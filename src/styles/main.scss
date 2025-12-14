@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'variables';
+@import 'dark-theme';
+@import 'light-theme';
+
+/* 
+ * Global Styles & Reset
+ */
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  // Apply theme variables
+  background-color: var(--bg-primary); 
+  color: var(--text-primary);
+}
+
+@layer utilities {
+
+  // ... (Keeping existing animations from original css)
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.5; }
+  }
+
+  .animate-fadeIn { animation: fadeIn 0.8s ease-out; }
+  .animate-fadeInUp { animation: fadeInUp 0.8s ease-out; animation-fill-mode: both; }
+  .animate-pulse { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+  
+  .dark-theme ::-webkit-scrollbar-thumb {
+      background: #334155;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+
+  // ... (Other utilities)
+  
+  .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  
+  // Apply logic to use new theme classes based on parent
+  .dark-theme .glass {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+/*
+ * Component Layer Integration
+ * Use standard class names in HTML, but map them to the 
+ * separated theme classes based on the root theme.
+ */
+@layer components {
+    .glass-panel {
+        @extend .light-theme-glass-panel;
+    }
+    
+    .dark-theme .glass-panel {
+        @extend .dark-theme-glass-panel;
+    }
+    
+    .neumorphic-button {
+        @extend .light-theme-neumorphic-button;
+    }
+    
+    .dark-theme .neumorphic-button {
+         @extend .dark-theme-neumorphic-button;
+    }
+
+    .green-tint-bg {
+        @extend .light-theme-green-tint-bg;
+    }
+
+    .dark-theme .green-tint-bg {
+        @extend .dark-theme-green-tint-bg;
+    }
+    
+    .loader {
+        width: 60px;
+        aspect-ratio: 1;
+        display: flex;
+        color: $color-primary; 
+        border: 4px solid;
+        box-sizing: border-box;
+        border-radius: 50%;
+        background: 
+          radial-gradient(circle 5px, currentColor 95%,#0000),
+          linear-gradient(currentColor 50%,#0000 0) 50%/4px 60% no-repeat;
+        animation: l1 2s infinite linear;
+    }
+    .loader:before {
+        content: "";
+        flex: 1;
+        background:linear-gradient(currentColor 50%,#0000 0) 50%/4px 80% no-repeat;
+        animation: inherit;
+    }
+    @keyframes l1 {
+        100% {transform: rotate(1turn)}
+    }
+}
+
+// React Grid Layout overrides
+.react-grid-item.react-grid-placeholder {
+  background: rgba(22, 115, 255, 0.1) !important;
+  border-radius: 1rem !important;
+  opacity: 0.8 !important;
+  border: 2px dashed rgba(22, 115, 255, 0.3);
+}
+// ... (Other existing RGL styles)

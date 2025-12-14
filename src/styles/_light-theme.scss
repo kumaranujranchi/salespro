@@ -1,0 +1,37 @@
+/**
+ * Light Theme Styles
+ * STRICT SEPARATION REQUIREMENT:
+ * All light theme specific styles must be defined here.
+ * Class naming convention: .light-theme-[component-name]
+ */
+
+@import 'variables';
+
+// 1. Root Level Theme overrides (CSS Variables)
+.light-theme {
+  --bg-primary: #{$color-bg-light};
+  --bg-surface: #{$color-surface-light};
+  --text-primary: #1e293b;
+  --text-muted: #64748b;
+
+  color-scheme: light;
+}
+
+// 2. Component Specific Light Theme Classes
+.light-theme-glass-panel {
+  // Uses Tailwind apply equivalent usually, but here defined explicitly
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.light-theme-neumorphic-button {
+  background-color: #f3f4f6;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.light-theme-green-tint-bg {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}

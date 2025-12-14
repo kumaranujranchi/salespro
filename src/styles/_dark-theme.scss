@@ -1,0 +1,38 @@
+/**
+ * Dark Theme Styles
+ * STRICT SEPARATION REQUIREMENT:
+ * All dark theme specific styles must be defined here.
+ * Class naming convention: .dark-theme-[component-name]
+ */
+
+@import 'variables';
+
+// 1. Root Level Theme overrides (CSS Variables)
+.dark-theme {
+  --bg-primary: #{$color-bg-dark};
+  --bg-surface: #{$color-surface-dark};
+  --text-primary: #ffffff;
+  --text-muted: #9db9a8;
+  
+  // Tailwind overrides if using CSS vars strategy
+  color-scheme: dark;
+}
+
+// 2. Component Specific Dark Theme Classes
+.dark-theme-glass-panel {
+  background: linear-gradient(160deg, rgba(35, 50, 42, 0.5) 0%, rgba(18, 28, 23, 0.4) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme-neumorphic-button {
+  background: linear-gradient(145deg, #1c2e26, #15231d);
+  box-shadow: 5px 5px 10px #0e1813, -5px -5px 10px #243a31;
+}
+
+.dark-theme-green-tint-bg {
+  background: linear-gradient(160deg, rgba(35, 50, 42, 0.7) 0%, rgba(18, 28, 23, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
