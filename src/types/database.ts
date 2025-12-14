@@ -13,6 +13,7 @@ export interface Profile {
   dob: string | null;
   marriage_anniversary: string | null;
   joining_date: string | null;
+  tenant_id: string; // Added for SaaS
   is_active: boolean;
   force_password_change: boolean;
   created_at: string;

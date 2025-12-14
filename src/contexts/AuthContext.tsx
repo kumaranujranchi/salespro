@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
+  tenant: { id: string; name: string; slug: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenant, setTenant] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,6 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Account is deactivated. Please contact support.');
       }
       setProfile(data);
+      if (data.tenant_id) {
+        const { data: tenantData } = await supabase
+          .from('tenants')
+          .select('id, name, slug')
+          .eq('id', data.tenant_id)
+          .single();
+        if (tenantData) setTenant(tenantData);
+      }
     }
   };
 
@@ -79,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           setProfile(null);
+          setTenant(null);
         }
         setLoading(false);
       })();
@@ -108,13 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    await supabase.auth.signOut();
     setProfile(null);
+    setTenant(null);
     setUser(null);
     setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, tenant, session, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

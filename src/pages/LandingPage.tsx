@@ -12,7 +12,8 @@ import {
     ArrowRight,
     Menu,
     X,
-    ChevronDown
+    ChevronDown,
+    Check
 } from 'lucide-react';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
 
@@ -33,6 +34,10 @@ export function LandingPage() {
         setTimeout(() => {
             navigate('/login');
         }, 500);
+    };
+
+    const handleRegisterClick = () => {
+        navigate('/register');
     };
 
     const features = [
@@ -83,6 +88,56 @@ export function LandingPage() {
         'Access from anywhere, on any device'
     ];
 
+    const pricingPlans = [
+        {
+            name: 'Monthly',
+            price: '₹1,500',
+            period: '/month',
+            description: 'Full access, billed monthly',
+            features: [
+                'All Pro Features Included',
+                'Unlimited Users',
+                'Real-time Analytics',
+                'Priority Email Support',
+                '30-Day Free Trial'
+            ],
+            buttonText: 'Start Monthly Trial',
+            popular: false
+        },
+        {
+            name: '6 Months',
+            price: '₹1,200',
+            period: '/month',
+            billing: 'Billed ₹7,200 semi-annually',
+            description: 'Save 20% with 6-month commitment',
+            features: [
+                'All Pro Features Included',
+                'Unlimited Users',
+                'Real-time Analytics',
+                'Priority Email Support',
+                '30-Day Free Trial'
+            ],
+            buttonText: 'Start 6-Month Trial',
+            popular: true
+        },
+        {
+            name: 'Yearly',
+            price: '₹1,000',
+            period: '/month',
+            billing: 'Billed ₹12,000 annually',
+            description: 'Best Value: Save 33% yearly',
+            features: [
+                'All Pro Features Included',
+                'Unlimited Users',
+                'Real-time Analytics',
+                'Priority Email Support',
+                '30-Day Free Trial'
+            ],
+            buttonText: 'Start Yearly Trial',
+            popular: false
+        }
+    ];
+
     return (
         <div className="min-h-screen bg-slate-50 overflow-x-hidden font-sans text-gray-900">
             {/* Navigation */}
@@ -103,7 +158,7 @@ export function LandingPage() {
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center space-x-8">
-                            {['Features', 'Benefits', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'Pricing', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -114,13 +169,19 @@ export function LandingPage() {
                             ))}
                             <button
                                 onClick={handleLoginClick}
+                                className={`text-sm font-semibold transition-colors ${scrollY > 20 ? 'text-gray-700 hover:text-[#1673FF]' : 'text-white hover:text-gray-200'}`}
+                            >
+                                Login
+                            </button>
+                            <button
+                                onClick={handleRegisterClick}
                                 disabled={isLoading}
                                 className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${scrollY > 20
                                     ? 'bg-[#1673FF] text-white hover:bg-[#0A1C37]'
                                     : 'bg-white text-[#1673FF] hover:bg-gray-100'
                                     }`}
                             >
-                                {isLoading ? 'Loading...' : 'Login'}
+                                Start Free Trial
                             </button>
                         </div>
 
@@ -138,7 +199,7 @@ export function LandingPage() {
                 {mobileMenuOpen && (
                     <div className="md:hidden bg-white border-t animate-fadeIn absolute w-full shadow-xl">
                         <div className="px-4 py-4 space-y-3">
-                            {['Features', 'Benefits', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'Pricing', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -150,10 +211,15 @@ export function LandingPage() {
                             ))}
                             <button
                                 onClick={handleLoginClick}
-                                disabled={isLoading}
+                                className="block w-full text-left py-2 text-gray-700 hover:text-[#1673FF] font-medium"
+                            >
+                                Login
+                            </button>
+                            <button
+                                onClick={handleRegisterClick}
                                 className="w-full px-6 py-3 bg-[#1673FF] text-white rounded-lg hover:bg-[#0A1C37] transition-all font-semibold"
                             >
-                                {isLoading ? 'Loading...' : 'Login'}
+                                Start 30-Day Free Trial
                             </button>
                         </div>
                     </div>
@@ -178,7 +244,7 @@ export function LandingPage() {
                         <div className="space-y-8 animate-slideInLeft text-center lg:text-left">
                             <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/20 transition-colors cursor-default">
                                 <Globe size={16} className="text-[#1673FF]" />
-                                <span className="text-sm text-gray-200">Trusted by 1000+ Sales Teams</span>
+                                <span className="text-sm text-gray-200">Start your 30-day free trial today</span>
                             </div>
 
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white tracking-tight">
@@ -195,18 +261,11 @@ export function LandingPage() {
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <button
-                                    onClick={handleLoginClick}
-                                    disabled={isLoading}
+                                    onClick={handleRegisterClick}
                                     className="group px-8 py-4 bg-[#1673FF] text-white rounded-xl font-bold text-lg hover:bg-[#1361D6] hover:shadow-[0_0_20px_rgba(22,115,255,0.5)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
                                 >
-                                    {isLoading ? (
-                                        <span>Loading...</span>
-                                    ) : (
-                                        <>
-                                            <span>Get Started Free</span>
-                                            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                                        </>
-                                    )}
+                                    <span>Start Free Trial</span>
+                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 <button className="px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/10 text-white rounded-xl font-bold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
                                     Book Demo
@@ -215,12 +274,12 @@ export function LandingPage() {
 
                             <div className="pt-8 border-t border-white/10 flex justify-center lg:justify-start gap-12 text-gray-400">
                                 <div className="text-center lg:text-left">
-                                    <div className="text-3xl font-bold text-white mb-1">40%</div>
-                                    <div className="text-sm">Revenue Growth</div>
+                                    <div className="text-3xl font-bold text-white mb-1">30 Days</div>
+                                    <div className="text-sm">Free Access</div>
                                 </div>
                                 <div className="text-center lg:text-left">
-                                    <div className="text-3xl font-bold text-white mb-1">2x</div>
-                                    <div className="text-sm">Faster Closing</div>
+                                    <div className="text-3xl font-bold text-white mb-1">No Card</div>
+                                    <div className="text-sm">Required</div>
                                 </div>
                                 <div className="text-center lg:text-left">
                                     <div className="text-3xl font-bold text-white mb-1">10k+</div>
@@ -387,9 +446,66 @@ export function LandingPage() {
             {/* Divider - Curve */}
             <div className="h-16 bg-[#0F172A]" style={{ clipPath: 'ellipse(70% 100% at 50% 100%)' }}></div>
 
+            {/* Pricing Section */}
+            <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Pricing Plans</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
+                            Transparent Pricing
+                        </h2>
+                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                            Choose the plan that fits your growth. Start with a 30-day free trial on any plan.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        {pricingPlans.map((plan, index) => (
+                            <div
+                                key={index}
+                                className={`relative bg-white rounded-2xl shadow-xl flex flex-col p-8 transition-transform duration-300 hover:-translate-y-2 ${plan.popular ? 'border-2 border-[#1673FF] ring-4 ring-[#1673FF]/10 scale-105 z-10' : 'border border-gray-100'}`}
+                            >
+                                {plan.popular && (
+                                    <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-[#1673FF] text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                        Most Popular
+                                    </div>
+                                )}
+                                <h3 className="text-2xl font-bold text-[#0A1C37] mb-2">{plan.name}</h3>
+                                <div className="flex items-baseline mb-2">
+                                    <span className="text-4xl font-extrabold text-[#0A1C37]">{plan.price}</span>
+                                    <span className="text-gray-500 ml-1">{plan.period}</span>
+                                </div>
+                                {plan.billing && (
+                                    <p className="text-sm text-green-600 font-medium mb-4">{plan.billing}</p>
+                                )}
+                                <p className="text-gray-500 mb-6">{plan.description}</p>
+
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    {plan.features.map((feature, i) => (
+                                        <li key={i} className="flex items-start">
+                                            <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                                            <span className="text-gray-600 text-sm">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <button
+                                    onClick={handleRegisterClick}
+                                    className={`w-full py-3 rounded-xl font-bold transition-all ${plan.popular
+                                        ? 'bg-[#1673FF] text-white hover:bg-[#1361D6] shadow-lg hover:shadow-blue-500/30'
+                                        : 'bg-gray-100 text-[#0A1C37] hover:bg-gray-200'
+                                        }`}
+                                >
+                                    {plan.buttonText}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
             {/* CTA Section */}
-            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-5xl mx-auto">
                     <div className="bg-gradient-to-r from-[#1673FF] to-[#0A1C37] rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full opacity-10 blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
@@ -398,14 +514,15 @@ export function LandingPage() {
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Supercharge Your Sales?</h2>
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-                                Join thousands of sales professionals who trust WishPro to manage their daily operations and smash their targets.
+                                Join thousands of sales professionals who trust WishPro.
+                                <br />
+                                <span className="font-bold text-white">Start your 30-day free trial now.</span>
                             </p>
                             <button
-                                onClick={handleLoginClick}
-                                disabled={isLoading}
+                                onClick={handleRegisterClick}
                                 className="px-10 py-4 bg-white text-[#1673FF] rounded-xl font-bold text-lg hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50"
                             >
-                                {isLoading ? 'Processing...' : 'Start Your Journey'}
+                                Start Free Trial
                             </button>
                         </div>
                     </div>
@@ -413,7 +530,7 @@ export function LandingPage() {
             </section>
 
             {/* About Section (Simplified) */}
-            <section id="about" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+            <section id="about" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
                 <div className="max-w-4xl mx-auto text-center">
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About WishPro</h2>
                     <p className="text-2xl md:text-3xl text-gray-700 font-light leading-relaxed mb-8">
@@ -455,7 +572,7 @@ export function LandingPage() {
                             <ul className="space-y-4 text-gray-400">
                                 <li><a href="#features" className="hover:text-[#1673FF] transition-colors">Features</a></li>
                                 <li><a href="#benefits" className="hover:text-[#1673FF] transition-colors">Benefits</a></li>
-                                <li><a href="#" className="hover:text-[#1673FF] transition-colors">Pricing</a></li>
+                                <li><a href="#pricing" className="hover:text-[#1673FF] transition-colors">Pricing</a></li>
                                 <li><a href="#" className="hover:text-[#1673FF] transition-colors">Integration</a></li>
                             </ul>
                         </div>
@@ -480,7 +597,18 @@ export function LandingPage() {
                     </div>
                 </div>
             </footer>
+            {/* WhatsApp Floating Button */}
+            <a
+                href="https://wa.me/919525230232"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-8 right-8 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:shadow-green-500/30 hover:scale-110 transition-all duration-300 flex items-center justify-center animate-bounce-in"
+                aria-label="Chat on WhatsApp"
+            >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+            </a>
         </div>
     );
 }
-
