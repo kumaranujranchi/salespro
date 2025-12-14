@@ -38,6 +38,9 @@ export interface Project {
   site_photos: string[];
   metadata: Record<string, any>;
   is_active: boolean;
+  project_type?: 'Flat/Apartment' | 'Residential Land (Plotting)' | 'Serviced Apartments' | 'Residential Land' | '1 RK/ Studio Apartment' | 'Independent House/Villa' | 'Farm House' | 'Duplex' | 'Other';
+  image_url?: string | null;
+  status?: 'Running' | 'Closed' | 'Hold';
   created_at: string;
   updated_at: string;
 }
