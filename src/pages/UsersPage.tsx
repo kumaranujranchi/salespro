@@ -12,7 +12,8 @@ import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock } from 'lucide-react';
+import { ImageCropper } from '../components/ImageCropper';
+import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, Upload, X } from 'lucide-react';
 import { Tooltip } from '../components/ui/Tooltip';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
@@ -24,8 +25,12 @@ export function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Cropper State
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const isReadOnly = profile?.role === 'director';
 
@@ -115,6 +120,49 @@ export function UsersPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     resetForm();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    // 1. Read file as Data URL for Cropper
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      setSelectedImage(reader.result as string);
+      setCropperOpen(true);
+      // Clear input so same file selection triggers change event if retried
+      e.target.value = '';
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropperOpen(false);
+    setUploadingImage(true);
+
+    const fileName = `${Math.random()}.jpg`; // Cropped output is usually jpeg 
+    const filePath = `${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, croppedBlob);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, imageUrl: data.publicUrl }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      await dialog.alert('Error uploading image. Please try again.', { variant: 'danger', title: 'Upload Failed' });
+    } finally {
+      setUploadingImage(false);
+      setSelectedImage(null); // Cleanup
+    }
   };
 
   const handleEditUser = (user: Profile) => {
@@ -498,9 +546,9 @@ export function UsersPage() {
                           </Tooltip>
 
                           <Tooltip content="Edit Details">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEditUser(user)}
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10"
                             >
@@ -630,13 +678,35 @@ export function UsersPage() {
               onChange={handleInputChange}
               options={users.filter(u => u.id !== editingUserId).map(u => ({ value: u.id, label: u.full_name }))}
             />
-            <Input
-              label="Profile Image URL"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleInputChange}
-              placeholder="https://..."
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Profile Image
+              </label>
+              <div className="flex items-center gap-4">
+                {formData.imageUrl && (
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-200">
+                    <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                      className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl-lg hover:bg-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="cursor-pointer"
+                  />
+                  {uploadingImage && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
+                </div>
+              </div>
+            </div>
 
             {!editingUserId && (
               <>
@@ -735,6 +805,16 @@ export function UsersPage() {
           </ModalFooter>
         </form>
       </Modal>
+
+      {/* Image Cropper Modal */}
+      {selectedImage && (
+        <ImageCropper
+          isOpen={cropperOpen}
+          onClose={() => setCropperOpen(false)}
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }

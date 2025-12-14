@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Building, Plus, ExternalLink, Trash2, Pencil } from 'lucide-react';
+import { Building, Plus, ExternalLink, Trash2, Pencil, Upload, X } from 'lucide-react';
 
 
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ export function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const isReadOnly = profile?.role === 'director';
 
@@ -79,6 +80,35 @@ export function ProjectsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     resetForm();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    setUploadingImage(true);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, imageUrl: data.publicUrl }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      await dialog.alert('Error uploading image. Please try again.', { variant: 'danger', title: 'Upload Failed' });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSaveProject = async (e: React.FormEvent) => {
@@ -320,12 +350,35 @@ export function ProjectsPage() {
             </div>
           </div>
 
-          <Input
-            label="Project Image URL"
-            value={formData.imageUrl}
-            onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-            placeholder="https://example.com/project-image.jpg"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Project Image
+            </label>
+            <div className="flex items-center gap-4">
+              {formData.imageUrl && (
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                  <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                    className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl-lg hover:bg-red-600"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
+              <div className="flex-1">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="cursor-pointer"
+                />
+                {uploadingImage && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
+              </div>
+            </div>
+          </div>
           <ModalFooter>
             {/* ... */}
             <Button
