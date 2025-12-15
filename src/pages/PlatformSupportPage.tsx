@@ -47,7 +47,11 @@ export function PlatformSupportPage() {
 
       const { data, error } = await supabase
         .from('support_tickets')
-        .select('*, profiles:created_by(full_name, email), tenants(name)')
+        .select(`
+          *,
+          created_by_profile:profiles!created_by(full_name, email),
+          tenant:tenants(name)
+        `)
         .order('created_at', { ascending: false });
 
       console.log('Fetch result:', { data, error });
@@ -58,7 +62,15 @@ export function PlatformSupportPage() {
       }
 
       console.log(`Found ${data?.length || 0} tickets`);
-      setTickets(data || []);
+
+      // Map the data to match our interface
+      const mappedTickets = data?.map(ticket => ({
+        ...ticket,
+        profiles: ticket.created_by_profile,
+        tenants: ticket.tenant
+      })) || [];
+
+      setTickets(mappedTickets);
     } catch (error: any) {
       console.error('Error fetching tickets:', error);
       // Show error to user
