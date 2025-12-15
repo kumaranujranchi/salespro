@@ -49,13 +49,14 @@ export function RegisterCompanyPage() {
       setGeneratedOtp(newOtp);
 
       // 2. Send OTP via Netlify Function (using Nodemailer)
-      const response = await fetch('/.netlify/functions/send-otp', {
+      const response = await fetch('/.netlify/functions/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'OTP',
           email: formData.email,
           name: formData.fullName,
-          otp: newOtp
+          data: { otp: newOtp }
         })
       });
 

@@ -20,6 +20,7 @@ import { IncentivesPage } from './pages/IncentivesPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { MyPerformancePage } from './pages/MyPerformancePage';
 import { DirectoryPage } from './pages/DirectoryPage';
+import { SupportPage } from './pages/SupportPage';
 
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -175,6 +176,17 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <ReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/support"
+                element={
+                  <ProtectedRoute allowedRoles={['super_admin', 'admin', 'director']}>
+                    <DashboardLayout>
+                      <SupportPage />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

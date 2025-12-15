@@ -22,6 +22,7 @@ import {
   BarChart2,
   Contact,
   Users,
+  HelpCircle,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+  { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
 ];
 
 import { useMobile } from '../../hooks/useMobile';
