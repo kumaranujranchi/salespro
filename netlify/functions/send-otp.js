@@ -60,7 +60,8 @@ exports.handler = async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Failed to send email', 
-        details: error.message 
+        details: error.message,
+        stack: error.stack // Included for debugging
       }),
     };
   }
