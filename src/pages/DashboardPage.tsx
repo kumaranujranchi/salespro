@@ -6,12 +6,15 @@ import { CRMDashboard } from '../components/dashboards/CRMDashboard';
 import { AccountantDashboard } from '../components/dashboards/AccountantDashboard';
 import { DriverDashboard } from '../components/dashboards/DriverDashboard';
 import { ReceptionistDashboard } from '../components/dashboards/ReceptionistDashboard';
+import { PlatformDashboard } from './PlatformDashboard';
 
 export function DashboardPage() {
   const { profile } = useAuth();
   if (!profile) return null;
 
   switch (profile.role) {
+    case 'platform_admin':
+      return <PlatformDashboard />;
     case 'super_admin':
     case 'admin':
     case 'director':
