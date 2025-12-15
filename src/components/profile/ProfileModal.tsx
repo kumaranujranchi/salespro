@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Eye, EyeOff, Shield, Lock, Check, User, Calendar, Phone } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Check, User, Phone } from 'lucide-react';
 import { ImageCropper } from '../ImageCropper';
 
 interface ProfileModalProps {

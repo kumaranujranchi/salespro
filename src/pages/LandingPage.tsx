@@ -412,8 +412,8 @@ export function LandingPage() {
                         <div className="order-2 md:order-1 relative animate-slideInLeft">
                             <div className="absolute inset-0 bg-[#1673FF] blur-[100px] opacity-20"></div>
                             <img
-                                src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800"
-                                alt="Team Success"
+                                src="/images/sales-analytics-growth.png"
+                                alt="Sales Analytics Growth"
                                 className="rounded-2xl shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-500 border-4 border-white/10 relative z-10"
                             />
                             {/* Floating Stats */}

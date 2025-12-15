@@ -1,16 +1,14 @@
-import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface LoadingSpinnerProps {
     className?: string;
     size?: 'sm' | 'md' | 'lg' | 'xl';
-    logoSrc?: string;
     fullScreen?: boolean;
 }
 
-export function LoadingSpinner({
+export function LoadingSpinner({ 
     className = '',
     size = 'md',
-    logoSrc = '/logo.png',
     fullScreen = false
 }: LoadingSpinnerProps) {
 
@@ -32,7 +30,7 @@ export function LoadingSpinner({
             role="status"
             aria-live="polite"
         >
-            <div className={`loader ${scaleClasses[size]}`}></div>
+            <Loader2 className={`animate-spin ${scaleClasses[size]} ${fullScreen ? 'text-indigo-600 dark:text-indigo-400' : 'text-current'}`} />
             <span className="sr-only">Loading...</span>
         </div>
     );

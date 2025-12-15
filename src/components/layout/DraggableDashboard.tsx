@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // @ts-ignore - WidthProvider/Responsive are often on default export in ESM build
-import GridLayout from 'react-grid-layout';
+import { Responsive, WidthProvider } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Button } from '../ui/Button';
 import { RotateCcw, GripVertical } from 'lucide-react';
 import clsx from 'clsx';
-
-const { Responsive, WidthProvider } = GridLayout;
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export interface DashboardItem {

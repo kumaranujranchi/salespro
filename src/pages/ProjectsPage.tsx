@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Building, Plus, ExternalLink, Trash2, Pencil, Upload, X } from 'lucide-react';
+import { Building, Plus, ExternalLink, Trash2, Pencil, X } from 'lucide-react';
 
 
 import { useAuth } from '../contexts/AuthContext';

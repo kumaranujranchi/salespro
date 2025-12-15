@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Building2, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ export function RegisterCompanyPage() {
       if (!authData.user) throw new Error("Registration failed");
 
       // Step 2: Call the Secure RPC function to create Tenant & Link User
-      const { data: rpcData, error: rpcError } = await supabase.rpc('register_tenant', {
+      const { error: rpcError } = await supabase.rpc('register_tenant', {
         company_name: formData.companyName,
         company_slug: formData.companySlug,
         user_full_name: formData.fullName
@@ -75,12 +75,13 @@ export function RegisterCompanyPage() {
 
       navigate('/dashboard');
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('Registration Error:', err);
-      if (err.message && err.message.includes("security purposes")) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      if (message.includes("security purposes")) {
         setError("Please wait a few seconds before trying again.");
       } else {
-        setError(err.message || 'Failed to register company');
+        setError(message || 'Failed to register company');
       }
     } finally {
       setLoading(false);
@@ -88,12 +89,15 @@ export function RegisterCompanyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
+      <Link to="/" className="absolute top-8 left-8 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-colors">
+        <ArrowRight className="h-4 w-4 rotate-180" />
+        Back to Home
+      </Link>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="bg-indigo-600 p-3 rounded-xl">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
+        <div className="flex justify-center flex-col items-center">
+          <img src="/logo.png" alt="SalesPro" className="h-12 w-auto dark:hidden" />
+          <img src="/logo-light.png" alt="SalesPro" className="h-12 w-auto hidden dark:block" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Register your Company

@@ -13,12 +13,12 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ImageCropper } from '../components/ImageCropper';
-import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, Upload, X } from 'lucide-react';
+import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, X } from 'lucide-react';
 import { Tooltip } from '../components/ui/Tooltip';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function UsersPage() {
-  const { user: currentUser, profile } = useAuth();
+  const { user: _currentUser, profile } = useAuth();
   const dialog = useDialog();
   const [users, setUsers] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);

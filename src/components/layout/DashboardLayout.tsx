@@ -7,7 +7,6 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 import { NotificationBell } from '../notifications/NotificationBell';
 import {
   LayoutDashboard,
-  Users,
   Building,
   Briefcase,
   Megaphone,
@@ -22,7 +21,7 @@ import {
   ChevronRight,
   BarChart2,
   Contact,
-  Activity,
+  Users,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {

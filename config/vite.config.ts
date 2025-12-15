@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['logo.png'],
+        includeAssets: ['logo-light.png'],
         manifest: {
           name: 'SalesPro - Sales Management',
           short_name: 'SalesPro',
