@@ -591,115 +591,119 @@ export function PlatformDashboard() {
                 Trials
               </button>
               <button
-            onClick={() => setActiveTab('tenants')}
-            className={`pb-4 px-2 font-medium text-sm transition-colors relative ${activeTab === 'tenants'
-              ? 'text-indigo-600 dark:text-indigo-400'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-          >
-            Manage Tenants
-            {activeTab === 'tenants' && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('support')}
-            className={`pb-4 px-2 font-medium text-sm transition-colors relative ${activeTab === 'support'
-              ? 'text-indigo-600 dark:text-indigo-400'
-              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-          >
-            Support Tickets
-            {tickets.some(t => t.status === 'open') && (
-              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
-                {tickets.filter(t => t.status === 'open').length}
-              </span>
-            )}
-            {activeTab === 'support' && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
-            )}
-          </button>
-        </div>className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'active' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
+                onClick={() => setActiveTab('tenants')}
+                className={`pb-4 px-2 font-medium text-sm transition-colors relative ${activeTab === 'tenants'
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
               >
-                Active
+                Manage Tenants
+                {activeTab === 'tenants' && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                )}
               </button>
-            </div>
-          </div>
+              <button
+                onClick={() => setActiveTab('support')}
+                className={`pb-4 px-2 font-medium text-sm transition-colors relative ${activeTab === 'support'
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+              >
+                Support Tickets
+                {tickets.some(t => t.status === 'open') && (
+                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                    {tickets.filter(t => t.status === 'open').length}
+                  </span>
+                )}
+                {activeTab === 'support' && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
+                )}
+              </button>
+            </div>className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'active' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
+              >
+            Active
+          </button>
         </div>
+      </div>
+    </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+      {
+    activeTab === 'tenants' && (
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+            {loading ? (
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  Loading tenants...
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    Loading tenants...
-                  </td>
-                </tr>
-              ) : filteredTenants.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    No tenants found matching your filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredTenants.map((tenant) => (
-                  <tr key={tenant.id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${tenant.is_active === false ? 'opacity-60 bg-slate-50' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mr-3 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
-                          {tenant.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-slate-900 dark:text-white">
-                            {tenant.name}
-                            {tenant.is_active === false && <span className="ml-2 text-xs text-red-500 font-bold">(SUSPENDED)</span>}
-                          </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">{tenant.slug}</div>
-                        </div>
+            ) : filteredTenants.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  No tenants found matching your filter.
+                </td>
+              </tr>
+            ) : (
+              filteredTenants.map((tenant) => (
+                <tr key={tenant.id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${tenant.is_active === false ? 'opacity-60 bg-slate-50' : ''}`}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mr-3 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
+                        {tenant.name.charAt(0)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                      <div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">
+                          {tenant.name}
+                          {tenant.is_active === false && <span className="ml-2 text-xs text-red-500 font-bold">(SUSPENDED)</span>}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{tenant.slug}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                         ${tenant.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                          tenant.subscription_status === 'trial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'}
+                        tenant.subscription_status === 'trial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'}
                       `}>
-                        {tenant.subscription_status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                      {tenant.plan_tier || 'Starter'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                      {formatDate(tenant.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedTenant(tenant)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-4"
-                      >
-                        Manage
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div >
+                      {tenant.subscription_status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
+                    {tenant.plan_tier || 'Starter'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    {formatDate(tenant.created_at)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => setSelectedTenant(tenant)}
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-4"
+                    >
+                      Manage
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 
-    { activeTab === 'support' && (
+  {
+    activeTab === 'support' && (
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
           {tickets.map((ticket) => (
@@ -759,408 +763,408 @@ export function PlatformDashboard() {
         </ul>
       </div>
     )
-}
+  }
 
-{/* Resolve Modal */ }
-{
-  resolveModalOpen && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 className="text-lg font-bold mb-4 dark:text-white">Resolve Ticket #{selectedTicket?.ticket_number}</h3>
-        <textarea
-          className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:text-white"
-          rows={4}
-          placeholder="Enter resolution notes..."
-          value={resolutionNote}
-          onChange={(e) => setResolutionNote(e.target.value)}
-        />
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => setResolveModalOpen(false)}
-            className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleResolveTicket}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"
-          >
-            Mark Resolved & Send Email
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-{/* Tenant Details Modal */ }
-{
-  selectedTenant && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-surface-dark rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-slideUp">
-        {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50/50 dark:bg-white/5">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              {selectedTenant.name}
-              {selectedTenant.is_active === false && <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Suspended</span>}
-            </h3>
-            <p className="text-sm text-slate-500">Tenant ID: {selectedTenant.id}</p>
-          </div>
-          <button
-            onClick={() => setSelectedTenant(null)}
-            className="text-slate-400 hover:text-slate-500 dark:hover:text-white transition-colors"
-            aria-label="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
-
-        <div className="p-6 space-y-8">
-          {/* Status & Plan Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
-              <p className="text-xs text-slate-500 uppercase font-semibold">Subscription</p>
-              <div className="mt-1 flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${selectedTenant.subscription_status === 'active' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
-                <span className="font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.subscription_status}</span>
-              </div>
-            </div>
-            <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
-              <p className="text-xs text-slate-500 uppercase font-semibold">Plan Tier</p>
-              <p className="mt-1 font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.plan_tier || 'Starter'} <span className="text-xs font-normal text-slate-500">({selectedTenant.billing_cycle || 'monthly'})</span></p>
-            </div>
-            <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
-              <p className="text-xs text-slate-500 uppercase font-semibold">Joined On</p>
-              <p className="mt-1 font-bold text-slate-900 dark:text-white">{formatDate(selectedTenant.created_at)}</p>
-            </div>
-          </div>
-
-          {/* Trial Bar */}
-          {selectedTenant.subscription_status === 'trial' && (
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Trial Period Progress</p>
-                <span className="text-xs font-mono bg-white dark:bg-black/20 px-2 py-1 rounded text-amber-700 dark:text-amber-300">
-                  {(selectedTenant.trial_ends_at && new Date(selectedTenant.trial_ends_at) > new Date()) ?
-                    Math.ceil((new Date(selectedTenant.trial_ends_at).getTime() - new Date(selectedTenant.created_at).getTime()) / (1000 * 60 * 60 * 24)) + ' Days Total'
-                    : '30 Days Total'
-                  }
-                </span>
-              </div>
-              {(() => {
-                const daysLeft = calculateTrialDaysLeft(selectedTenant);
-                // Approximation for progress bar
-                const totalDays = 30;
-                const progress = Math.max(0, Math.min(100, ((totalDays - daysLeft) / totalDays) * 100));
-
-                return (
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className={`${daysLeft < 5 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>
-                        {daysLeft > 0 ? `${daysLeft} days remaining` : 'Trial Expired'}
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${daysLeft < 5 ? 'bg-red-500' : 'bg-amber-500'}`}
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Contact & Address Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 border-b border-slate-100 dark:border-white/10 pb-2">Contact Details</h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-slate-500">Contact Email</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.contact_email || 'Not provided'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Phone</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.contact_phone || 'Not provided'}</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 border-b border-slate-100 dark:border-white/10 pb-2">Billing Address</h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-slate-500">Address</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.address || 'Not provided'}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="text-xs text-slate-500">City</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.city || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">State</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.state || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/10">
-            <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-4">Danger Zone</h4>
-            <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg">
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedTenant.is_active === false ? 'Activate Tenant Account' : 'Deactivate Tenant Account'}</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {selectedTenant.is_active === false
-                    ? 'Restore access to this tenant immediately.'
-                    : 'Prevent all users in this tenant from logging in.'}
-                </p>
-              </div>
-              <button
-                onClick={() => toggleTenantStatus(selectedTenant)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${selectedTenant.is_active === false
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-                  }`}
-              >
-                {selectedTenant.is_active === false ? 'ACTIVATE' : 'DEACTIVATE'}
-              </button>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg">
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Reset Owner Password</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Manually set a new password for the tenant's super admin.
-                </p>
-              </div>
-              <button
-                onClick={() => openResetPasswordModal(selectedTenant)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-900 dark:text-white transition-colors"
-              >
-                <Lock className="w-4 h-4" />
-                RESET PASSWORD
-              </button>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg">
-              <div>
-                <p className="text-sm font-bold text-red-700 dark:text-red-400">Delete Tenant Data</p>
-                <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
-                  Permanently remove this company and all its data.
-                </p>
-              </div>
-              <button
-                onClick={handleDeleteTenant}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                DELETE TENANT
-              </button>
-            </div>
+  {/* Resolve Modal */ }
+  {
+    resolveModalOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+          <h3 className="text-lg font-bold mb-4 dark:text-white">Resolve Ticket #{selectedTicket?.ticket_number}</h3>
+          <textarea
+            className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:text-white"
+            rows={4}
+            placeholder="Enter resolution notes..."
+            value={resolutionNote}
+            onChange={(e) => setResolutionNote(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setResolveModalOpen(false)}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleResolveTicket}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold"
+            >
+              Mark Resolved & Send Email
+            </button>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
-{/* Custom Password Reset Modal */ }
-{
-  resetModalOpen && selectedTenant && (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
-
-        {/* Header with detailed styling */}
-        <div className="relative bg-indigo-600 p-6 text-center overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner ring-4 ring-white/10">
-              <KeyRound className="w-8 h-8 text-white" />
+  {/* Tenant Details Modal */ }
+  {
+    selectedTenant && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white dark:bg-surface-dark rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-slideUp">
+          {/* Modal Header */}
+          <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center bg-slate-50/50 dark:bg-white/5">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                {selectedTenant.name}
+                {selectedTenant.is_active === false && <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Suspended</span>}
+              </h3>
+              <p className="text-sm text-slate-500">Tenant ID: {selectedTenant.id}</p>
             </div>
-            <h3 className="text-xl font-bold text-white">Reset Access</h3>
-            <p className="text-indigo-100 text-sm mt-1">Set a new password for {selectedTenant.name}</p>
+            <button
+              onClick={() => setSelectedTenant(null)}
+              className="text-slate-400 hover:text-slate-500 dark:hover:text-white transition-colors"
+              aria-label="Close"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </div>
-          <button
-            onClick={() => setResetModalOpen(false)}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="p-6 space-y-8">
+            {/* Status & Plan Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
+                <p className="text-xs text-slate-500 uppercase font-semibold">Subscription</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className={`inline-block w-2 h-2 rounded-full ${selectedTenant.subscription_status === 'active' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                  <span className="font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.subscription_status}</span>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
+                <p className="text-xs text-slate-500 uppercase font-semibold">Plan Tier</p>
+                <p className="mt-1 font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.plan_tier || 'Starter'} <span className="text-xs font-normal text-slate-500">({selectedTenant.billing_cycle || 'monthly'})</span></p>
+              </div>
+              <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
+                <p className="text-xs text-slate-500 uppercase font-semibold">Joined On</p>
+                <p className="mt-1 font-bold text-slate-900 dark:text-white">{formatDate(selectedTenant.created_at)}</p>
+              </div>
+            </div>
+
+            {/* Trial Bar */}
+            {selectedTenant.subscription_status === 'trial' && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Trial Period Progress</p>
+                  <span className="text-xs font-mono bg-white dark:bg-black/20 px-2 py-1 rounded text-amber-700 dark:text-amber-300">
+                    {(selectedTenant.trial_ends_at && new Date(selectedTenant.trial_ends_at) > new Date()) ?
+                      Math.ceil((new Date(selectedTenant.trial_ends_at).getTime() - new Date(selectedTenant.created_at).getTime()) / (1000 * 60 * 60 * 24)) + ' Days Total'
+                      : '30 Days Total'
+                    }
+                  </span>
+                </div>
+                {(() => {
+                  const daysLeft = calculateTrialDaysLeft(selectedTenant);
+                  // Approximation for progress bar
+                  const totalDays = 30;
+                  const progress = Math.max(0, Math.min(100, ((totalDays - daysLeft) / totalDays) * 100));
+
+                  return (
+                    <div>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className={`${daysLeft < 5 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>
+                          {daysLeft > 0 ? `${daysLeft} days remaining` : 'Trial Expired'}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${daysLeft < 5 ? 'bg-red-500' : 'bg-amber-500'}`}
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Contact & Address Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 border-b border-slate-100 dark:border-white/10 pb-2">Contact Details</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-slate-500">Contact Email</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.contact_email || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Phone</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.contact_phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3 border-b border-slate-100 dark:border-white/10 pb-2">Billing Address</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-slate-500">Address</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.address || 'Not provided'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-xs text-slate-500">City</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.city || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">State</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedTenant.state || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/10">
+              <h4 className="text-sm font-bold text-red-600 dark:text-red-400 mb-4">Danger Zone</h4>
+              <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg">
+                <div>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedTenant.is_active === false ? 'Activate Tenant Account' : 'Deactivate Tenant Account'}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selectedTenant.is_active === false
+                      ? 'Restore access to this tenant immediately.'
+                      : 'Prevent all users in this tenant from logging in.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => toggleTenantStatus(selectedTenant)}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${selectedTenant.is_active === false
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                >
+                  {selectedTenant.is_active === false ? 'ACTIVATE' : 'DEACTIVATE'}
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg">
+                <div>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">Reset Owner Password</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manually set a new password for the tenant's super admin.
+                  </p>
+                </div>
+                <button
+                  onClick={() => openResetPasswordModal(selectedTenant)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-900 dark:text-white transition-colors"
+                >
+                  <Lock className="w-4 h-4" />
+                  RESET PASSWORD
+                </button>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg">
+                <div>
+                  <p className="text-sm font-bold text-red-700 dark:text-red-400">Delete Tenant Data</p>
+                  <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                    Permanently remove this company and all its data.
+                  </p>
+                </div>
+                <button
+                  onClick={handleDeleteTenant}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-white dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  DELETE TENANT
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+    )
+  }
 
-        <div className="p-6">
-          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-lg p-3 flex gap-3 mb-6">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
-            <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-              This modification will immediately invalidate the current password for the Super Admin of <strong>{selectedTenant.name}</strong>. Provide the new password to the user securely.
-            </p>
-          </div>
+  {/* Custom Password Reset Modal */ }
+  {
+    resetModalOpen && selectedTenant && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
 
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-              New Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                ref={passwordInputRef}
-                type={showPassword ? "text" : "password"}
-                value={resetPassword}
-                onChange={(e) => setResetPassword(e.target.value)}
-                className="block w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
-                placeholder="Enter secure password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+          {/* Header with detailed styling */}
+          <div className="relative bg-indigo-600 p-6 text-center overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner ring-4 ring-white/10">
+                <KeyRound className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Reset Access</h3>
+              <p className="text-indigo-100 text-sm mt-1">Set a new password for {selectedTenant.name}</p>
             </div>
-            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
-              <span>Min. 6 characters</span>
-              {resetPassword.length > 0 && resetPassword.length < 6 && (
-                <span className="text-red-500 font-medium">Too short</span>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-8 flex gap-3">
             <button
               onClick={() => setResetModalOpen(false)}
-              className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+              className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
             >
-              Cancel
+              <X className="w-5 h-5" />
             </button>
-            <button
-              onClick={confirmResetPassword}
-              disabled={resetLoading || resetPassword.length < 6}
-              className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
-            >
-              {resetLoading ? (
-                'Updating...'
-              ) : (
-                <>
-                  Confirm Reset
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+          </div>
+
+          <div className="p-6">
+            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-lg p-3 flex gap-3 mb-6">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                This modification will immediately invalidate the current password for the Super Admin of <strong>{selectedTenant.name}</strong>. Provide the new password to the user securely.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                New Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  ref={passwordInputRef}
+                  type={showPassword ? "text" : "password"}
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  className="block w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                  placeholder="Enter secure password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+                <span>Min. 6 characters</span>
+                {resetPassword.length > 0 && resetPassword.length < 6 && (
+                  <span className="text-red-500 font-medium">Too short</span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setResetModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmResetPassword}
+                disabled={resetLoading || resetPassword.length < 6}
+                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
+              >
+                {resetLoading ? (
+                  'Updating...'
+                ) : (
+                  <>
+                    Confirm Reset
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
-{/* Custom Delete Confirmation Modal */ }
-{
-  deleteModalOpen && selectedTenant && (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-red-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border-2 border-red-500/50">
+  {/* Custom Delete Confirmation Modal */ }
+  {
+    deleteModalOpen && selectedTenant && (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-red-950/80 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border-2 border-red-500/50">
 
-        {/* Header - DANGER Theme */}
-        <div className="relative bg-red-600 p-6 text-center overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner ring-4 ring-white/10 animate-pulse">
-              <Trash2 className="w-8 h-8 text-white" />
+          {/* Header - DANGER Theme */}
+          <div className="relative bg-red-600 p-6 text-center overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-4 shadow-inner ring-4 ring-white/10 animate-pulse">
+                <Trash2 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white uppercase tracking-wider">Confirm Deletion</h3>
+              <p className="text-red-100 text-sm mt-1 font-medium">Permanent Data Loss for {selectedTenant.name}</p>
             </div>
-            <h3 className="text-xl font-bold text-white uppercase tracking-wider">Confirm Deletion</h3>
-            <p className="text-red-100 text-sm mt-1 font-medium">Permanent Data Loss for {selectedTenant.name}</p>
-          </div>
-          <button
-            onClick={() => setDeleteModalOpen(false)}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg p-4 flex gap-4 mb-6">
-            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0" />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-red-800 dark:text-red-200">
-                You are about to destroy this company.
-              </p>
-              <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
-                This will delete <strong className="underline">ALL</strong> users, sales, payments, and history associated with <strong>{selectedTenant.name}</strong>. This action cannot be undone.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-              Type the company slug <span className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-900">{selectedTenant.slug}</span> to confirm:
-            </label>
-            <input
-              type="text"
-              value={deleteSlugInput}
-              onChange={(e) => setDeleteSlugInput(e.target.value)}
-              className="block w-full px-4 py-3 rounded-lg border-2 border-red-200 dark:border-red-900/50 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all shadow-sm placeholder:text-slate-400"
-              placeholder={`Type "${selectedTenant.slug}" here`}
-            />
-          </div>
-
-          <div className="mt-8 flex gap-3">
             <button
               onClick={() => setDeleteModalOpen(false)}
-              className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+              className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
             >
-              Cancel
-            </button>
-            <button
-              onClick={confirmDeleteTenant}
-              disabled={deleteSlugInput !== selectedTenant.slug || loading}
-              className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                'Deleting...'
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4" />
-                  DELETE FOREVER
-                </>
-              )}
+              <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
-      </div>
-      )}
 
-      {/* Notification Modal */}
-      {notification && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
-            <div className={`p-6 text-center ${notification.type === 'success' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
-              <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${notification.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
-                {notification.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
+          <div className="p-6">
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-lg p-4 flex gap-4 mb-6">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-500 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-red-800 dark:text-red-200">
+                  You are about to destroy this company.
+                </p>
+                <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                  This will delete <strong className="underline">ALL</strong> users, sales, payments, and history associated with <strong>{selectedTenant.name}</strong>. This action cannot be undone.
+                </p>
               </div>
-              <h3 className={`text-xl font-bold mb-2 ${notification.type === 'success' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                {notification.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-                {notification.message}
-              </p>
             </div>
-            <div className="p-4 bg-white dark:bg-[#1e1e2d] border-t border-slate-100 dark:border-slate-700">
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Type the company slug <span className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-900">{selectedTenant.slug}</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteSlugInput}
+                onChange={(e) => setDeleteSlugInput(e.target.value)}
+                className="block w-full px-4 py-3 rounded-lg border-2 border-red-200 dark:border-red-900/50 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all shadow-sm placeholder:text-slate-400"
+                placeholder={`Type "${selectedTenant.slug}" here`}
+              />
+            </div>
+
+            <div className="mt-8 flex gap-3">
               <button
-                onClick={() => setNotification(null)}
-                className={`w-full py-2.5 rounded-lg font-bold text-white transition-all shadow-lg ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-500/30' : 'bg-red-600 hover:bg-red-700 shadow-red-500/30'}`}
+                onClick={() => setDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
               >
-                Okay, Got it
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteTenant}
+                disabled={deleteSlugInput !== selectedTenant.slug || loading}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  'Deleting...'
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    DELETE FOREVER
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
-}
+
+        {/* Notification Modal */}
+        {notification && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
+              <div className={`p-6 text-center ${notification.type === 'success' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
+                <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${notification.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                  {notification.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
+                </div>
+                <h3 className={`text-xl font-bold mb-2 ${notification.type === 'success' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                  {notification.title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                  {notification.message}
+                </p>
+              </div>
+              <div className="p-4 bg-white dark:bg-[#1e1e2d] border-t border-slate-100 dark:border-slate-700">
+                <button
+                  onClick={() => setNotification(null)}
+                  className={`w-full py-2.5 rounded-lg font-bold text-white transition-all shadow-lg ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-500/30' : 'bg-red-600 hover:bg-red-700 shadow-red-500/30'}`}
+                >
+                  Okay, Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
