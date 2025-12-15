@@ -19,13 +19,18 @@ BEGIN
 END;
 $$;
 
--- 1b. Fix RLS on Profiles to prevent recursion
--- Drop the recursive combined policy
-DROP POLICY IF EXISTS "View Own and Co-Tenant Profiles" ON public.profiles;
-DROP POLICY IF EXISTS "View Own Profile" ON public.profiles;
-DROP POLICY IF EXISTS "View Co-Tenant Profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Insert Own Profile" ON public.profiles;
-DROP POLICY IF EXISTS "Update Own Profile" ON public.profiles;
+-- 1b. Fix RLS on Profiles to prevent recursion AND removing legacy leaks
+-- Dynamic Drop: Find ALL policies for 'profiles' and delete them.
+-- This removes "Users can view all active profiles" and other legacy leaks.
+DO $$
+DECLARE
+    pol RECORD;
+BEGIN
+    FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles' LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname);
+        RAISE NOTICE 'Dropped policy: % on profiles', pol.policyname;
+    END LOOP;
+END $$;
 
 -- Create separate policies (Optimizer barrier)
 CREATE POLICY "View Own Profile" ON public.profiles
