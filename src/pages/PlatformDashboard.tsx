@@ -587,23 +587,15 @@ export function PlatformDashboard() {
 
       {/* Tenant List */}
       <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden">
-        {/* ... (Keep existing list header) ... */}
-        <div className="p-6 border-b border-slate-200 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">All Tenants</h2>
-          <div className="flex items-center gap-3">
-            <div className="flex bg-slate-100 dark:bg-surface-highlight p-1 rounded-lg">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'all' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilter('trial')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'trial' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
-              >
-                Trials
-              </button>
+        {/* Header with Title and Tab Navigation */}
+        <div className="p-6 border-b border-slate-200 dark:border-white/10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">All Tenants</h2>
+          </div>
+
+          <div className="flex items-center justify-between">
+            {/* Tab Buttons */}
+            <div className="flex gap-6 border-b border-slate-200 dark:border-white/10">
               <button
                 onClick={() => setActiveTab('tenants')}
                 className={`pb-4 px-2 font-medium text-sm transition-colors relative ${activeTab === 'tenants'
@@ -640,19 +632,19 @@ export function PlatformDashboard() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setFilter('all')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'all' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'all' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                 >
                   All
                 </button>
                 <button
                   onClick={() => setFilter('trial')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'trial' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'trial' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                 >
                   Trials
                 </button>
                 <button
                   onClick={() => setFilter('active')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'active' ? 'bg-white dark:bg-surface-dark shadow text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'}`}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'active' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                 >
                   Active
                 </button>
