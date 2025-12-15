@@ -24,7 +24,7 @@ export function ImageCropper({ isOpen, onClose, imageSrc, onCropComplete }: Imag
     setZoom(zoom)
   }
 
-  const onCropCompleteHandler = useCallback((_croppedArea: any, _croppedAreaPixels: any) => {
+  const onCropCompleteHandler = useCallback((croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels)
   }, [])
 

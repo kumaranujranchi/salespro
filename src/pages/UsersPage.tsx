@@ -376,8 +376,13 @@ export function UsersPage() {
       resetForm();
       loadUsers();
     } catch (err: any) {
-      console.error('Error saving user:', err);
+      console.error('Error saving user FULL OBJ:', JSON.stringify(err, null, 2));
       let message = err.message || 'An error occurred while saving the user';
+
+      // Enhanced debugging for "Database error"
+      if (message.includes('Database error')) {
+        message += ` (Details: ${err.details || err.hint || 'No details'})`;
+      }
 
       // Detect "User already registered" Auth Error which implies an Orphan (since we passed the Profile check above)
       if (message.toLowerCase().includes('user already registered') || message.toLowerCase().includes('already been registered')) {
