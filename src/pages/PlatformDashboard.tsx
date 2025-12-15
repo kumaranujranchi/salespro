@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import {
   Users,
   TrendingUp,
@@ -14,7 +15,11 @@ import {
   ArrowRight,
   Trash2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Plus,
+  Building2,
+  Mail,
+  User
 } from 'lucide-react';
 
 const formatDate = (dateString: string) => {
@@ -24,9 +29,6 @@ const formatDate = (dateString: string) => {
     year: 'numeric'
   });
 };
-
-// ... (interfaces)
-// ... (previous imports)
 
 interface Tenant {
   id: string;
@@ -52,6 +54,17 @@ export function PlatformDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [filter, setFilter] = useState('all'); // all, trial, active
+
+  // Add Tenant Modal State
+  const [addTenantModalOpen, setAddTenantModalOpen] = useState(false);
+  const [addTenantLoading, setAddTenantLoading] = useState(false);
+  const [newTenantData, setNewTenantData] = useState({
+    companyName: '',
+    companySlug: '',
+    adminName: '',
+    email: '',
+    password: ''
+  });
 
   // Password Reset State
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -86,6 +99,96 @@ export function PlatformDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (!newTenantData.companyName || !newTenantData.email || !newTenantData.password || newTenantData.password.length < 6) {
+      alert('Please fill all fields. Password must be at least 6 characters.');
+      return;
+    }
+
+    try {
+      setAddTenantLoading(true);
+
+      // CRITICAL: Create a temporary client to avoid logging out the Admin
+      const tempSupabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: false, // Don't save session to local storage
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          }
+        }
+      );
+
+      // 1. Create the Auth User (as the new user)
+      const { data: authData, error: authError } = await tempSupabase.auth.signUp({
+        email: newTenantData.email,
+        password: newTenantData.password,
+        options: {
+          data: {
+            full_name: newTenantData.adminName,
+            role: 'super_admin' // The new user is a super_admin of their tenant
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user account.");
+
+      // 2. Register the Tenant (RPC executes as the new user context)
+      const { error: rpcError } = await tempSupabase.rpc('register_tenant', {
+        company_name: newTenantData.companyName,
+        company_slug: newTenantData.companySlug,
+        user_full_name: newTenantData.adminName
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Success!
+      setAddTenantModalOpen(false);
+      setNewTenantData({
+        companyName: '',
+        companySlug: '',
+        adminName: '',
+        email: '',
+        password: ''
+      });
+
+      setNotification({
+        type: 'success',
+        title: 'Client Onboarded',
+        message: `${newTenantData.companyName} has been successfully created.`
+      });
+
+      // Refresh list
+      fetchTenants();
+
+    } catch (error: any) {
+      console.error('Error adding tenant:', error);
+      setNotification({
+        type: 'error',
+        title: 'Onboarding Failed',
+        message: error.message || 'An error occurred while creating the tenant.'
+      });
+    } finally {
+      setAddTenantLoading(false);
+    }
+  };
+
+  const handleNewTenantInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewTenantData(prev => ({
+      ...prev,
+      [name]: value,
+      // Auto-slug
+      companySlug: name === 'companyName' ? value.toLowerCase().replace(/[^a-z0-9]/g, '-') : prev.companySlug
+    }));
   };
 
   const toggleTenantStatus = async (tenant: Tenant) => {
@@ -232,10 +335,133 @@ export function PlatformDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Platform Overview</h1>
-        <p className="text-slate-500 dark:text-slate-400">Monitor SaaS growth and tenant health.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Platform Overview</h1>
+          <p className="text-slate-500 dark:text-slate-400">Monitor SaaS growth and tenant health.</p>
+        </div>
+        <button
+          onClick={() => setAddTenantModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-indigo-500/30"
+        >
+          <Plus className="w-5 h-5" />
+          Onboard New Client
+        </button>
       </div>
+
+      {/* Add Tenant Modal */}
+      {addTenantModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
+            <div className="bg-indigo-600 p-6 flex justify-between items-center text-white">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Building2 className="w-6 h-6" />
+                Onboard New Client
+              </h3>
+              <button onClick={() => setAddTenantModalOpen(false)} className="hover:bg-white/10 p-1 rounded-full text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTenant} className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company Name</label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={newTenantData.companyName}
+                    onChange={handleNewTenantInputChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g. Acme Corp"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company Slug (URL)</label>
+                <input
+                  type="text"
+                  name="companySlug"
+                  value={newTenantData.companySlug}
+                  onChange={(e) => setNewTenantData({ ...newTenantData, companySlug: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Admin Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="adminName"
+                      value={newTenantData.adminName}
+                      onChange={handleNewTenantInputChange}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Admin Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={newTenantData.email}
+                      onChange={handleNewTenantInputChange}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                      placeholder="admin@company.com"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Initial Password</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text" // Visible for admin convenience
+                    name="password"
+                    value={newTenantData.password}
+                    onChange={handleNewTenantInputChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Set a strong password"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-slate-500">Share this password securely with the client.</p>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAddTenantModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addTenantLoading}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2"
+                >
+                  {addTenantLoading ? 'Creating...' : 'Create Tenant'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
