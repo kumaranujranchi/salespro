@@ -30,23 +30,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .maybeSingle();
 
-    if (!error && data) {
-      if (data.is_active === false) {
-        await supabase.auth.signOut();
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        throw new Error('Account is deactivated. Please contact support.');
-      }
-      setProfile(data);
-      if (data.tenant_id) {
-        const { data: tenantData } = await supabase
-          .from('tenants')
-          .select('id, name, slug')
-          .eq('id', data.tenant_id)
-          .single();
-        if (tenantData) setTenant(tenantData);
-      }
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return;
+    }
+
+    if (!data) {
+      // Profile missing - Likely deleted user
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      throw new Error('Account does not exist. It may have been deleted.');
+    }
+
+    if (data.is_active === false) {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      throw new Error('Account is deactivated. Please contact support.');
+    }
+
+    setProfile(data);
+    if (data.tenant_id) {
+      const { data: tenantData } = await supabase
+        .from('tenants')
+        .select('id, name, slug')
+        .eq('id', data.tenant_id)
+        .single();
+      if (tenantData) setTenant(tenantData);
     }
   };
 
