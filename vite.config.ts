@@ -20,11 +20,11 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon-v2.png', 'logo.png'],
+        includeAssets: ['logo.png'],
         manifest: {
-          name: 'WishPro - Sales Management',
-          short_name: 'WishPro',
-          description: 'WishPro - Sales Management App for modern teams.',
+          name: 'SalesPro - Sales Management',
+          short_name: 'SalesPro',
+          description: 'SalesPro - Sales Management App for modern teams.',
           theme_color: '#ffffff',
           background_color: '#ffffff',
           display: 'standalone',

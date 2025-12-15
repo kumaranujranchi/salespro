@@ -22,6 +22,7 @@ import {
   ChevronRight,
   BarChart2,
   Contact,
+  Activity,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -36,15 +37,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
   { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
-  { label: 'Directory', path: '/directory', icon: Contact },
+  { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
   { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
   { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Site Visits', path: '/site-visits', icon: Calendar },
+  { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
   { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
@@ -158,12 +160,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo Section */}
           <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
             {isCollapsed ? (
-              <img src="/logo.png" alt="WishPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
+              <img src="/logo.png" alt="SalesPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
             ) : (
               <div className="flex items-center gap-3">
-                <img src="/logo.png" alt="WishPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
+                <img src="/logo.png" alt="SalesPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-gray-300">
-                  WishPro
+                  SalesPro
                 </span>
               </div>
             )}

@@ -8,6 +8,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterCompanyPage } from './pages/RegisterCompanyPage';
 import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { PlatformDashboard } from './pages/PlatformDashboard';
 import { UsersPage } from './pages/UsersPage';
 import { DepartmentsPage } from './pages/DepartmentsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
@@ -41,6 +42,18 @@ function App() {
                   <ProtectedRoute>
                     <DashboardLayout>
                       <DashboardPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* SaaS Owner Route */}
+              <Route
+                path="/platform/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['platform_admin']}>
+                    <DashboardLayout>
+                      <PlatformDashboard />
                     </DashboardLayout>
                   </ProtectedRoute>
                 }

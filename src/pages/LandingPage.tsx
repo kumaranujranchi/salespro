@@ -13,15 +13,24 @@ import {
     Menu,
     X,
     ChevronDown,
-    Check
+
+    Check,
+    Lock,
+    Database,
+    Server,
+    EyeOff,
+    FileKey
 } from 'lucide-react';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
+import { Modal } from '../components/ui/Modal';
 
 export function LandingPage() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [scrollY, setScrollY] = useState(0);
+    const [activePrivacyTab, setActivePrivacyTab] = useState<'encryption' | 'privacy' | 'selfhosted'>('encryption');
+    const [showTechSpecs, setShowTechSpecs] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
@@ -148,11 +157,11 @@ export function LandingPage() {
                         <div className="flex items-center space-x-3">
                             <img
                                 src={scrollY > 20 ? "/logo.png" : "/logo-light.png"}
-                                alt="WishPro Logo"
+                                alt="SalesPro Logo"
                                 className="h-10 w-auto object-contain transition-all duration-300"
                             />
                             <div>
-                                <h1 className={`text-2xl font-bold ${scrollY > 20 ? 'text-[#0A1C37]' : 'text-white'} transition-colors`}>WishPro</h1>
+                                <h1 className={`text-2xl font-bold ${scrollY > 20 ? 'text-[#0A1C37]' : 'text-white'} transition-colors`}>SalesPro</h1>
                             </div>
                         </div>
 
@@ -504,6 +513,263 @@ export function LandingPage() {
                 </div>
             </section>
 
+
+            {/* Data Privacy & Security Section */}
+            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Security First</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
+                            Your Data, Your Control
+                        </h2>
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                            We prioritize your data privacy and security with enterprise-grade encryption and flexible deployment options.
+                        </p>
+                    </div>
+
+                    <div className="grid lg:grid-cols-12 gap-12 items-start">
+                        {/* Tab Navigation */}
+                        <div className="lg:col-span-4 space-y-4">
+                            <button
+                                onClick={() => setActivePrivacyTab('encryption')}
+                                className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'encryption'
+                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
+                                    }`}
+                            >
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'encryption' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                    <Lock size={24} />
+                                </div>
+                                <div>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'encryption' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Data Encryption</h3>
+                                    <p className="text-sm text-gray-500 mt-1">AES-256 Assurance</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => setActivePrivacyTab('privacy')}
+                                className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'privacy'
+                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
+                                    }`}
+                            >
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'privacy' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                    <EyeOff size={24} />
+                                </div>
+                                <div>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'privacy' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Privacy Controls</h3>
+                                    <p className="text-sm text-gray-500 mt-1">Optional Collection</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => setActivePrivacyTab('selfhosted')}
+                                className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'selfhosted'
+                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
+                                    }`}
+                            >
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'selfhosted' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                    <Database size={24} />
+                                </div>
+                                <div>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'selfhosted' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Self-Hosted DB</h3>
+                                    <p className="text-sm text-gray-500 mt-1">Customer Managed</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="lg:col-span-8 bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100 min-h-[400px]">
+                            {activePrivacyTab === 'encryption' && (
+                                <div className="animate-fadeIn space-y-6">
+                                    <div className="flex items-center space-x-4 mb-6">
+                                        <div className="p-4 bg-green-100 text-green-600 rounded-2xl">
+                                            <Shield size={32} />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Bank-Grade Data Encryption</h3>
+                                    </div>
+                                    <p className="text-lg text-gray-600 leading-relaxed">
+                                        We employ industry-standard <strong>AES-256 encryption</strong> for all customer data, ensuring your information remains secure both at rest and in transit.
+                                    </p>
+                                    <div className="grid md:grid-cols-2 gap-6 mt-8">
+                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                            <div className="flex items-center space-x-3 mb-3">
+                                                <FileKey size={20} className="text-[#1673FF]" />
+                                                <h4 className="font-bold text-gray-900">At Rest</h4>
+                                            </div>
+                                            <p className="text-sm text-gray-500">All databases and backups are encrypted on disk using AES-256.</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                            <div className="flex items-center space-x-3 mb-3">
+                                                <Globe size={20} className="text-[#1673FF]" />
+                                                <h4 className="font-bold text-gray-900">In Transit</h4>
+                                            </div>
+                                            <p className="text-sm text-gray-500">Data transfers are protected via TLS 1.3 encryption protocols.</p>
+                                        </div>
+                                    </div>
+                                    <div className="pt-6 mt-6 border-t border-gray-100">
+                                        <button className="text-[#1673FF] font-semibold hover:text-[#0A1C37] transition-colors flex items-center gap-2">
+                                            View Security Whitepaper <ArrowRight size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activePrivacyTab === 'privacy' && (
+                                <div className="animate-fadeIn space-y-6">
+                                    <div className="flex items-center space-x-4 mb-6">
+                                        <div className="p-4 bg-purple-100 text-purple-600 rounded-2xl">
+                                            <EyeOff size={32} />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Optional Sensitive Data Collection</h3>
+                                    </div>
+                                    <p className="text-lg text-gray-600 leading-relaxed">
+                                        We believe in minimizing data liability. Sensitive customer details are completely <strong>non-mandatory</strong>.
+                                    </p>
+                                    <ul className="space-y-4 mt-6">
+                                        <li className="flex items-start">
+                                            <CheckCircle className="text-green-500 mt-1 mr-3 flex-shrink-0" size={20} />
+                                            <span className="text-gray-600">You choose what to collect. Personal identifiers and payment details can be omitted.</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <CheckCircle className="text-green-500 mt-1 mr-3 flex-shrink-0" size={20} />
+                                            <span className="text-gray-600">Our support team has <strong>zero access</strong> to custom sensitive fields.</span>
+                                        </li>
+                                    </ul>
+                                    <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-100 mt-6">
+                                        <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                                            <Lock size={16} /> Data Minimization Policy
+                                        </h4>
+                                        <p className="text-sm text-yellow-700">
+                                            We encourage collecting only what is strictly necessary for your sales process to reduce risk.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activePrivacyTab === 'selfhosted' && (
+                                <div className="animate-fadeIn space-y-6">
+                                    <div className="flex items-center space-x-4 mb-6">
+                                        <div className="p-4 bg-blue-100 text-blue-600 rounded-2xl">
+                                            <Server size={32} />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Bring Your Own Database</h3>
+                                    </div>
+                                    <p className="text-lg text-gray-600 leading-relaxed">
+                                        For regulated industries or maximum control, SalesPro supports <strong>Self-Hosted Database</strong> connections.
+                                    </p>
+                                    <div className="grid grid-cols-3 gap-4 mt-6">
+                                        <div className="p-4 border border-gray-200 rounded-lg text-center hover:border-[#1673FF] transition-colors cursor-pointer bg-gray-50">
+                                            <Database className="mx-auto mb-2 text-gray-400" size={24} />
+                                            <span className="font-semibold text-gray-700">PostgreSQL</span>
+                                        </div>
+                                        <a 
+                                            href="https://hostinger.in?REFERRALCODE=synergy" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-4 border-2 border-[#673DE6] bg-[#673DE6]/5 rounded-lg text-center hover:bg-[#673DE6]/10 transition-colors cursor-pointer group"
+                                        >
+                                            <div className="mx-auto mb-2 text-[#673DE6]">
+                                                <Server className="w-6 h-6 mx-auto" />
+                                            </div>
+                                            <span className="font-bold text-gray-900 group-hover:text-[#673DE6] transition-colors">Hostinger</span>
+                                            <div className="text-xs text-[#673DE6] font-medium mt-1">Get VPS Hosting &rarr;</div>
+                                        </a>
+                                        <a 
+                                            href="https://supabase.com/pricing" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-4 border-2 border-[#3ECF8E] bg-[#3ECF8E]/5 rounded-lg text-center hover:bg-[#3ECF8E]/10 transition-colors cursor-pointer group"
+                                        >
+                                            <div className="mx-auto mb-2 text-[#3ECF8E]">
+                                                <svg className="w-6 h-6 mx-auto" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M21.362 9.354H12L13.714 0L2.638 14.646H12L10.286 24L21.362 9.354Z" />
+                                                </svg>
+                                            </div>
+                                            <span className="font-bold text-gray-900 group-hover:text-[#3ECF8E] transition-colors">Supabase</span>
+                                            <div className="text-xs text-[#3ECF8E] font-medium mt-1">Get Managed DB &rarr;</div>
+                                        </a>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100 justify-center">
+                                        <button 
+                                            onClick={() => setShowTechSpecs(true)}
+                                            className="px-6 py-3 bg-[#0A1C37] text-white rounded-xl font-semibold hover:bg-[#1673FF] transition-colors"
+                                        >
+                                            View Technical Requirements
+                                        </button>
+                                        <a href="tel:9525230232" className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
+                                            Contact Sales: 9525230232
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             {/* Technical Requirements Modal */}
+             <Modal
+                isOpen={showTechSpecs}
+                onClose={() => setShowTechSpecs(false)}
+                title="Bring Your Own Database - Technical Specs"
+            >
+                <div className="space-y-6">
+                    <div>
+                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
+                            <Server size={20} className="text-[#1673FF]" />
+                            Configuration Process
+                        </h4>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                            Connecting your database is simple and secure. We provide you with a <strong>static IP address</strong> to whitelist in your firewall. You then provide a strictly scoped <strong>Connection String</strong>. Our system performs a handshake validation to ensure connectivity before finalizing the setup.
+                        </p>
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
+                            <Shield size={20} className="text-green-600" />
+                            Data Ownership & Security
+                        </h4>
+                        <p className="text-gray-700 text-sm leading-relaxed">
+                            <strong>You retain 100% ownership</strong> of your data. SalesPro acts as a client securely connecting to your instance. You manage the credentials and can revoke our access at any time. We never store your raw database files—only the metadata required to run the application.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
+                            <Database size={20} className="text-purple-600" />
+                            Supported Databases
+                        </h4>
+                        <ul className="space-y-3 mt-2">
+                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#1673FF] transition-colors">
+                                <span className="bg-blue-100 text-blue-600 p-1.5 rounded-md font-bold text-xs">Recommended</span>
+                                <div>
+                                    <span className="font-bold text-gray-800 block text-sm">PostgreSQL (v12+)</span>
+                                    <span className="text-xs text-gray-500">Best for performance and JSON support. Using Supabase or AWS RDS is highly recommended.</span>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#1673FF] transition-colors">
+                                <span className="bg-gray-100 text-gray-500 p-1.5 rounded-md font-bold text-xs">Supported</span>
+                                <div>
+                                    <span className="font-bold text-gray-800 block text-sm">MySQL (v8.0+) / MariaDB</span>
+                                    <span className="text-xs text-gray-500">Fully supported for standard CRM operations. Hostinger VPS is a popular choice.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100 flex justify-end">
+                        <button
+                            onClick={() => setShowTechSpecs(false)}
+                            className="text-gray-500 hover:text-gray-800 font-medium text-sm transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
             {/* CTA Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-5xl mx-auto">
@@ -514,7 +780,7 @@ export function LandingPage() {
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Supercharge Your Sales?</h2>
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-                                Join thousands of sales professionals who trust WishPro.
+                                Join thousands of sales professionals who trust SalesPro.
                                 <br />
                                 <span className="font-bold text-white">Start your 30-day free trial now.</span>
                             </p>
@@ -532,10 +798,10 @@ export function LandingPage() {
             {/* About Section (Simplified) */}
             <section id="about" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About WishPro</h2>
+                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About SalesPro</h2>
                     <p className="text-2xl md:text-3xl text-gray-700 font-light leading-relaxed mb-8">
                         "We believe that sales should be about relationships, not paperwork.
-                        <strong className="text-[#0A1C37] font-bold"> WishPro </strong>
+                        <strong className="text-[#0A1C37] font-bold"> SalesPro </strong>
                         removes the friction from sales management so you can focus on what matters most: closing deals."
                     </p>
                 </div>
@@ -547,8 +813,8 @@ export function LandingPage() {
                     <div className="grid md:grid-cols-4 gap-12 mb-12">
                         <div className="col-span-1 md:col-span-2">
                             <div className="flex items-center space-x-3 mb-6">
-                                <TrendingUp size={32} className="text-[#1673FF]" />
-                                <span className="text-2xl font-bold">WishPro</span>
+                                <img src="/logo-light.png" alt="SalesPro Logo" className="h-8 w-auto object-contain" />
+                                <span className="text-2xl font-bold">SalesPro</span>
                             </div>
                             <p className="text-gray-400 max-w-sm leading-relaxed mb-6">
                                 Empowering sales teams worldwide with intelligent tools and real-time insights.
@@ -589,7 +855,7 @@ export function LandingPage() {
                     </div>
 
                     <div className="border-t border-gray-800 pt-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; 2024 WishPro. All rights reserved.</p>
+                        <p>&copy; 2024 SalesPro. All rights reserved.</p>
                         <div className="flex space-x-6 mt-4 md:mt-0">
                             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>

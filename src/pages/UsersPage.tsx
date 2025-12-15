@@ -326,7 +326,8 @@ export function UsersPage() {
               phone: formData.phone,
               dob: formData.dob,
               marriage_anniversary: formData.marriageAnniversary,
-              joining_date: formData.joiningDate
+              joining_date: formData.joiningDate,
+              tenant_id: profile?.tenant_id // Enforce Tenant ID
             }
           }
         });
@@ -354,6 +355,7 @@ export function UsersPage() {
           dob: formData.dob || null,
           marriage_anniversary: formData.marriageAnniversary || null,
           joining_date: formData.joiningDate || null,
+          tenant_id: profile?.tenant_id, // Ensure Tenant ID is set
           is_active: true,
           force_password_change: true
         });

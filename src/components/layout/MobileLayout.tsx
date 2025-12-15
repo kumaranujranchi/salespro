@@ -59,7 +59,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 z-40 px-4 flex items-center justify-between pt-[env(safe-area-inset-top)]">
                 <div className="flex items-center gap-2">
                     <img src="/pwa-icon.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-                    <span className="font-bold text-slate-800 dark:text-white text-lg">WishPro</span>
+                    <span className="font-bold text-slate-800 dark:text-white text-lg">SalesPro</span>
                 </div>
 
                 <div className="flex items-center gap-3">
