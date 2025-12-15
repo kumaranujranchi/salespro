@@ -43,15 +43,26 @@ export function PlatformSupportPage() {
   const fetchTickets = async () => {
     try {
       setLoading(true);
+      console.log('Fetching tickets...');
+
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*, profiles:created_by(full_name, email), tenants(name)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Fetch result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log(`Found ${data?.length || 0} tickets`);
       setTickets(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching tickets:', error);
+      // Show error to user
+      setTickets([]);
     } finally {
       setLoading(false);
     }
@@ -254,8 +265,8 @@ export function PlatformSupportPage() {
           <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-gray-200 dark:border-gray-700">
             {/* Header with gradient background */}
             <div className={`relative p-6 text-center overflow-hidden ${notification.type === 'success'
-                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                : 'bg-gradient-to-br from-red-500 to-rose-600'
+              ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+              : 'bg-gradient-to-br from-red-500 to-rose-600'
               }`}>
               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
               <div className="relative z-10 flex flex-col items-center">
@@ -286,8 +297,8 @@ export function PlatformSupportPage() {
               <button
                 onClick={() => setNotification(null)}
                 className={`w-full py-3 rounded-lg font-bold text-white transition-all shadow-lg transform hover:scale-[1.02] active:scale-[0.98] ${notification.type === 'success'
-                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30'
-                    : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-red-500/30'
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30'
+                  : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-red-500/30'
                   }`}
               >
                 Got it, Thanks!
