@@ -132,7 +132,7 @@ export function PlatformDashboard() {
       if (error) throw error;
 
       // 2. Send Email
-      await fetch('/.netlify/functions/send-email', {
+      const emailResponse = await fetch('/.netlify/functions/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -146,13 +146,26 @@ export function PlatformDashboard() {
         })
       });
 
+      if (!emailResponse.ok) {
+        throw new Error('Ticket resolved in database, but failed to send notification email.');
+      }
+
       setResolveModalOpen(false);
       setResolutionNote('');
       fetchTickets(); // Refresh list
-      alert('Ticket resolved and email sent!');
-    } catch (err) {
+
+      setNotification({
+        type: 'success',
+        title: 'Ticket Resolved!',
+        message: 'The ticket has been marked as resolved and the user has been notified via email.'
+      });
+    } catch (err: any) {
       console.error(err);
-      alert('Error resolving ticket');
+      setNotification({
+        type: 'error',
+        title: 'Resolution Failed',
+        message: err.message || 'An error occurred while resolving the ticket.'
+      });
     }
   };
 

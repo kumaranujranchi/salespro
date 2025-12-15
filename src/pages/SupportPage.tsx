@@ -86,7 +86,7 @@ export function SupportPage() {
       if (error) throw error;
 
       // 3. Send Confirmation Email via Netlify Function
-      await fetch('/.netlify/functions/send-email', {
+      const emailResponse = await fetch('/.netlify/functions/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,6 +99,10 @@ export function SupportPage() {
           }
         })
       });
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send confirmation email. Ticket created but email failed.');
+      }
 
       // 4. Reset & Refresh
       setSubject('');
@@ -253,15 +257,15 @@ export function SupportPage() {
           <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-gray-200 dark:border-gray-700">
             {/* Header with gradient background */}
             <div className={`relative p-6 text-center overflow-hidden ${notification.type === 'success'
-                ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                : 'bg-gradient-to-br from-red-500 to-rose-600'
+              ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+              : 'bg-gradient-to-br from-red-500 to-rose-600'
               }`}>
               <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
               <div className="relative z-10 flex flex-col items-center">
                 {/* Icon with animation */}
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-lg ring-4 ${notification.type === 'success'
-                    ? 'bg-white/20 ring-white/10 backdrop-blur-md'
-                    : 'bg-white/20 ring-white/10 backdrop-blur-md'
+                  ? 'bg-white/20 ring-white/10 backdrop-blur-md'
+                  : 'bg-white/20 ring-white/10 backdrop-blur-md'
                   }`}>
                   {notification.type === 'success' ? (
                     <CheckCircle2 className="w-10 h-10 text-white animate-bounce" />
@@ -288,8 +292,8 @@ export function SupportPage() {
               <button
                 onClick={() => setNotification(null)}
                 className={`w-full py-3 rounded-lg font-bold text-white transition-all shadow-lg transform hover:scale-[1.02] active:scale-[0.98] ${notification.type === 'success'
-                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30'
-                    : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-red-500/30'
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30'
+                  : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-red-500/30'
                   }`}
               >
                 Got it, Thanks!
