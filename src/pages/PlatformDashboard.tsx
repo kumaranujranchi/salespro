@@ -97,7 +97,9 @@ export function PlatformDashboard() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .rpc('get_tenants_with_users');
+        .from('tenants')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setTenants(data || []);
