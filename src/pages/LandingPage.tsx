@@ -13,7 +13,9 @@ import {
     Menu,
     X,
     ChevronDown,
-
+    Building2,
+    MapPin,
+    Key,
     Check,
     Lock,
     Database,
@@ -52,49 +54,49 @@ export function LandingPage() {
     const features = [
         {
             icon: Users,
-            title: 'Team Management',
-            description: 'Manage your sales team with role-based access control and hierarchical structures.',
+            title: 'Agent & Team Management',
+            description: 'Manage your real estate agents, channel partners, and sales hierarchy efficiently.',
             color: 'bg-blue-500'
         },
         {
             icon: Target,
-            title: 'Target Tracking',
-            description: 'Set and monitor sales targets with real-time progress tracking and analytics.',
+            title: 'Sales & Commission Tracking',
+            description: 'Set monthly booking targets and automate commission calculations for agents.',
             color: 'bg-green-500'
         },
         {
-            icon: BarChart3,
-            title: 'Advanced Analytics',
-            description: 'Gain insights with comprehensive reports and visual dashboards.',
+            icon: Building2,
+            title: 'Inventory Management',
+            description: 'Live tracking of available units, flats, and plots across all your projects.',
             color: 'bg-purple-500'
         },
         {
-            icon: TrendingUp,
-            title: 'Sales Pipeline',
-            description: 'Track deals from lead to close with our intuitive pipeline management.',
+            icon: MapPin,
+            title: 'Site Visit Scheduling',
+            description: 'Streamline site visits with automated scheduling, reminders, and feedback tracking.',
             color: 'bg-orange-500'
         },
         {
             icon: Shield,
-            title: 'Secure & Compliant',
-            description: 'Enterprise-grade security with role-based permissions and data encryption.',
+            title: 'Secure Client Data',
+            description: 'Protect sensitive HNI client data with role-based access and encryption.',
             color: 'bg-red-500'
         },
         {
-            icon: Zap,
-            title: 'Real-time Updates',
-            description: 'Stay informed with instant notifications and live data synchronization.',
+            icon: Key,
+            title: 'Booking & Handover',
+            description: 'Digital booking forms, payment milestones, and streamlined handover processes.',
             color: 'bg-yellow-500'
         }
     ];
 
     const benefits = [
-        'Increase sales productivity by up to 40%',
-        'Reduce administrative tasks by 60%',
-        'Improve team collaboration and communication',
-        'Make data-driven decisions with real-time insights',
-        'Scale your sales operations effortlessly',
-        'Access from anywhere, on any device'
+        'Increase site visit to booking conversion by 40%',
+        'Automate lead distribution to channel partners',
+        'Real-time inventory visibility for all agents',
+        'Reduce booking overlap and double-selling',
+        'Faster commission payouts and transparency',
+        'Mobile app for on-field sales updates'
     ];
 
     const pricingPlans = [
@@ -259,13 +261,13 @@ export function LandingPage() {
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white tracking-tight">
                                 Transform Your <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1673FF] via-[#60A5FA] to-white">
-                                    Sales Reality
+                                    Real Estate Sales
                                 </span>
                             </h1>
 
                             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                The all-in-one platform engineered for modern sales teams.
-                                Track targets, streamline pipelines, and accelerate revenue with AI-driven insights.
+                                The all-in-one CRM engineered for Real Estate Developers & Channel Partners.
+                                Manage site visits, inventory, and bookings with AI-driven insights.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -315,15 +317,15 @@ export function LandingPage() {
                                         <div className="h-8 w-8 bg-blue-500 rounded-lg mb-3 flex items-center justify-center">
                                             <TrendingUp size={16} className="text-white" />
                                         </div>
-                                        <div className="text-2xl font-bold text-white mb-1">₹8.4M</div>
-                                        <div className="text-xs text-blue-200">+12.5% vs last month</div>
+                                        <div className="text-2xl font-bold text-white mb-1">₹8.4Cr</div>
+                                        <div className="text-xs text-blue-200">+12% Bookings</div>
                                     </div>
                                     <div className="bg-white/10 p-4 rounded-xl">
                                         <div className="h-8 w-8 bg-green-500 rounded-lg mb-3 flex items-center justify-center">
-                                            <Users size={16} className="text-white" />
+                                            <MapPin size={16} className="text-white" />
                                         </div>
-                                        <div className="text-2xl font-bold text-white mb-1">1,240</div>
-                                        <div className="text-xs text-green-200">Active Leads</div>
+                                        <div className="text-2xl font-bold text-white mb-1">124</div>
+                                        <div className="text-xs text-green-200">Site Visits</div>
                                     </div>
                                 </div>
 
@@ -344,8 +346,8 @@ export function LandingPage() {
                                         <CheckCircle size={20} />
                                     </div>
                                     <div>
-                                        <div className="text-sm font-bold text-gray-800">Deal Closed!</div>
-                                        <div className="text-xs text-gray-500">Just now • ₹450,000</div>
+                                        <div className="text-sm font-bold text-gray-800">Unit 402 Booked!</div>
+                                        <div className="text-xs text-gray-500">Just now • ₹1.5 Cr</div>
                                     </div>
                                 </div>
                             </div>
@@ -373,10 +375,10 @@ export function LandingPage() {
                     <div className="text-center mb-20 animate-fadeIn">
                         <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Capabilities</h2>
                         <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
-                            Everything You Need to Succeed
+                            Everything You Need to Sell Property
                         </h2>
                         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                            A complete suite of tools designed to help your team perform at their absolute best.
+                            A complete suite of tools designed to help Developers and CPs close more deals.
                         </p>
                     </div>
 
@@ -428,7 +430,7 @@ export function LandingPage() {
                             <div>
                                 <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Why Us?</h2>
                                 <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
-                                    Built for High-Growth Sales Teams
+                                    Built for High-Growth Real Estate Teams
                                 </h2>
                             </div>
 
@@ -464,7 +466,7 @@ export function LandingPage() {
                             Transparent Pricing
                         </h2>
                         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            Choose the plan that fits your growth. Start with a 30-day free trial on any plan.
+                            Choose the plan that fits your project scale. Start with a 30-day free trial on any plan.
                         </p>
                     </div>
 
@@ -778,9 +780,9 @@ export function LandingPage() {
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full opacity-10 blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
 
                         <div className="relative z-10">
-                            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Supercharge Your Sales?</h2>
+                            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Sell Out Your Next Project?</h2>
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-                                Join thousands of sales professionals who trust SalesPro.
+                                Join 500+ Real Estate Developers who trust SalesPro.
                                 <br />
                                 <span className="font-bold text-white">Start your 30-day free trial now.</span>
                             </p>
