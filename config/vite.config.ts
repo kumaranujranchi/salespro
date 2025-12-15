@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['logo-light.png'],
+        workbox: {
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
+        },
         manifest: {
           name: 'SalesPro - Sales Management',
           short_name: 'SalesPro',
