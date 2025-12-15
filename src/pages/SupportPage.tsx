@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Plus, Loader2, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Clock } from 'lucide-react';
 
 interface Ticket {
   id: string;
