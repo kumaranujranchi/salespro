@@ -133,34 +133,47 @@ export function PlatformDashboard() {
 
       if (error) throw error;
 
-      // 2. Send Email
-      const emailResponse = await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'TICKET_RESOLVED',
-          email: selectedTicket.profiles?.email,
-          name: selectedTicket.profiles?.full_name,
-          data: {
-            ticketNumber: selectedTicket.ticket_number,
-            resolution: resolutionNote
-          }
-        })
-      });
+      // 2. Try to Send Email (but don't fail if email fails)
+      let emailSent = false;
+      try {
+        const emailResponse = await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'TICKET_RESOLVED',
+            email: selectedTicket.profiles?.email,
+            name: selectedTicket.profiles?.full_name,
+            data: {
+              ticketNumber: selectedTicket.ticket_number,
+              resolution: resolutionNote
+            }
+          })
+        });
 
-      if (!emailResponse.ok) {
-        throw new Error('Ticket resolved in database, but failed to send notification email.');
+        emailSent = emailResponse.ok;
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError);
+        emailSent = false;
       }
 
       setResolveModalOpen(false);
       setResolutionNote('');
       fetchTickets(); // Refresh list
 
-      setNotification({
-        type: 'success',
-        title: 'Ticket Resolved!',
-        message: 'The ticket has been marked as resolved and the user has been notified via email.'
-      });
+      // Show appropriate notification based on email status
+      if (emailSent) {
+        setNotification({
+          type: 'success',
+          title: 'Ticket Resolved!',
+          message: 'The ticket has been marked as resolved and the user has been notified via email.'
+        });
+      } else {
+        setNotification({
+          type: 'success',
+          title: 'Ticket Resolved!',
+          message: 'The ticket has been marked as resolved. However, the notification email could not be sent. Please inform the user manually.'
+        });
+      }
     } catch (err: any) {
       console.error(err);
       setNotification({
