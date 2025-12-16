@@ -125,9 +125,12 @@ export function PlatformDashboard() {
       }
 
       if (!ticketsData || ticketsData.length === 0) {
+        console.log('No tickets found');
         setTickets([]);
         return;
       }
+
+      console.log(`Fetching details for ${ticketsData.length} tickets...`);
 
       // Now fetch profile and tenant data for each ticket
       const ticketsWithDetails = await Promise.all(
@@ -137,22 +140,38 @@ export function PlatformDashboard() {
 
           // Fetch profile
           if (ticket.created_by) {
-            const { data: profile } = await supabase
+            console.log(`Fetching profile for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('id, full_name, email')
               .eq('id', ticket.created_by)
               .single();
-            profileData = profile;
+
+            if (profileError) {
+              console.error(`Error fetching profile for ticket #${ticket.ticket_number}:`, profileError);
+            } else if (profile) {
+              console.log(`Profile fetched for ticket #${ticket.ticket_number}:`, profile);
+              profileData = profile;
+            } else {
+              console.warn(`No profile found for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
+            }
+          } else {
+            console.warn(`Ticket #${ticket.ticket_number} has no created_by field`);
           }
 
           // Fetch tenant
           if (ticket.tenant_id) {
-            const { data: tenant } = await supabase
+            const { data: tenant, error: tenantError } = await supabase
               .from('tenants')
               .select('id, name')
               .eq('id', ticket.tenant_id)
               .single();
-            tenantData = tenant;
+
+            if (tenantError) {
+              console.error(`Error fetching tenant for ticket #${ticket.ticket_number}:`, tenantError);
+            } else {
+              tenantData = tenant;
+            }
           }
 
           return {
@@ -163,7 +182,18 @@ export function PlatformDashboard() {
         })
       );
 
-      console.log('Fetched tickets with details:', ticketsWithDetails);
+      console.log('=== TICKETS WITH DETAILS ===');
+      ticketsWithDetails.forEach(ticket => {
+        console.log(`Ticket #${ticket.ticket_number}:`, {
+          id: ticket.id,
+          created_by: ticket.created_by,
+          profiles: ticket.profiles,
+          email: ticket.profiles?.email,
+          name: ticket.profiles?.full_name
+        });
+      });
+      console.log('=== END TICKETS ===');
+
       setTickets(ticketsWithDetails || []);
     } catch (error) {
       console.error('Error in fetchTickets:', error);
