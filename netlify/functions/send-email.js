@@ -15,13 +15,27 @@ exports.handler = async (event, context) => {
   try {
     const { type, email, name, data } = JSON.parse(event.body);
 
+    console.log('Email function called with:', { type, email, name });
+
     if (!email || !type) {
+      console.error('Missing required fields:', { email, type });
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Missing email or type' }),
       };
     }
 
+    // Check email credentials
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('Email credentials not configured');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Email service not configured. Please contact administrator.' }),
+      };
+    }
+
+    console.log('Creating email transporter...');
+    
     // Create a transporter using SMTP
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -229,7 +243,11 @@ exports.handler = async (event, context) => {
       html: htmlContent,
     };
 
+    console.log('Sending email to:', email, 'with subject:', subject);
+
     await transporter.sendMail(mailOptions);
+
+    console.log('Email sent successfully to:', email);
 
     return {
       statusCode: 200,

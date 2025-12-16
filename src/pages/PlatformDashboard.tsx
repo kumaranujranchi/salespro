@@ -135,7 +135,16 @@ export function PlatformDashboard() {
 
       // 2. Try to Send Email (but don't fail if email fails)
       let emailSent = false;
+      let emailError = null;
+
       try {
+        console.log('Attempting to send resolution email to:', selectedTicket.profiles?.email);
+        console.log('Ticket data:', {
+          ticketNumber: selectedTicket.ticket_number,
+          email: selectedTicket.profiles?.email,
+          name: selectedTicket.profiles?.full_name
+        });
+
         const emailResponse = await fetch('/.netlify/functions/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -150,9 +159,21 @@ export function PlatformDashboard() {
           })
         });
 
+        console.log('Email response status:', emailResponse.status);
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error('Email function returned error:', errorData);
+          emailError = errorData.error || errorData.details || 'Unknown error';
+        } else {
+          const successData = await emailResponse.json();
+          console.log('Email sent successfully:', successData);
+        }
+
         emailSent = emailResponse.ok;
-      } catch (emailError) {
-        console.error('Email sending failed:', emailError);
+      } catch (err: any) {
+        console.error('Email sending exception:', err);
+        emailError = err.message;
         emailSent = false;
       }
 
@@ -171,7 +192,7 @@ export function PlatformDashboard() {
         setNotification({
           type: 'success',
           title: 'Ticket Resolved!',
-          message: 'The ticket has been marked as resolved. However, the notification email could not be sent. Please inform the user manually.'
+          message: `The ticket has been marked as resolved. However, the notification email could not be sent${emailError ? ': ' + emailError : ''}. Please inform the user manually.`
         });
       }
     } catch (err: any) {
