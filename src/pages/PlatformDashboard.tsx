@@ -111,11 +111,64 @@ export function PlatformDashboard() {
   };
 
   const fetchTickets = async () => {
-    const { data } = await supabase
-      .from('support_tickets')
-      .select('*, profiles:created_by(full_name, email), tenants(name)')
-      .order('created_at', { ascending: false });
-    setTickets(data || []);
+    try {
+      // First fetch all tickets
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (ticketsError) {
+        console.error('Error fetching tickets:', ticketsError);
+        setTickets([]);
+        return;
+      }
+
+      if (!ticketsData || ticketsData.length === 0) {
+        setTickets([]);
+        return;
+      }
+
+      // Now fetch profile and tenant data for each ticket
+      const ticketsWithDetails = await Promise.all(
+        ticketsData.map(async (ticket) => {
+          let profileData = null;
+          let tenantData = null;
+
+          // Fetch profile
+          if (ticket.created_by) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, full_name, email')
+              .eq('id', ticket.created_by)
+              .single();
+            profileData = profile;
+          }
+
+          // Fetch tenant
+          if (ticket.tenant_id) {
+            const { data: tenant } = await supabase
+              .from('tenants')
+              .select('id, name')
+              .eq('id', ticket.tenant_id)
+              .single();
+            tenantData = tenant;
+          }
+
+          return {
+            ...ticket,
+            profiles: profileData,
+            tenants: tenantData
+          };
+        })
+      );
+
+      console.log('Fetched tickets with details:', ticketsWithDetails);
+      setTickets(ticketsWithDetails || []);
+    } catch (error) {
+      console.error('Error in fetchTickets:', error);
+      setTickets([]);
+    }
   };
 
   const handleResolveTicket = async () => {
