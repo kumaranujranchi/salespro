@@ -191,12 +191,13 @@ export function PlatformDashboard() {
       let emailError = null;
 
       try {
-        console.log('Attempting to send resolution email to:', selectedTicket.profiles?.email);
-        console.log('Ticket data:', {
-          ticketNumber: selectedTicket.ticket_number,
-          email: selectedTicket.profiles?.email,
-          name: selectedTicket.profiles?.full_name
-        });
+        console.log('=== EMAIL SENDING DEBUG START ===');
+        console.log('Full selectedTicket object:', JSON.stringify(selectedTicket, null, 2));
+        console.log('selectedTicket.profiles:', selectedTicket.profiles);
+        console.log('selectedTicket.profiles?.email:', selectedTicket.profiles?.email);
+        console.log('selectedTicket.profiles?.full_name:', selectedTicket.profiles?.full_name);
+        console.log('selectedTicket.ticket_number:', selectedTicket.ticket_number);
+        console.log('=== EMAIL SENDING DEBUG END ===');
 
         const emailResponse = await fetch('/.netlify/functions/send-email', {
           method: 'POST',
