@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
-// Base URL for logo (adjust based on your deployment)
-const LOGO_URL = 'https://raw.githubusercontent.com/yourusername/salesPro/main/public/logo.png'; // Update this
+// Brand logo URL
+const LOGO_URL = 'https://imagizer.imageshack.com/img923/4269/bP85qb.png';
 
 exports.handler = async (event, context) => {
   // Only allow POST requests
@@ -48,189 +48,179 @@ exports.handler = async (event, context) => {
     let subject = '';
     let htmlContent = '';
 
-    // Common email header with branding - Email-client compatible design
-    const emailHeader = `
-      <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%); padding: 50px 20px; text-align: center; border-radius: 0; position: relative; overflow: hidden;">
-        <!-- Decorative circles -->
-        <div style="position: absolute; top: -30px; left: -30px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-        <div style="position: absolute; bottom: -40px; right: -40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
-        <div style="position: absolute; top: 50%; right: 10%; width: 60px; height: 60px; background: rgba(255,255,255,0.08); border-radius: 50%;"></div>
-        
-        <!-- Logo Badge with Emoji -->
-        <div style="position: relative; z-index: 1;">
-          <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); width: 140px; height: 140px; margin: 0 auto 25px; border-radius: 30px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.2); transform: rotate(-5deg); transition: transform 0.3s;">
-            <div style="text-align: center;">
-              <div style="font-size: 50px; line-height: 1; margin-bottom: 5px; transform: rotate(5deg);">📊</div>
-              <div style="font-size: 18px; font-weight: 900; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; transform: rotate(5deg);">SalesPro</div>
-            </div>
-          </div>
-          
-          <!-- Main Title -->
-          <h1 style="color: #ffffff; margin: 0 0 15px 0; font-size: 42px; font-weight: 900; text-shadow: 0 4px 20px rgba(0,0,0,0.3); letter-spacing: -1px; line-height: 1;">
-            Sales<span style="color: #fbbf24;">Pro</span>
-          </h1>
-          
-          <!-- Subtitle with icon -->
-          <div style="display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 10px 25px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.3);">
-            <p style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;">
-              ⚡ Your Sales Management Platform
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
+    // Common email wrapper - Clean and Simple Design
+    const emailWrapper = (content) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <!-- Main Container -->
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden;">
+                
+                <!-- Logo Section -->
+                <tr>
+                  <td align="center" style="padding: 40px 40px 20px 40px;">
+                    <img src="${LOGO_URL}" alt="SalesPro Logo" style="width: 180px; height: auto; display: block;">
+                  </td>
+                </tr>
 
-    const emailFooter = `
-      <div style="background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%); padding: 40px 30px; text-align: center; border-top: 3px solid #e5e7eb;">
-        <!-- Support Section -->
-        <div style="margin-bottom: 25px;">
-          <p style="color: #6b7280; font-size: 15px; margin: 0 0 12px 0; font-weight: 600;">Need assistance? We're here to help! 💬</p>
-          <a href="mailto:support@salespro.com" style="display: inline-block; color: #6366f1; text-decoration: none; font-weight: 700; font-size: 16px; padding: 12px 30px; background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-radius: 50px; border: 2px solid #6366f1; transition: all 0.3s;">
-            📧 support@salespro.com
-          </a>
-        </div>
-        
-        <!-- Divider -->
-        <div style="height: 2px; background: linear-gradient(90deg, transparent 0%, #e5e7eb 50%, transparent 100%); margin: 30px 0;"></div>
-        
-        <!-- Social Links -->
-        <div style="margin: 25px 0;">
-          <p style="color: #9ca3af; font-size: 13px; margin: 0 0 15px 0;">Follow us on social media</p>
-          <div style="display: inline-block;">
-            <a href="#" style="display: inline-block; margin: 0 8px; text-decoration: none; font-size: 24px;">📘</a>
-            <a href="#" style="display: inline-block; margin: 0 8px; text-decoration: none; font-size: 24px;">🐦</a>
-            <a href="#" style="display: inline-block; margin: 0 8px; text-decoration: none; font-size: 24px;">💼</a>
-            <a href="#" style="display: inline-block; margin: 0 8px; text-decoration: none; font-size: 24px;">📸</a>
-          </div>
-        </div>
-        
-        <!-- Copyright -->
-        <div style="margin-top: 25px;">
-          <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.6;">
-            © 2024 <strong style="color: #6366f1;">SalesPro</strong>. All rights reserved.<br/>
-            <span style="font-size: 11px;">Made with ❤️ for modern sales teams</span>
-          </p>
-        </div>
-      </div>
-    `;
+                <!-- Content Section -->
+                <tr>
+                  <td style="padding: 20px 50px 50px 50px;">
+                    ${content}
+                  </td>
+                </tr>
 
-    const containerStart = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 0; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.05);">
-        ${emailHeader}
-        <div style="padding: 45px 35px; background: #ffffff;">
-    `;
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #fafafa; padding: 30px 40px; border-top: 1px solid #e5e5e5; text-align: center;">
+                    <p style="margin: 0 0 10px 0; color: #666666; font-size: 13px;">
+                      Have a question?
+                    </p>
+                    <p style="margin: 0 0 15px 0;">
+                      <a href="mailto:support@salespro.com" style="color: #4F46E5; text-decoration: none; font-weight: 600;">support@salespro.com</a>
+                    </p>
+                    <p style="margin: 15px 0 0 0; color: #999999; font-size: 12px;">
+                      This is an automatically generated email<br>
+                      Replies to this email address are not monitored
+                    </p>
+                  </td>
+                </tr>
 
-    const containerEnd = `
-        </div>
-        ${emailFooter}
-      </div>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `;
 
     // --- TEMPLATE LOGIC ---
     if (type === 'OTP') {
-      subject = '🔐 Verify Your Email Address - SalesPro';
-      htmlContent = `
-        ${containerStart}
-          <h2 style="color: #1f2937; font-size: 24px; margin: 0 0 20px 0; text-align: center;">Welcome to SalesPro! 🎉</h2>
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Hi <strong>${name || 'User'}</strong>,</p>
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">Thank you for joining SalesPro! To complete your registration, please verify your email address using the code below:</p>
-          
-          <div style="text-align: center; margin: 40px 0; padding: 30px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 15px; border: 2px dashed #667eea;">
-            <p style="color: #6b7280; font-size: 14px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your Verification Code</p>
-            <div style="font-size: 42px; font-weight: 900; letter-spacing: 10px; color: #667eea; font-family: 'Courier New', monospace; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">${data.otp}</div>
-          </div>
+      subject = 'Verification Code - SalesPro';
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Verification Code
+        </h2>
+        <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          To verify your account, enter the code in SalesPro
+        </p>
+        
+        <!-- OTP Box -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding: 30px 0;">
+              <div style="background-color: #f8f8f8; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px 40px; display: inline-block;">
+                <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #1a1a1a; font-family: 'Courier New', monospace;">
+                  ${data.otp}
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
 
-          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; border-radius: 8px; margin: 30px 0;">
-            <p style="color: #92400e; margin: 0; font-size: 14px; display: flex; align-items: center;">
-              <span style="font-size: 20px; margin-right: 10px;">⏰</span>
-              <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>.
-            </p>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">If you didn't request this code, please ignore this email.</p>
-        ${containerEnd}
+        <p style="margin: 30px 0 10px 0; color: #666666; font-size: 13px; line-height: 1.6; text-align: center;">
+          Verification codes expire after 48 hours
+        </p>
+        <p style="margin: 0; color: #999999; font-size: 13px; line-height: 1.6; text-align: center;">
+          If you did not request this code, you can ignore this message
+        </p>
       `;
-    } 
+      htmlContent = emailWrapper(content);
+    }
     else if (type === 'TICKET_CREATED') {
-      subject = `✅ [Ticket #${data.ticketNumber}] Support Request Received`;
-      htmlContent = `
-        ${containerStart}
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-              ✅ Request Received
-            </div>
-          </div>
+      subject = `Support Request Received - Ticket #${data.ticketNumber}`;
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Support Request Received
+        </h2>
+        <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          Thank you for contacting us. We have received your support request.
+        </p>
+        
+        <!-- Ticket Details Box -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td style="background-color: #f8f8f8; border: 1px solid #e5e5e5; border-radius: 8px; padding: 25px;">
+              <table width="100%" cellpadding="8" cellspacing="0">
+                <tr>
+                  <td style="color: #666666; font-size: 14px; padding-bottom: 12px;">
+                    <strong style="color: #1a1a1a;">Ticket ID:</strong>
+                  </td>
+                  <td style="color: #1a1a1a; font-size: 14px; text-align: right; padding-bottom: 12px;">
+                    #${data.ticketNumber}
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-top: 1px solid #e5e5e5; padding-top: 12px;">
+                    <p style="margin: 0; color: #666666; font-size: 14px;">
+                      <strong style="color: #1a1a1a;">Subject:</strong>
+                    </p>
+                    <p style="margin: 8px 0 0 0; color: #1a1a1a; font-size: 14px;">
+                      ${data.subject}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px 0;">Hi <strong>${name || 'Valued Customer'}</strong>,</p>
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">Thank you for reaching out to us! We have successfully received your support request and our team is reviewing it.</p>
-          
-          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 25px; border-radius: 15px; border: 2px solid #10b981; margin: 25px 0;">
-            <h3 style="color: #047857; margin: 0 0 15px 0; font-size: 18px; display: flex; align-items: center;">
-              <span style="font-size: 24px; margin-right: 10px;">🎫</span> Ticket Details
-            </h3>
-            <div style="background: white; padding: 15px; border-radius: 10px; margin-top: 15px;">
-              <p style="margin: 0 0 10px 0; color: #374151;"><strong style="color: #047857;">Subject:</strong> ${data.subject}</p>
-              <p style="margin: 0; color: #374151;"><strong style="color: #047857;">Ticket ID:</strong> <span style="font-family: 'Courier New', monospace; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-weight: 600;">#${data.ticketNumber}</span></p>
-            </div>
-          </div>
-
-          <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px 20px; border-radius: 8px; margin: 25px 0;">
-            <p style="color: #1e40af; margin: 0; font-size: 14px;">
-              <strong>💡 What's Next?</strong><br/>
-              Our support team will review your request and get back to you as soon as possible. You'll receive another email once your ticket is resolved.
-            </p>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">Thank you for your patience!</p>
-        ${containerEnd}
+        <p style="margin: 30px 0 0 0; color: #666666; font-size: 14px; line-height: 1.6; text-align: center;">
+          Our support team will review your request and get back to you as soon as possible.
+        </p>
       `;
+      htmlContent = emailWrapper(content);
     }
     else if (type === 'TICKET_RESOLVED') {
-      subject = `🎉 [Ticket #${data.ticketNumber}] Your Issue Has Been Resolved`;
-      htmlContent = `
-        ${containerStart}
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-              🎉 Issue Resolved
-            </div>
-          </div>
+      subject = `Support Ticket Resolved - Ticket #${data.ticketNumber}`;
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Your Issue Has Been Resolved
+        </h2>
+        <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          Good news! Your support ticket has been successfully resolved.
+        </p>
+        
+        <!-- Resolution Details Box -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td style="background-color: #f8f8f8; border: 1px solid #e5e5e5; border-radius: 8px; padding: 25px;">
+              <table width="100%" cellpadding="8" cellspacing="0">
+                <tr>
+                  <td style="color: #666666; font-size: 14px; padding-bottom: 12px;">
+                    <strong style="color: #1a1a1a;">Ticket ID:</strong>
+                  </td>
+                  <td style="color: #1a1a1a; font-size: 14px; text-align: right; padding-bottom: 12px;">
+                    #${data.ticketNumber}
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-top: 1px solid #e5e5e5; padding-top: 12px;">
+                    <p style="margin: 0; color: #666666; font-size: 14px;">
+                      <strong style="color: #1a1a1a;">Resolution:</strong>
+                    </p>
+                    <p style="margin: 12px 0 0 0; color: #1a1a1a; font-size: 14px; line-height: 1.6;">
+                      ${data.resolution}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px 0;">Hi <strong>${name || 'Valued Customer'}</strong>,</p>
-          <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">Great news! 🎊 Your support ticket has been successfully resolved by our team.</p>
-          
-          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 25px; border-radius: 15px; border: 2px solid #10b981; margin: 25px 0; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.1);">
-            <h3 style="color: #047857; margin: 0 0 15px 0; font-size: 18px; display: flex; align-items: center;">
-              <span style="font-size: 24px; margin-right: 10px;">🎫</span> Resolution Details
-            </h3>
-            <div style="background: white; padding: 20px; border-radius: 10px; margin-top: 15px;">
-              <p style="margin: 0 0 15px 0; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb; color: #374151;">
-                <strong style="color: #047857;">Ticket ID:</strong> 
-                <span style="font-family: 'Courier New', monospace; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-weight: 600; margin-left: 5px;">#${data.ticketNumber}</span>
-              </p>
-              <p style="margin: 0; color: #374151; line-height: 1.6;">
-                <strong style="color: #047857; display: block; margin-bottom: 8px;">Resolution:</strong>
-                <span style="display: block; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 3px solid #10b981;">${data.resolution}</span>
-              </p>
-            </div>
-          </div>
-
-          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; border-radius: 8px; margin: 25px 0;">
-            <p style="color: #92400e; margin: 0; font-size: 14px;">
-              <strong>📌 Still need help?</strong><br/>
-              If you have any further questions or concerns, feel free to raise a new support ticket or contact us directly.
-            </p>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px;">
-            <p style="color: #4b5563; font-size: 16px; margin: 0 0 20px 0;">We value your feedback!</p>
-            <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 50px; font-weight: 600; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s;">
-              Rate Our Support
-            </a>
-          </div>
-
-          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">Thank you for choosing SalesPro! 💙</p>
-        ${containerEnd}
+        <p style="margin: 30px 0 0 0; color: #666666; font-size: 14px; line-height: 1.6; text-align: center;">
+          If you need further assistance, feel free to raise a new support ticket.
+        </p>
       `;
+      htmlContent = emailWrapper(content);
     }
     else {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid email type' }) };
