@@ -3,40 +3,24 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileModal } from '../profile/ProfileModal';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import {
-    LayoutDashboard,
-    Users,
-    Building,
-    Briefcase,
-    Megaphone,
-    Target,
-    Calendar,
-    TrendingUp,
-    Award,
-    FileText,
-    Contact,
-    LogOut
-} from 'lucide-react';
+import { LogOut } from 'lucide-react';
+
+interface NavItem {
+    label: string;
+    path: string;
+    icon: any;
+    roles?: string[];
+}
 
 interface MobileLayoutProps {
     children: ReactNode;
+    navItems: NavItem[];
+    activeModule: 'sales' | 'crm';
+    onModuleChange: (isCRM: boolean) => void;
+    hasCRMAccess: boolean;
 }
 
-const navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'crm_staff', 'receptionist'] },
-    { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
-    { label: 'Depts', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
-    { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
-    { label: 'News', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'crm_staff', 'receptionist'] },
-    { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
-    { label: 'Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'crm_staff', 'driver'] },
-    { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'crm_staff', 'accountant'] },
-    { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'accountant'] },
-    { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director'] },
-];
-
-export function MobileLayout({ children }: MobileLayoutProps) {
+export function MobileLayout({ children, navItems, activeModule, onModuleChange, hasCRMAccess }: MobileLayoutProps) {
     const { profile, signOut } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -57,12 +41,35 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
             {/* Top Header */}
             <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 z-40 px-4 flex items-center justify-between pt-[env(safe-area-inset-top)]">
-                <div className="flex items-center gap-2">
-                    <img src="/pwa-icon.png" alt="Logo" className="w-8 h-8 rounded-lg" />
-                    <span className="font-bold text-slate-800 dark:text-white text-lg">SalesPro</span>
+                <div className="flex items-center gap-2 shrink-0">
+                    <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" />
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* Module Toggle - Centered/Flexible */}
+                {hasCRMAccess && (
+                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
+                        <button
+                            onClick={() => onModuleChange(false)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'sales'
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400'
+                                }`}
+                        >
+                            Sales
+                        </button>
+                        <button
+                            onClick={() => onModuleChange(true)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'crm'
+                                ? 'bg-green-600 text-white shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400'
+                                }`}
+                        >
+                            CRM
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-3 shrink-0">
                     <ThemeToggle />
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm ring-2 ring-white dark:ring-white/10 shadow-sm cursor-pointer" onClick={() => setIsProfileOpen(true)}>
                         {profile?.image_url ? (

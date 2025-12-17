@@ -13,8 +13,8 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ImageCropper } from '../components/ImageCropper';
-import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, X } from 'lucide-react';
-import { Tooltip } from '../components/ui/Tooltip';
+import { ActionMenu } from '../components/ui/ActionMenu';
+import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, X, Eye } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function UsersPage() {
@@ -31,6 +31,7 @@ export function UsersPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   const isReadOnly = profile?.role === 'director';
 
@@ -114,6 +115,7 @@ export function UsersPage() {
       joiningDate: ''
     });
     setEditingUserId(null);
+    setIsViewMode(false);
     setError('');
   };
 
@@ -177,6 +179,28 @@ export function UsersPage() {
       departmentId: user.department_id || '',
       reportingManagerId: user.reporting_manager_id || '',
       password: '', // Password not editable directly here
+      confirmPassword: '',
+      imageUrl: user.image_url || '',
+      dob: user.dob || '',
+      marriageAnniversary: user.marriage_anniversary || '',
+      joiningDate: user.joining_date || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleViewUser = (user: Profile) => {
+    // Reuse handleEditUser logic to populate form, but set view mode
+    setEditingUserId(user.id);
+    setIsViewMode(true);
+    setFormData({
+      fullName: user.full_name,
+      email: user.email,
+      phone: user.phone || '',
+      employeeId: user.employee_id,
+      role: user.role,
+      departmentId: user.department_id || '',
+      reportingManagerId: user.reporting_manager_id || '',
+      password: '',
       confirmPassword: '',
       imageUrl: user.image_url || '',
       dob: user.dob || '',
@@ -501,7 +525,7 @@ export function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  {!isReadOnly && <TableHead>Actions</TableHead>}
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -530,52 +554,43 @@ export function UsersPage() {
                         )}
                       </div>
                     </TableCell>
-                    {!isReadOnly && (
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Tooltip content="Reset Password">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenResetPassword(user.id)}
-                              className="text-gray-600 hover:text-[#1673FF] hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-500/10"
-                            >
-                              <Lock size={16} />
-                            </Button>
-                          </Tooltip>
-
-                          <Tooltip content={user.is_active ? "Deactivate User" : "Reactivate User"}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleStatus(user)}
-                              className={user.is_active ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-500/10" : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-500/10"}
-                            >
-                              {user.is_active ? <Ban size={16} /> : <CheckCircle size={16} />}
-                            </Button>
-                          </Tooltip>
-
-                          <Tooltip content="Edit Details">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10"
-                            >
-                              <Pencil size={16} />
-                            </Button>
-                          </Tooltip>
-
-                          <Tooltip content="Delete Permanently">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                              onClick={() => handleDelete(user.id)}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    )}
+                    <TableCell className="text-right">
+                      <ActionMenu
+                        actions={[
+                          {
+                            label: 'View Details',
+                            icon: Eye,
+                            onClick: () => handleViewUser(user)
+                          },
+                          {
+                            label: 'Edit',
+                            icon: Pencil,
+                            onClick: () => handleEditUser(user),
+                            disabled: isReadOnly
+                          },
+                          {
+                            label: user.is_active ? 'Deactivate' : 'Activate',
+                            icon: user.is_active ? Ban : CheckCircle,
+                            onClick: () => handleToggleStatus(user),
+                            variant: user.is_active ? 'warning' : 'success',
+                            disabled: isReadOnly
+                          },
+                          {
+                            label: 'Reset Password',
+                            icon: Lock,
+                            onClick: () => handleOpenResetPassword(user.id),
+                            disabled: isReadOnly
+                          },
+                          {
+                            label: 'Delete',
+                            icon: Trash2,
+                            onClick: () => handleDelete(user.id),
+                            variant: 'danger',
+                            disabled: isReadOnly
+                          }
+                        ]}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -587,194 +602,204 @@ export function UsersPage() {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={editingUserId ? "Edit User" : "Add New User"}
+        title={isViewMode ? "User Details" : (editingUserId ? "Edit User" : "Add New User")}
         size="lg"
       >
         <form onSubmit={handleSaveUser} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              label="Full Name"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              required
-              placeholder="e.g. John Doe"
-            />
-            <Input
-              label="Employee ID"
-              name="employeeId"
-              value={formData.employeeId}
-              onChange={handleInputChange}
-              required
-              placeholder="e.g. EMP001"
-              disabled={!!editingUserId}
-            />
-            <Input
-              type="email"
-              label="Email Address"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              placeholder="john@example.com"
-              disabled={!!editingUserId}
-            />
-            <Input
-              label="Phone Number"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder="+91 98765 43210"
-            />
+          <fieldset disabled={isViewMode} className="contents">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Full Name"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g. John Doe"
+              />
+              <Input
+                label="Employee ID"
+                name="employeeId"
+                value={formData.employeeId}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g. EMP001"
+                disabled={!!editingUserId}
+              />
+              <Input
+                type="email"
+                label="Email Address"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                placeholder="john@example.com"
+                disabled={!!editingUserId}
+              />
+              <Input
+                label="Phone Number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="+91 98765 43210"
+              />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
-              <Input
-                type="date"
-                label="Date of Birth"
-                name="dob"
-                value={formData.dob}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
+                <Input
+                  type="date"
+                  label="Date of Birth"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleInputChange}
+                  className="w-full"
+                />
+                <Input
+                  type="date"
+                  label="Marriage Anniversary"
+                  name="marriageAnniversary"
+                  value={formData.marriageAnniversary}
+                  onChange={handleInputChange}
+                  className="w-full"
+                />
+                <Input
+                  type="date"
+                  label="Date of Joining"
+                  name="joiningDate"
+                  value={formData.joiningDate}
+                  onChange={handleInputChange}
+                  className="w-full"
+                />
+              </div>
+              <Select
+                label="Role"
+                name="role"
+                value={formData.role}
                 onChange={handleInputChange}
-                className="w-full"
+                required
+                options={[
+                  { value: 'admin', label: 'Admin (Access & Controls)' },
+                  { value: 'director', label: 'Director (Read-Only Access)' },
+                  { value: 'sales_executive', label: 'Sales Executive' },
+                  { value: 'accountant', label: 'Accountant' },
+                  { value: 'crm_staff', label: 'CRM (Customer Relationship Manager)' },
+                  { value: 'team_leader', label: 'Team Leader – Sales' },
+                  { value: 'driver', label: 'Driver' },
+                  { value: 'receptionist', label: 'Receptionist' },
+                ]}
               />
-              <Input
-                type="date"
-                label="Marriage Anniversary"
-                name="marriageAnniversary"
-                value={formData.marriageAnniversary}
+              <Select
+                label="Department"
+                name="departmentId"
+                value={formData.departmentId}
                 onChange={handleInputChange}
-                className="w-full"
+                required
+                options={departments.map(d => ({ value: d.id, label: d.name }))}
               />
-              <Input
-                type="date"
-                label="Date of Joining"
-                name="joiningDate"
-                value={formData.joiningDate}
+              <Select
+                label="Reporting Manager"
+                name="reportingManagerId"
+                value={formData.reportingManagerId}
                 onChange={handleInputChange}
-                className="w-full"
+                options={users.filter(u => u.id !== editingUserId).map(u => ({ value: u.id, label: u.full_name }))}
               />
-            </div>
-            <Select
-              label="Role"
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              required
-              options={[
-                { value: 'admin', label: 'Admin (Access & Controls)' },
-                { value: 'director', label: 'Director (Read-Only Access)' },
-                { value: 'sales_executive', label: 'Sales Executive' },
-                { value: 'accountant', label: 'Accountant' },
-                { value: 'crm_staff', label: 'CRM (Customer Relationship Manager)' },
-                { value: 'team_leader', label: 'Team Leader – Sales' },
-                { value: 'driver', label: 'Driver' },
-                { value: 'receptionist', label: 'Receptionist' },
-              ]}
-            />
-            <Select
-              label="Department"
-              name="departmentId"
-              value={formData.departmentId}
-              onChange={handleInputChange}
-              required
-              options={departments.map(d => ({ value: d.id, label: d.name }))}
-            />
-            <Select
-              label="Reporting Manager"
-              name="reportingManagerId"
-              value={formData.reportingManagerId}
-              onChange={handleInputChange}
-              options={users.filter(u => u.id !== editingUserId).map(u => ({ value: u.id, label: u.full_name }))}
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Profile Image
-              </label>
-              <div className="flex items-center gap-4">
-                {formData.imageUrl && (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-200">
-                    <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-                      className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl-lg hover:bg-red-600"
-                    >
-                      <X size={12} />
-                    </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Profile Image
+                </label>
+                <div className="flex items-center gap-4">
+                  {formData.imageUrl && (
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-200">
+                      <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                        className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl-lg hover:bg-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="cursor-pointer"
+                    />
+                    {uploadingImage && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
                   </div>
-                )}
-                <div className="flex-1">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="cursor-pointer"
-                  />
-                  {uploadingImage && <p className="text-xs text-blue-500 mt-1">Uploading...</p>}
                 </div>
               </div>
-            </div>
 
-            {!editingUserId && (
-              <>
-                <div className="col-span-1 md:col-span-2 bg-blue-50 p-3 rounded-md text-sm text-blue-800 border border-blue-100 flex items-start gap-2">
-                  <Lock size={16} className="mt-0.5 shrink-0" />
-                  <p>New users will be required to change their password upon first login.</p>
-                </div>
-                <Input
-                  type="password"
-                  label="Initial Password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="********"
-                />
-                <Input
-                  type="password"
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="********"
-                />
-              </>
-            )}
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
-              {error}
-            </div>
-          )}
-
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseModal}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={isSubmitting}
-            >
-              {editingUserId ? (
+              {!editingUserId && (
                 <>
-                  <span className="hidden sm:inline">Update User</span>
-                  <span className="sm:hidden">Update</span>
-                </>
-              ) : (
-                <>
-                  <span className="hidden sm:inline">Create User</span>
-                  <span className="sm:hidden">Create</span>
+                  <div className="col-span-1 md:col-span-2 bg-blue-50 p-3 rounded-md text-sm text-blue-800 border border-blue-100 flex items-start gap-2">
+                    <Lock size={16} className="mt-0.5 shrink-0" />
+                    <p>New users will be required to change their password upon first login.</p>
+                  </div>
+                  <Input
+                    type="password"
+                    label="Initial Password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="********"
+                  />
+                  <Input
+                    type="password"
+                    label="Confirm Password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="********"
+                  />
                 </>
               )}
-            </Button>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
+                {error}
+              </div>
+            )}
+
+          </fieldset>
+          <ModalFooter>
+            {isViewMode ? (
+              <Button type="button" variant="outline" onClick={handleCloseModal}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={isSubmitting}
+                >
+                  {editingUserId ? (
+                    <>
+                      <span className="hidden sm:inline">Update User</span>
+                      <span className="sm:hidden">Update</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Create User</span>
+                      <span className="sm:hidden">Create</span>
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </ModalFooter>
         </form>
       </Modal>
@@ -814,15 +839,17 @@ export function UsersPage() {
       </Modal>
 
       {/* Image Cropper Modal */}
-      {selectedImage && (
-        <ImageCropper
-          isOpen={cropperOpen}
-          onClose={() => setCropperOpen(false)}
-          imageSrc={selectedImage}
-          onCropComplete={handleCropComplete}
-        />
-      )}
-    </div>
+      {
+        selectedImage && (
+          <ImageCropper
+            isOpen={cropperOpen}
+            onClose={() => setCropperOpen(false)}
+            imageSrc={selectedImage}
+            onCropComplete={handleCropComplete}
+          />
+        )
+      }
+    </div >
   );
 }
 

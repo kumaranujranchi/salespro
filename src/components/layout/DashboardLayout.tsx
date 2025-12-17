@@ -56,6 +56,15 @@ const navItems: NavItem[] = [
 
 import { useMobile } from '../../hooks/useMobile';
 import { MobileLayout } from './MobileLayout';
+import { useTutorial } from '../../contexts/TutorialContext';
+import { AppTutorial } from '../tutorial/AppTutorial';
+
+// Define CRM Nav Items
+const crmNavItems: NavItem[] = [
+  { label: 'Dashboard', path: '/crm', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
+  { label: 'Contacts', path: '/leads', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
+  { label: 'Pipeline', path: '/crm/pipeline', icon: BarChart2, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
+];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isMobile = useMobile();
@@ -64,8 +73,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { profile, signOut } = useAuth();
+  const { startTutorial } = useTutorial();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Module State
+  const [activeModule, setActiveModule] = useState<'sales' | 'crm'>('sales');
+
+  // Check if user has access to CRM (Sales Department)
+  // Assuming 'sales_executive', 'team_leader' are in Sales department + Admins
+  const hasCRMAccess = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
+
+  useEffect(() => {
+    // Sync module state with URL
+    if (location.pathname.startsWith('/crm') || location.pathname.startsWith('/leads')) {
+      setActiveModule('crm');
+    } else {
+      setActiveModule('sales');
+    }
+  }, [location.pathname]);
+
+  const handleModuleToggle = (isCRM: boolean) => {
+    if (isCRM) {
+      setActiveModule('crm');
+      navigate('/crm');
+    } else {
+      setActiveModule('sales');
+      navigate('/dashboard');
+    }
+  };
 
   useEffect(() => {
     if (profile?.force_password_change) {
@@ -73,19 +109,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [profile]);
 
+  // Determine which nav items to show
+  const currentNavItems = activeModule === 'crm' ? crmNavItems : navItems;
+
+  const filteredNavItems = currentNavItems.filter((item) => {
+    if (!item.roles) return true;
+    return item.roles.includes(profile?.role || '');
+  });
+
   if (isMobile) {
-    return <MobileLayout>{children}</MobileLayout>;
+    return (
+      <MobileLayout
+        navItems={filteredNavItems}
+        activeModule={activeModule}
+        onModuleChange={handleModuleToggle}
+        hasCRMAccess={hasCRMAccess}
+      >
+        {children}
+      </MobileLayout>
+    );
   }
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
-
-  const filteredNavItems = navItems.filter((item) => {
-    if (!item.roles) return true;
-    return item.roles.includes(profile?.role || '');
-  });
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-300">
@@ -106,18 +154,55 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu size={20} />
             </button>
 
-            {/* Search Bar Removed */}
+            {/* Module Toggle Switch */}
+            {hasCRMAccess && (
+              <div id="module-toggle" className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
+                <button
+                  onClick={() => handleModuleToggle(false)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'sales'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                >
+                  Sales
+                </button>
+                <button
+                  onClick={() => handleModuleToggle(true)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'crm'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                >
+                  CRM
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <NotificationBell />
+            {/* Help Button - Desktop Only */}
+            <button
+              id="help-button"
+              onClick={startTutorial}
+              className="hidden lg:flex items-center justify-center p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors"
+              title="Start Tutorial"
+            >
+              <HelpCircle size={20} />
+            </button>
+
+            <div id="theme-toggle">
+              <ThemeToggle />
+            </div>
+            <div id="notification-bell">
+              <NotificationBell />
+            </div>
 
             {/* Profile Dropdown Trigger */}
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-white/10 mx-2 hidden md:block"></div>
 
             <Tooltip content="Manage Profile" position="bottom">
               <button
+                id="user-profile"
                 onClick={() => setIsProfileOpen(true)}
                 className="flex items-center gap-3 pl-1 pr-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all"
               >
@@ -167,7 +252,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex items-center gap-3">
                 <img src="/logo.png" alt="SalesPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-gray-300">
-                  SalesPro
+                  {activeModule === 'crm' ? 'SalePro CRM' : 'SalesPro'}
                 </span>
               </div>
             )}
@@ -181,9 +266,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
+          <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
             <div className={`px-2 mb-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest ${isCollapsed ? 'hidden' : 'block'}`}>
-              Main Menu
+              {activeModule === 'crm' ? 'CRM Module' : 'Main Menu'}
             </div>
             {filteredNavItems.map((item) => {
               const Icon = item.icon;
@@ -267,6 +352,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </div>
       </main>
+      <AppTutorial />
     </div>
   );
 }

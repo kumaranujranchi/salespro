@@ -218,3 +218,116 @@ export interface ActivityLog {
   details: Record<string, any>;
   created_at: string;
 }
+
+// =====================================================
+// CRM MODULE TYPES
+// =====================================================
+
+export type LeadSource = 'Ads' | 'Walk-in' | 'Reference' | 'Channel Partner';
+export type LeadStatus = 'New' | 'Contacted' | 'In Progress' | 'Qualified' | 'Site Visit Scheduled' | 'Site Visit Done' | 'Lost' | 'Disqualified' | 'Converted';
+export type BudgetRange = '<50L' | '50L-1Cr' | '1Cr-2Cr' | '>2Cr';
+export type PurposeType = 'Investment' | 'End Use';
+export type LeadScore = 'Hot' | 'Warm' | 'Cold';
+export type FollowupType = 'Call' | 'WhatsApp' | 'Visit' | 'Email';
+export type CustomerResponse = 'Positive' | 'Neutral' | 'Negative';
+export type CallStatus = 'Connected' | 'Ringing' | 'Disconnected' | 'Busy' | 'Not Responding' | 'Asked to call later';
+
+export interface Lead {
+  id: string;
+  tenant_id: string;
+  lead_id: string; // Auto-generated: L-YYYYMMDD-XXXX
+
+  // Lead Source & Assignment
+  lead_source: LeadSource;
+  project_id: string | null;
+  sales_executive_id: string | null;
+
+  // Customer Details
+  customer_name: string;
+  mobile: string;
+  email: string | null;
+  city: string | null;
+
+  // Requirement Details
+  budget_range: BudgetRange | null;
+  purpose: PurposeType | null;
+  preferred_locations: string[] | null; // Array of location names
+
+  // Lead Management
+  lead_status: LeadStatus;
+  lead_score: LeadScore;
+  internal_notes: string | null;
+
+  // Timestamps
+  lead_date: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+
+  // Metadata
+  metadata: Record<string, any>;
+}
+
+export interface LeadFollowup {
+  id: string;
+  tenant_id: string;
+  lead_id: string;
+
+  // Follow-up Details
+  followup_type: FollowupType;
+  followup_date: string;
+
+  // Discussion & Response
+  discussion_summary: string;
+  customer_response: CustomerResponse | null;
+  call_status?: CallStatus;
+
+  // Status Management
+  previous_status: LeadStatus | null;
+  new_status: LeadStatus;
+
+  // Next Action
+  next_followup_date: string | null;
+
+  // Audit Trail
+  created_at: string;
+  created_by: string | null;
+  is_editable: boolean;
+
+  // Metadata
+  metadata: Record<string, any>;
+}
+
+export interface LeadTransfer {
+  id: string;
+  tenant_id: string;
+  lead_id: string;
+
+  // Transfer Details
+  from_executive_id: string | null;
+  to_executive_id: string;
+
+  // Approval Workflow
+  requested_by: string;
+  approved_by: string | null;
+  transfer_status: 'Pending' | 'Approved' | 'Rejected';
+  approval_notes: string | null;
+
+  // Timestamps
+  requested_at: string;
+  approved_at: string | null;
+
+  // Metadata
+  metadata: Record<string, any>;
+}
+
+// Extended interfaces with relation data
+export interface LeadWithRelations extends Lead {
+  project?: Project;
+  sales_executive?: Profile;
+  followups?: LeadFollowup[];
+  latest_followup?: LeadFollowup;
+  followup_count?: number;
+  overdue_followup?: boolean;
+}

@@ -52,26 +52,26 @@ export function LandingPage() {
     const features = [
         {
             icon: Users,
-            title: 'Agent & Team Management',
-            description: 'Manage your real estate agents, channel partners, and sales hierarchy efficiently.',
+            title: 'Advanced CRM & Lead Tracking',
+            description: 'Capture leads from Ads, Walk-ins, & Partners. Visualize your entire sales funnel with dynamic charts.',
             color: 'bg-blue-500'
         },
         {
             icon: Target,
-            title: 'Sales & Commission Tracking',
-            description: 'Set monthly booking targets and automate commission calculations for agents.',
+            title: 'Sales & Incentive Automation',
+            description: 'Set monthly targets, track live achievement, and automate complex incentive calculations.',
             color: 'bg-green-500'
         },
         {
             icon: Building2,
             title: 'Inventory Management',
-            description: 'Live tracking of available units, flats, and plots across all your projects.',
+            description: 'Live tracking of available units, flats, and plots across all your projects. Prevents double-booking.',
             color: 'bg-purple-500'
         },
         {
-            icon: MapPin,
-            title: 'Site Visit Scheduling',
-            description: 'Streamline site visits with automated scheduling, reminders, and feedback tracking.',
+            icon: TrendingUp, // Changed icon for Pipeline
+            title: 'Visual Sales Pipeline',
+            description: 'Track every deal stage from "New Lead" to "Site Visit" to "Closed". Know exactly where your revenue is.',
             color: 'bg-orange-500'
         },
         {
@@ -89,12 +89,12 @@ export function LandingPage() {
     ];
 
     const benefits = [
-        'Increase site visit to booking conversion by 40%',
-        'Automate lead distribution to channel partners',
-        'Real-time inventory visibility for all agents',
-        'Reduce booking overlap and double-selling',
-        'Faster commission payouts and transparency',
-        'Mobile app for on-field sales updates'
+        'One Platform: Replace CRM + Excel + HR tools',
+        'End-to-End Deal Visibility (Lead to Booking)',
+        'Automated Incentive & Commission Payouts',
+        'Real-time Inventory for all Sales Agents',
+        'Visual Pipeline & Funnel Analysis',
+        'Mobile App for On-Field Updates'
     ];
 
     const pricingPlans = [
@@ -259,13 +259,13 @@ export function LandingPage() {
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white tracking-tight">
                                 Transform Your <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1673FF] via-[#60A5FA] to-white">
-                                    Real Estate Sales
+                                    Sales & CRM
                                 </span>
                             </h1>
 
                             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                The all-in-one CRM engineered for Real Estate Developers & Channel Partners.
-                                Manage site visits, inventory, and bookings with AI-driven insights.
+                                The <strong>One-Stop Solution</strong> for Real Estate Developers. seamlessly manage
+                                <strong>Leads, Pipelines, Inventory, and Sales Teams</strong> in a single, powerful platform.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -373,7 +373,7 @@ export function LandingPage() {
                     <div className="text-center mb-20 animate-fadeIn">
                         <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Capabilities</h2>
                         <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
-                            Everything You Need to Sell Property
+                            One Solution. Complete Control.
                         </h2>
                         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                             A complete suite of tools designed to help Developers and CPs close more deals.
@@ -664,9 +664,9 @@ export function LandingPage() {
                                             <Database className="mx-auto mb-2 text-gray-400" size={24} />
                                             <span className="font-semibold text-gray-700">PostgreSQL</span>
                                         </div>
-                                        <a 
-                                            href="https://hostinger.in?REFERRALCODE=synergy" 
-                                            target="_blank" 
+                                        <a
+                                            href="https://hostinger.in?REFERRALCODE=synergy"
+                                            target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-4 border-2 border-[#673DE6] bg-[#673DE6]/5 rounded-lg text-center hover:bg-[#673DE6]/10 transition-colors cursor-pointer group"
                                         >
@@ -676,9 +676,9 @@ export function LandingPage() {
                                             <span className="font-bold text-gray-900 group-hover:text-[#673DE6] transition-colors">Hostinger</span>
                                             <div className="text-xs text-[#673DE6] font-medium mt-1">Get VPS Hosting &rarr;</div>
                                         </a>
-                                        <a 
-                                            href="https://supabase.com/pricing" 
-                                            target="_blank" 
+                                        <a
+                                            href="https://supabase.com/pricing"
+                                            target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-4 border-2 border-[#3ECF8E] bg-[#3ECF8E]/5 rounded-lg text-center hover:bg-[#3ECF8E]/10 transition-colors cursor-pointer group"
                                         >
@@ -692,7 +692,7 @@ export function LandingPage() {
                                         </a>
                                     </div>
                                     <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100 justify-center">
-                                        <button 
+                                        <button
                                             onClick={() => setShowTechSpecs(true)}
                                             className="px-6 py-3 bg-[#0A1C37] text-white rounded-xl font-semibold hover:bg-[#1673FF] transition-colors"
                                         >
@@ -709,8 +709,8 @@ export function LandingPage() {
                 </div>
             </section>
 
-             {/* Technical Requirements Modal */}
-             <Modal
+            {/* Technical Requirements Modal */}
+            <Modal
                 isOpen={showTechSpecs}
                 onClose={() => setShowTechSpecs(false)}
                 title="Bring Your Own Database - Technical Specs"
