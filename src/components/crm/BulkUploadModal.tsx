@@ -3,10 +3,8 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { useDialog } from '../../contexts/DialogContext';
 import * as XLSX from 'xlsx';
-import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
-import { LeadStatus, LeadSource, LeadScore, BudgetRange, PurposeType } from '../../types/database';
+import { Download, FileSpreadsheet, AlertCircle } from 'lucide-react';
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -16,7 +14,6 @@ interface BulkUploadModalProps {
 
 export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalProps) {
   const { profile } = useAuth();
-  const dialog = useDialog();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);

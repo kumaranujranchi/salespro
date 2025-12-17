@@ -59,7 +59,7 @@ export const TutorialProvider: React.FC<TutorialProviderProps> = ({ children }) 
   };
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, type, index, action } = data;
+    const { status, type, index } = data;
 
     if (type === 'step:after') {
       trackTutorialEvent('step_completed', { step: index });

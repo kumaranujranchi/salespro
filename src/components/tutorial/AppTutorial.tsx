@@ -1,5 +1,5 @@
 import React from 'react';
-import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
+import Joyride, { Step } from 'react-joyride';
 import { useTutorial } from '../../contexts/TutorialContext';
 
 export const AppTutorial: React.FC = () => {
