@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Eye, EyeOff, Shield, Lock, Check, User, Phone, Zap } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Check, User, Phone } from 'lucide-react';
 import { ImageCropper } from '../ImageCropper';
 
 interface ProfileModalProps {
@@ -328,18 +328,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 <Lock size={16} />
                                 Security
                             </button>
-                            {profile?.role === 'super_admin' && (
-                                <button
-                                    onClick={() => {
-                                        onClose();
-                                        window.location.href = '/subscription';
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-[#1673FF] hover:bg-indigo-50 transition-colors ml-auto"
-                                >
-                                    <Zap size={16} />
-                                    Subscription
-                                </button>
-                            )}
                         </div>
                     )}
 
