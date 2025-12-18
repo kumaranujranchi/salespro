@@ -456,15 +456,24 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Project Performance Cards (All Time) */}
+      {/* Project Performance Cards (All Time) - Dynamic Responsive Grid */}
       {stats.projectStats.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div
+          className={`grid gap-4 md:gap-6 transition-all duration-300 ${stats.projectStats.length === 1
+              ? 'grid-cols-1'
+              : stats.projectStats.length === 2
+                ? 'grid-cols-1 md:grid-cols-2'
+                : stats.projectStats.length === 3
+                  ? 'grid-cols-1 md:grid-cols-3'
+                  : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+            }`}
+        >
           {stats.projectStats.map((proj, index) => {
             const colors = [
-              { bg: 'bg-emerald-50', text: 'text-emerald-600' },
-              { bg: 'bg-blue-50', text: 'text-blue-600' },
-              { bg: 'bg-violet-50', text: 'text-violet-600' },
-              { bg: 'bg-amber-50', text: 'text-amber-600' },
+              { bg: 'bg-emerald-50', text: 'text-emerald-600', darkBg: 'dark:bg-emerald-500/10', darkText: 'dark:text-emerald-400' },
+              { bg: 'bg-blue-50', text: 'text-blue-600', darkBg: 'dark:bg-blue-500/10', darkText: 'dark:text-blue-400' },
+              { bg: 'bg-violet-50', text: 'text-violet-600', darkBg: 'dark:bg-violet-500/10', darkText: 'dark:text-violet-400' },
+              { bg: 'bg-amber-50', text: 'text-amber-600', darkBg: 'dark:bg-amber-500/10', darkText: 'dark:text-amber-400' },
             ];
             const style = colors[index % colors.length];
 
@@ -475,8 +484,8 @@ export function AdminDashboard() {
                 value={`${proj.area.toLocaleString()} Sq ft`}
                 icon={Building}
                 subtitle="Total Sold (All Time)"
-                iconBgColor={style.bg}
-                iconColor={style.text}
+                iconBgColor={`${style.bg} ${style.darkBg}`}
+                iconColor={`${style.text} ${style.darkText}`}
                 valueClassName="md:text-2xl"
               />
             );
