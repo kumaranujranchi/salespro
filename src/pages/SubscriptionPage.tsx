@@ -139,12 +139,12 @@ export function SubscriptionPage() {
         {/* Trial Status Card */}
         <div className={`rounded-2xl p-8 border-2 ${isExpired ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800' :
           isExpiringSoon ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800' :
-            'bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200 dark:from-indigo-900/20 dark:to-blue-900/20 dark:border-indigo-700'
+            'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200 dark:from-emerald-900/20 dark:to-green-900/20 dark:border-emerald-700'
           }`}>
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Clock className={`w-6 h-6 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`} />
+                <Clock className={`w-6 h-6 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-emerald-600'}`} />
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                   {tenantData.plan_tier === 'pro' ? 'Pro' : 'Starter'} Trial
                 </h2>
@@ -154,7 +154,7 @@ export function SubscriptionPage() {
               </p>
             </div>
             <div className="text-right">
-              <div className={`text-4xl font-extrabold ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`}>
+              <div className={`text-4xl font-extrabold ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-emerald-600'}`}>
                 {daysRemaining > 0 ? daysRemaining : 0}
               </div>
               <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -195,30 +195,30 @@ export function SubscriptionPage() {
           </div>
 
           {/* Upgrade Benefits */}
-          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl p-6 text-white">
+          <div className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-xl p-6 text-white">
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-6 h-6" />
               <h3 className="text-xl font-bold">Upgrade to Pro</h3>
             </div>
-            <p className="text-indigo-100 mb-6">
+            <p className="text-emerald-100 mb-6">
               Unlock the full potential of RealSalePro with a paid subscription
             </p>
             <ul className="space-y-3 mb-8">
               {paidPlanAdvantages.map((advantage) => (
                 <li key={advantage} className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-indigo-200 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 text-emerald-200 flex-shrink-0 mt-0.5" />
                   <span className="text-white">{advantage}</span>
                 </li>
               ))}
             </ul>
             <button
               onClick={() => navigate('/pricing')}
-              className="w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 group"
+              className="w-full bg-white text-emerald-600 font-bold py-3 px-6 rounded-lg hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2 group"
             >
               Upgrade Now
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <p className="text-center text-xs text-indigo-200 mt-3">
+            <p className="text-center text-xs text-emerald-200 mt-3">
               Starting at ₹1,000/month • Cancel anytime
             </p>
           </div>
@@ -238,7 +238,7 @@ export function SubscriptionPage() {
               • You can upgrade at any time to regain full access
             </p>
             <p className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
-              Need more time to evaluate? <a href="/support" className="text-indigo-600 dark:text-indigo-400 hover:underline">Contact our support team</a>
+              Need more time to evaluate? <a href="/support" className="text-emerald-600 dark:text-emerald-400 hover:underline">Contact our support team</a>
             </p>
           </div>
         </div>
