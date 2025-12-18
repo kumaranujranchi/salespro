@@ -128,119 +128,120 @@ export function SubscriptionPage() {
   const isExpired = daysRemaining <= 0;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your Subscription</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your trial and explore upgrade options</p>
-      </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12">
+      <div className="max-w-6xl mx-auto p-6 space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Your Subscription</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your trial and explore upgrade options</p>
+        </div>
 
-      {/* Trial Status Card */}
-      <div className={`rounded-2xl p-8 border-2 ${isExpired ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800' :
-        isExpiringSoon ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800' :
-          'bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200 dark:from-indigo-900/20 dark:to-blue-900/20 dark:border-indigo-700'
-        }`}>
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className={`w-6 h-6 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`} />
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {tenantData.plan_tier === 'pro' ? 'Pro' : 'Starter'} Trial
-              </h2>
+        {/* Trial Status Card */}
+        <div className={`rounded-2xl p-8 border-2 ${isExpired ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800' :
+          isExpiringSoon ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800' :
+            'bg-gradient-to-br from-blue-50 to-indigo-50 border-indigo-200 dark:from-indigo-900/20 dark:to-blue-900/20 dark:border-indigo-700'
+          }`}>
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className={`w-6 h-6 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`} />
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {tenantData.plan_tier === 'pro' ? 'Pro' : 'Starter'} Trial
+                </h2>
+              </div>
+              <p className="text-slate-600 dark:text-slate-400">
+                {isExpired ? 'Your trial has ended' : `You have ${daysRemaining} days remaining in your trial`}
+              </p>
             </div>
-            <p className="text-slate-600 dark:text-slate-400">
-              {isExpired ? 'Your trial has ended' : `You have ${daysRemaining} days remaining in your trial`}
+            <div className="text-right">
+              <div className={`text-4xl font-extrabold ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`}>
+                {daysRemaining > 0 ? daysRemaining : 0}
+              </div>
+              <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                {daysRemaining === 1 ? 'Day Remaining' : 'Days Remaining'}
+              </div>
+            </div>
+          </div>
+
+          {tenantData.trial_ends_at && (
+            <div className="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400">Trial ends on:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {new Date(tenantData.trial_ends_at).toLocaleDateString('en-CA')}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
+                {isExpired ? 'Upgrade now to continue using all features' : 'After your trial ends, you\'ll need to upgrade to continue accessing all features'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Current Plan Features */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+              What's Included in Your Trial
+            </h3>
+            <ul className="space-y-3">
+              {trialFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-600 dark:text-slate-300">{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Upgrade Benefits */}
+          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl p-6 text-white">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="w-6 h-6" />
+              <h3 className="text-xl font-bold">Upgrade to Pro</h3>
+            </div>
+            <p className="text-indigo-100 mb-6">
+              Unlock the full potential of RealSalePro with a paid subscription
+            </p>
+            <ul className="space-y-3 mb-8">
+              {paidPlanAdvantages.map((advantage) => (
+                <li key={advantage} className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-indigo-200 flex-shrink-0 mt-0.5" />
+                  <span className="text-white">{advantage}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 group"
+            >
+              Upgrade Now
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <p className="text-center text-xs text-indigo-200 mt-3">
+              Starting at ₹1,000/month • Cancel anytime
             </p>
           </div>
-          <div className="text-right">
-            <div className={`text-4xl font-extrabold ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-indigo-600'}`}>
-              {daysRemaining > 0 ? daysRemaining : 0}
-            </div>
-            <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
-              {daysRemaining === 1 ? 'Day Remaining' : 'Days Remaining'}
-            </div>
-          </div>
         </div>
 
-        {tenantData.trial_ends_at && (
-          <div className="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600 dark:text-slate-400">Trial ends on:</span>
-              <span className="font-semibold text-slate-900 dark:text-white">
-                {new Date(tenantData.trial_ends_at).toLocaleDateString('en-CA')}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
-              {isExpired ? 'Upgrade now to continue using all features' : 'After your trial ends, you\'ll need to upgrade to continue accessing all features'}
+        {/* FAQ / What Happens Next */}
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">What happens when my trial ends?</h3>
+          <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+            <p>
+              • Your account will be automatically downgraded to the free tier with limited features
+            </p>
+            <p>
+              • All your data will be preserved and available when you upgrade
+            </p>
+            <p>
+              • You can upgrade at any time to regain full access
+            </p>
+            <p className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+              Need more time to evaluate? <a href="/support" className="text-indigo-600 dark:text-indigo-400 hover:underline">Contact our support team</a>
             </p>
           </div>
-        )}
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Current Plan Features */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-            What's Included in Your Trial
-          </h3>
-          <ul className="space-y-3">
-            {trialFeatures.map((feature) => (
-              <li key={feature} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <span className="text-slate-600 dark:text-slate-300">{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Upgrade Benefits */}
-        <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl p-6 text-white">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-6 h-6" />
-            <h3 className="text-xl font-bold">Upgrade to Pro</h3>
-          </div>
-          <p className="text-indigo-100 mb-6">
-            Unlock the full potential of RealSalePro with a paid subscription
-          </p>
-          <ul className="space-y-3 mb-8">
-            {paidPlanAdvantages.map((advantage) => (
-              <li key={advantage} className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-indigo-200 flex-shrink-0 mt-0.5" />
-                <span className="text-white">{advantage}</span>
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => navigate('/pricing')}
-            className="w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 group"
-          >
-            Upgrade Now
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <p className="text-center text-xs text-indigo-200 mt-3">
-            Starting at ₹1,000/month • Cancel anytime
-          </p>
         </div>
       </div>
-
-      {/* FAQ / What Happens Next */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">What happens when my trial ends?</h3>
-        <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
-          <p>
-            • Your account will be automatically downgraded to the free tier with limited features
-          </p>
-          <p>
-            • All your data will be preserved and available when you upgrade
-          </p>
-          <p>
-            • You can upgrade at any time to regain full access
-          </p>
-          <p className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
-            Need more time to evaluate? <a href="/support" className="text-indigo-600 dark:text-indigo-400 hover:underline">Contact our support team</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+      );
 }
