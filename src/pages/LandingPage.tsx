@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
     TrendingUp,
     Users,
@@ -14,7 +14,7 @@ import {
     Building2,
     MapPin,
     Key,
-    Check,
+
     Lock,
     Database,
     Server,
@@ -97,55 +97,7 @@ export function LandingPage() {
         'Mobile App for On-Field Updates'
     ];
 
-    const pricingPlans = [
-        {
-            name: 'Monthly',
-            price: '₹1,500',
-            period: '/month',
-            description: 'Full access, billed monthly',
-            features: [
-                'All Pro Features Included',
-                'Unlimited Users',
-                'Real-time Analytics',
-                'Priority Email Support',
-                '30-Day Free Trial'
-            ],
-            buttonText: 'Start Monthly Trial',
-            popular: false
-        },
-        {
-            name: '6 Months',
-            price: '₹1,200',
-            period: '/month',
-            billing: 'Billed ₹7,200 semi-annually',
-            description: 'Save 20% with 6-month commitment',
-            features: [
-                'All Pro Features Included',
-                'Unlimited Users',
-                'Real-time Analytics',
-                'Priority Email Support',
-                '30-Day Free Trial'
-            ],
-            buttonText: 'Start 6-Month Trial',
-            popular: true
-        },
-        {
-            name: 'Yearly',
-            price: '₹1,000',
-            period: '/month',
-            billing: 'Billed ₹12,000 annually',
-            description: 'Best Value: Save 33% yearly',
-            features: [
-                'All Pro Features Included',
-                'Unlimited Users',
-                'Real-time Analytics',
-                'Priority Email Support',
-                '30-Day Free Trial'
-            ],
-            buttonText: 'Start Yearly Trial',
-            popular: false
-        }
-    ];
+
 
     return (
         <div className="min-h-screen bg-slate-50 overflow-x-hidden font-sans text-gray-900">
@@ -165,7 +117,7 @@ export function LandingPage() {
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center space-x-8">
-                            {['Features', 'Benefits', 'Pricing', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -174,6 +126,12 @@ export function LandingPage() {
                                     {item}
                                 </a>
                             ))}
+                            <Link
+                                to="/pricing"
+                                className={`text-sm font-medium hover:text-[#1673FF] transition-colors ${scrollY > 20 ? 'text-gray-700' : 'text-gray-200'}`}
+                            >
+                                Pricing
+                            </Link>
                             <button
                                 onClick={handleLoginClick}
                                 className={`text-sm font-semibold transition-colors ${scrollY > 20 ? 'text-gray-700 hover:text-[#1673FF]' : 'text-white hover:text-gray-200'}`}
@@ -450,66 +408,7 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* Divider - Curve */}
-            <div className="h-16 bg-[#0F172A]" style={{ clipPath: 'ellipse(70% 100% at 50% 100%)' }}></div>
 
-            {/* Pricing Section */}
-            <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Pricing Plans</h2>
-                        <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
-                            Transparent Pricing
-                        </h2>
-                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            Choose the plan that fits your project scale. Start with a 30-day free trial on any plan.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        {pricingPlans.map((plan, index) => (
-                            <div
-                                key={index}
-                                className={`relative bg-white rounded-2xl shadow-xl flex flex-col p-8 transition-transform duration-300 hover:-translate-y-2 ${plan.popular ? 'border-2 border-[#1673FF] ring-4 ring-[#1673FF]/10 scale-105 z-10' : 'border border-gray-100'}`}
-                            >
-                                {plan.popular && (
-                                    <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-[#1673FF] text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                                        Most Popular
-                                    </div>
-                                )}
-                                <h3 className="text-2xl font-bold text-[#0A1C37] mb-2">{plan.name}</h3>
-                                <div className="flex items-baseline mb-2">
-                                    <span className="text-4xl font-extrabold text-[#0A1C37]">{plan.price}</span>
-                                    <span className="text-gray-500 ml-1">{plan.period}</span>
-                                </div>
-                                {plan.billing && (
-                                    <p className="text-sm text-green-600 font-medium mb-4">{plan.billing}</p>
-                                )}
-                                <p className="text-gray-500 mb-6">{plan.description}</p>
-
-                                <ul className="space-y-4 mb-8 flex-1">
-                                    {plan.features.map((feature, i) => (
-                                        <li key={i} className="flex items-start">
-                                            <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                                            <span className="text-gray-600 text-sm">{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <button
-                                    onClick={handleRegisterClick}
-                                    className={`w-full py-3 rounded-xl font-bold transition-all ${plan.popular
-                                        ? 'bg-[#1673FF] text-white hover:bg-[#1361D6] shadow-lg hover:shadow-blue-500/30'
-                                        : 'bg-gray-100 text-[#0A1C37] hover:bg-gray-200'
-                                        }`}
-                                >
-                                    {plan.buttonText}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
 
             {/* Data Privacy & Security Section */}
@@ -796,10 +695,10 @@ export function LandingPage() {
             {/* About Section (Simplified) */}
             <section id="about" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About SalesPro</h2>
+                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About RealSalePro</h2>
                     <p className="text-2xl md:text-3xl text-gray-700 font-light leading-relaxed mb-8">
                         "We believe that sales should be about relationships, not paperwork.
-                        <strong className="text-[#0A1C37] font-bold"> SalesPro </strong>
+                        <strong className="text-[#0A1C37] font-bold"> RealSalePro </strong>
                         removes the friction from sales management so you can focus on what matters most: closing deals."
                     </p>
                 </div>
@@ -854,9 +753,11 @@ export function LandingPage() {
 
                     <div className="border-t border-gray-800 pt-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
                         <p>&copy; 2025 RealSalePro. All rights reserved.</p>
-                        <div className="flex space-x-6 mt-4 md:mt-0">
-                            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-                            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+                        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 md:mt-0">
+                            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                            <Link to="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
+                            <Link to="/shipping-policy" className="hover:text-white transition-colors">Shipping Policy</Link>
                         </div>
                     </div>
                 </div>

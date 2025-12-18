@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Eye, EyeOff, Shield, Lock, Check, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Check, User, Phone, Zap } from 'lucide-react';
 import { ImageCropper } from '../ImageCropper';
 
 interface ProfileModalProps {
@@ -115,8 +115,8 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-             await dialog.alert('Image size must be less than 5MB', { variant: 'danger' });
-             return;
+            await dialog.alert('Image size must be less than 5MB', { variant: 'danger' });
+            return;
         }
 
         setSelectedFile(file);
@@ -137,12 +137,12 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             const fileExt = selectedFile?.name.split('.').pop() || 'jpg';
             const fileName = `${profile?.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
-            
+
             // Upload
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, croppedBlob, {
-                     contentType: croppedBlob.type 
+                    contentType: croppedBlob.type
                 });
 
             if (uploadError) throw uploadError;
@@ -159,9 +159,9 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                 .eq('id', profile?.id);
 
             if (updateError) throw updateError;
-            
+
             // Ideally AuthContext should reload, but for now we rely on re-render or window reload
-            window.location.reload(); 
+            window.location.reload();
         } catch (error: any) {
             console.error('Error uploading avatar:', error);
             await dialog.alert('Failed to upload image', { variant: 'danger' });
@@ -186,7 +186,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             if (error) throw error;
 
             await dialog.alert('Profile details updated successfully!', { variant: 'success', title: 'Success' });
-             window.location.reload(); // Refresh to show new name
+            window.location.reload(); // Refresh to show new name
         } catch (err: any) {
             console.error('Update profile error:', err);
             await dialog.alert(err.message || 'Failed to update profile.', { variant: 'danger' });
@@ -317,6 +317,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 <User size={16} />
                                 Profile Details
                             </button>
+
                             <button
                                 onClick={() => setActiveTab('security')}
                                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
@@ -327,6 +328,18 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 <Lock size={16} />
                                 Security
                             </button>
+                            {profile?.role === 'super_admin' && (
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        window.location.href = '/subscription';
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-[#1673FF] hover:bg-indigo-50 transition-colors ml-auto"
+                                >
+                                    <Zap size={16} />
+                                    Subscription
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -460,8 +473,8 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                         </form>
                     )}
                 </div>
-            </Modal>
-            
+            </Modal >
+
             {cropImageSrc && (
                 <ImageCropper
                     isOpen={showCropper}
@@ -473,7 +486,8 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                     imageSrc={cropImageSrc}
                     onCropComplete={handleCropComplete}
                 />
-            )}
+            )
+            }
         </>
     );
 }

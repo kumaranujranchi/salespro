@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -7,8 +7,13 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Extract plan details from URL if present
+  const planName = searchParams.get('plan');
+  const planAmount = searchParams.get('amount');
 
   const [formData, setFormData] = useState({
     companyName: '',
@@ -121,7 +126,12 @@ export function RegisterCompanyPage() {
         password: formData.password
       });
 
-      navigate('/dashboard');
+      // 5. Redirect to pricing checkout if plan was selected, otherwise dashboard
+      if (planName && planAmount) {
+        navigate(`/pricing?checkout=true&plan=${encodeURIComponent(planName)}&amount=${planAmount}`);
+      } else {
+        navigate('/dashboard');
+      }
 
     } catch (err: any) {
       console.error('Registration Error:', err);

@@ -110,106 +110,106 @@ export function PlatformDashboard() {
     }
   };
 
- // Updated fetchTickets function with RPC call
-// Replace lines 113-172 in PlatformDashboard.tsx with this code:
+  // Updated fetchTickets function with RPC call
+  // Replace lines 113-172 in PlatformDashboard.tsx with this code:
 
-const fetchTickets = async () => {
-  try {
-    // First fetch all tickets
-    const { data: ticketsData, error: ticketsError } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
+  const fetchTickets = async () => {
+    try {
+      // First fetch all tickets
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (ticketsError) {
-      console.error('Error fetching tickets:', ticketsError);
-      setTickets([]);
-      return;
-    }
+      if (ticketsError) {
+        console.error('Error fetching tickets:', ticketsError);
+        setTickets([]);
+        return;
+      }
 
-    if (!ticketsData || ticketsData.length === 0) {
-      console.log('No tickets found');
-      setTickets([]);
-      return;
-    }
+      if (!ticketsData || ticketsData.length === 0) {
+        console.log('No tickets found');
+        setTickets([]);
+        return;
+      }
 
-    console.log(`Fetching details for ${ticketsData.length} tickets...`);
+      console.log(`Fetching details for ${ticketsData.length} tickets...`);
 
-    // Now fetch profile and tenant data for each ticket
-    const ticketsWithDetails = await Promise.all(
-      ticketsData.map(async (ticket) => {
-        let profileData = null;
-        let tenantData = null;
+      // Now fetch profile and tenant data for each ticket
+      const ticketsWithDetails = await Promise.all(
+        ticketsData.map(async (ticket) => {
+          let profileData = null;
+          let tenantData = null;
 
-        // Fetch user email using RPC function (fallback to auth.users if not in profiles)
-        if (ticket.created_by) {
-          console.log(`Fetching user info for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
-          
-          try {
-            const { data: userInfo, error: userError } = await supabase
-              .rpc('get_user_email_by_id', { user_id: ticket.created_by });
-            
-            if (userError) {
-              console.error(`Error fetching user info for ticket #${ticket.ticket_number}:`, userError);
-            } else if (userInfo && userInfo.length > 0) {
-              const user = userInfo[0];
-              profileData = {
-                id: ticket.created_by,
-                email: user.email,
-                full_name: user.full_name
-              };
-              console.log(`User info fetched for ticket #${ticket.ticket_number}:`, profileData);
-            } else {
-              console.warn(`No user found for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
+          // Fetch user email using RPC function (fallback to auth.users if not in profiles)
+          if (ticket.created_by) {
+            console.log(`Fetching user info for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
+
+            try {
+              const { data: userInfo, error: userError } = await supabase
+                .rpc('get_user_email_by_id', { user_id: ticket.created_by });
+
+              if (userError) {
+                console.error(`Error fetching user info for ticket #${ticket.ticket_number}:`, userError);
+              } else if (userInfo && userInfo.length > 0) {
+                const user = userInfo[0];
+                profileData = {
+                  id: ticket.created_by,
+                  email: user.email,
+                  full_name: user.full_name
+                };
+                console.log(`User info fetched for ticket #${ticket.ticket_number}:`, profileData);
+              } else {
+                console.warn(`No user found for ticket #${ticket.ticket_number}, created_by:`, ticket.created_by);
+              }
+            } catch (err) {
+              console.error(`Exception fetching user for ticket #${ticket.ticket_number}:`, err);
             }
-          } catch (err) {
-            console.error(`Exception fetching user for ticket #${ticket.ticket_number}:`, err);
-          }
-        } else {
-          console.warn(`Ticket #${ticket.ticket_number} has no created_by field`);
-        }
-
-        // Fetch tenant
-        if (ticket.tenant_id) {
-          const { data: tenant, error: tenantError } = await supabase
-            .from('tenants')
-            .select('id, name')
-            .eq('id', ticket.tenant_id)
-            .single();
-          
-          if (tenantError) {
-            console.error(`Error fetching tenant for ticket #${ticket.ticket_number}:`, tenantError);
           } else {
-            tenantData = tenant;
+            console.warn(`Ticket #${ticket.ticket_number} has no created_by field`);
           }
-        }
 
-        return {
-          ...ticket,
-          profiles: profileData,
-          tenants: tenantData
-        };
-      })
-    );
+          // Fetch tenant
+          if (ticket.tenant_id) {
+            const { data: tenant, error: tenantError } = await supabase
+              .from('tenants')
+              .select('id, name')
+              .eq('id', ticket.tenant_id)
+              .single();
 
-    console.log('=== TICKETS WITH DETAILS ===');
-    ticketsWithDetails.forEach(ticket => {
-      console.log(`Ticket #${ticket.ticket_number}:`, {
-        id: ticket.id,
-        created_by: ticket.created_by,
-        profiles: ticket.profiles,
-        email: ticket.profiles?.email,
-        name: ticket.profiles?.full_name
+            if (tenantError) {
+              console.error(`Error fetching tenant for ticket #${ticket.ticket_number}:`, tenantError);
+            } else {
+              tenantData = tenant;
+            }
+          }
+
+          return {
+            ...ticket,
+            profiles: profileData,
+            tenants: tenantData
+          };
+        })
+      );
+
+      console.log('=== TICKETS WITH DETAILS ===');
+      ticketsWithDetails.forEach(ticket => {
+        console.log(`Ticket #${ticket.ticket_number}:`, {
+          id: ticket.id,
+          created_by: ticket.created_by,
+          profiles: ticket.profiles,
+          email: ticket.profiles?.email,
+          name: ticket.profiles?.full_name
+        });
       });
-    });
-    console.log('=== END TICKETS ===');
+      console.log('=== END TICKETS ===');
 
-    setTickets(ticketsWithDetails || []);
-  } catch (error) {
-    console.error('Error in fetchTickets:', error);
-    setTickets([]);
-  }
-};
+      setTickets(ticketsWithDetails || []);
+    } catch (error) {
+      console.error('Error in fetchTickets:', error);
+      setTickets([]);
+    }
+  };
 
 
   const handleResolveTicket = async () => {
@@ -790,6 +790,8 @@ const fetchTickets = async () => {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trial Expiry</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Billing</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -797,13 +799,13 @@ const fetchTickets = async () => {
               <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                       Loading tenants...
                     </td>
                   </tr>
                 ) : filteredTenants.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                       No tenants found matching your filter.
                     </td>
                   </tr>
@@ -835,6 +837,27 @@ const fetchTickets = async () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
                         {tenant.plan_tier || 'Starter'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {(() => {
+                          const daysLeft = calculateTrialDaysLeft(tenant);
+                          const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
+                          const isExpired = daysLeft <= 0;
+                          return tenant.trial_ends_at ? (
+                            <div className="flex flex-col">
+                              <span className={`${isExpired ? 'text-red-600 font-bold' : isExpiringSoon ? 'text-amber-600 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
+                                {formatDate(tenant.trial_ends_at)}
+                              </span>
+                              {isExpired && <span className="text-xs text-red-500">Trial Ended</span>}
+                              {isExpiringSoon && !isExpired && <span className="text-xs text-amber-500">{daysLeft} days left</span>}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">N/A</span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
+                        {tenant.billing_cycle || 'Monthly'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                         {formatDate(tenant.created_at)}

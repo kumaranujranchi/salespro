@@ -23,6 +23,7 @@ import {
   Contact,
   Users,
   HelpCircle,
+  Zap,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
   { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
+  { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
   { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
 ];
 

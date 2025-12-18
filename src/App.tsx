@@ -25,6 +25,12 @@ import { SupportPage } from './pages/SupportPage';
 import { LeadsPage } from './pages/LeadsPage';
 import { CRMDashboardPage } from './pages/CRMDashboardPage';
 import { PipelinePage } from './pages/PipelinePage';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
+import { RefundPolicy } from './pages/RefundPolicy';
+import { ShippingPolicy } from './pages/ShippingPolicy';
+import { PricingPage } from './pages/PricingPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -42,6 +48,11 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterCompanyPage />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
+                <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route
@@ -238,6 +249,17 @@ function App() {
                     <ProtectedRoute allowedRoles={['super_admin', 'admin', 'director']}>
                       <DashboardLayout>
                         <SupportPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/subscription"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardLayout>
+                        <SubscriptionPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }
