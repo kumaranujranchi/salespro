@@ -25,9 +25,9 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
         },
         manifest: {
-          name: 'SalesPro - Sales Management',
-          short_name: 'SalesPro',
-          description: 'SalesPro - Sales Management App for modern teams.',
+          name: 'RealSalePro - Sales Management',
+          short_name: 'RealSalePro',
+          description: 'RealSalePro - Sales Management App for modern teams.',
           theme_color: '#ffffff',
           background_color: '#ffffff',
           display: 'standalone',

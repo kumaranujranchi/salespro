@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
                 <!-- Logo Section -->
                 <tr>
                   <td align="center" style="padding: 40px 40px 20px 40px;">
-                    <img src="${LOGO_URL}" alt="SalesPro Logo" style="width: 180px; height: auto; display: block;">
+                    <img src="${LOGO_URL}" alt="RealSalePro Logo" style="width: 180px; height: auto; display: block;">
                   </td>
                 </tr>
 
@@ -109,7 +109,7 @@ exports.handler = async (event, context) => {
           Verification Code
         </h2>
         <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
-          To verify your account, enter the code in SalesPro
+          To verify your account, enter the code in RealSalePro
         </p>
         
         <!-- OTP Box -->

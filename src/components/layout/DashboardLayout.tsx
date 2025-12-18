@@ -245,15 +245,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-transparent">
           {/* Logo Section */}
-          <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
+          {/* Logo Section */}
+          <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-center px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
             {isCollapsed ? (
-              <img src="/logo.png" alt="SalesPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
+              <>
+                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-14 h-14 object-contain rounded-xl shadow-sm dark:hidden" />
+                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-14 h-14 object-contain rounded-xl shadow-sm hidden dark:block" />
+              </>
             ) : (
-              <div className="flex items-center gap-3">
-                <img src="/logo.png" alt="SalesPro" className="w-10 h-10 object-contain rounded-xl shadow-sm dark:brightness-0 dark:invert" />
-                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-gray-300">
-                  {activeModule === 'crm' ? 'SalePro CRM' : 'SalesPro'}
-                </span>
+              <div className="flex items-center justify-center w-full">
+                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-20 w-auto object-contain rounded-xl shadow-sm dark:hidden" />
+                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-20 w-auto object-contain rounded-xl shadow-sm hidden dark:block" />
               </div>
             )}
 

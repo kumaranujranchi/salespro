@@ -11,7 +11,7 @@ export const AppTutorial: React.FC = () => {
     {
       target: 'body',
       placement: 'center',
-      title: 'Welcome to SalesPro',
+      title: 'Welcome to RealSalePro',
       content: (
         <div className="text-left">
           <h3 className="font-bold text-lg mb-2">Let's get you valid started!</h3>

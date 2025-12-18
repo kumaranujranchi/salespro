@@ -156,13 +156,11 @@ export function LandingPage() {
                         {/* Logo */}
                         <div className="flex items-center space-x-3">
                             <img
-                                src={scrollY > 20 ? "/logo.png" : "/logo-light.png"}
+                                src={scrollY > 20 ? "/images/RealSalePro_DarkLogo.png" : "/images/RealSalePro_LighLogo.png"}
                                 alt="SalesPro Logo"
-                                className="h-10 w-auto object-contain transition-all duration-300"
+                                className="h-32 w-auto object-contain transition-all duration-300"
                             />
-                            <div>
-                                <h1 className={`text-2xl font-bold ${scrollY > 20 ? 'text-[#0A1C37]' : 'text-white'} transition-colors`}>SalesPro</h1>
-                            </div>
+
                         </div>
 
                         {/* Desktop Navigation */}
@@ -657,7 +655,7 @@ export function LandingPage() {
                                         <h3 className="text-2xl font-bold text-[#0A1C37]">Bring Your Own Database</h3>
                                     </div>
                                     <p className="text-lg text-gray-600 leading-relaxed">
-                                        For regulated industries or maximum control, SalesPro supports <strong>Self-Hosted Database</strong> connections.
+                                        For regulated industries or maximum control, RealSalePro supports <strong>Self-Hosted Database</strong> connections.
                                     </p>
                                     <div className="grid grid-cols-3 gap-4 mt-6">
                                         <div className="p-4 border border-gray-200 rounded-lg text-center hover:border-[#1673FF] transition-colors cursor-pointer bg-gray-50">
@@ -732,7 +730,7 @@ export function LandingPage() {
                             Data Ownership & Security
                         </h4>
                         <p className="text-gray-700 text-sm leading-relaxed">
-                            <strong>You retain 100% ownership</strong> of your data. SalesPro acts as a client securely connecting to your instance. You manage the credentials and can revoke our access at any time. We never store your raw database files—only the metadata required to run the application.
+                            <strong>You retain 100% ownership</strong> of your data. RealSalePro acts as a client securely connecting to your instance. You manage the credentials and can revoke our access at any time. We never store your raw database files—only the metadata required to run the application.
                         </p>
                     </div>
 
@@ -780,7 +778,7 @@ export function LandingPage() {
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Sell Out Your Next Project?</h2>
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-                                Join 500+ Real Estate Developers who trust SalesPro.
+                                Join 500+ Real Estate Developers who trust RealSalePro.
                                 <br />
                                 <span className="font-bold text-white">Start your 30-day free trial now.</span>
                             </p>
@@ -812,9 +810,9 @@ export function LandingPage() {
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-4 gap-12 mb-12">
                         <div className="col-span-1 md:col-span-2">
-                            <div className="flex items-center space-x-3 mb-6">
-                                <img src="/logo-light.png" alt="SalesPro Logo" className="h-8 w-auto object-contain" />
-                                <span className="text-2xl font-bold">SalesPro</span>
+                            <div className="flex items-center space-x-3 mb-3">
+                                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="h-32 w-auto object-contain -ml-4" />
+
                             </div>
                             <p className="text-gray-400 max-w-sm leading-relaxed mb-6">
                                 Empowering sales teams worldwide with intelligent tools and real-time insights.
@@ -833,7 +831,7 @@ export function LandingPage() {
                             </div>
                         </div>
 
-                        <div>
+                        <div className="pt-2">
                             <h4 className="font-bold text-lg mb-6">Platform</h4>
                             <ul className="space-y-4 text-gray-400">
                                 <li><a href="#features" className="hover:text-[#1673FF] transition-colors">Features</a></li>
@@ -843,7 +841,7 @@ export function LandingPage() {
                             </ul>
                         </div>
 
-                        <div>
+                        <div className="pt-2">
                             <h4 className="font-bold text-lg mb-6">Company</h4>
                             <ul className="space-y-4 text-gray-400">
                                 <li><a href="#about" className="hover:text-[#1673FF] transition-colors">About Us</a></li>
@@ -855,7 +853,7 @@ export function LandingPage() {
                     </div>
 
                     <div className="border-t border-gray-800 pt-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; 2024 SalesPro. All rights reserved.</p>
+                        <p>&copy; 2025 RealSalePro. All rights reserved.</p>
                         <div className="flex space-x-6 mt-4 md:mt-0">
                             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
                             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
