@@ -31,6 +31,7 @@ import { RefundPolicy } from './pages/RefundPolicy';
 import { ShippingPolicy } from './pages/ShippingPolicy';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
+import { ContactUsPage } from './pages/ContactUsPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/contact" element={<ContactUsPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route
