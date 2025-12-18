@@ -227,7 +227,7 @@ exports.handler = async (event, context) => {
     }
 
     const mailOptions = {
-      from: `"SalesPro Support" <${process.env.EMAIL_USER}>`,
+      from: `"RealSalePro Support" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: subject,
       html: htmlContent,
