@@ -128,7 +128,7 @@ export function SubscriptionPage() {
   const isExpired = daysRemaining <= 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0E1A15] py-12">
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="text-center">
