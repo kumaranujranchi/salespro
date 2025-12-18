@@ -33,8 +33,8 @@ export function ContactUsPage() {
               <Phone className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
-                <a href="tel:+919999999999" className="text-green-600 hover:text-green-700">
-                  +91 99999 99999
+                <a href="tel:+919525230232" className="text-green-600 hover:text-green-700">
+                  +91 95252 30232
                 </a>
                 <p className="text-sm text-gray-600 mt-1">Monday - Friday, 9:00 AM - 6:00 PM IST</p>
               </div>
