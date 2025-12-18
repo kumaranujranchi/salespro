@@ -243,5 +243,6 @@ export function SubscriptionPage() {
           </div>
         </div>
       </div>
-      );
+    </div>
+  );
 }
