@@ -84,7 +84,7 @@ exports.handler = async (event, context) => {
                       Have a question?
                     </p>
                     <p style="margin: 0 0 15px 0;">
-                      <a href="mailto:support@salespro.com" style="color: #4F46E5; text-decoration: none; font-weight: 600;">support@salespro.com</a>
+                      <a href="mailto:support@realsalepro.com" style="color: #4F46E5; text-decoration: none; font-weight: 600;">support@realsalepro.com</a>
                     </p>
                     <p style="margin: 15px 0 0 0; color: #999999; font-size: 12px;">
                       This is an automatically generated email<br>

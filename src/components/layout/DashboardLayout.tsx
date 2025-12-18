@@ -40,18 +40,18 @@ const navItems: NavItem[] = [
   { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
   { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
-  { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
+  { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
+  { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
   { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+  { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
   { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+  { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
   { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
+  { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
 ];
 
 import { useMobile } from '../../hooks/useMobile';
@@ -158,15 +158,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {hasCRMAccess && (
               <div id="module-toggle" className="flex items-center gap-3 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
                 <button
-                  onClick={() => handleModuleToggle(false)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'sales'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                >
-                  Sales
-                </button>
-                <button
                   onClick={() => handleModuleToggle(true)}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'crm'
                     ? 'bg-green-600 text-white shadow-sm'
@@ -174,6 +165,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     }`}
                 >
                   CRM
+                </button>
+                <button
+                  onClick={() => handleModuleToggle(false)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'sales'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                >
+                  Sales
                 </button>
               </div>
             )}

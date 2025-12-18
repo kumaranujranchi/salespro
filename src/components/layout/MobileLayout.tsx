@@ -49,15 +49,6 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                 {hasCRMAccess && (
                     <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
                         <button
-                            onClick={() => onModuleChange(false)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'sales'
-                                ? 'bg-indigo-600 text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400'
-                                }`}
-                        >
-                            Sales
-                        </button>
-                        <button
                             onClick={() => onModuleChange(true)}
                             className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'crm'
                                 ? 'bg-green-600 text-white shadow-sm'
@@ -65,6 +56,15 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                                 }`}
                         >
                             CRM
+                        </button>
+                        <button
+                            onClick={() => onModuleChange(false)}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'sales'
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400'
+                                }`}
+                        >
+                            Sales
                         </button>
                     </div>
                 )}
