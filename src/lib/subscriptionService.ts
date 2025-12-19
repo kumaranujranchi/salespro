@@ -1,9 +1,9 @@
 import { supabase } from './supabase';
 import { Subscription, BillingHistory } from '../types/database';
 
-// Razorpay API Configuration
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2';
-const RAZORPAY_KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET || '';
+// Razorpay API Configuration (for future backend implementation)
+// const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2';
+// const RAZORPAY_KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET || '';
 
 // Plan IDs (These should be created in Razorpay Dashboard)
 export const RAZORPAY_PLANS = {
@@ -52,7 +52,7 @@ interface RazorpaySubscriptionResponse {
 export async function createRazorpaySubscription(params: CreateSubscriptionParams): Promise<{ subscription: Subscription; shortUrl: string }> {
   try {
     // 1. Create or get Razorpay customer
-    const customerId = await createOrGetCustomer(params.tenantId, params.customerName, params.customerEmail, params.customerContact);
+    const customerId = await createOrGetCustomer(params.tenantId);
 
     // 2. Create subscription via Razorpay API
     const razorpayPlanId = RAZORPAY_PLANS[params.billingCycle];
@@ -147,7 +147,7 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
 /**
  * Create or get Razorpay customer
  */
-async function createOrGetCustomer(tenantId: string, name: string, email: string, contact: string): Promise<string> {
+async function createOrGetCustomer(tenantId: string): Promise<string> {
   // Check if customer already exists
   const { data: tenant } = await supabase
     .from('tenants')
@@ -162,7 +162,7 @@ async function createOrGetCustomer(tenantId: string, name: string, email: string
   // Create new customer (mock for now)
   const customerId = `cust_${Date.now()}`;
 
-  // In production, call Razorpay API to create customer
+  // In production, call Razorpay API to create customer with tenant details
   // const response = await fetch('https://api.razorpay.com/v1/customers', {
   //   method: 'POST',
   //   headers: {

@@ -48,7 +48,7 @@ export function PricingPage() {
       const billingCycle = planName === '6 Months' ? 'semi_annual' : planName === 'Yearly' ? 'yearly' : 'monthly';
 
       // Create subscription
-      const { subscription, shortUrl } = await createRazorpaySubscription({
+      const { subscription } = await createRazorpaySubscription({
         tenantId: tenant.id,
         planId: `plan_${billingCycle}`,
         customerName: tenant.name,
@@ -74,7 +74,6 @@ export function PricingPage() {
               tenant_id: tenant.id,
               subscription_id: subscription.id,
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_subscription_id: response.razorpay_subscription_id,
               amount: amount * 100,
               currency: 'INR',
               status: 'captured',
