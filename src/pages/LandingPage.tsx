@@ -112,7 +112,7 @@ export function LandingPage() {
                             <img
                                 src={scrollY > 20 ? "/images/RealSalePro_DarkLogo.png" : "/images/RealSalePro_LighLogo.png"}
                                 alt="SalesPro Logo"
-                                className="h-32 w-auto object-contain transition-all duration-300"
+                                className="h-10 w-auto object-contain transition-all duration-300"
                             />
 
                         </div>
@@ -143,7 +143,7 @@ export function LandingPage() {
                             <button
                                 onClick={handleRegisterClick}
                                 disabled={isLoading}
-                                className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${scrollY > 20
+                                className={`px-4 py-2 text-sm rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${scrollY > 20
                                     ? 'bg-[#10B981] text-white hover:bg-[#0E1A15]'
                                     : 'bg-white text-[#10B981] hover:bg-gray-100'
                                     }`}
@@ -166,7 +166,7 @@ export function LandingPage() {
                 {mobileMenuOpen && (
                     <div className="md:hidden bg-white border-t animate-fadeIn absolute w-full shadow-xl">
                         <div className="px-4 py-4 space-y-3">
-                            {['Features', 'Benefits', 'Pricing', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -176,6 +176,15 @@ export function LandingPage() {
                                     {item}
                                 </a>
                             ))}
+                            <button
+                                onClick={() => {
+                                    setMobileMenuOpen(false);
+                                    navigate('/pricing');
+                                }}
+                                className="block w-full text-left py-2 text-gray-700 hover:text-[#10B981] font-medium"
+                            >
+                                Pricing
+                            </button>
                             <button
                                 onClick={handleLoginClick}
                                 className="block w-full text-left py-2 text-gray-700 hover:text-[#10B981] font-medium"

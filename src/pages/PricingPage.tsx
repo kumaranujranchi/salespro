@@ -160,82 +160,82 @@ export function PricingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
             {/* Monthly Plan */}
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-8 flex flex-col border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900">Monthly</h3>
-              <div className="mt-4 flex items-baseline text-gray-900">
-                <span className="text-5xl font-extrabold tracking-tight">₹1,500</span>
-                <span className="ml-1 text-xl font-semibold text-gray-500">/month</span>
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-5 md:p-8 flex flex-col border border-gray-100">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900">Monthly</h3>
+              <div className="mt-2 md:mt-4 flex items-baseline text-gray-900">
+                <span className="text-3xl md:text-5xl font-extrabold tracking-tight">₹1,500</span>
+                <span className="ml-1 text-base md:text-xl font-semibold text-gray-500">/month</span>
               </div>
-              <p className="mt-6 text-gray-500">Full access, billed monthly</p>
-              <ul className="mt-6 space-y-4 flex-1">
+              <p className="mt-4 md:mt-6 text-sm md:text-base text-gray-500">Full access, billed monthly</p>
+              <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
                 {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
-                  <li key={feature} className="flex">
-                    <Check className="flex-shrink-0 w-5 h-5 text-green-500" />
-                    <span className="ml-3 text-gray-500">{feature}</span>
+                  <li key={feature} className="flex items-start">
+                    <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
+                    <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => handleSubscribe('Monthly', 1500)}
                 disabled={loading}
-                className="mt-8 block w-full bg-indigo-50 border border-transparent rounded-lg py-3 px-6 text-center font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                className="mt-6 md:mt-8 block w-full bg-indigo-50 border border-transparent rounded-lg py-2 md:py-3 px-4 md:px-6 text-center text-sm md:text-base font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : user ? 'Pay Now ₹1,500' : 'Start Monthly Trial'}
               </button>
             </div>
 
             {/* 6 Months Plan */}
-            <div className="bg-[#0A1C37] rounded-2xl shadow-xl p-8 flex flex-col transform md:-translate-y-4 border border-gray-900 relative">
-              <div className="absolute top-0 right-0 -mt-3 -mr-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+            <div className="bg-[#0A1C37] rounded-2xl shadow-xl p-5 md:p-8 flex flex-col transform md:-translate-y-4 border border-gray-900 relative">
+              <div className="absolute top-0 right-0 -mt-3 -mr-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full shadow-lg">
                 Most Popular
               </div>
-              <h3 className="text-xl font-semibold text-white">6 Months</h3>
-              <div className="mt-4 flex items-baseline text-white">
-                <span className="text-5xl font-extrabold tracking-tight">₹1,200</span>
-                <span className="ml-1 text-xl font-semibold text-gray-400">/month</span>
+              <h3 className="text-lg md:text-xl font-semibold text-white">6 Months</h3>
+              <div className="mt-2 md:mt-4 flex items-baseline text-white">
+                <span className="text-3xl md:text-5xl font-extrabold tracking-tight">₹1,200</span>
+                <span className="ml-1 text-base md:text-xl font-semibold text-gray-400">/month</span>
               </div>
-              <p className="mt-2 text-sm text-green-400 font-medium">Billed ₹7,200 semi-annually</p>
-              <p className="mt-4 text-gray-400">Save 20% with 6-month commitment</p>
-              <ul className="mt-6 space-y-4 flex-1">
+              <p className="mt-2 text-xs md:text-sm text-green-400 font-medium">Billed ₹7,200 semi-annually</p>
+              <p className="mt-2 text-xs md:text-base text-gray-400">Save 20% with 6-month commitment</p>
+              <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
                 {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
-                  <li key={feature} className="flex">
-                    <Check className="flex-shrink-0 w-5 h-5 text-blue-400" />
-                    <span className="ml-3 text-gray-300">{feature}</span>
+                  <li key={feature} className="flex items-start">
+                    <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5" />
+                    <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-300">{feature}</span>
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => handleSubscribe('6 Months', 7200)}
                 disabled={loading}
-                className="mt-8 block w-full bg-[#1673FF] border border-transparent rounded-lg py-3 px-6 text-center font-bold text-white hover:bg-[#1361D6] disabled:opacity-50"
+                className="mt-6 md:mt-8 block w-full bg-[#1673FF] border border-transparent rounded-lg py-2 md:py-3 px-4 md:px-6 text-center text-sm md:text-base font-bold text-white hover:bg-[#1361D6] disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : user ? 'Pay Now ₹7,200' : 'Start 6-Month Trial'}
               </button>
             </div>
 
             {/* Yearly Plan */}
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-8 flex flex-col border border-gray-100">
-              <h3 className="text-xl font-semibold text-gray-900">Yearly</h3>
-              <div className="mt-4 flex items-baseline text-gray-900">
-                <span className="text-5xl font-extrabold tracking-tight">₹1,000</span>
-                <span className="ml-1 text-xl font-semibold text-gray-500">/month</span>
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-5 md:p-8 flex flex-col border border-gray-100">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900">Yearly</h3>
+              <div className="mt-2 md:mt-4 flex items-baseline text-gray-900">
+                <span className="text-3xl md:text-5xl font-extrabold tracking-tight">₹1,000</span>
+                <span className="ml-1 text-base md:text-xl font-semibold text-gray-500">/month</span>
               </div>
-              <p className="mt-2 text-sm text-green-600 font-medium">Billed ₹12,000 annually</p>
-              <p className="mt-4 text-gray-500">Best Value: Save 33% yearly</p>
-              <ul className="mt-6 space-y-4 flex-1">
+              <p className="mt-2 text-xs md:text-sm text-green-600 font-medium">Billed ₹12,000 annually</p>
+              <p className="mt-2 text-xs md:text-base text-gray-500">Best Value: Save 33% yearly</p>
+              <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
                 {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
-                  <li key={feature} className="flex">
-                    <Check className="flex-shrink-0 w-5 h-5 text-green-500" />
-                    <span className="ml-3 text-gray-500">{feature}</span>
+                  <li key={feature} className="flex items-start">
+                    <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
+                    <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => handleSubscribe('Yearly', 12000)}
                 disabled={loading}
-                className="mt-8 block w-full bg-indigo-50 border border-transparent rounded-lg py-3 px-6 text-center font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                className="mt-6 md:mt-8 block w-full bg-indigo-50 border border-transparent rounded-lg py-2 md:py-3 px-4 md:px-6 text-center text-sm md:text-base font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : user ? 'Pay Now ₹12,000' : 'Start Yearly Trial'}
               </button>
