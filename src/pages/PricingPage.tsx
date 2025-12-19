@@ -10,7 +10,7 @@ import { PaymentSuccessModal } from '../components/ui/PaymentSuccessModal';
 
 export function PricingPage() {
   const { openPaymentModal } = useRazorpay();
-  const { user, tenant } = useAuth();
+  const { user, tenant, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,11 +59,16 @@ export function PricingPage() {
         image: '/images/RealSalePro_Favicon.png',
         handler: async (response) => {
           try {
+            console.log('🎉 Payment Response:', response);
+            console.log('📋 Tenant ID:', tenant.id);
+            console.log('📋 Billing Cycle:', billingCycle);
+            
             // Import supabase
             const { supabase } = await import('../lib/supabase');
             
             // Update tenant subscription
-            const { error: updateError } = await supabase
+            console.log('🔄 Updating tenant subscription...');
+            const { data: updateData, error: updateError } = await supabase
               .from('tenants')
               .update({
                 plan_tier: 'pro',
@@ -72,7 +77,11 @@ export function PricingPage() {
                 subscription_status: 'active',
                 updated_at: new Date().toISOString()
               })
-              .eq('id', tenant.id);
+              .eq('id', tenant.id)
+              .select();
+
+            console.log('✅ Update Response:', updateData);
+            console.log('❌ Update Error:', updateError);
 
             if (updateError) {
               console.error('Error updating subscription:', updateError);
@@ -82,7 +91,8 @@ export function PricingPage() {
 
             // Record payment in billing history
             try {
-              await supabase.from('billing_history').insert({
+              console.log('💾 Recording payment in billing history...');
+              const { data: billingData, error: billingError } = await supabase.from('billing_history').insert({
                 tenant_id: tenant.id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 amount: amount * 100,
@@ -90,7 +100,10 @@ export function PricingPage() {
                 status: 'captured',
                 description: `${planName} Plan Payment`,
                 email: user.email || undefined,
-              });
+              }).select();
+              
+              console.log('✅ Billing Record:', billingData);
+              console.log('❌ Billing Error:', billingError);
             } catch (billingError) {
               console.error('Error recording billing:', billingError);
               // Don't fail the whole flow if billing record fails
@@ -103,7 +116,7 @@ export function PricingPage() {
             });
             setShowSuccessModal(true);
           } catch (error) {
-            console.error('Error processing payment:', error);
+            console.error('❌ Payment Handler Error:', error);
             alert('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
           }
         },
@@ -234,10 +247,12 @@ export function PricingPage() {
       {/* Payment Success Modal */}
       <PaymentSuccessModal
         isOpen={showSuccessModal}
-        onClose={() => {
+        onClose={async () => {
           setShowSuccessModal(false);
-          // Reload page to refresh tenant data from AuthContext
-          window.location.href = '/dashboard';
+          // Refresh tenant data from database
+          await refreshProfile();
+          // Navigate to dashboard with refreshed data
+          navigate('/dashboard');
         }}
         paymentId={paymentDetails.paymentId}
         planName={paymentDetails.planName}
