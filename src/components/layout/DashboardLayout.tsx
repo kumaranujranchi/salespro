@@ -20,6 +20,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   BarChart2,
   Contact,
   Users,
@@ -38,25 +39,58 @@ interface NavItem {
   roles?: string[];
 }
 
-const navItems: NavItem[] = [
-  { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
-  { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
-  { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
-  { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
-  { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-  { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
-  { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
-  { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
-  { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
-  { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
+      { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
+      { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
+      { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
+    ]
+  },
+  {
+    label: 'Sales',
+    items: [
+      { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+      { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+      { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+    ]
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
+      { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
+      { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
+    ]
+  },
+  {
+    label: 'Configuration',
+    items: [
+      { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
+      { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
+    ]
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
+    ]
+  }
 ];
+
+// Flatten for backward compatibility
+const navItems: NavItem[] = navGroups.flatMap(group => group.items);
 
 import { useMobile } from '../../hooks/useMobile';
 import { MobileLayout } from './MobileLayout';
@@ -83,6 +117,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Module State
   const [activeModule, setActiveModule] = useState<'sales' | 'crm'>('sales');
+  
+  // Collapsed Groups State (all expanded by default)
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   // Check if tenant has CRM enabled
   const isCRMEnabled = tenant?.settings?.features?.crm !== false;
@@ -317,52 +354,152 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           {/* Navigation Items */}
-          <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 custom-scrollbar">
+          <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-6 px-4 space-y-4 custom-scrollbar">
             <div className={`px-2 mb-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest ${isCollapsed ? 'hidden' : 'block'}`}>
               {activeModule === 'crm' ? 'CRM Module' : 'Main Menu'}
             </div>
-            {filteredNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+            
+            {activeModule === 'sales' ? (
+              // Sales Module - Grouped Navigation
+              navGroups.map((group) => {
+                const groupItems = group.items.filter(item => {
+                  // 1. Permission-based filtering
+                  const permissions = profile?.role_details?.permissions;
+                  if (permissions) {
+                    const menuKey = item.path.substring(1).replace(/\//g, '_');
+                    const menuPermission = permissions.menu[menuKey];
+                    if (menuPermission === 'none') return false;
+                  }
 
-              return (
-                <Tooltip key={item.path} content={isCollapsed ? item.label : ''} position="right" className="w-full">
-                  <button
-                    onClick={() => {
-                      navigate(item.path);
-                      setSidebarOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
-                      transition-all duration-300 group relative overflow-hidden
-                      ${isActive
-                        ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
-                        : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
-                      }
-                      ${isCollapsed ? 'justify-center px-2' : ''}
-                    `}
-                  >
-                    {/* Hover Effect Background */}
-                    {!isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    )}
+                  // 2. Role access check
+                  const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
+                  if (!roleAccess) return false;
 
-                    <Icon size={isCollapsed ? 22 : 20} className={`
-                      relative z-10 transition-transform duration-300 group-hover:scale-110
-                      ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
-                    `} />
+                  // 3. Feature flags
+                  const features = tenant?.settings?.features;
+                  if (features) {
+                    if (item.path === '/projects') return features.inventory !== false;
+                    if (item.path === '/reports') return features.reports !== false;
+                    if (item.path === '/site-visits') return features.site_visits !== false;
+                    if (item.path === '/incentives') return features.incentives !== false;
+                  }
 
+                  return true;
+                });
+
+                if (groupItems.length === 0) return null;
+
+                const isGroupCollapsed = collapsedGroups[group.label];
+                const toggleGroup = () => {
+                  setCollapsedGroups(prev => ({
+                    ...prev,
+                    [group.label]: !prev[group.label]
+                  }));
+                };
+
+                return (
+                  <div key={group.label} className="space-y-1">
                     {!isCollapsed && (
-                      <span className="relative z-10 font-semibold text-[13.5px] tracking-wide">{item.label}</span>
+                      <button
+                        onClick={toggleGroup}
+                        className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                      >
+                        <span>{group.label}</span>
+                        <ChevronDown 
+                          size={14} 
+                          className={`transition-transform duration-200 ${isGroupCollapsed ? '-rotate-90' : ''}`}
+                        />
+                      </button>
                     )}
+                    
+                    {(!isGroupCollapsed || isCollapsed) && groupItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path;
 
-                    {!isCollapsed && isActive && (
-                      <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
-                    )}
-                  </button>
-                </Tooltip>
-              );
-            })}
+                      return (
+                        <Tooltip key={item.path} content={isCollapsed ? item.label : ''} position="right" className="w-full">
+                          <button
+                            onClick={() => {
+                              navigate(item.path);
+                              setSidebarOpen(false);
+                            }}
+                            className={`
+                              w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left
+                              transition-all duration-300 group relative overflow-hidden
+                              ${isActive
+                                ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
+                                : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
+                              }
+                              ${isCollapsed ? 'justify-center px-2' : ''}
+                            `}
+                          >
+                            {!isActive && (
+                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            )}
+
+                            <Icon size={isCollapsed ? 22 : 18} className={`
+                              relative z-10 transition-transform duration-300 group-hover:scale-110
+                              ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
+                            `} />
+
+                            {!isCollapsed && (
+                              <span className="relative z-10 font-semibold text-[13px] tracking-wide">{item.label}</span>
+                            )}
+
+                            {!isCollapsed && isActive && (
+                              <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
+                            )}
+                          </button>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              // CRM Module - Original flat navigation
+              filteredNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <Tooltip key={item.path} content={isCollapsed ? item.label : ''} position="right" className="w-full">
+                    <button
+                      onClick={() => {
+                        navigate(item.path);
+                        setSidebarOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
+                        transition-all duration-300 group relative overflow-hidden
+                        ${isActive
+                          ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
+                          : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
+                        }
+                        ${isCollapsed ? 'justify-center px-2' : ''}
+                      `}
+                    >
+                      {!isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      )}
+
+                      <Icon size={isCollapsed ? 22 : 20} className={`
+                        relative z-10 transition-transform duration-300 group-hover:scale-110
+                        ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
+                      `} />
+
+                      {!isCollapsed && (
+                        <span className="relative z-10 font-semibold text-[13.5px] tracking-wide">{item.label}</span>
+                      )}
+
+                      {!isCollapsed && isActive && (
+                        <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
+                      )}
+                    </button>
+                  </Tooltip>
+                );
+              })
+            )}
           </nav>
 
           {/* Bottom Actions */}

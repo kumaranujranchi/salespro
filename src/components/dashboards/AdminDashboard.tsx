@@ -575,13 +575,8 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Activity Log & Leaderboard Widgets */}
+      {/* Leaderboard Widget */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {permissions.recent_activity && (
-          <div className="h-[500px]">
-            <ActivityCalendar activities={activityLogs} />
-          </div>
-        )}
 
         {permissions.leaderboard && (
           <Card className="h-[500px] flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark overflow-hidden">
@@ -670,68 +665,74 @@ export function AdminDashboard() {
         )}
       </div>
 
+      {/* Recent Activity Log & Announcements */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity Log */}
         {permissions.recent_activity && (
           <div className="h-[500px]">
             <RecentActivityLog activities={activityLogs} />
           </div>
         )}
 
-        {/* Announcements & Recent Sales */}
-        <div className="space-y-8">
-          <Card className="rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
-            <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-rose-50/50 dark:bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 ring-1 ring-rose-100/50 dark:ring-rose-500/30">
-                  <Megaphone size={20} />
-                </div>
-                <CardTitle className="text-slate-800 dark:text-white text-base">Announcements</CardTitle>
+        <Card className="h-[500px] flex flex-col rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
+          <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-50/50 dark:bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 ring-1 ring-rose-100/50 dark:ring-rose-500/30">
+                <Megaphone size={20} />
               </div>
-            </CardHeader>
-            <CardContent className="pt-4 max-h-[400px] overflow-auto custom-scrollbar">
-              <div className="space-y-4">
-                {announcements.map((ann) => (
-                  <div key={ann.id} className="p-4 bg-white dark:bg-surface-dark rounded-xl border border-slate-100 dark:border-white/10 hover:border-rose-200 transition-all">
-                    <h4 className="font-bold text-slate-800 dark:text-white text-sm">{ann.title}</h4>
-                    <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">{ann.content}</p>
-                    <div className="mt-2 text-[10px] text-slate-400">{new Date(ann.created_at).toLocaleDateString()}</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {salesView !== 'none' && (
-            <div className="h-[400px]">
-              <Card className="h-full rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
-                <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4">
-                  <CardTitle className="text-slate-800 dark:text-white text-base">Recent Sales</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 overflow-auto custom-scrollbar">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-gray-400 uppercase text-[10px] font-bold tracking-wider">
-                      <tr>
-                        <th className="px-4 py-3">Customer</th>
-                        <th className="px-4 py-3">Project</th>
-                        <th className="px-4 py-3 text-right">Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-                      {recentSales.map((sale) => (
-                        <tr key={sale.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                          <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">{sale.customer?.name}</td>
-                          <td className="px-4 py-3 text-slate-500 dark:text-gray-400">{sale.project?.name}</td>
-                          <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(sale.total_revenue)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
+              <CardTitle className="text-slate-800 dark:text-white text-base">Announcements</CardTitle>
             </div>
-          )}
-        </div>
+          </CardHeader>
+          <CardContent className="pt-4 flex-1 overflow-auto custom-scrollbar">
+            <div className="space-y-4">
+              {announcements.map((ann) => (
+                <div key={ann.id} className="p-4 bg-white dark:bg-surface-dark rounded-xl border border-slate-100 dark:border-white/10 hover:border-rose-200 transition-all">
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">{ann.title}</h4>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">{ann.content}</p>
+                  <div className="mt-2 text-[10px] text-slate-400">{new Date(ann.created_at).toLocaleDateString()}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Activity Calendar & Recent Sales */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {permissions.recent_activity && (
+          <div className="h-[500px]">
+            <ActivityCalendar activities={activityLogs} />
+          </div>
+        )}
+
+        {salesView !== 'none' && (
+          <div className="h-[500px]">
+            <Card className="h-full rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
+              <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4">
+                <CardTitle className="text-slate-800 dark:text-white text-base">Recent Sales</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-auto custom-scrollbar">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-gray-400 uppercase text-[10px] font-bold tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Project</th>
+                      <th className="px-4 py-3 text-right">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+                    {recentSales.map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">{sale.customer?.name}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-gray-400">{sale.project?.name}</td>
+                        <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(sale.total_revenue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
       
       {permissions.upcoming_events && (
