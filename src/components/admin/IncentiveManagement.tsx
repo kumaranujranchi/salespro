@@ -198,43 +198,45 @@ export function IncentiveManagement() {
     <div className="space-y-6">
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row justify-between gap-4 bg-white dark:bg-white/5 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-white/10">
-        <div className="flex flex-wrap gap-2 items-center flex-1">
-          <div className="flex items-center gap-2 text-gray-500 mr-2">
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-1 w-full sm:w-auto">
+          <div className="flex items-center gap-2 text-gray-500 mb-1 sm:mb-0">
             <Filter size={18} />
             <span className="text-sm font-medium">Filters:</span>
           </div>
 
-          <select
-            value={filterUser}
-            onChange={(e) => setFilterUser(e.target.value)}
-            className="p-2 text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white min-w-[150px]"
-          >
-            <option value="" className="dark:bg-[#121e18]">All Users</option>
-            {profiles.map(p => <option key={p.id} value={p.id} className="dark:bg-[#121e18]">{p.full_name}</option>)}
-          </select>
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
+            <select
+              value={filterUser}
+              onChange={(e) => setFilterUser(e.target.value)}
+              className="p-2 text-xs sm:text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white w-full sm:min-w-[150px]"
+            >
+              <option value="" className="dark:bg-[#121e18]">All Users</option>
+              {profiles.map(p => <option key={p.id} value={p.id} className="dark:bg-[#121e18]">{p.full_name}</option>)}
+            </select>
 
-          <select
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(e.target.value)}
-            className="p-2 text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white"
-          >
-            <option value="" className="dark:bg-[#121e18]">All Months</option>
-            {months.map(m => <option key={m} value={m} className="dark:bg-[#121e18]">{m}</option>)}
-          </select>
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="p-2 text-xs sm:text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white w-full"
+            >
+              <option value="" className="dark:bg-[#121e18]">All Months</option>
+              {months.map(m => <option key={m} value={m} className="dark:bg-[#121e18]">{m}</option>)}
+            </select>
 
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(e.target.value)}
-            className="p-2 text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white"
-          >
-            <option value="" className="dark:bg-[#121e18]">All Years</option>
-            {years.map(y => <option key={y} value={y} className="dark:bg-[#121e18]">{y}</option>)}
-          </select>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="p-2 text-xs sm:text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white w-full"
+            >
+              <option value="" className="dark:bg-[#121e18]">All Years</option>
+              {years.map(y => <option key={y} value={y} className="dark:bg-[#121e18]">{y}</option>)}
+            </select>
+          </div>
 
           {(filterUser || filterMonth || filterYear) && (
             <button
               onClick={() => { setFilterUser(''); setFilterMonth(''); setFilterYear(''); }}
-              className="p-2 text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+              className="p-2 text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1 self-end sm:self-auto"
             >
               <X size={14} /> Clear
             </button>
@@ -243,7 +245,7 @@ export function IncentiveManagement() {
 
         <button
           onClick={() => { resetForm(); setIsAdding(true); }}
-          className="flex items-center gap-2 bg-[#00E576] hover:bg-[#00C853] text-[#0A1C37] px-4 py-2 rounded-lg font-bold transition-colors shadow-lg whitespace-nowrap"
+          className="flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg whitespace-nowrap"
         >
           <Plus size={20} />
           Add Manual Incentive

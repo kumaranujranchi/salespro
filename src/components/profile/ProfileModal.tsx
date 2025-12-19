@@ -86,7 +86,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
         setImageError(false);
         setCropImageSrc(null);
         setShowCropper(false);
-        // Reset profile data to current val if closed w/o saving
         if (profile) {
             setProfileData({
                 fullName: profile.full_name || '',
@@ -99,10 +98,10 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
     };
 
     const handleClose = () => {
-        if (forceChange) return; // Prevent closing if forced
+        if (forceChange) return;
         resetForm();
         onClose();
-        setTimeout(() => setActiveTab('details'), 300); // Reset tab after close
+        setTimeout(() => setActiveTab('details'), 300);
     };
 
     const handleImageError = () => {
@@ -113,7 +112,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             await dialog.alert('Image size must be less than 5MB', { variant: 'danger' });
             return;
@@ -126,7 +124,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             setShowCropper(true);
         });
         reader.readAsDataURL(file);
-        // Reset input so same file can be selected again
         e.target.value = '';
     };
 
@@ -138,7 +135,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             const fileName = `${profile?.id}-${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            // Upload
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, croppedBlob, {
@@ -147,20 +143,16 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
 
             if (uploadError) throw uploadError;
 
-            // Get URL
             const { data: { publicUrl } } = supabase.storage
                 .from('avatars')
                 .getPublicUrl(filePath);
 
-            // Update Profile
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ image_url: publicUrl })
                 .eq('id', profile?.id);
 
             if (updateError) throw updateError;
-
-            // Ideally AuthContext should reload, but for now we rely on re-render or window reload
             window.location.reload();
         } catch (error: any) {
             console.error('Error uploading avatar:', error);
@@ -186,7 +178,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             if (error) throw error;
 
             await dialog.alert('Profile details updated successfully!', { variant: 'success', title: 'Success' });
-            window.location.reload(); // Refresh to show new name
+            window.location.reload();
         } catch (err: any) {
             console.error('Update profile error:', err);
             await dialog.alert(err.message || 'Failed to update profile.', { variant: 'danger' });
@@ -202,14 +194,12 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
         setError('');
 
         try {
-            // 1. Update Password in Supabase Auth
             const { error: updateError } = await supabase.auth.updateUser({
                 password: newPassword
             });
 
             if (updateError) throw updateError;
 
-            // 2. Update force_password_change flag in profile
             if (profile) {
                 const { error: profileError } = await supabase
                     .from('profiles')
@@ -220,7 +210,6 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                     console.error('Failed to update profile flag:', profileError);
                 }
 
-                // Log the activity
                 await supabase.from('activity_log').insert({
                     user_id: profile.id,
                     action: 'USER_PASSWORD_CHANGED',
@@ -237,7 +226,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                 title: 'Password Changed'
             });
 
-            await signOut(); // Force re-login
+            await signOut();
             window.location.href = '/login';
 
         } catch (err: any) {
@@ -256,9 +245,9 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                 title={forceChange ? "Change Password Required" : "My Profile"}
                 size="md"
             >
-                <div className="space-y-6">
-                    {/* User Info Section */}
-                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 relative">
+                <div className="space-y-4">
+                    {/* User Info Section - Compact */}
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 relative">
                         <div className="relative group cursor-pointer">
                             <input
                                 type="file"
@@ -273,16 +262,16 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                         src={profile.image_url}
                                         alt={profile.full_name}
                                         onError={handleImageError}
-                                        className="w-16 h-16 rounded-full border-2 border-[#1673FF] object-cover shrink-0 transition-opacity group-hover:opacity-75"
+                                        className="w-14 h-14 rounded-full border-2 border-[#10B981] object-cover shrink-0 transition-opacity group-hover:opacity-75"
                                     />
                                 ) : (
-                                    <div className="w-16 h-16 rounded-full bg-[#E3F2FD] flex items-center justify-center border-2 border-[#1673FF] shrink-0 transition-opacity group-hover:opacity-75">
-                                        <span className="text-xl font-bold text-[#1673FF]">{profile?.full_name?.charAt(0)}</span>
+                                    <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center border-2 border-[#10B981] shrink-0 transition-opacity group-hover:opacity-75">
+                                        <span className="text-lg font-bold text-[#10B981]">{profile?.full_name?.charAt(0)}</span>
                                     </div>
                                 )}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <span className="bg-black/50 text-white p-1 rounded-full">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                     </span>
                                 </div>
                             </label>
@@ -291,17 +280,17 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                         <div className="min-w-0 flex-1">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="font-bold text-[#0A1C37] text-lg truncate" title={profile?.full_name}>{profile?.full_name}</h3>
-                                    <p className="text-sm text-gray-500 truncate" title={profile?.email}>{profile?.email}</p>
+                                    <h3 className="font-bold text-[#0E1A15] text-base truncate" title={profile?.full_name}>{profile?.full_name}</h3>
+                                    <p className="text-xs text-gray-500 truncate" title={profile?.email}>{profile?.email}</p>
                                 </div>
                             </div>
-                            <p className="text-xs font-medium text-[#1673FF] uppercase mt-1">{profile?.role?.replace('_', ' ')}</p>
+                            <p className="text-[10px] font-medium text-[#10B981] uppercase mt-0.5">{profile?.role?.replace('_', ' ')}</p>
                         </div>
                     </div>
 
                     {forceChange && (
-                        <div className="p-3 bg-amber-50 text-amber-800 text-sm rounded-md border border-amber-200">
-                            For security reasons, you must change your password before proceeding.
+                        <div className="p-2.5 bg-amber-50 text-amber-800 text-xs rounded-md border border-amber-200">
+                            For security reasons, you must change your password.
                         </div>
                     )}
 
@@ -309,83 +298,91 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                         <div className="flex border-b border-gray-200">
                             <button
                                 onClick={() => setActiveTab('details')}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details'
-                                    ? 'border-[#1673FF] text-[#1673FF]'
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details'
+                                    ? 'border-[#10B981] text-[#10B981]'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
-                                <User size={16} />
+                                <User size={14} />
                                 Profile Details
                             </button>
 
                             <button
                                 onClick={() => setActiveTab('security')}
-                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
-                                    ? 'border-[#1673FF] text-[#1673FF]'
+                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
+                                    ? 'border-[#10B981] text-[#10B981]'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
-                                <Lock size={16} />
+                                <Lock size={14} />
                                 Security
                             </button>
                         </div>
                     )}
 
                     {activeTab === 'details' && !forceChange ? (
-                        <form onSubmit={handleUpdateProfile} className="space-y-4">
+                        <form onSubmit={handleUpdateProfile} className="space-y-3">
                             <Input
                                 label="Full Name"
                                 value={profileData.fullName}
                                 onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                                 placeholder="Enter full name"
-                                rightIcon={<User size={18} />}
+                                rightIcon={<User size={16} />}
+                                className="py-2 text-sm"
                             />
                             <Input
                                 label="Phone Number"
                                 value={profileData.phone}
                                 onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                                 placeholder="+91..."
-                                rightIcon={<Phone size={18} />}
+                                rightIcon={<Phone size={16} />}
+                                className="py-2 text-sm"
                             />
-                            <Input
-                                type="date"
-                                label="Date of Birth"
-                                value={profileData.dob}
-                                onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
-                            />
-                            <Input
-                                type="date"
-                                label="Marriage Anniversary"
-                                value={profileData.marriageAnniversary}
-                                onChange={(e) => setProfileData({ ...profileData, marriageAnniversary: e.target.value })}
-                            />
+                            <div className="grid grid-cols-2 gap-3">
+                                <Input
+                                    type="date"
+                                    label="Date of Birth"
+                                    value={profileData.dob}
+                                    onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
+                                    className="py-2 text-sm"
+                                />
+                                <Input
+                                    type="date"
+                                    label="Anniversary"
+                                    value={profileData.marriageAnniversary}
+                                    onChange={(e) => setProfileData({ ...profileData, marriageAnniversary: e.target.value })}
+                                    className="py-2 text-sm"
+                                />
+                            </div>
                             <Input
                                 type="date"
                                 label="Date of Joining"
                                 value={profileData.joiningDate}
                                 onChange={(e) => setProfileData({ ...profileData, joiningDate: e.target.value })}
+                                className="py-2 text-sm"
                             />
 
                             <ModalFooter>
-                                <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" variant="primary" isLoading={loading}>
-                                    <span className="hidden sm:inline">Update Profile</span>
-                                    <span className="sm:hidden">Update</span>
-                                </Button>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                    <Button type="button" variant="outline" onClick={handleClose} disabled={loading} size="sm" className="w-full">
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" variant="primary" isLoading={loading} size="sm" className="bg-[#10B981] hover:bg-[#059669] w-full">
+                                        Update Profile
+                                    </Button>
+                                </div>
                             </ModalFooter>
                         </form>
                     ) : (
-                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                        <form onSubmit={handlePasswordSubmit} className="space-y-3">
                             <div className="flex justify-end">
                                 <button
                                     type="button"
                                     onClick={() => setShowPasswords(!showPasswords)}
-                                    className="text-gray-500 hover:text-[#1673FF] text-sm flex items-center gap-1 transition-colors"
+                                    className="text-gray-500 hover:text-[#10B981] text-xs flex items-center gap-1 transition-colors"
                                 >
-                                    {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
-                                    {showPasswords ? "Hide Passwords" : "Show Passwords"}
+                                    {showPasswords ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    {showPasswords ? "Hide/Mask" : "Show"}
                                 </button>
                             </div>
 
@@ -395,8 +392,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                     label="Current Password"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
-                                    placeholder="Enter current password if you want to verify"
-                                    className="hidden" // Hiding it for now
+                                    className="hidden"
                                 />
                             )}
 
@@ -407,7 +403,8 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 required
                                 autoComplete="new-password"
-                                placeholder="Min 8 chars, uppercase, number, special"
+                                placeholder="Min 8 chars, uppercase, number"
+                                className="py-2 text-sm"
                             />
 
                             <Input
@@ -419,30 +416,33 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 autoComplete="new-password"
                                 placeholder="Re-enter new password"
                                 error={confirmPassword && !requirements.match ? "Passwords do not match" : undefined}
+                                className="py-2 text-sm"
                             />
 
-                            {/* Requirements Checklist */}
-                            <div className="bg-gray-50 p-3 rounded-md text-xs space-y-2 border border-gray-100">
+                            {/* Requirements Checklist - Compact */}
+                            <div className="bg-gray-50 p-2.5 rounded-md text-[10px] space-y-1.5 border border-gray-100">
                                 <p className="font-semibold text-gray-700">Password strength:</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <RequirementItem met={requirements.length} text="At least 8 characters" />
-                                    <RequirementItem met={requirements.uppercase} text="At least one uppercase letter" />
-                                    <RequirementItem met={requirements.number} text="At least one number" />
-                                    <RequirementItem met={requirements.special} text="At least one special char (!@#$)" />
+                                <div className="grid grid-cols-1 gap-1">
+                                    <RequirementItem met={requirements.length} text="8+ characters" />
+                                    <div className="flex gap-2">
+                                        <RequirementItem met={requirements.uppercase} text="Uppercase" />
+                                        <RequirementItem met={requirements.number} text="Number" />
+                                        <RequirementItem met={requirements.special} text="Special Char" />
+                                    </div>
                                 </div>
                             </div>
 
                             {error && (
-                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-100 flex items-start gap-2">
-                                    <Shield size={16} className="mt-0.5 shrink-0" />
+                                <div className="p-2.5 bg-red-50 text-red-600 text-xs rounded-md border border-red-100 flex items-start gap-2">
+                                    <Shield size={14} className="mt-0.5 shrink-0" />
                                     <span>{error}</span>
                                 </div>
                             )}
 
                             <ModalFooter>
-                                <div className="grid grid-cols-2 gap-3 w-full md:flex md:w-auto md:justify-end">
+                                <div className="flex justify-end gap-2 w-full">
                                     {!forceChange && (
-                                        <Button type="button" variant="outline" onClick={handleClose} disabled={loading} className="w-full md:w-auto">
+                                        <Button type="button" variant="outline" onClick={handleClose} disabled={loading} size="sm">
                                             Cancel
                                         </Button>
                                     )}
@@ -450,10 +450,11 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                         type="submit"
                                         variant="primary"
                                         isLoading={loading}
-                                        className={`w-full md:w-auto ${forceChange ? 'col-span-2' : ''}`}
+                                        size="sm"
+                                        className={`bg-[#10B981] hover:bg-[#059669] ${forceChange ? 'w-full' : ''}`}
                                         disabled={!isValid}
                                     >
-                                        <Lock size={16} className="mr-2" />
+                                        <Lock size={14} className="mr-1.5" />
                                         Change Password
                                     </Button>
                                 </div>
@@ -482,8 +483,8 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
 
 function RequirementItem({ met, text }: { met: boolean; text: string }) {
     return (
-        <div className={`flex items-center gap-2 ${met ? 'text-green-600' : 'text-gray-500'}`}>
-            {met ? <Check size={14} className="stroke-[3]" /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
+        <div className={`flex items-center gap-1.5 ${met ? 'text-[#10B981]' : 'text-gray-500'}`}>
+            {met ? <Check size={12} className="stroke-[3]" /> : <div className="w-2.5 h-2.5 rounded-full border border-gray-300" />}
             <span>{text}</span>
         </div>
     );

@@ -150,7 +150,7 @@ export function TargetsPage() {
     // Import dynamically or assume it's imported at top (I will add import via another tool call or assume previous step did it? No I need to add import)
     // For now, implementing logic using the util structure
     // We need to map over months and call calculateTeamPerformance
-    
+
     return months.map(monthDate => {
       const monthStr = format(monthDate, 'MMM');
       const monthFilter = (dateStr: string) => isSameMonth(parseISO(dateStr), monthDate);
@@ -168,10 +168,10 @@ export function TargetsPage() {
         // Individual View Logic (Default)
         const userTarget = targets.find(t => t.user_id === selectedUserId && t.start_date && monthFilter(t.start_date));
         const targetSqft = Number(userTarget?.target_sqft) || 0;
-        
+
         const userSales = sales.filter(s => s.sales_executive_id === selectedUserId && s.sale_date && monthFilter(s.sale_date));
         const achievedSqft = userSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0);
-        
+
         const diff = achievedSqft - targetSqft;
 
         return {
@@ -229,7 +229,7 @@ export function TargetsPage() {
   // Breakdown Calculation for Team View (Annual)
   const breakdown = useMemo(() => {
     if (viewBy !== 'team' || !selectedUserId) return null;
-    
+
     const tlTotal = calculationResults.reduce((sum, r) => sum + r.leaderTarget, 0);
     const teamTotal = calculationResults.reduce((sum, r) => sum + r.teamTarget, 0);
 
@@ -350,7 +350,7 @@ export function TargetsPage() {
 
             {/* Right Column: Chart & Warning */}
             <div className="lg:col-span-2 flex flex-col gap-6">
-              
+
               {/* Warning for Missing Targets */}
               {annualSummary?.missingTargetsList && annualSummary.missingTargetsList.length > 0 && (
                 <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-4 flex items-start gap-3">
@@ -452,7 +452,7 @@ export function TargetsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Filter Section for Management */}
-            <div className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 dark:bg-white/5 p-4 rounded-lg border border-gray-100 dark:border-white/10">
+            <div className="flex flex-col md:flex-row gap-4 items-center md:items-end bg-gray-50 dark:bg-white/5 p-4 rounded-lg border border-gray-100 dark:border-white/10">
               <Select
                 label="Select Team Leader"
                 value={managerFilter}
@@ -541,10 +541,10 @@ export function TargetsPage() {
                           <td className="px-4 py-3 text-right font-medium dark:text-gray-200">{(t.target_sqft || 0).toLocaleString()}</td>
                           <td className="px-4 py-3 text-right">
                             {!isReadOnly && (
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingTarget(t); setIsModalOpen(true); }} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10"><Pencil size={16} /></Button>
-                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10" onClick={() => handleDelete(t.id)}><Trash2 size={16} /></Button>
-                            </div>
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="sm" onClick={() => { setEditingTarget(t); setIsModalOpen(true); }} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10"><Pencil size={16} /></Button>
+                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10" onClick={() => handleDelete(t.id)}><Trash2 size={16} /></Button>
+                              </div>
                             )}
                           </td>
                         </tr>

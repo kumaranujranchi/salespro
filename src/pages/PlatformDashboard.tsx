@@ -24,7 +24,9 @@ import {
   Zap,
   Award,
   Bell,
-  Receipt
+  Receipt,
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react';
 
 const formatDate = (dateString: string) => {
@@ -104,6 +106,8 @@ export function PlatformDashboard() {
   // Notification State
   const [notification, setNotification] = useState<{ type: 'success' | 'error', title: string, message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'support'>('overview');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
 
   // New State for Support
   const [tickets, setTickets] = useState<any[]>([]);
@@ -659,7 +663,7 @@ export function PlatformDashboard() {
         </div>
         <button
           onClick={() => setAddTenantModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-indigo-500/30"
+          className="flex w-full md:w-auto items-center justify-center gap-2 px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg font-semibold transition-colors shadow-lg shadow-green-500/30"
         >
           <Plus className="w-5 h-5" />
           Onboard New Client
@@ -796,7 +800,7 @@ export function PlatformDashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* ... (Keep existing stats cards) ... */}
         <div className="bg-white dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
           <div className="flex justify-between items-start">
@@ -855,7 +859,7 @@ export function PlatformDashboard() {
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">All Tenants</h2>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Tab Buttons */}
             <div className="flex gap-6 border-b border-slate-200 dark:border-white/10">
               <button
@@ -916,181 +920,256 @@ export function PlatformDashboard() {
         </div>
 
         {activeTab === 'tenants' && (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Details</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trial Expiry</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Billing</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                      Loading tenants...
-                    </td>
-                  </tr>
-                ) : filteredTenants.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                      No tenants found matching your filter.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTenants.map((tenant) => (
-                    <tr key={tenant.id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${tenant.is_active === false ? 'opacity-60 bg-slate-50' : ''}`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mr-3 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
-                            {tenant.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-slate-900 dark:text-white">
-                              {tenant.name}
-                              {tenant.is_active === false && <span className="ml-2 text-xs text-red-500 font-bold">(SUSPENDED)</span>}
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">{tenant.slug}</div>
-                          </div>
+          <>
+            {/* Mobile View - Collapsible Cards */}
+            <div className="md:hidden space-y-4 p-4">
+              {filteredTenants.map((tenant) => (
+                <div key={tenant.id} className="bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 overflow-hidden">
+                  <div
+                    className="p-4 flex items-center justify-between cursor-pointer"
+                    onClick={() => setExpandedId(expandedId === tenant.id ? null : tenant.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
+                        {tenant.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 dark:text-white">{tenant.name}</h3>
+                        <p className="text-xs text-slate-500 capitalize">{tenant.plan_tier || 'Starter'} Plan</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${expandedId === tenant.id ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {expandedId === tenant.id && (
+                    <div className="px-4 pb-4 pt-0 space-y-3 animate-fadeIn">
+                      <div className="pt-3 border-t border-slate-200 dark:border-white/10 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <p className="text-slate-500">Status</p>
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full font-bold capitalize ${tenant.subscription_status === 'active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                            {tenant.subscription_status}
+                          </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                            <Mail className="h-3 w-3" />
-                            {tenant.contact_email || 'No email'}
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                            <Phone className="h-3 w-3" />
-                            {tenant.contact_phone || 'No phone'}
-                          </div>
+                        <div>
+                          <p className="text-slate-500">Joined</p>
+                          <p className="mt-1 font-medium text-slate-900 dark:text-white">{formatDate(tenant.created_at)}</p>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                        ${tenant.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                            tenant.subscription_status === 'trial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'}
-                      `}>
-                          {tenant.subscription_status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                        {tenant.plan_tier || 'Starter'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {(() => {
-                          const daysLeft = calculateTrialDaysLeft(tenant);
-                          const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
-                          const isExpired = daysLeft <= 0;
-                          return tenant.trial_ends_at ? (
-                            <div className="flex flex-col">
-                              <span className={`${isExpired ? 'text-red-600 font-bold' : isExpiringSoon ? 'text-amber-600 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
-                                {formatDate(tenant.trial_ends_at)}
-                              </span>
-                              {isExpired && <span className="text-xs text-red-500">Trial Ended</span>}
-                              {isExpiringSoon && !isExpired && <span className="text-xs text-amber-500">{daysLeft} days left</span>}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">N/A</span>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                        {tenant.billing_cycle || 'Monthly'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                        {formatDate(tenant.created_at)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleSendReminder(tenant)}
-                          className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 mr-4"
-                          title="Send Expiry Reminder"
-                        >
-                          <Bell className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => setSelectedTenant(tenant)}
-                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-4"
-                        >
-                          Manage
-                        </button>
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                          <Mail className="w-3.5 h-3.5" /> {tenant.contact_email || 'N/A'}
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                          <Phone className="w-3.5 h-3.5" /> {tenant.contact_phone || 'N/A'}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTenant(tenant);
+                        }}
+                        className="w-full mt-2 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        Manage Tenant
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View - Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Details</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trial Expiry</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Billing</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                        Loading tenants...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )
-        }
+                  ) : filteredTenants.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                        No tenants found matching your filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTenants.map((tenant) => (
+                      <tr key={tenant.id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${tenant.is_active === false ? 'opacity-60 bg-slate-50' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mr-3 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
+                              {tenant.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-slate-900 dark:text-white">
+                                {tenant.name}
+                                {tenant.is_active === false && <span className="ml-2 text-xs text-red-500 font-bold">(SUSPENDED)</span>}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{tenant.slug}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                              <Mail className="h-3 w-3" />
+                              {tenant.contact_email || 'No email'}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                              <Phone className="h-3 w-3" />
+                              {tenant.contact_phone || 'No phone'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                        ${tenant.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                              tenant.subscription_status === 'trial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                                'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'}
+                      `}>
+                            {tenant.subscription_status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
+                          {tenant.plan_tier || 'Starter'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {(() => {
+                            const daysLeft = calculateTrialDaysLeft(tenant);
+                            const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
+                            const isExpired = daysLeft <= 0;
+                            return tenant.trial_ends_at ? (
+                              <div className="flex flex-col">
+                                <span className={`${isExpired ? 'text-red-600 font-bold' : isExpiringSoon ? 'text-amber-600 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
+                                  {formatDate(tenant.trial_ends_at)}
+                                </span>
+                                {isExpired && <span className="text-xs text-red-500">Trial Ended</span>}
+                                {isExpiringSoon && !isExpired && <span className="text-xs text-amber-500">{daysLeft} days left</span>}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">N/A</span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
+                          {tenant.billing_cycle || 'Monthly'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                          {formatDate(tenant.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleSendReminder(tenant)}
+                            className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 mr-4"
+                            title="Send Expiry Reminder"
+                          >
+                            <Bell className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => setSelectedTenant(tenant)}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-4"
+                          >
+                            Manage
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {
           activeTab === 'support' && (
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-              <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                {tickets.map((ticket) => (
-                  <li key={ticket.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <div className="flex justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="px-2 py-1 text-xs font-bold rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                            #{ticket.ticket_number}
-                          </span>
-                          <h3 className="text-lg font-medium text-indigo-600 dark:text-indigo-400">
+            <div className="space-y-4 md:p-0 p-4">
+              {tickets.length === 0 ? (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center text-gray-500 border border-slate-200 dark:border-gray-700">
+                  <LifeBuoy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  No support tickets found.
+                </div>
+              ) : (
+                tickets.map((ticket) => (
+                  <div key={ticket.id} className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all shadow-sm">
+                    {/* Header - Always Visible */}
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer active:bg-gray-50 dark:active:bg-gray-700/50"
+                      onClick={() => setExpandedTicketId(expandedTicketId === ticket.id ? null : ticket.id)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Status Icon/Badge */}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${ticket.status === 'open' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'}`}>
+                          {ticket.status === 'open' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-mono text-gray-500">#{ticket.ticket_number}</span>
+                            <span className="text-xs text-gray-400">• {new Date(ticket.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                             {ticket.subject}
                           </h3>
-                          <span className={`px-2 py-0.5 text-xs rounded-full font-bold uppercase ${ticket.status === 'open' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                            }`}>
-                            {ticket.status}
-                          </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <Building2 className="w-3 h-3" />
-                            {ticket.tenants?.name}
-                          </span>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{ticket.description}</p>
-                        <p className="text-xs text-gray-400">
-                          Raised by <strong>{ticket.profiles?.full_name}</strong> on {new Date(ticket.created_at).toLocaleString()}
-                        </p>
-
-                        {ticket.resolution_notes && (
-                          <div className="mt-3 bg-green-50 dark:bg-green-900/10 p-2 rounded text-sm text-green-800 border border-green-100 dark:border-green-900/30">
-                            <strong>Resolution:</strong> {ticket.resolution_notes}
-                          </div>
-                        )}
                       </div>
-
-                      <div className="ml-4 flex items-start">
-                        {ticket.status === 'open' && (
-                          <button
-                            onClick={() => {
-                              setSelectedTicket(ticket);
-                              setResolveModalOpen(true);
-                            }}
-                            className="px-3 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded hover:bg-indigo-700"
-                          >
-                            Resolve
-                          </button>
-                        )}
-                      </div>
+                      <ChevronDown size={18} className={`text-gray-400 ml-2 shrink-0 transition-transform ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} />
                     </div>
-                  </li>
-                ))}
-                {tickets.length === 0 && (
-                  <div className="p-12 text-center text-gray-500">
-                    <LifeBuoy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    No tickets found.
+
+                    {/* Expanded Body */}
+                    {expandedTicketId === ticket.id && (
+                      <div className="px-4 pb-4 pt-0 text-sm animate-fadeIn">
+                        <div className="pt-3 border-t border-slate-100 dark:border-gray-700 space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
+                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-md text-xs">
+                              {ticket.description}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Raised by: <strong>{ticket.profiles?.full_name}</strong></span>
+                            <span className="flex items-center gap-1"><Building2 size={12} /> {ticket.tenants?.name}</span>
+                          </div>
+
+                          {ticket.resolution_notes && (
+                            <div className="bg-green-50 dark:bg-green-900/10 p-3 rounded-md border border-green-100 dark:border-green-900/30">
+                              <p className="text-xs font-bold text-green-800 dark:text-green-300 mb-1 flex items-center gap-1">
+                                <CheckCircle2 size={12} /> Resolution
+                              </p>
+                              <p className="text-xs text-green-900 dark:text-green-200">{ticket.resolution_notes}</p>
+                            </div>
+                          )}
+
+                          {ticket.status === 'open' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedTicket(ticket); setResolveModalOpen(true); }}
+                              className="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transition-colors"
+                            >
+                              Resolve Ticket
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </ul>
+                ))
+              )}
             </div>
           )
         }
