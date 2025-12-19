@@ -29,7 +29,6 @@ export function PricingPage() {
 
   const handleSubscribe = async (planName: string, amount: number) => {
     if (!user) {
-      // Redirect to registration with plan details
       navigate(`/register?plan=${encodeURIComponent(planName)}&amount=${amount}`);
       return;
     }
@@ -40,52 +39,62 @@ export function PricingPage() {
     }
 
     setLoading(true);
+    
     try {
-      // Import subscription service
-      const { createRazorpaySubscription, recordPayment } = await import('../lib/subscriptionService');
-
-      // Determine billing cycle
       const billingCycle = planName === '6 Months' ? 'semi_annual' : planName === 'Yearly' ? 'yearly' : 'monthly';
-
-      // Create subscription
-      const { subscription } = await createRazorpaySubscription({
-        tenantId: tenant.id,
-        planId: `plan_${billingCycle}`,
-        customerName: tenant.name,
-        customerEmail: user.email || 'customer@example.com',
-        customerContact: '9999999999', // Should come from tenant/user profile
-        billingCycle: billingCycle as 'monthly' | 'semi_annual' | 'yearly',
-      });
-
-      // Open Razorpay subscription checkout
+      
+      // Simple Razorpay checkout (no subscription API)
       await openPaymentModal({
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2',
-        amount: amount * 100, // Amount in paise (for first payment)
+        amount: amount * 100, // Amount in paise
         currency: 'INR',
         name: 'RealSalePro',
-        description: `${planName} Subscription - Recurring Billing`,
-        order_id: '', // Subscription doesn't need order_id
+        description: `${planName} Plan - ${billingCycle === 'monthly' ? 'Monthly' : billingCycle === 'semi_annual' ? '6 Months' : 'Yearly'} Subscription`,
         image: '/images/RealSalePro_Favicon.png',
-        subscription_id: subscription.razorpay_subscription_id,
         handler: async (response) => {
           try {
-            // Record successful payment
-            await recordPayment({
-              tenant_id: tenant.id,
-              subscription_id: subscription.id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              amount: amount * 100,
-              currency: 'INR',
-              status: 'captured',
-              description: `${planName} Subscription - First Payment`,
-              email: user.email || undefined,
-            });
+            // Import supabase
+            const { supabase } = await import('../lib/supabase');
+            
+            // Update tenant subscription
+            const { error: updateError } = await supabase
+              .from('tenants')
+              .update({
+                plan_tier: 'pro',
+                billing_cycle: billingCycle,
+                is_active: true,
+                subscription_status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', tenant.id);
 
-            alert(`Subscription Activated! Payment ID: ${response.razorpay_payment_id}\n\nYour subscription will auto-renew every ${billingCycle === 'monthly' ? 'month' : billingCycle === 'semi_annual' ? '6 months' : 'year'}.`);
+            if (updateError) {
+              console.error('Error updating subscription:', updateError);
+              alert('Payment successful but failed to activate subscription. Please contact support with Payment ID: ' + response.razorpay_payment_id);
+              return;
+            }
+
+            // Record payment in billing history
+            try {
+              await supabase.from('billing_history').insert({
+                tenant_id: tenant.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                amount: amount * 100,
+                currency: 'INR',
+                status: 'captured',
+                description: `${planName} Plan Payment`,
+                email: user.email || undefined,
+              });
+            } catch (billingError) {
+              console.error('Error recording billing:', billingError);
+              // Don't fail the whole flow if billing record fails
+            }
+
+            alert(`✅ Payment Successful!\n\nPayment ID: ${response.razorpay_payment_id}\nPlan: ${planName}\n\nYour account has been upgraded to Pro!`);
             navigate('/dashboard');
           } catch (error) {
-            console.error('Error recording payment:', error);
-            alert('Payment successful but failed to record. Please contact support.');
+            console.error('Error processing payment:', error);
+            alert('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
           }
         },
         prefill: {
@@ -98,13 +107,14 @@ export function PricingPage() {
         },
         notes: {
           tenant_id: tenant.id,
+          plan_name: planName,
           billing_cycle: billingCycle,
-          subscription_type: 'recurring',
         },
       });
-    } catch (error: any) {
-      console.error('Subscription creation failed:', error);
-      alert(`Failed to create subscription: ${error.message || 'Unknown error'}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Payment initialization failed:', error);
+      alert(`Failed to initialize payment: ${errorMessage}\n\nPlease try again or contact support.`);
     } finally {
       setLoading(false);
     }
