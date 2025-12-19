@@ -45,6 +45,10 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
         return true;
     });
 
+    // Determine if menu is crowded (more than 4 items + Sign Out = 5)
+    // If crowded, enable horizontal scrolling instead of squeezing
+    const isCrowded = filteredNavItems.length + 1 > 5;
+
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark pb-24 transition-colors duration-300">
             <ProfileModal
@@ -103,7 +107,7 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
 
             {/* Bottom Navigation */}
             <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-surface-dark border-t border-slate-200 dark:border-white/10 z-50 pb-[env(safe-area-inset-bottom)]">
-                <div className="flex w-full py-2 px-2 gap-1 items-center justify-between">
+                <div className={`flex w-full py-2 items-center ${isCrowded ? 'overflow-x-auto justify-start px-4 gap-3' : 'justify-between px-2 gap-1'}`}>
                     {filteredNavItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -111,11 +115,11 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                             <button
                                 key={item.path}
                                 onClick={() => navigate(item.path)}
-                                className={`flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition-all ${isActive ? 'text-blue-600 dark:text-primary bg-blue-50 dark:bg-white/5' : 'text-slate-400 dark:text-text-muted hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white'
+                                className={`${isCrowded ? 'flex-none min-w-[64px]' : 'flex-1'} flex flex-col items-center justify-center py-2 rounded-xl transition-all ${isActive ? 'text-blue-600 dark:text-primary bg-blue-50 dark:bg-white/5' : 'text-slate-400 dark:text-text-muted hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white'
                                     }`}
                             >
                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'mb-1' : 'mb-1 opacity-70'} />
-                                <span className={`text-[10px] font-medium leading-none ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                                <span className={`text-[10px] font-medium leading-none whitespace-nowrap ${isActive ? 'opacity-100' : 'opacity-70'}`}>
                                     {item.label}
                                 </span>
                             </button>
@@ -123,10 +127,10 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                     })}
                     <button
                         onClick={async () => { await signOut(); navigate('/login'); }}
-                        className="flex-1 flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 dark:text-text-muted hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all"
+                        className={`${isCrowded ? 'flex-none min-w-[64px]' : 'flex-1'} flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 dark:text-text-muted hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all`}
                     >
                         <LogOut size={20} className="mb-1 opacity-70" />
-                        <span className="text-[10px] font-medium leading-none opacity-70">Sign Out</span>
+                        <span className="text-[10px] font-medium leading-none opacity-70 whitespace-nowrap">Sign Out</span>
                     </button>
                 </div>
             </div>
