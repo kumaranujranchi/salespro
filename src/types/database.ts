@@ -49,6 +49,59 @@ export interface Tenant {
   settings: TenantSettings;
   subscription_status: string;
   plan_tier: string;
+  billing_cycle?: string;
+  subscription_id?: string;
+  razorpay_customer_id?: string;
+  next_billing_date?: string;
+  trial_ends_at?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  tenant_id: string;
+  razorpay_subscription_id: string;
+  razorpay_plan_id: string;
+  status: 'created' | 'authenticated' | 'active' | 'paused' | 'halted' | 'cancelled' | 'completed' | 'expired';
+  current_start?: string;
+  current_end?: string;
+  ended_at?: string;
+  charge_at?: string;
+  start_at?: string;
+  end_at?: string;
+  auth_attempts: number;
+  total_count?: number;
+  paid_count: number;
+  remaining_count?: number;
+  short_url?: string;
+  customer_notify: boolean;
+  quantity: number;
+  notes?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BillingHistory {
+  id: string;
+  tenant_id: string;
+  subscription_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
+  razorpay_invoice_id?: string;
+  amount: number; // in paise
+  currency: string;
+  status: 'created' | 'authorized' | 'captured' | 'refunded' | 'failed';
+  method?: string; // card, netbanking, wallet, upi
+  description?: string;
+  email?: string;
+  contact?: string;
+  fee?: number; // Razorpay fee in paise
+  tax?: number; // Tax in paise
+  error_code?: string;
+  error_description?: string;
+  notes?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

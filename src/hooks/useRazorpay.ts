@@ -8,7 +8,8 @@ interface RazorpayOptions {
   name: string;
   description: string;
   image?: string;
-  order_id: string;
+  order_id?: string;
+  subscription_id?: string; // For subscription payments
   handler: (response: any) => void;
   prefill?: {
     name?: string;
@@ -18,6 +19,7 @@ interface RazorpayOptions {
   theme?: {
     color?: string;
   };
+  notes?: Record<string, any>;
 }
 
 export const useRazorpay = () => {

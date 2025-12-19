@@ -1,10 +1,10 @@
 
+
 import { useState, useEffect } from 'react';
 import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { useRazorpay } from '../hooks/useRazorpay';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export function PricingPage() {
   const { openPaymentModal } = useRazorpay();
@@ -34,119 +34,78 @@ export function PricingPage() {
       return;
     }
 
+    if (!tenant?.id) {
+      alert('Tenant information not found. Please try again.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // 1. Create Order on Backend
-      const response = await fetch('/.netlify/functions/create-payment-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency: 'INR', receipt: `receipt_${Date.now()}` })
+      // Import subscription service
+      const { createRazorpaySubscription, recordPayment } = await import('../lib/subscriptionService');
+
+      // Determine billing cycle
+      const billingCycle = planName === '6 Months' ? 'semi_annual' : planName === 'Yearly' ? 'yearly' : 'monthly';
+
+      // Create subscription
+      const { subscription, shortUrl } = await createRazorpaySubscription({
+        tenantId: tenant.id,
+        planId: `plan_${billingCycle}`,
+        customerName: tenant.name,
+        customerEmail: user.email || 'customer@example.com',
+        customerContact: '9999999999', // Should come from tenant/user profile
+        billingCycle: billingCycle as 'monthly' | 'semi_annual' | 'yearly',
       });
 
-      if (!response.ok) throw new Error('Failed to create order');
-      const order = await response.json();
-
-      // 2. Open Razorpay Checkout
+      // Open Razorpay subscription checkout
       await openPaymentModal({
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2', // Frontend Key with fallback
-        amount: order.amount, // Amount in paise
-        currency: order.currency,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2',
+        amount: amount * 100, // Amount in paise (for first payment)
+        currency: 'INR',
         name: 'RealSalePro',
-        description: `Subscription for ${planName}`,
-        order_id: order.id,
+        description: `${planName} Subscription - Recurring Billing`,
+        order_id: '', // Subscription doesn't need order_id
         image: '/images/RealSalePro_Favicon.png',
+        subscription_id: subscription.razorpay_subscription_id,
         handler: async (response) => {
-          // 3. Update Tenant Subscription on Success
-          if (tenant?.id) {
-            const billingCycle = planName === '6 Months' ? 'semi_annual' : planName.toLowerCase();
-            const trialEndsAt = new Date();
-            trialEndsAt.setDate(trialEndsAt.getDate() + 30); // 30 Day Free Trial
+          try {
+            // Record successful payment
+            await recordPayment({
+              tenant_id: tenant.id,
+              subscription_id: subscription.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              amount: amount * 100,
+              currency: 'INR',
+              status: 'captured',
+              description: `${planName} Subscription - First Payment`,
+              email: user.email || undefined,
+            });
 
-            const { error: updateError } = await supabase
-              .from('tenants')
-              .update({
-                plan_tier: 'pro',
-                billing_cycle: billingCycle,
-                is_active: true,
-                trial_ends_at: trialEndsAt.toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', tenant.id);
-
-            if (updateError) {
-              console.error('Error updating subscription:', updateError);
-              alert('Payment successful but failed to update subscription. Please contact support.');
-            }
+            alert(`Subscription Activated! Payment ID: ${response.razorpay_payment_id}\n\nYour subscription will auto-renew every ${billingCycle === 'monthly' ? 'month' : billingCycle === 'semi_annual' ? '6 months' : 'year'}.`);
+            navigate('/dashboard');
+          } catch (error) {
+            console.error('Error recording payment:', error);
+            alert('Payment successful but failed to record. Please contact support.');
           }
-
-          alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-          setLoading(false);
-          navigate('/dashboard');
         },
         prefill: {
-          name: 'Test User',
-          email: 'test@example.com',
-          contact: '9999999999'
+          name: tenant.name,
+          email: user.email || 'customer@example.com',
+          contact: '9999999999',
         },
         theme: {
-          color: '#0F172A'
-        }
+          color: '#0F172A',
+        },
+        notes: {
+          tenant_id: tenant.id,
+          billing_cycle: billingCycle,
+          subscription_type: 'recurring',
+        },
       });
     } catch (error: any) {
-      console.warn('Backend Order Creation Failed, falling back to Client-Side (TEST MODE ONLY)', error);
-
-      // Fallback for Local Development (when backend function is unreachable)
-      const isDev = import.meta.env.DEV;
-      if (isDev) {
-        try {
-          await openPaymentModal({
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2',
-            amount: amount * 100, // Amount in paise
-            currency: 'INR',
-            name: 'RealSalePro',
-            description: `Subscription for ${planName} (Test Mode)`,
-            order_id: '', // Empty order_id for client-side test
-            image: '/images/RealSalePro_Favicon.png',
-            handler: async (response) => {
-              // Update Tenant Subscription on Success (Test Mode)
-              if (tenant?.id) {
-                const billingCycle = planName === '6 Months' ? 'semi_annual' : planName.toLowerCase();
-                const trialEndsAt = new Date();
-                trialEndsAt.setDate(trialEndsAt.getDate() + 30);
-
-                const { error: updateError } = await supabase
-                  .from('tenants')
-                  .update({
-                    plan_tier: 'pro',
-                    billing_cycle: billingCycle,
-                    is_active: true,
-                    trial_ends_at: trialEndsAt.toISOString(),
-                    updated_at: new Date().toISOString()
-                  })
-                  .eq('id', tenant.id);
-
-                if (updateError) console.error('Error updating subscription (mock):', updateError);
-              }
-
-              alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-              setLoading(false);
-              navigate('/dashboard');
-            },
-            prefill: {
-              name: 'Test User',
-              email: 'test@example.com',
-              contact: '9999999999'
-            },
-            theme: {
-              color: '#0F172A'
-            }
-          });
-        } catch (fallbackError: any) {
-          alert(`Payment execution failed: ${fallbackError.message}`);
-        }
-      } else {
-        alert(`Payment execution failed: ${error.message}`);
-      }
+      console.error('Subscription creation failed:', error);
+      alert(`Failed to create subscription: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
