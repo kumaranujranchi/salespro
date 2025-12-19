@@ -229,6 +229,7 @@ export function PricingPage() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Payment Success Modal */}
       <PaymentSuccessModal
