@@ -14,6 +14,8 @@ import {
   Receipt
 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface TenantData {
   id: string;
@@ -37,7 +39,7 @@ interface BillingRecord {
 }
 
 export function SubscriptionPage() {
-  const { tenant } = useAuth();
+  const { tenant, user } = useAuth();
   const navigate = useNavigate();
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
@@ -105,7 +107,6 @@ export function SubscriptionPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        // Table might not exist yet if migrations haven't run, ignore safely
         console.warn('Could not fetch billing history', error);
         return;
       }
@@ -116,6 +117,103 @@ export function SubscriptionPage() {
     } catch (err) {
       console.warn('Error fetching billing history:', err);
     }
+  };
+
+  const generateInvoice = (record: BillingRecord) => {
+    const doc = new jsPDF();
+
+    // Brand Colors
+    const primaryColor = '#4F46E5'; // Indigo 600
+
+    // Header
+    doc.setFontSize(24);
+    doc.setTextColor(primaryColor);
+    doc.text('TAX INVOICE', 14, 25);
+
+    // Company Details (Seller)
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Synergy Brand Architect', 14, 40);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Patna, Bihar', 14, 46);
+    doc.text('Email: support@realsalepro.com', 14, 52);
+
+    // Invoice Details (Right Side)
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const rightColX = 140;
+    doc.text(`Invoice Date: ${new Date(record.created_at).toLocaleDateString()}`, rightColX, 40);
+    doc.text(`Invoice #: ${record.id.slice(0, 8).toUpperCase()}`, rightColX, 46);
+    doc.text(`Payment ID: ${record.razorpay_payment_id}`, rightColX, 52);
+
+    // Bill To
+    doc.text('Bill To:', 14, 65);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.text(tenant?.name || 'Valued Customer', 14, 71);
+    if (user?.email) {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(user.email, 14, 76);
+    }
+
+    // Calculations
+    // Assuming Amount is Inclusive of 18% GST because most B2C prices are inclusive
+    const totalAmount = record.amount / 100;
+    const baseAmount = totalAmount / 1.18;
+    const gstAmount = totalAmount - baseAmount;
+
+    // Table
+    autoTable(doc, {
+      startY: 85,
+      head: [['Description', 'Base Amount', 'GST (18%)', 'Total']],
+      body: [
+        [
+          record.description || 'Subscription Plan',
+          `INR ${baseAmount.toFixed(2)}`,
+          `INR ${gstAmount.toFixed(2)}`,
+          `INR ${totalAmount.toFixed(2)}`
+        ],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229] }, // Indigo 600
+      styles: { fontSize: 10, cellPadding: 5 },
+    });
+
+    // Total Section
+    // @ts-ignore
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Subtotal:', 140, finalY);
+    doc.text('IGST (18%):', 140, finalY + 6);
+
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Grand Total:', 140, finalY + 14);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`INR ${baseAmount.toFixed(2)}`, 170, finalY, { align: 'right' });
+    doc.text(`INR ${gstAmount.toFixed(2)}`, 170, finalY + 6, { align: 'right' });
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(primaryColor);
+    doc.text(`INR ${totalAmount.toFixed(2)}`, 170, finalY + 14, { align: 'right' });
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont('helvetica', 'normal');
+    const pageHeight = doc.internal.pageSize.height;
+    doc.text('This is a computer generated invoice and does not require a signature.', 14, pageHeight - 20);
+
+    // Save
+    doc.save(`Invoice_${record.id.slice(0, 8)}.pdf`);
   };
 
   const trialFeatures = [
@@ -214,8 +312,8 @@ export function SubscriptionPage() {
                   <Shield className="w-6 h-6" />
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                  isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                    'bg-red-100 text-red-700'
+                    isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      'bg-red-100 text-red-700'
                   }`}>
                   {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
                 </span>
@@ -364,7 +462,11 @@ export function SubscriptionPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors" title="Download Invoice">
+                          <button
+                            onClick={() => generateInvoice(record)}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                            title="Download Invoice"
+                          >
                             <Download className="w-4 h-4" />
                           </button>
                         </td>
