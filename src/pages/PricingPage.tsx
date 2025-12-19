@@ -1,10 +1,12 @@
 
 
+
 import { useState, useEffect } from 'react';
 import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { useRazorpay } from '../hooks/useRazorpay';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { PaymentSuccessModal } from '../components/ui/PaymentSuccessModal';
 
 export function PricingPage() {
   const { openPaymentModal } = useRazorpay();
@@ -12,6 +14,10 @@ export function PricingPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Payment Success Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({ paymentId: '', planName: '' });
 
   // Auto-trigger checkout if returning from registration
   useEffect(() => {
@@ -90,8 +96,12 @@ export function PricingPage() {
               // Don't fail the whole flow if billing record fails
             }
 
-            alert(`✅ Payment Successful!\n\nPayment ID: ${response.razorpay_payment_id}\nPlan: ${planName}\n\nYour account has been upgraded to Pro!`);
-            navigate('/dashboard');
+            // Show success modal instead of alert
+            setPaymentDetails({
+              paymentId: response.razorpay_payment_id,
+              planName: planName
+            });
+            setShowSuccessModal(true);
           } catch (error) {
             console.error('Error processing payment:', error);
             alert('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
@@ -121,7 +131,8 @@ export function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+    <>
+      <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <Link to={user ? "/dashboard" : "/"} className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -218,6 +229,18 @@ export function PricingPage() {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Payment Success Modal */}
+      <PaymentSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          // Reload page to refresh tenant data from AuthContext
+          window.location.href = '/dashboard';
+        }}
+        paymentId={paymentDetails.paymentId}
+        planName={paymentDetails.planName}
+      />
+    </>
   );
 }
