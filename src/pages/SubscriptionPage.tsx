@@ -35,28 +35,28 @@ export function SubscriptionPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('tenants')
-        .select('*')
+        .select('id, name, plan_tier, billing_cycle, trial_ends_at, subscription_status, is_active')
         .eq('id', tenant.id)
         .single();
 
       if (fetchError) throw fetchError;
 
-      setTenantData(data);
+      if (!data) {
+        throw new Error('Tenant data not found');
+      }
+
+      setTenantData(data as TenantData);
 
       // Calculate days remaining
-      // Use trial_ends_at if available, otherwise calculate 30 days from created_at
+      // Use trial_ends_at if available
       let endDate: Date;
 
       if (data.trial_ends_at) {
         endDate = new Date(data.trial_ends_at);
-      } else if (data.created_at) {
-        // Fallback: 30 days trial from creation
-        const createdDate = new Date(data.created_at);
-        endDate = new Date(createdDate.setDate(createdDate.getDate() + 30));
       } else {
-        // Fallback if no dates (shouldn't happen)
-        setDaysRemaining(0);
-        return;
+        // Fallback if no dates (default to 14 days from now if missing)
+        const now = new Date();
+        endDate = new Date(now.setDate(now.getDate() + 14));
       }
 
       const now = new Date();

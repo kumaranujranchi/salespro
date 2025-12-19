@@ -119,17 +119,30 @@ export function AdminDashboard() {
         { count: projectCount },
         { count: teamCount },
         { count: departmentCount },
-        { data: activities },
+        // { data: activities } - Fetched separately to prevent crash
         { data: allTimeProjectSales },
         { data: projectsData }
       ] = await Promise.all([
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('activity_logs').select('*, user:user_id(full_name)').order('created_at', { ascending: false }).limit(500),
         supabase.from('sales').select('project_id, area_sqft').filter('sales_executive_id', salesView === 'self' ? 'eq' : 'neq', salesView === 'self' ? profile?.id : '00000000-0000-0000-0000-000000000000'),
         supabase.from('projects').select('id, name')
       ]);
+
+      // Fetch Activity Logs separately
+      try {
+        const { data: activities } = await supabase
+          .from('activity_logs')
+          .select('*')
+          .limit(50);
+
+        if (activities) {
+          setActivityLogs(activities);
+        }
+      } catch (logError) {
+        console.warn('Failed to load activity logs', logError);
+      }
 
       // Calculate Project Performance (All Time)
       const projectAreaMap = new Map<string, number>();
@@ -255,9 +268,7 @@ export function AdminDashboard() {
         projectStats: topProjects,
       });
 
-      if (activities) {
-        setActivityLogs(activities);
-      }
+      // Activities set above in try-catch block
 
       // Fetch Announcements
       const { data: announcementData } = await supabase
@@ -357,7 +368,7 @@ export function AdminDashboard() {
     upcoming_events: true,
     recent_activity: true
   };
-  
+
   const salesView = permissions.sales_view || 'overall';
 
   return (
@@ -400,10 +411,10 @@ export function AdminDashboard() {
       {permissions.project_performance && tenant?.settings?.features?.inventory !== false && stats.projectStats.length > 0 && (
         <div
           className={`grid gap-4 md:gap-6 transition-all duration-300 ${stats.projectStats.length === 1
-              ? 'grid-cols-1'
-              : stats.projectStats.length === 2
-                ? 'grid-cols-1 md:grid-cols-2'
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+            ? 'grid-cols-1'
+            : stats.projectStats.length === 2
+              ? 'grid-cols-1 md:grid-cols-2'
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
             }`}
         >
           {stats.projectStats.map((project, idx) => (
@@ -734,10 +745,10 @@ export function AdminDashboard() {
           </div>
         )}
       </div>
-      
+
       {permissions.upcoming_events && (
         <div className="mt-8">
-           <UpcomingEvents />
+          <UpcomingEvents />
         </div>
       )}
     </div>
