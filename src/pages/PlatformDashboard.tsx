@@ -1129,6 +1129,14 @@ export function PlatformDashboard() {
                         <span className={`inline-block w-2 h-2 rounded-full ${selectedTenant.subscription_status === 'active' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
                         <span className="font-bold text-slate-900 dark:text-white capitalize">{selectedTenant.subscription_status}</span>
                       </div>
+                      <button
+                        onClick={() => handleSendReminder(selectedTenant)}
+                        style={{ marginTop: '0.75rem' }}
+                        className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors border border-indigo-200 dark:border-indigo-500/30 rounded px-2 py-1 bg-indigo-50 dark:bg-indigo-900/10"
+                      >
+                        <Bell className="w-3 h-3" />
+                        Send Reminder
+                      </button>
                     </div>
                     <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-100 dark:border-white/5">
                       <p className="text-xs text-slate-500 uppercase font-semibold">Plan Tier</p>
