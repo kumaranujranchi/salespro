@@ -4,9 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
   Check,
-  Clock,
   Zap,
-  ArrowRight,
   AlertCircle,
   Loader2,
   CreditCard,
@@ -44,7 +42,6 @@ export function SubscriptionPage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
 
@@ -118,8 +115,6 @@ export function SubscriptionPage() {
       }
     } catch (err) {
       console.warn('Error fetching billing history:', err);
-    } finally {
-      setHistoryLoading(false);
     }
   };
 
@@ -219,8 +214,8 @@ export function SubscriptionPage() {
                   <Shield className="w-6 h-6" />
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                    isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                      'bg-red-100 text-red-700'
+                  isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                    'bg-red-100 text-red-700'
                   }`}>
                   {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
                 </span>
