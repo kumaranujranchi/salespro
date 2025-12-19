@@ -56,12 +56,12 @@ export function LandingPage() {
             icon: Users,
             title: 'Advanced CRM & Lead Tracking',
             description: 'Capture leads from Ads, Walk-ins, & Partners. Visualize your entire sales funnel with dynamic charts.',
-            color: 'bg-blue-500'
+            color: 'bg-emerald-500'
         },
         {
             icon: Target,
             title: 'Sales & Incentive Automation',
-            description: 'Set monthly targets, track live achievement, and automate complex incentive calculations.',
+            description: 'Set monthly targets & track achievement. Note: Custom Incentive Automation is ONLY available with Self-Hosted Database.',
             color: 'bg-green-500'
         },
         {
@@ -123,20 +123,20 @@ export function LandingPage() {
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
-                                    className={`text-sm font-medium hover:text-[#1673FF] transition-colors ${scrollY > 20 ? 'text-gray-700' : 'text-gray-200'}`}
+                                    className={`text-sm font-medium hover:text-[#10B981] transition-colors ${scrollY > 20 ? 'text-gray-700' : 'text-gray-200'}`}
                                 >
                                     {item}
                                 </a>
                             ))}
                             <Link
                                 to="/pricing"
-                                className={`text-sm font-medium hover:text-[#1673FF] transition-colors ${scrollY > 20 ? 'text-gray-700' : 'text-gray-200'}`}
+                                className={`text-sm font-medium hover:text-[#10B981] transition-colors ${scrollY > 20 ? 'text-gray-700' : 'text-gray-200'}`}
                             >
                                 Pricing
                             </Link>
                             <button
                                 onClick={handleLoginClick}
-                                className={`text-sm font-semibold transition-colors ${scrollY > 20 ? 'text-gray-700 hover:text-[#1673FF]' : 'text-white hover:text-gray-200'}`}
+                                className={`text-sm font-semibold transition-colors ${scrollY > 20 ? 'text-gray-700 hover:text-[#10B981]' : 'text-white hover:text-gray-200'}`}
                             >
                                 Login
                             </button>
@@ -144,8 +144,8 @@ export function LandingPage() {
                                 onClick={handleRegisterClick}
                                 disabled={isLoading}
                                 className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${scrollY > 20
-                                    ? 'bg-[#1673FF] text-white hover:bg-[#0A1C37]'
-                                    : 'bg-white text-[#1673FF] hover:bg-gray-100'
+                                    ? 'bg-[#10B981] text-white hover:bg-[#0E1A15]'
+                                    : 'bg-white text-[#10B981] hover:bg-gray-100'
                                     }`}
                             >
                                 Start Free Trial
@@ -170,7 +170,7 @@ export function LandingPage() {
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
-                                    className="block py-2 text-gray-700 hover:text-[#1673FF] font-medium"
+                                    className="block py-2 text-gray-700 hover:text-[#10B981] font-medium"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {item}
@@ -178,13 +178,13 @@ export function LandingPage() {
                             ))}
                             <button
                                 onClick={handleLoginClick}
-                                className="block w-full text-left py-2 text-gray-700 hover:text-[#1673FF] font-medium"
+                                className="block w-full text-left py-2 text-gray-700 hover:text-[#10B981] font-medium"
                             >
                                 Login
                             </button>
                             <button
                                 onClick={handleRegisterClick}
-                                className="w-full px-6 py-3 bg-[#1673FF] text-white rounded-lg hover:bg-[#0A1C37] transition-all font-semibold"
+                                className="w-full px-6 py-3 bg-[#10B981] text-white rounded-lg hover:bg-[#0E1A15] transition-all font-semibold"
                             >
                                 Start 30-Day Free Trial
                             </button>
@@ -194,15 +194,15 @@ export function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-[#0A1C37] overflow-hidden">
+            <section className="relative min-h-screen flex items-center justify-center pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-[#0E1A15] overflow-hidden">
                 {/* Dynamic Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#0A1C37] via-[#112D55] to-[#1673FF] opacity-90"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0E1A15] via-[#113028] to-[#10B981] opacity-90"></div>
 
                 {/* Particle Effects */}
                 <ParticlesBackground />
 
                 {/* Decorative Glowing Orbs */}
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#1673FF] rounded-full blur-[128px] opacity-20 animate-pulse-slow"></div>
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#10B981] rounded-full blur-[128px] opacity-20 animate-pulse-slow"></div>
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[128px] opacity-20 animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
 
                 <div className="max-w-7xl mx-auto relative z-10 w-full">
@@ -210,13 +210,13 @@ export function LandingPage() {
                         {/* Left Content */}
                         <div className="space-y-8 animate-slideInLeft text-center lg:text-left">
                             <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/20 transition-colors cursor-default">
-                                <Globe size={16} className="text-[#1673FF]" />
+                                <Globe size={16} className="text-[#10B981]" />
                                 <span className="text-sm text-gray-200">Start your 30-day free trial today</span>
                             </div>
 
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white tracking-tight">
                                 Transform Your <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1673FF] via-[#60A5FA] to-white">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-[#34D399] to-white">
                                     Sales & CRM
                                 </span>
                             </h1>
@@ -229,7 +229,7 @@ export function LandingPage() {
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <button
                                     onClick={handleRegisterClick}
-                                    className="group px-8 py-4 bg-[#1673FF] text-white rounded-xl font-bold text-lg hover:bg-[#1361D6] hover:shadow-[0_0_20px_rgba(22,115,255,0.5)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
+                                    className="group px-8 py-4 bg-[#10B981] text-white rounded-xl font-bold text-lg hover:bg-[#059669] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
                                 >
                                     <span>Start Free Trial</span>
                                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -270,11 +270,11 @@ export function LandingPage() {
 
                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div className="bg-white/10 p-4 rounded-xl">
-                                        <div className="h-8 w-8 bg-blue-500 rounded-lg mb-3 flex items-center justify-center">
+                                        <div className="h-8 w-8 bg-emerald-500 rounded-lg mb-3 flex items-center justify-center">
                                             <TrendingUp size={16} className="text-white" />
                                         </div>
                                         <div className="text-2xl font-bold text-white mb-1">₹8.4Cr</div>
-                                        <div className="text-xs text-blue-200">+12% Bookings</div>
+                                        <div className="text-xs text-emerald-200">+12% Bookings</div>
                                     </div>
                                     <div className="bg-white/10 p-4 rounded-xl">
                                         <div className="h-8 w-8 bg-green-500 rounded-lg mb-3 flex items-center justify-center">
@@ -289,7 +289,7 @@ export function LandingPage() {
                                     <div className="h-24 bg-white/5 rounded-xl border border-white/5 p-3 flex items-end justify-between gap-2">
                                         {/* Fake Chart Bars */}
                                         {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
-                                            <div key={i} className="w-full bg-blue-500/50 hover:bg-blue-500 transition-colors rounded-t-sm" style={{ height: `${h}%` }}></div>
+                                            <div key={i} className="w-full bg-emerald-500/50 hover:bg-emerald-500 transition-colors rounded-t-sm" style={{ height: `${h}%` }}></div>
                                         ))}
                                     </div>
                                 </div>
@@ -329,8 +329,8 @@ export function LandingPage() {
             <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-white relative">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20 animate-fadeIn">
-                        <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Capabilities</h2>
-                        <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
+                        <h2 className="text-sm font-bold text-[#10B981] tracking-widest uppercase mb-3">Capabilities</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#0E1A15] mb-6">
                             One Solution. Complete Control.
                         </h2>
                         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -342,12 +342,12 @@ export function LandingPage() {
                         {features.map((feature, index) => (
                             <div
                                 key={index}
-                                className="group bg-gray-50 p-8 rounded-2xl border border-gray-100 hover:border-[#1673FF]/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-2"
+                                className="group bg-gray-50 p-8 rounded-2xl border border-gray-100 hover:border-[#10B981]/30 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 transform hover:-translate-y-2"
                             >
                                 <div className={`w-14 h-14 ${feature.color} bg-opacity-10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                                     <feature.icon size={28} className={feature.color.replace('bg-', 'text-')} />
                                 </div>
-                                <h3 className="text-xl font-bold text-[#0A1C37] mb-3">{feature.title}</h3>
+                                <h3 className="text-xl font-bold text-[#0E1A15] mb-3">{feature.title}</h3>
                                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
                             </div>
                         ))}
@@ -360,15 +360,15 @@ export function LandingPage() {
 
 
             {/* Benefits Section - Dark Mode Contrast */}
-            <section id="benefits" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#0F172A] text-white relative overflow-hidden">
+            <section id="benefits" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#0E1A15] text-white relative overflow-hidden">
                 {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#1673FF 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+                <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#10B981 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
 
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         {/* Right - Image/Visual (Swapped for variety) */}
                         <div className="order-2 md:order-1 relative animate-slideInLeft">
-                            <div className="absolute inset-0 bg-[#1673FF] blur-[100px] opacity-20"></div>
+                            <div className="absolute inset-0 bg-[#10B981] blur-[100px] opacity-20"></div>
                             <img
                                 src="/images/sales-analytics-growth.png"
                                 alt="Sales Analytics Growth"
@@ -376,7 +376,7 @@ export function LandingPage() {
                             />
                             {/* Floating Stats */}
                             <div className="absolute bottom-10 -left-10 bg-white text-gray-900 p-6 rounded-xl shadow-xl z-20">
-                                <div className="text-4xl font-bold text-[#1673FF] mb-1">3.5x</div>
+                                <div className="text-4xl font-bold text-[#10B981] mb-1">3.5x</div>
                                 <div className="text-sm font-semibold">ROI Average</div>
                             </div>
                         </div>
@@ -384,7 +384,7 @@ export function LandingPage() {
                         {/* Left - Benefits List */}
                         <div className="order-1 md:order-2 space-y-8 animate-slideInRight">
                             <div>
-                                <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Why Us?</h2>
+                                <h2 className="text-sm font-bold text-[#10B981] tracking-widest uppercase mb-3">Why Us?</h2>
                                 <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
                                     Built for High-Growth Real Estate Teams
                                 </h2>
@@ -417,8 +417,8 @@ export function LandingPage() {
             <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-sm font-bold text-[#1673FF] tracking-widest uppercase mb-3">Security First</h2>
-                        <h2 className="text-4xl md:text-5xl font-bold text-[#0A1C37] mb-6">
+                        <h2 className="text-sm font-bold text-[#10B981] tracking-widest uppercase mb-3">Security First</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold text-[#0E1A15] mb-6">
                             Your Data, Your Control
                         </h2>
                         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -432,15 +432,15 @@ export function LandingPage() {
                             <button
                                 onClick={() => setActivePrivacyTab('encryption')}
                                 className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'encryption'
-                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    ? 'bg-white border-[#10B981] shadow-lg scale-105'
                                     : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
                                     }`}
                             >
-                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'encryption' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'encryption' ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-gray-100 text-gray-500'}`}>
                                     <Lock size={24} />
                                 </div>
                                 <div>
-                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'encryption' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Data Encryption</h3>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'encryption' ? 'text-[#0E1A15]' : 'text-gray-600'}`}>Data Encryption</h3>
                                     <p className="text-sm text-gray-500 mt-1">AES-256 Assurance</p>
                                 </div>
                             </button>
@@ -448,15 +448,15 @@ export function LandingPage() {
                             <button
                                 onClick={() => setActivePrivacyTab('privacy')}
                                 className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'privacy'
-                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    ? 'bg-white border-[#10B981] shadow-lg scale-105'
                                     : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
                                     }`}
                             >
-                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'privacy' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'privacy' ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-gray-100 text-gray-500'}`}>
                                     <EyeOff size={24} />
                                 </div>
                                 <div>
-                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'privacy' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Privacy Controls</h3>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'privacy' ? 'text-[#0E1A15]' : 'text-gray-600'}`}>Privacy Controls</h3>
                                     <p className="text-sm text-gray-500 mt-1">Optional Collection</p>
                                 </div>
                             </button>
@@ -464,15 +464,15 @@ export function LandingPage() {
                             <button
                                 onClick={() => setActivePrivacyTab('selfhosted')}
                                 className={`w-full text-left p-6 rounded-2xl transition-all duration-300 flex items-center space-x-4 border-2 ${activePrivacyTab === 'selfhosted'
-                                    ? 'bg-white border-[#1673FF] shadow-lg scale-105'
+                                    ? 'bg-white border-[#10B981] shadow-lg scale-105'
                                     : 'bg-white/50 border-transparent hover:bg-white hover:border-gray-200'
                                     }`}
                             >
-                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'selfhosted' ? 'bg-[#1673FF]/10 text-[#1673FF]' : 'bg-gray-100 text-gray-500'}`}>
+                                <div className={`p-3 rounded-xl ${activePrivacyTab === 'selfhosted' ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-gray-100 text-gray-500'}`}>
                                     <Database size={24} />
                                 </div>
                                 <div>
-                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'selfhosted' ? 'text-[#0A1C37]' : 'text-gray-600'}`}>Self-Hosted DB</h3>
+                                    <h3 className={`font-bold text-lg ${activePrivacyTab === 'selfhosted' ? 'text-[#0E1A15]' : 'text-gray-600'}`}>Self-Hosted DB</h3>
                                     <p className="text-sm text-gray-500 mt-1">Customer Managed</p>
                                 </div>
                             </button>
@@ -486,7 +486,7 @@ export function LandingPage() {
                                         <div className="p-4 bg-green-100 text-green-600 rounded-2xl">
                                             <Shield size={32} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Bank-Grade Data Encryption</h3>
+                                        <h3 className="text-2xl font-bold text-[#0E1A15]">Bank-Grade Data Encryption</h3>
                                     </div>
                                     <p className="text-lg text-gray-600 leading-relaxed">
                                         We employ industry-standard <strong>AES-256 encryption</strong> for all customer data, ensuring your information remains secure both at rest and in transit.
@@ -494,23 +494,23 @@ export function LandingPage() {
                                     <div className="grid md:grid-cols-2 gap-6 mt-8">
                                         <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                                             <div className="flex items-center space-x-3 mb-3">
-                                                <FileKey size={20} className="text-[#1673FF]" />
+                                                <FileKey size={20} className="text-[#10B981]" />
                                                 <h4 className="font-bold text-gray-900">At Rest</h4>
                                             </div>
                                             <p className="text-sm text-gray-500">All databases and backups are encrypted on disk using AES-256.</p>
                                         </div>
                                         <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                                             <div className="flex items-center space-x-3 mb-3">
-                                                <Globe size={20} className="text-[#1673FF]" />
+                                                <Globe size={20} className="text-[#10B981]" />
                                                 <h4 className="font-bold text-gray-900">In Transit</h4>
                                             </div>
                                             <p className="text-sm text-gray-500">Data transfers are protected via TLS 1.3 encryption protocols.</p>
                                         </div>
                                     </div>
                                     <div className="pt-6 mt-6 border-t border-gray-100">
-                                        <button 
+                                        <button
                                             onClick={() => setShowSecurityWhitepaper(true)}
-                                            className="text-[#1673FF] font-semibold hover:text-[#0A1C37] transition-colors flex items-center gap-2"
+                                            className="text-[#10B981] font-semibold hover:text-[#0E1A15] transition-colors flex items-center gap-2"
                                         >
                                             View Security Whitepaper <ArrowRight size={16} />
                                         </button>
@@ -524,7 +524,7 @@ export function LandingPage() {
                                         <div className="p-4 bg-purple-100 text-purple-600 rounded-2xl">
                                             <EyeOff size={32} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Optional Sensitive Data Collection</h3>
+                                        <h3 className="text-2xl font-bold text-[#0E1A15]">Optional Sensitive Data Collection</h3>
                                     </div>
                                     <p className="text-lg text-gray-600 leading-relaxed">
                                         We believe in minimizing data liability. Sensitive customer details are completely <strong>non-mandatory</strong>.
@@ -553,16 +553,25 @@ export function LandingPage() {
                             {activePrivacyTab === 'selfhosted' && (
                                 <div className="animate-fadeIn space-y-6">
                                     <div className="flex items-center space-x-4 mb-6">
-                                        <div className="p-4 bg-blue-100 text-blue-600 rounded-2xl">
+                                        <div className="p-4 bg-emerald-100 text-emerald-600 rounded-2xl">
                                             <Server size={32} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-[#0A1C37]">Bring Your Own Database</h3>
+                                        <h3 className="text-2xl font-bold text-[#0E1A15]">Bring Your Own Database</h3>
                                     </div>
                                     <p className="text-lg text-gray-600 leading-relaxed">
                                         For regulated industries or maximum control, RealSalePro supports <strong>Self-Hosted Database</strong> connections.
                                     </p>
+                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-start gap-3">
+                                        <CheckCircle className="text-emerald-500 mt-1 shrink-0" size={20} />
+                                        <div>
+                                            <h4 className="font-bold text-[#0E1A15]">Exclusive Feature</h4>
+                                            <p className="text-sm text-gray-600">
+                                                Self-Hosted Database unlocks <strong>Custom Incentive Automation</strong>. (Standard plans support Manual Incentives only).
+                                            </p>
+                                        </div>
+                                    </div>
                                     <div className="grid grid-cols-3 gap-4 mt-6">
-                                        <div className="p-4 border border-gray-200 rounded-lg text-center hover:border-[#1673FF] transition-colors cursor-pointer bg-gray-50">
+                                        <div className="p-4 border border-gray-200 rounded-lg text-center hover:border-[#10B981] transition-colors cursor-pointer bg-gray-50">
                                             <Database className="mx-auto mb-2 text-gray-400" size={24} />
                                             <span className="font-semibold text-gray-700">PostgreSQL</span>
                                         </div>
@@ -596,7 +605,7 @@ export function LandingPage() {
                                     <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100 justify-center">
                                         <button
                                             onClick={() => setShowTechSpecs(true)}
-                                            className="px-6 py-3 bg-[#0A1C37] text-white rounded-xl font-semibold hover:bg-[#1673FF] transition-colors"
+                                            className="px-6 py-3 bg-[#0E1A15] text-white rounded-xl font-semibold hover:bg-[#10B981] transition-colors"
                                         >
                                             View Technical Requirements
                                         </button>
@@ -619,8 +628,8 @@ export function LandingPage() {
             >
                 <div className="space-y-6">
                     <div>
-                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
-                            <Server size={20} className="text-[#1673FF]" />
+                        <h4 className="flex items-center gap-2 font-bold text-[#0E1A15] mb-2">
+                            <Server size={20} className="text-[#10B981]" />
                             Configuration Process
                         </h4>
                         <p className="text-gray-600 text-sm leading-relaxed">
@@ -628,8 +637,8 @@ export function LandingPage() {
                         </p>
                     </div>
 
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
+                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <h4 className="flex items-center gap-2 font-bold text-[#0E1A15] mb-2">
                             <Shield size={20} className="text-green-600" />
                             Data Ownership & Security
                         </h4>
@@ -639,19 +648,19 @@ export function LandingPage() {
                     </div>
 
                     <div>
-                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37] mb-2">
+                        <h4 className="flex items-center gap-2 font-bold text-[#0E1A15] mb-2">
                             <Database size={20} className="text-purple-600" />
                             Supported Databases
                         </h4>
                         <ul className="space-y-3 mt-2">
-                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#1673FF] transition-colors">
-                                <span className="bg-blue-100 text-blue-600 p-1.5 rounded-md font-bold text-xs">Recommended</span>
+                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#10B981] transition-colors">
+                                <span className="bg-emerald-100 text-emerald-600 p-1.5 rounded-md font-bold text-xs">Recommended</span>
                                 <div>
                                     <span className="font-bold text-gray-800 block text-sm">PostgreSQL (v12+)</span>
                                     <span className="text-xs text-gray-500">Best for performance and JSON support. Using Supabase or AWS RDS is highly recommended.</span>
                                 </div>
                             </li>
-                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#1673FF] transition-colors">
+                            <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#10B981] transition-colors">
                                 <span className="bg-gray-100 text-gray-500 p-1.5 rounded-md font-bold text-xs">Supported</span>
                                 <div>
                                     <span className="font-bold text-gray-800 block text-sm">MySQL (v8.0+) / MariaDB</span>
@@ -675,7 +684,7 @@ export function LandingPage() {
             {/* CTA Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
                 <div className="max-w-5xl mx-auto">
-                    <div className="bg-gradient-to-r from-[#1673FF] to-[#0A1C37] rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
+                    <div className="bg-gradient-to-r from-[#10B981] to-[#0E1A15] rounded-3xl p-12 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full opacity-10 blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full opacity-10 blur-3xl transform -translate-x-1/2 translate-y-1/2"></div>
 
@@ -688,7 +697,7 @@ export function LandingPage() {
                             </p>
                             <button
                                 onClick={handleRegisterClick}
-                                className="px-10 py-4 bg-white text-[#1673FF] rounded-xl font-bold text-lg hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50"
+                                className="px-10 py-4 bg-white text-[#10B981] rounded-xl font-bold text-lg hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50"
                             >
                                 Start Free Trial
                             </button>
@@ -703,7 +712,7 @@ export function LandingPage() {
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">About RealSalePro</h2>
                     <p className="text-2xl md:text-3xl text-gray-700 font-light leading-relaxed mb-8">
                         "We believe that sales should be about relationships, not paperwork.
-                        <strong className="text-[#0A1C37] font-bold"> RealSalePro </strong>
+                        <strong className="text-[#0E1A15] font-bold"> RealSalePro </strong>
                         removes the friction from sales management so you can focus on what matters most: closing deals."
                     </p>
                 </div>
@@ -719,7 +728,7 @@ export function LandingPage() {
             <FAQSection />
 
             {/* Footer */}
-            <footer className="bg-[#0A1C37] text-white py-16 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+            <footer className="bg-[#0E1A15] text-white py-16 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-4 gap-12 mb-12">
                         <div className="col-span-1 md:col-span-2">
@@ -733,11 +742,11 @@ export function LandingPage() {
                             </p>
                             <div className="flex space-x-4">
                                 {/* Social placeholders */}
-                                <div className="w-10 h-10 bg-white/5 rounded-full hover:bg-[#1673FF] transition-colors cursor-pointer flex items-center justify-center">
+                                <div className="w-10 h-10 bg-white/5 rounded-full hover:bg-[#10B981] transition-colors cursor-pointer flex items-center justify-center">
                                     <span className="sr-only">Twitter</span>
                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
                                 </div>
-                                <div className="w-10 h-10 bg-white/5 rounded-full hover:bg-[#1673FF] transition-colors cursor-pointer flex items-center justify-center">
+                                <div className="w-10 h-10 bg-white/5 rounded-full hover:bg-[#10B981] transition-colors cursor-pointer flex items-center justify-center">
                                     <span className="sr-only">LinkedIn</span>
                                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                                 </div>
@@ -747,20 +756,20 @@ export function LandingPage() {
                         <div className="pt-2">
                             <h4 className="font-bold text-lg mb-6">Platform</h4>
                             <ul className="space-y-4 text-gray-400">
-                                <li><a href="#features" className="hover:text-[#1673FF] transition-colors">Features</a></li>
-                                <li><a href="#benefits" className="hover:text-[#1673FF] transition-colors">Benefits</a></li>
-                                <li><a href="#pricing" className="hover:text-[#1673FF] transition-colors">Pricing</a></li>
-                                <li><a href="#" className="hover:text-[#1673FF] transition-colors">Integration</a></li>
+                                <li><a href="#features" className="hover:text-[#10B981] transition-colors">Features</a></li>
+                                <li><a href="#benefits" className="hover:text-[#10B981] transition-colors">Benefits</a></li>
+                                <li><Link to="/pricing" className="hover:text-[#10B981] transition-colors">Pricing</Link></li>
+                                <li><Link to="/integration" className="hover:text-[#10B981] transition-colors">Integration</Link></li>
                             </ul>
                         </div>
 
                         <div className="pt-2">
                             <h4 className="font-bold text-lg mb-6">Company</h4>
                             <ul className="space-y-4 text-gray-400">
-                                <li><a href="#about" className="hover:text-[#1673FF] transition-colors">About Us</a></li>
-                                <li><a href="#" className="hover:text-[#1673FF] transition-colors">Careers</a></li>
-                                <li><a href="#" className="hover:text-[#1673FF] transition-colors">Blog</a></li>
-                                <li><a href="#" className="hover:text-[#1673FF] transition-colors">Contact</a></li>
+                                <li><a href="#about" className="hover:text-[#10B981] transition-colors">About Us</a></li>
+                                <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Careers</Link></li>
+                                <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Blog</Link></li>
+                                <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Contact</Link></li>
                             </ul>
                         </div>
                     </div>
@@ -796,10 +805,10 @@ export function LandingPage() {
                 size="lg"
             >
                 <div className="space-y-8 max-h-[70vh] overflow-y-auto pr-4 custom-scrollbar">
-                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                    <div className="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100">
                         <div className="flex items-center gap-3 mb-4">
-                            <Shield className="text-[#1673FF]" size={28} />
-                            <h3 className="text-xl font-bold text-[#0A1C37]">Security Commitment</h3>
+                            <Shield className="text-[#10B981]" size={28} />
+                            <h3 className="text-xl font-bold text-[#0E1A15]">Security Commitment</h3>
                         </div>
                         <p className="text-gray-600 text-sm leading-relaxed">
                             At RealSalePro, security is not just a feature; it is our foundation. We use a multi-layered security approach to protect your most sensitive real estate data, from client information to project inventory.
@@ -808,8 +817,8 @@ export function LandingPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            <h4 className="flex items-center gap-2 font-bold text-[#0A1C37]">
-                                <Lock size={18} className="text-[#1673FF]" />
+                            <h4 className="flex items-center gap-2 font-bold text-[#0E1A15]">
+                                <Lock size={18} className="text-[#10B981]" />
                                 Data Encryption
                             </h4>
                             <div className="bg-white p-4 border border-gray-100 rounded-xl">
@@ -823,8 +832,8 @@ export function LandingPage() {
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="flex items-center gap-2 font-bold text-[#0A1C37]">
-                                <Users size={18} className="text-[#1673FF]" />
+                            <h4 className="flex items-center gap-2 font-bold text-[#0E1A15]">
+                                <Users size={18} className="text-[#10B981]" />
                                 Access Control
                             </h4>
                             <div className="bg-white p-4 border border-gray-100 rounded-xl">
@@ -839,8 +848,8 @@ export function LandingPage() {
                     </div>
 
                     <div className="space-y-4">
-                        <h4 className="flex items-center gap-2 font-bold text-[#0A1C37]">
-                            <Globe size={18} className="text-[#1673FF]" />
+                        <h4 className="flex items-center gap-2 font-bold text-[#0E1A15]">
+                            <Globe size={18} className="text-[#10B981]" />
                             Infrastructure & Compliance
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">

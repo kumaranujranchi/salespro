@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Star, Quote, Zap, CheckCircle } from 'lucide-react';
 
 // FAQ Data
@@ -72,7 +73,7 @@ const valueProps = [
         icon: Star,
         title: "Performance Analytics",
         description: "Track team metrics via leaderboards & targets",
-        color: "text-blue-500"
+        color: "text-emerald-500"
     }
 ];
 
@@ -86,12 +87,12 @@ export function FAQSection() {
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
                         Frequently Asked Questions
                     </h2>
-                    <h3 className="text-3xl md:text-4xl font-bold text-[#0A1C37] mb-4">
+                    <h3 className="text-3xl md:text-4xl font-bold text-[#0E1A15] mb-4">
                         Got Questions? We've Got Answers
                     </h3>
                     <p className="text-gray-600 max-w-2xl mx-auto">
-                        Everything you need to know about RealSalePro. Can't find what you're looking for? 
-                        <a href="mailto:support@realsalepro.com" className="text-[#1673FF] hover:underline ml-1">Contact our team</a>.
+                        Everything you need to know about RealSalePro. Can't find what you're looking for?
+                        <a href="mailto:support@realsalepro.com" className="text-[#10B981] hover:underline ml-1">Contact our team</a>.
                     </p>
                 </div>
 
@@ -99,17 +100,17 @@ export function FAQSection() {
                     {faqs.map((faq, index) => (
                         <div
                             key={index}
-                            className="border border-gray-200 rounded-xl overflow-hidden hover:border-[#1673FF] transition-all duration-300"
+                            className="border border-gray-200 rounded-xl overflow-hidden hover:border-[#10B981] hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                         >
                             <button
                                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                                 className="w-full px-6 py-5 flex items-center justify-between text-left bg-white hover:bg-gray-50 transition-colors"
                             >
-                                <span className="font-semibold text-[#0A1C37] text-lg pr-4">
+                                <span className="font-semibold text-[#0E1A15] text-lg pr-4">
                                     {faq.question}
                                 </span>
                                 {openIndex === index ? (
-                                    <ChevronUp className="w-5 h-5 text-[#1673FF] flex-shrink-0" />
+                                    <ChevronUp className="w-5 h-5 text-[#10B981] flex-shrink-0" />
                                 ) : (
                                     <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
                                 )}
@@ -133,16 +134,16 @@ export function TestimonialsSection() {
     const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <section id="testimonials" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0A1C37] to-[#1673FF]">
+        <section id="testimonials" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0E1A15] to-[#10B981]">
             <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-16">
-                    <h2 className="text-sm font-bold text-blue-200 uppercase tracking-widest mb-4">
+                    <h2 className="text-sm font-bold text-emerald-200 uppercase tracking-widest mb-4">
                         Customer Success Stories
                     </h2>
                     <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
                         Trusted by Leading Real Estate Professionals
                     </h3>
-                    <p className="text-blue-100 max-w-2xl mx-auto">
+                    <p className="text-emerald-100 max-w-2xl mx-auto">
                         Join hundreds of agencies who have transformed their sales operations with RealSalePro
                     </p>
                 </div>
@@ -150,7 +151,7 @@ export function TestimonialsSection() {
                 {/* Testimonial Carousel */}
                 <div className="relative">
                     <div className="bg-white rounded-2xl p-8 md:p-12 shadow-2xl">
-                        <Quote className="w-12 h-12 text-[#1673FF] mb-6" />
+                        <Quote className="w-12 h-12 text-[#10B981] mb-6" />
                         <p className="text-xl md:text-2xl text-gray-800 font-light leading-relaxed mb-8">
                             "{testimonials[activeIndex].quote}"
                         </p>
@@ -158,10 +159,10 @@ export function TestimonialsSection() {
                             <img
                                 src={testimonials[activeIndex].image}
                                 alt={testimonials[activeIndex].name}
-                                className="w-16 h-16 rounded-full border-4 border-[#1673FF]"
+                                className="w-16 h-16 rounded-full border-4 border-[#10B981]"
                             />
                             <div>
-                                <h4 className="font-bold text-[#0A1C37] text-lg">
+                                <h4 className="font-bold text-[#0E1A15] text-lg">
                                     {testimonials[activeIndex].name}
                                 </h4>
                                 <p className="text-gray-600 text-sm">
@@ -182,11 +183,10 @@ export function TestimonialsSection() {
                             <button
                                 key={index}
                                 onClick={() => setActiveIndex(index)}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                    activeIndex === index
-                                        ? 'bg-white w-8'
-                                        : 'bg-white/30 hover:bg-white/50'
-                                }`}
+                                className={`w-3 h-3 rounded-full transition-all duration-300 ${activeIndex === index
+                                    ? 'bg-white w-8'
+                                    : 'bg-white/30 hover:bg-white/50'
+                                    }`}
                                 aria-label={`View testimonial ${index + 1}`}
                             />
                         ))}
@@ -195,7 +195,7 @@ export function TestimonialsSection() {
 
                 {/* Featured In / Client Logos */}
                 <div className="mt-16 text-center">
-                    <p className="text-blue-100 text-sm uppercase tracking-wider mb-8">
+                    <p className="text-emerald-100 text-sm uppercase tracking-wider mb-8">
                         Trusted by 500+ Real Estate Agencies
                     </p>
                     <div className="flex flex-wrap justify-center items-center gap-8 opacity-70">
@@ -224,7 +224,7 @@ export function ValuePropositionSection() {
                     <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
                         Why Choose Us
                     </h2>
-                    <h3 className="text-3xl md:text-4xl font-bold text-[#0A1C37] mb-4">
+                    <h3 className="text-3xl md:text-4xl font-bold text-[#0E1A15] mb-4">
                         Why RealSalePro Stands Out
                     </h3>
                     <p className="text-gray-600 max-w-2xl mx-auto">
@@ -239,12 +239,12 @@ export function ValuePropositionSection() {
                         return (
                             <div
                                 key={index}
-                                className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#1673FF] group"
+                                className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#10B981] group hover:-translate-y-2"
                             >
                                 <div className={`w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                                     <Icon className={`w-7 h-7 ${prop.color}`} />
                                 </div>
-                                <h4 className="text-xl font-bold text-[#0A1C37] mb-3">
+                                <h4 className="text-xl font-bold text-[#0E1A15] mb-3">
                                     {prop.title}
                                 </h4>
                                 <p className="text-gray-600 leading-relaxed">
@@ -257,14 +257,14 @@ export function ValuePropositionSection() {
 
                 {/* Additional Benefits */}
                 <div className="bg-white rounded-2xl p-8 md:p-12 shadow-sm border border-gray-100">
-                    <h4 className="text-2xl font-bold text-[#0A1C37] mb-8 text-center">
+                    <h4 className="text-2xl font-bold text-[#0E1A15] mb-8 text-center">
                         Complete Real Estate Sales Solution
                     </h4>
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="flex items-start gap-4">
                             <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                             <div>
-                                <h5 className="font-semibold text-[#0A1C37] mb-1">
+                                <h5 className="font-semibold text-[#0E1A15] mb-1">
                                     Efficient Workflow
                                 </h5>
                                 <p className="text-gray-600 text-sm">
@@ -275,7 +275,7 @@ export function ValuePropositionSection() {
                         <div className="flex items-start gap-4">
                             <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                             <div>
-                                <h5 className="font-semibold text-[#0A1C37] mb-1">
+                                <h5 className="font-semibold text-[#0E1A15] mb-1">
                                     Financial Tools
                                 </h5>
                                 <p className="text-gray-600 text-sm">
@@ -286,7 +286,7 @@ export function ValuePropositionSection() {
                         <div className="flex items-start gap-4">
                             <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                             <div>
-                                <h5 className="font-semibold text-[#0A1C37] mb-1">
+                                <h5 className="font-semibold text-[#0E1A15] mb-1">
                                     Business Customization
                                 </h5>
                                 <p className="text-gray-600 text-sm">
@@ -297,7 +297,7 @@ export function ValuePropositionSection() {
                         <div className="flex items-start gap-4">
                             <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                             <div>
-                                <h5 className="font-semibold text-[#0A1C37] mb-1">
+                                <h5 className="font-semibold text-[#0E1A15] mb-1">
                                     Mobile-First Design
                                 </h5>
                                 <p className="text-gray-600 text-sm">
@@ -309,13 +309,13 @@ export function ValuePropositionSection() {
 
                     {/* CTA */}
                     <div className="mt-10 text-center">
-                        <a
-                            href="#pricing"
-                            className="inline-flex items-center gap-2 bg-[#1673FF] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#0A1C37] transition-all duration-300 shadow-lg hover:shadow-xl"
+                        <Link
+                            to="/register"
+                            className="inline-flex items-center gap-2 bg-[#10B981] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#0E1A15] transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
                             Start Your Free Trial
                             <ChevronDown className="w-5 h-5" />
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>

@@ -32,6 +32,7 @@ import { ShippingPolicy } from './pages/ShippingPolicy';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { ContactUsPage } from './pages/ContactUsPage';
+import { IntegrationsPage } from './pages/IntegrationsPage';
 import { RolesPage } from './pages/RolesPage';
 
 
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/contact" element={<ContactUsPage />} />
+                <Route path="/integration" element={<IntegrationsPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route
