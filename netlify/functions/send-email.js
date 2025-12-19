@@ -1,7 +1,8 @@
 const nodemailer = require('nodemailer');
 
-// Brand logo URL
-const LOGO_URL = 'https://imagizer.imageshack.com/img923/4269/bP85qb.png';
+// Brand logo URL - Use DarkLogo for light email background
+const BASE_URL = process.env.URL || 'https://realsalepro.com';
+const LOGO_URL = `${BASE_URL}/images/RealSalePro_DarkLogo.png`;
 
 exports.handler = async (event, context) => {
   // Only allow POST requests
