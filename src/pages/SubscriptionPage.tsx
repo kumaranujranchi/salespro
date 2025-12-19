@@ -2,7 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Check, Clock, Zap, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Check,
+  Clock,
+  Zap,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  CreditCard,
+  Calendar,
+  Shield,
+  Download,
+  Receipt
+} from 'lucide-react';
+import { formatCurrency } from '../utils/format';
 
 interface TenantData {
   id: string;
@@ -12,18 +25,32 @@ interface TenantData {
   trial_ends_at: string | null;
   subscription_status: string;
   is_active: boolean;
+  next_billing_date?: string;
+  created_at?: string;
+}
+
+interface BillingRecord {
+  id: string;
+  created_at: string;
+  amount: number;
+  status: string;
+  razorpay_payment_id: string;
+  description: string;
 }
 
 export function SubscriptionPage() {
   const { tenant } = useAuth();
   const navigate = useNavigate();
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
+  const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
 
   useEffect(() => {
     fetchTenantData();
+    fetchBillingHistory();
   }, [tenant]);
 
   const fetchTenantData = async () => {
@@ -35,7 +62,7 @@ export function SubscriptionPage() {
     try {
       const { data, error: fetchError } = await supabase
         .from('tenants')
-        .select('id, name, plan_tier, billing_cycle, trial_ends_at, subscription_status, is_active')
+        .select('id, name, plan_tier, billing_cycle, trial_ends_at, subscription_status, is_active, next_billing_date, created_at')
         .eq('id', tenant.id)
         .single();
 
@@ -48,13 +75,11 @@ export function SubscriptionPage() {
       setTenantData(data as TenantData);
 
       // Calculate days remaining
-      // Use trial_ends_at if available
       let endDate: Date;
 
       if (data.trial_ends_at) {
         endDate = new Date(data.trial_ends_at);
       } else {
-        // Fallback if no dates (default to 14 days from now if missing)
         const now = new Date();
         endDate = new Date(now.setDate(now.getDate() + 14));
       }
@@ -72,7 +97,31 @@ export function SubscriptionPage() {
     }
   };
 
-  // Redirect logic removed to allow viewing Active subscription
+  const fetchBillingHistory = async () => {
+    if (!tenant?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('billing_history')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Table might not exist yet if migrations haven't run, ignore safely
+        console.warn('Could not fetch billing history', error);
+        return;
+      }
+
+      if (data) {
+        setBillingHistory(data);
+      }
+    } catch (err) {
+      console.warn('Error fetching billing history:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const trialFeatures = [
     'All Pro Features Included',
@@ -83,14 +132,6 @@ export function SubscriptionPage() {
     'Lead Management',
     'Sales Tracking',
     'Custom Reports'
-  ];
-
-  const paidPlanAdvantages = [
-    'No trial limitations',
-    'Guaranteed uptime SLA',
-    'Advanced integrations',
-    'Dedicated account manager',
-    'Custom feature requests'
   ];
 
   if (loading) {
@@ -123,142 +164,223 @@ export function SubscriptionPage() {
   const isTrial = tenantData.subscription_status === 'trial';
   const isActive = tenantData.subscription_status === 'active';
 
-  const isExpiringSoon = isTrial && daysRemaining <= 7 && daysRemaining > 0;
-  const isExpired = isTrial && daysRemaining <= 0;
+  // Calculate generic next billing date if not in DB
+  const getNextBillingDate = () => {
+    if (tenantData.next_billing_date) return new Date(tenantData.next_billing_date);
+
+    // Fallback based on last update or creation
+    // This is just for display if real data is missing
+    const baseDate = new Date();
+    if (tenantData.billing_cycle === 'yearly') {
+      return new Date(baseDate.setFullYear(baseDate.getFullYear() + 1));
+    } else if (tenantData.billing_cycle === 'semi_annual') {
+      return new Date(baseDate.setMonth(baseDate.getMonth() + 6));
+    } else {
+      return new Date(baseDate.setMonth(baseDate.getMonth() + 1));
+    }
+  };
+
+  const billingAmount = tenantData.billing_cycle === 'yearly' ? 12000 : tenantData.billing_cycle === 'semi_annual' ? 7200 : 1500;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0E1A15] py-12">
-      <div className="max-w-6xl mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            {isPro ? 'Your Pro Subscription' : 'Your Subscription'}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
-            {isPro ? 'Thank you for being a premium member' : 'Manage your trial and explore upgrade options'}
-          </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0E1A15] py-8 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Subscription & Billing
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
+              Manage your plan, view history, and payment details
+            </p>
+          </div>
+          {!isActive && (
+            <button
+              onClick={() => navigate('/pricing')}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2"
+            >
+              <Zap className="w-5 h-5" />
+              Upgrade Plan
+            </button>
+          )}
         </div>
 
-        {/* Status Card */}
-        <div className={`rounded-2xl p-8 border-2 ${isActive ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/10 dark:border-indigo-800' :
-          isExpired ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800' :
-            isExpiringSoon ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800' :
-              'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200 dark:from-emerald-900/20 dark:to-green-900/20 dark:border-emerald-700'
-          }`}>
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {isActive ? (
-                  <Check className="w-6 h-6 text-indigo-600" />
-                ) : (
-                  <Clock className={`w-6 h-6 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-emerald-600'}`} />
-                )}
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {isPro ? 'Pro Plan Active' : `${tenantData.plan_tier === 'pro' ? 'Pro' : 'Starter'} Trial`}
-                </h2>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400">
-                {isActive ? `Your subscription is active (Billed ${tenantData.billing_cycle})` :
-                  isExpired ? 'Your trial has ended' :
-                    `You have ${daysRemaining} days remaining in your trial`}
-              </p>
-            </div>
+        {/* Status Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
+          {/* Card 1: Current Plan */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                    isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      'bg-red-100 text-red-700'
+                  }`}>
+                  {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
+                </span>
+              </div>
+              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+                Current Plan
+              </h3>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                {isPro ? 'Pro Subscription' : 'Starter Plan'}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                {isActive
+                  ? `Billed ${tenantData.billing_cycle === 'yearly' ? 'Yearly' : tenantData.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
+                  : `${daysRemaining} days left in trial`
+                }
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Billing Status */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+              </div>
+              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+                Upcoming Invoice
+              </h3>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                {formatCurrency(billingAmount)}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Renewing on {getNextBillingDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Usage / Stats (Placeholder for now) */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                  <Zap className="w-6 h-6" />
+                </div>
+              </div>
+              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+                Plan Benefits
+              </h3>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                All Systems Go
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                You have full access to all Pro features
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Plan Features List */}
+          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 h-fit">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" />
+              Included in your plan
+            </h3>
+            <ul className="space-y-4">
+              {trialFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-3 text-sm">
+                  <div className="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-slate-600 dark:text-slate-300 font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
             {!isActive && (
-              <div className="text-right">
-                <div className={`text-4xl font-extrabold ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-amber-600' : 'text-emerald-600'}`}>
-                  {daysRemaining > 0 ? daysRemaining : 0}
-                </div>
-                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                  {daysRemaining === 1 ? 'Day Remaining' : 'Days Remaining'}
-                </div>
+              <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade now for full access</h4>
+                <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
+                  Don't lose your data when the trial ends. Secure your pricing today.
+                </p>
+                <button onClick={() => navigate('/pricing')} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+                  View Plans →
+                </button>
               </div>
             )}
           </div>
 
-          {tenantData.trial_ends_at && isTrial && (
-            <div className="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-400">Trial ends on:</span>
-                <span className="font-semibold text-slate-900 dark:text-white">
-                  {new Date(tenantData.trial_ends_at).toLocaleDateString('en-CA')}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
-                {isExpired ? 'Upgrade now to continue using all features' : 'After your trial ends, you\'ll need to upgrade to continue accessing all features'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Current Plan Features */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-              {isActive ? 'Your Plan Includes' : "What's Included in Your Trial"}
-            </h3>
-            <ul className="space-y-3">
-              {trialFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-600 dark:text-slate-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Upgrade Benefits - Hide if Active */}
-          {!isActive && (
-            <div className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-xl p-6 text-white">
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-6 h-6" />
-                <h3 className="text-xl font-bold">Upgrade to Pro</h3>
-              </div>
-              <p className="text-emerald-100 mb-6">
-                Unlock the full potential of RealSalePro with a paid subscription
-              </p>
-              <ul className="space-y-3 mb-8">
-                {paidPlanAdvantages.map((advantage) => (
-                  <li key={advantage} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-emerald-200 flex-shrink-0 mt-0.5" />
-                    <span className="text-white">{advantage}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="w-full bg-white text-emerald-600 font-bold py-3 px-6 rounded-lg hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2 group"
-              >
-                Upgrade Now
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          {/* Billing History Table */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-slate-400" />
+                Payment History
+              </h3>
+              <button className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+                Download All
               </button>
-              <p className="text-center text-xs text-emerald-200 mt-3">
-                Starting at ₹1,000/month • Cancel anytime
-              </p>
             </div>
-          )}
-        </div>
 
-        {/* FAQ - Hide if Active */}
-        {!isActive && (
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">What happens when my trial ends?</h3>
-            <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
-              <p>
-                • Your account will be automatically downgraded to the free tier with limited features
-              </p>
-              <p>
-                • All your data will be preserved and available when you upgrade
-              </p>
-              <p>
-                • You can upgrade at any time to regain full access
-              </p>
-              <p className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
-                Need more time to evaluate? <a href="/support" className="text-emerald-600 dark:text-emerald-400 hover:underline">Contact our support team</a>
-              </p>
+            <div className="flex-1 overflow-auto">
+              {billingHistory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                    <Receipt className="w-8 h-8 text-slate-300 dark:text-slate-500" />
+                  </div>
+                  <h4 className="text-slate-900 dark:text-white font-medium mb-1">No payment history yet</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs">
+                    Once you make a payment, your invoices and receipts will appear here.
+                  </p>
+                </div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium">
+                    <tr>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Description</th>
+                      <th className="px-6 py-4">Amount</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {billingHistory.map((record) => (
+                      <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          {new Date(record.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
+                          {record.description || 'Pro Subscription'}
+                          <div className="text-xs text-slate-400 font-normal mt-0.5">{record.razorpay_payment_id}</div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
+                          {formatCurrency(record.amount / 100)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize 
+                            ${record.status === 'captured' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'}
+                          `}>
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors" title="Download Invoice">
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
