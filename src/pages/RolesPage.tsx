@@ -1,0 +1,483 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  Shield, 
+  Plus, 
+  Search, 
+  Edit2, 
+  Trash2, 
+  Check, 
+  X,
+  Lock,
+  Eye,
+  Settings,
+  LayoutDashboard,
+  Users as UsersIcon,
+  Building,
+  FileText,
+  Clock,
+  Award,
+  AlertCircle
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+
+interface RolePermissions {
+  menu: Record<string, 'none' | 'read' | 'edit'>;
+  dashboard: {
+    sales_view: 'none' | 'self' | 'team' | 'overall';
+    [key: string]: string | boolean | undefined;
+  };
+}
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  permissions: RolePermissions;
+}
+
+const MENU_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'crm', label: 'CRM / Leads', icon: UsersIcon },
+  { id: 'inventory', label: 'Inventory / Projects', icon: Building },
+  { id: 'site_visits', label: 'Site Visits', icon: Clock },
+  { id: 'incentives', label: 'Incentives', icon: Award },
+  { id: 'reports', label: 'Reports', icon: FileText },
+  { id: 'users', label: 'User Management', icon: UsersIcon },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
+const DASHBOARD_WIDGETS = [
+  { id: 'kpi_cards', label: 'KPI Statistics Cards' },
+  { id: 'project_performance', label: 'Project-wise Performance' },
+  { id: 'leaderboard', label: 'Sales Leaderboard' },
+  { id: 'upcoming_events', label: 'Birthdays & Events' },
+  { id: 'recent_activity', label: 'Recent Activity Feed' },
+];
+
+const SALES_PERSPECTIVES: { id: 'none' | 'self' | 'team' | 'overall'; label: string; description: string }[] = [
+  { id: 'none', label: 'No Sales Data', description: 'Hide all sales metrics' },
+  { id: 'self', label: 'Self Sales Only', description: 'Show only user\'s own sales' },
+  { id: 'team', label: 'Team Sales', description: 'Show sales of reporting team members' },
+  { id: 'overall', label: 'Overall Sales', description: 'Show total company sales' },
+];
+
+export function RolesPage() {
+  const { tenant, profile } = useAuth();
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    permissions: {
+      menu: MENU_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: 'none' }), {}),
+      dashboard: {
+        ...DASHBOARD_WIDGETS.reduce((acc, item) => ({ ...acc, [item.id]: false }), {}),
+        sales_view: 'none'
+      } as RolePermissions['dashboard'],
+    } as RolePermissions
+  });
+
+  const fetchRoles = useCallback(async () => {
+    try {
+      if (!tenant?.id) return;
+      const { data, error } = await supabase
+        .from('tenant_roles')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('is_system', { ascending: false });
+
+      if (error) throw error;
+      setRoles(data || []);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+    }
+  }, [tenant?.id]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  const handleEditRole = (role: Role) => {
+    setSelectedRole(role);
+    setFormData({
+      name: role.name,
+      description: role.description || '',
+      permissions: role.permissions
+    });
+    setIsEditorOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedRole(null);
+    setFormData({
+      name: '',
+      description: '',
+      permissions: {
+        menu: MENU_ITEMS.reduce((acc, item) => ({ ...acc, [item.id]: 'none' }), {}),
+        dashboard: {
+          ...DASHBOARD_WIDGETS.reduce((acc, item) => ({ ...acc, [item.id]: false }), {}),
+          sales_view: 'none'
+        },
+      }
+    });
+    setIsEditorOpen(true);
+  };
+
+  async function handleSaveRole() {
+    try {
+      if (!tenant?.id || !formData.name) return;
+
+      const roleData = {
+        tenant_id: tenant.id,
+        name: formData.name,
+        description: formData.description,
+        permissions: formData.permissions,
+        updated_at: new Date()
+      };
+
+      let error;
+      if (selectedRole) {
+        ({ error } = await supabase
+          .from('tenant_roles')
+          .update(roleData)
+          .eq('id', selectedRole.id));
+      } else {
+        ({ error } = await supabase
+          .from('tenant_roles')
+          .insert([roleData]));
+      }
+
+      if (error) throw error;
+      
+      setIsEditorOpen(false);
+      fetchRoles();
+    } catch (err) {
+      console.error('Error saving role:', err);
+      alert('Failed to save role. Check if name is unique.');
+    }
+  }
+
+  async function handleDeleteRole() {
+    if (!selectedRole || selectedRole.is_system) return;
+    try {
+      const { error } = await supabase
+        .from('tenant_roles')
+        .delete()
+        .eq('id', selectedRole.id);
+
+      if (error) throw error;
+      setDeleteModalOpen(false);
+      fetchRoles();
+    } catch (err) {
+      console.error('Error deleting role:', err);
+    }
+  }
+
+  if (profile?.role !== 'super_admin') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <Lock size={48} className="text-slate-400" />
+        <h1 className="text-xl font-bold">Access Denied</h1>
+        <p className="text-slate-500">Only Super Admins can manage roles.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Shield className="text-emerald-600" /> Role Management
+          </h1>
+          <p className="text-slate-500 mt-1">Configure custom roles and granular permissions for your team.</p>
+        </div>
+        <Button 
+          onClick={handleCreateNew} 
+          variant="gradient"
+          className="rounded-xl px-6 py-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+        >
+          <Plus className="mr-2" size={18} /> Create New Role
+        </Button>
+      </div>
+
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
+        <Input 
+          className="pl-12 py-6 rounded-2xl border-slate-200 dark:border-white/10 bg-white dark:bg-surface-dark focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
+          placeholder="Search roles by name or description..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {roles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map((role) => (
+          <Card key={role.id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-emerald-500">
+            <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
+              <div className="flex items-start justify-between">
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
+                  <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
+                </div>
+                {!role.is_system && (
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditRole(role)} className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-600">
+                      <Edit2 size={16} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedRole(role); setDeleteModalOpen(true); }} className="h-8 w-8 p-0 text-slate-400 hover:text-red-600">
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="mt-4">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl font-bold truncate">{role.name}</CardTitle>
+                  {role.is_system && (
+                    <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">System</span>
+                  )}
+                </div>
+                <CardDescription className="line-clamp-2 mt-1">{role.description || 'No description provided.'}</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Permissions</p>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 4).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                      {val === 'edit' ? <Check size={12} /> : <Eye size={12} />}
+                      {MENU_ITEMS.find(m => m.id === key)?.label}
+                    </div>
+                  ))}
+                  {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 4 && (
+                    <div className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
+                      +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 4} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Role Editor Overlay */}
+      {isEditorOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-end bg-black/40 backdrop-blur-sm transition-opacity">
+          <div className="w-full max-w-2xl h-full bg-white dark:bg-surface-dark shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="sticky top-0 z-10 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 p-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{selectedRole ? 'Edit Role' : 'Create New Role'}</h2>
+                <p className="text-sm text-slate-500">Define name and granular permissions.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setIsEditorOpen(false)} className="rounded-full h-10 w-10 p-0 hover:bg-slate-100 dark:hover:bg-white/10">
+                <X size={24} />
+              </Button>
+            </div>
+
+            <div className="p-8 space-y-10 pb-32">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
+                  <div className="h-6 w-1 bg-emerald-600 rounded-full" /> Basic Details
+                </h3>
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Role Name</label>
+                    <Input 
+                      placeholder="e.g. Regional Manager" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      disabled={selectedRole?.is_system}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <Input 
+                      placeholder="Briefly describe what this role can do" 
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      disabled={selectedRole?.is_system}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Permissions */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
+                  <div className="h-6 w-1 bg-emerald-600 rounded-full" /> Menu & Module Access
+                </h3>
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden divide-y divide-slate-100 dark:divide-white/5">
+                  <div className="grid grid-cols-12 bg-slate-50 dark:bg-white/5 p-4 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                    <div className="col-span-5">Module Name</div>
+                    <div className="col-span-7 flex justify-between px-4">
+                      <span>No Access</span>
+                      <span>Read Only</span>
+                      <span>Full Edit</span>
+                    </div>
+                  </div>
+                  {MENU_ITEMS.map((item) => {
+                    const currentVal = formData.permissions.menu[item.id] || 'none';
+                    return (
+                      <div key={item.id} className="grid grid-cols-12 p-4 items-center hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                        <div className="col-span-5 flex items-center gap-3">
+                          <item.icon size={18} className="text-slate-400" />
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
+                        </div>
+                        <div className="col-span-7 flex justify-between px-2 bg-slate-100/50 dark:bg-white/5 rounded-xl p-1">
+                          {['none', 'read', 'edit'].map((level) => {
+                            // Dashboard is view-only, no 'edit' level needed
+                            if (item.id === 'dashboard' && level === 'edit') {
+                              return <div key={level} className="w-8" />; // Empty spacer for alignment
+                            }
+                            
+                            return (
+                              <button
+                                key={level}
+                                onClick={() => {
+                                  if (selectedRole?.is_system) return;
+                                  setFormData({
+                                    ...formData,
+                                    permissions: {
+                                      ...formData.permissions,
+                                      menu: { ...formData.permissions.menu, [item.id]: level as 'none' | 'read' | 'edit' }
+                                    }
+                                  });
+                                }}
+                                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
+                                  currentVal === level 
+                                  ? 'bg-emerald-600 text-white shadow-lg' 
+                                  : 'text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-white/10'
+                                }`}
+                              >
+                                {level === 'none' && <X size={16} />}
+                                {level === 'read' && <Eye size={16} />}
+                                {level === 'edit' && <Edit2 size={16} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sales Perspective */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
+                  <div className="h-6 w-1 bg-emerald-600 rounded-full" /> Sales Visibility
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {SALES_PERSPECTIVES.map((opt) => (
+                    <button
+                      key={opt.id}
+                      disabled={selectedRole?.is_system}
+                      onClick={() => setFormData({
+                        ...formData,
+                        permissions: {
+                          ...formData.permissions,
+                          dashboard: { ...formData.permissions.dashboard, sales_view: opt.id }
+                        }
+                      })}
+                      className={`flex flex-col p-4 rounded-2xl border text-left transition-all ${
+                        formData.permissions.dashboard?.sales_view === opt.id
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 ring-2 ring-emerald-500/20'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 opacity-70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-sm font-bold ${ formData.permissions.dashboard?.sales_view === opt.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                          {opt.label}
+                        </span>
+                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${ formData.permissions.dashboard?.sales_view === opt.id ? 'border-emerald-500' : 'border-slate-300'}`}>
+                          { formData.permissions.dashboard?.sales_view === opt.id && <div className="h-2 w-2 bg-emerald-500 rounded-full" /> }
+                        </div>
+                      </div>
+                      <span className="text-xs text-slate-500 leading-tight">{opt.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dashboard Visibility */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-emerald-600 flex items-center gap-2">
+                  <div className="h-6 w-1 bg-emerald-600 rounded-full" /> Dashboard Content
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {DASHBOARD_WIDGETS.map((widget) => (
+                    <button
+                      key={widget.id}
+                      disabled={selectedRole?.is_system}
+                      onClick={() => setFormData({
+                        ...formData,
+                        permissions: {
+                          ...formData.permissions,
+                          dashboard: { ...formData.permissions.dashboard, [widget.id]: !formData.permissions.dashboard[widget.id] }
+                        }
+                      })}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                        formData.permissions.dashboard[widget.id]
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 grayscale opacity-60'
+                      }`}
+                    >
+                      <span className="text-sm font-bold">{widget.label}</span>
+                      <div className={`h-6 w-10 rounded-full p-1 transition-colors ${formData.permissions.dashboard[widget.id] ? 'bg-emerald-600' : 'bg-slate-300'}`}>
+                        <div className={`h-4 w-4 bg-white rounded-full transition-transform ${formData.permissions.dashboard[widget.id] ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-white dark:bg-surface-dark p-6 border-t border-slate-200 dark:border-white/10 flex gap-4">
+              <Button variant="outline" onClick={() => setIsEditorOpen(false)} className="flex-1 rounded-xl py-2.5">Cancel</Button>
+              <Button 
+                onClick={handleSaveRole} 
+                disabled={selectedRole?.is_system} 
+                variant="gradient"
+                className="flex-1 rounded-xl py-2.5"
+              >
+                {selectedRole ? 'Update Role' : 'Create Role'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+           <Card className="max-w-md w-full rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="p-8 space-y-4 text-center">
+               <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center">
+                 <AlertCircle size={32} />
+               </div>
+               <h3 className="text-2xl font-bold">Delete Role?</h3>
+               <p className="text-slate-500">This action cannot be undone. Users currently assigned to this role may lose access.</p>
+               <div className="flex gap-3 pt-4">
+                 <Button variant="outline" onClick={() => setDeleteModalOpen(false)} className="flex-1 rounded-xl py-2.5">Cancel</Button>
+                 <Button onClick={handleDeleteRole} className="flex-1 rounded-xl py-2.5 bg-red-600 hover:bg-red-700 text-white">Delete</Button>
+               </div>
+             </div>
+           </Card>
+        </div>
+      )}
+    </div>
+  );
+}

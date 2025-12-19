@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -10,7 +10,7 @@ import { CelebrationCards } from '../sales-executive/CelebrationCards';
 import {
   TrendingUp, DollarSign, Target,
   Award, MapPin, Briefcase,
-  Activity
+  Activity, Building
 } from 'lucide-react';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area
@@ -43,7 +43,7 @@ interface LeaderboardEntry {
 interface TeamTargetStatus {
   id: string;
   name: string;
-  targetAmount: number; // or sqft based on business logic, sticking to revenue for generalized view or sqft if specified
+  targetAmount: number;
   achievedAmount: number;
   shortfall: number;
   percentage: number;
@@ -108,7 +108,7 @@ export function TeamLeaderDashboard() {
     mtdSales: 0, mtdRevenue: 0, mtdSalesGrowth: 0, mtdRevenueGrowth: 0,
     ytdSales: 0, ytdRevenue: 0, ytdSalesGrowth: 0, ytdRevenueGrowth: 0
   });
-  const [salesTrend, setSalesTrend] = useState<any[]>([]);
+  const [salesTrend, setSalesTrend] = useState<{name: string; revenue: number; area: number}[]>([]);
   const [areaLeaderboard, setAreaLeaderboard] = useState<{ mtd: LeaderboardEntry[]; ytd: LeaderboardEntry[] }>({ mtd: [], ytd: [] });
   const [teamTargets, setTeamTargets] = useState<TeamTargetStatus[]>([]);
   const [operational, setOperational] = useState<OperationalData>({
@@ -116,13 +116,17 @@ export function TeamLeaderDashboard() {
     siteVisits: { total: 0, avgPerExec: 0, conversionRate: 0 }
   });
 
-  useEffect(() => {
-    if (profile?.id) {
-      loadAllData();
-    }
-  }, [profile]);
+  const permissions = profile?.role_details?.permissions?.dashboard || {
+    sales_view: 'team',
+    kpi_cards: true,
+    project_performance: true,
+    leaderboard: true,
+    upcoming_events: true,
+    recent_activity: true
+  };
+  const salesView = permissions.sales_view || 'team';
 
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     if (!profile?.id) return;
     setLoading(true);
 
@@ -140,19 +144,26 @@ export function TeamLeaderDashboard() {
         .eq('is_active', true);
 
       const teamIds = teamMembers?.map(m => m.id) || [];
-      // Include TL metrics? Usually TL wants to see Team's performance. Let's stick to teamIds for strict team view, or all for inclusive. Prompt says "Team Leader View: view sales records of their entire team". Usually implies specific reportees.
 
-      if (teamIds.length === 0) {
+      if (salesView === 'none') {
+        setMetrics({
+          mtdSales: 0, mtdRevenue: 0, mtdSalesGrowth: 0, mtdRevenueGrowth: 0,
+          ytdSales: 0, ytdRevenue: 0, ytdSalesGrowth: 0, ytdRevenueGrowth: 0
+        });
         setLoading(false);
-        return; // No team members
+        return;
       }
 
-      // 2. Fetch Sales Data (All Time for YTD calculation)
-      const { data: allSales } = await supabase
-        .from('sales')
-        .select('*')
-        .in('sales_executive_id', teamIds);
+      // 2. Fetch Sales Data
+      let salesQuery = supabase.from('sales').select('*');
 
+      if (salesView === 'self') {
+        salesQuery = salesQuery.eq('sales_executive_id', profile.id);
+      } else if (salesView === 'team') {
+        salesQuery = salesQuery.in('sales_executive_id', teamIds);
+      }
+
+      const { data: allSales } = await salesQuery;
       const sales = allSales || [];
 
       // 3. Calculate MTD Metrics
@@ -177,116 +188,107 @@ export function TeamLeaderDashboard() {
         mtdRevenueGrowth: lastMonthRevenue ? ((mtdRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 100,
         ytdSales: ytdSalesData.length,
         ytdRevenue: ytdRevenue,
-        ytdSalesGrowth: 0, // Placeholder for YoY if we had historical data
+        ytdSalesGrowth: 0,
         ytdRevenueGrowth: 0
       };
       setMetrics(cardMetrics);
 
-      // 5. Chart Data (Last 6 Months)
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const d = subMonths(now, 5 - i);
-        return {
-          name: format(d, 'MMM'),
-          date: d,
-          revenue: 0,
-          target: 5000000 // Mock constant target line for visualization or fetch real targets
-        };
+      // 5. Sales Trend
+      const trendData = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = subMonths(now, i);
+        const mKey = format(d, 'MMM');
+        const mSales = sales.filter(s => isSameMonth(parseISO(s.sale_date), d));
+        trendData.push({
+          name: mKey,
+          revenue: mSales.reduce((sum, s) => sum + (s.total_revenue || 0), 0),
+          area: mSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0)
+        });
+      }
+      setSalesTrend(trendData);
+
+      // 6. Leaderboard
+      const execMap = new Map<string, { name: string, image_url: string | null, area: number, revenue: number, salesCount: number }>();
+      teamMembers?.forEach(m => {
+        execMap.set(m.id, { name: m.full_name, image_url: m.image_url, area: 0, revenue: 0, salesCount: 0 });
       });
 
       sales.forEach(s => {
-        const d = parseISO(s.sale_date);
-        const monthIdx = months.findIndex(m => isSameMonth(m.date, d));
-        if (monthIdx >= 0) {
-          months[monthIdx].revenue += (s.total_revenue || 0);
+        const exec = execMap.get(s.sales_executive_id);
+        if (exec) {
+          exec.area += Number(s.area_sqft || 0);
+          exec.revenue += Number(s.total_revenue || 0);
+          exec.salesCount += 1;
         }
       });
-      setSalesTrend(months);
 
-      // 6. Leaderboard & Target Status
-      // Fetch active monthly targets for this month
+      const leaderData = Array.from(execMap.entries()).map(([id, data]) => ({
+        id,
+        name: data.name,
+        avatarUrl: data.image_url,
+        revenue: data.revenue,
+        area: data.area,
+        salesCount: data.salesCount,
+        targetAchievement: 0,
+        trend: 'neutral' as const
+      })).sort((a, b) => b.area - a.area);
+
+      setAreaLeaderboard({ mtd: leaderData.slice(0, 5), ytd: leaderData.slice(0, 5) });
+
+      // 7. Team Targets
       const { data: targets } = await supabase
-        .from('sales_targets') // Assuming this table exists from previous context
+        .from('sales_targets')
         .select('*')
-        .in('user_id', teamIds)
-        .eq('period_type', 'monthly')
-        .eq('start_date', format(startOfMonth(now), 'yyyy-MM-dd')); // Adjust date format match
+        .in('sales_executive_id', teamIds)
+        .eq('month', now.getMonth() + 1)
+        .eq('year', now.getFullYear());
 
-      const leaderboardData = teamMembers?.map(member => {
-        const memberSalesMTD = mtdSalesData.filter(s => s.sales_executive_id === member.id);
-        const memberSalesYTD = ytdSalesData.filter(s => s.sales_executive_id === member.id);
-
-        const memberRev = memberSalesMTD.reduce((sum, s) => sum + (s.total_revenue || 0), 0);
-        const memberAreaMTD = memberSalesMTD.reduce((sum, s) => sum + (s.area_sqft || 0), 0);
-        const memberAreaYTD = memberSalesYTD.reduce((sum, s) => sum + (s.area_sqft || 0), 0);
-
-        // Find target - defaulting to SqFt or Amt logic. Let's use Revenue for generic dash, or convert SqFt.
-        // For this visual dashboard, let's assume a generic target 
-        const target = targets?.find(t => t.user_id === member.id)?.target_amount || 1000000; // Default mock target if missing
-
+      const targetStatus = teamMembers?.map(m => {
+        const t = targets?.find(target => target.sales_executive_id === m.id);
+        const achievedSqft = sales.filter(s => s.sales_executive_id === m.id && isSameMonth(parseISO(s.sale_date), now))
+                                  .reduce((sum, s) => sum + Number(s.area_sqft || 0), 0);
+        const targetSqft = Number(t?.target_sqft || 0);
+        
         return {
-          id: member.id,
-          name: member.full_name,
-          avatarUrl: member.image_url,
-          revenue: memberRev,
-          areaMTD: memberAreaMTD,
-          areaYTD: memberAreaYTD,
-          salesCount: memberSalesMTD.length,
-          targetAchievement: (memberRev / target) * 100,
-          trend: 'neutral' as const
+          id: m.id,
+          name: m.full_name,
+          targetAmount: targetSqft,
+          achievedAmount: achievedSqft,
+          shortfall: Math.max(0, targetSqft - achievedSqft),
+          percentage: targetSqft > 0 ? (achievedSqft / targetSqft) * 100 : 0
         };
       }) || [];
+      setTeamTargets(targetStatus);
 
-      // Sort for Area Leaderboards
-      const mtdAreaSorted = [...leaderboardData].map(d => ({ ...d, area: d.areaMTD })).sort((a, b) => b.area - a.area);
-      const ytdAreaSorted = [...leaderboardData].map(d => ({ ...d, area: d.areaYTD })).sort((a, b) => b.area - a.area);
-
-      setAreaLeaderboard({ mtd: mtdAreaSorted, ytd: ytdAreaSorted });
-
-      // 7. Team Target Details
-      const targetStatusData = leaderboardData.map(l => ({
-        id: l.id,
-        name: l.name,
-        targetAmount: 1000000, // Matching logic above
-        achievedAmount: l.revenue,
-        shortfall: Math.max(0, 1000000 - l.revenue),
-        percentage: l.targetAchievement
-      }));
-      setTeamTargets(targetStatusData);
-
-      // 8. Operational Data (Mocked for Demo as requested tables might not exist)
-      // Fetch Site Visits
-      const { data: visits } = await supabase
-        .from('site_visits')
-        .select('id, created_at, assigned_vehicle')
-        .in('requested_by', teamIds); // Visits requested by team
-
-      const totalVisits = visits?.length || 0;
-      const conversion = totalVisits > 0 ? (mtdSalesData.length / totalVisits) * 100 : 0;
-
-      // Real projects (Fetch with images)
+      // 8. Operational Oversight
       const { data: projectsData } = await supabase
         .from('projects')
-        .select('id, name, site_photos');
+        .select('name, is_active, id, site_photos')
+        .eq('is_active', true)
+        .limit(10);
 
-      // Calculate YTD Sales Area (Sq. Ft.) per Project
       const projectSalesMap = new Map<string, number>();
-      ytdSalesData.forEach(sale => {
-        const pId = sale.project_id;
-        if (pId) {
-          projectSalesMap.set(pId, (projectSalesMap.get(pId) || 0) + (sale.area_sqft || 0));
-        }
+      sales.forEach(s => {
+        projectSalesMap.set(s.project_id, (projectSalesMap.get(s.project_id) || 0) + Number(s.area_sqft || 0));
       });
+
+      const { count: totalVisits } = await supabase
+        .from('site_visits')
+        .select('*', { count: 'exact', head: true })
+        .in('assigned_to_id', teamIds);
+
+      const conversion = sales.length > 0 && totalVisits ? (sales.length / totalVisits) * 100 : 0;
 
       setOperational({
         projects: projectsData?.map(p => ({
           name: p.name,
           status: 'Active',
-          salesSqFt: projectSalesMap.get(p.id) || 0, // Map sales area
+          salesSqFt: projectSalesMap.get(p.id) || 0,
           imageUrl: p.site_photos?.[0] || null
-        })).sort((a, b) => b.salesSqFt - a.salesSqFt).slice(0, 4) || [], // Top 4 by sales area
+        })).sort((a, b) => b.salesSqFt - a.salesSqFt).slice(0, 4) || [],
         siteVisits: {
-          total: totalVisits,
-          avgPerExec: teamIds.length ? (totalVisits / teamIds.length) : 0,
+          total: totalVisits || 0,
+          avgPerExec: teamIds.length ? ((totalVisits || 0) / teamIds.length) : 0,
           conversionRate: conversion
         }
       });
@@ -296,9 +298,13 @@ export function TeamLeaderDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile, salesView]);
 
-
+  useEffect(() => {
+    if (profile?.id) {
+      loadAllData();
+    }
+  }, [profile, loadAllData]);
 
   if (loading) {
     return <LoadingSpinner size="lg" fullScreen />;
@@ -306,7 +312,6 @@ export function TeamLeaderDashboard() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Welcome Section - Vibrant for TL - optimized for Dark Mode */}
       <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-900/80 dark:to-teal-900/80 rounded-3xl p-8 shadow-2xl shadow-emerald-200 dark:shadow-none border border-white/10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
@@ -322,141 +327,119 @@ export function TeamLeaderDashboard() {
                 </div>
               )}
             </div>
-            <div className="space-y-1">
-              <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-                Welcome Back, {profile?.full_name?.split(' ')[0]}! 👋
-              </h1>
-              <p className="text-emerald-100 text-sm font-medium">
-                Here's what's happening with your team today.
-              </p>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Team Overview, {profile?.full_name?.split(' ')[0]}! 👋</h1>
+              <p className="text-emerald-50 text-base font-medium opacity-90">Monitor your team's sales performance and operational targets.</p>
             </div>
           </div>
-
-          <div className="flex w-full md:w-auto mt-2 md:mt-0 justify-start md:justify-end gap-3 items-center">
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 text-xs md:text-sm font-medium whitespace-nowrap">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </div>
+          <div className="px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-sm font-semibold shadow-inner">
+            {format(new Date(), 'EEEE, do MMMM')}
           </div>
         </div>
       </div>
 
+      {permissions.kpi_cards && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KPICard
+            title="MTD Team Sales"
+            value={metrics.mtdSales}
+            icon={TrendingUp}
+            trend={{ value: metrics.mtdSalesGrowth, isPositive: metrics.mtdSalesGrowth >= 0 }}
+            iconBgColor="bg-blue-500/10"
+            iconColor="text-blue-600"
+          />
+          <KPICard
+            title="MTD Revenue"
+            value={metrics.mtdRevenue}
+            icon={DollarSign}
+            trend={{ value: metrics.mtdRevenueGrowth, isPositive: metrics.mtdRevenueGrowth >= 0 }}
+            formatter={(val) => formatCurrency(val, true)}
+            iconBgColor="bg-emerald-500/10"
+            iconColor="text-emerald-600"
+          />
+          <KPICard
+            title="YTD Team Sales"
+            value={metrics.ytdSales}
+            icon={Award}
+            iconBgColor="bg-purple-500/10"
+            iconColor="text-purple-600"
+          />
+          <KPICard
+            title="YTD Total Revenue"
+            value={metrics.ytdRevenue}
+            icon={Target}
+            formatter={(val) => formatCurrency(val, true)}
+            iconBgColor="bg-orange-500/10"
+            iconColor="text-orange-600"
+          />
+        </div>
+      )}
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <KPICard
-          title="MTD Revenue"
-          value={formatCurrency(metrics.mtdRevenue, true)}
-          icon={DollarSign}
-          trend={{ value: parseFloat(metrics.mtdRevenueGrowth.toFixed(1)), isPositive: metrics.mtdRevenueGrowth >= 0 }}
-          iconColor="text-emerald-600 dark:text-emerald-400"
-          iconBgColor="bg-emerald-100 dark:bg-emerald-500/20"
-        />
-        <KPICard
-          title="MTD Sales"
-          value={metrics.mtdSales}
-          icon={Target}
-          trend={{ value: parseFloat(metrics.mtdSalesGrowth.toFixed(1)), isPositive: metrics.mtdSalesGrowth >= 0 }}
-          iconColor="text-blue-600 dark:text-blue-400"
-          iconBgColor="bg-blue-100 dark:bg-blue-500/20"
-        />
-        <KPICard
-          title="YTD Revenue"
-          value={formatCurrency(metrics.ytdRevenue, true)} // Force Cr
-          icon={TrendingUp}
-          subtitle="Current Fiscal Year"
-          iconColor="text-purple-600 dark:text-purple-400"
-          iconBgColor="bg-purple-100 dark:bg-purple-500/20"
-        />
-        <KPICard
-          title="Avg Team Performace"
-          value={`${(teamTargets.reduce((a, b) => a + b.percentage, 0) / (teamTargets.length || 1)).toFixed(1)}%`}
-          icon={Award}
-          subtitle="Goal Achievement"
-          iconColor="text-orange-600 dark:text-orange-400"
-          iconBgColor="bg-orange-100 dark:bg-orange-500/20"
-        />
-      </div>
-
-      {/* Main Content Split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Left Column (Main Charts & Tables) */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* Sales Trend Chart */}
-          <Card className="rounded-3xl shadow-card-custom overflow-hidden">
-            <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-              <CardTitle>Revenue Trend</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[250px] sm:h-[350px] pt-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesTrend}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1673FF" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#1673FF" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:opacity-10" />
-                  <XAxis dataKey="name" fontSize={12} stroke="#6B7280" />
-                  <YAxis
-                    fontSize={12}
-                    stroke="#6B7280"
-                    tickFormatter={(val) => `₹${(val / 100000).toFixed(0)}L`}
-                  />
-                  <RechartsTooltip
-                    formatter={(val: number) => formatCurrency(val)}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#1673FF"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorRevenue)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Team Target Status Table */}
-          <Card className="rounded-3xl shadow-card-custom overflow-hidden">
-            <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-              <CardTitle className="flex items-center justify-between">
-                <span>Monthly Team Targets</span>
-                <span className="text-sm font-normal text-slate-400">Revenue Goals</span>
+        {salesView !== 'none' && (
+          <Card className="lg:col-span-2 rounded-3xl border-0 shadow-lg shadow-gray-200/50 dark:shadow-none ring-1 ring-gray-100 dark:ring-white/10">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Activity className="text-emerald-500" size={20} />
+                Revenue Trend
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[250px] overflow-y-auto p-0">
-              <div className="">
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={salesTrend}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 12 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 12 }} tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
+                    <RechartsTooltip />
+                    <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {salesView !== 'none' && (
+          <Card className="rounded-3xl border-0 shadow-lg shadow-gray-200/50 dark:shadow-none ring-1 ring-gray-100 dark:ring-white/10 overflow-hidden">
+            <CardHeader className="border-b border-gray-50 dark:border-white/5 bg-gray-50/30 dark:bg-white/5">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Target className="text-blue-500" size={20} />
+                Monthly Team Targets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-auto max-h-[400px]">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-100 dark:border-white/5 sticky top-0 z-10">
+                  <thead className="bg-gray-50/50 dark:bg-white/5 text-gray-400 font-bold text-[10px] uppercase tracking-wider sticky top-0">
                     <tr>
                       <th className="px-4 py-3 text-left">Executive</th>
-                      <th className="px-4 py-3 text-right">Target</th>
-                      <th className="px-4 py-3 text-right">Achieved</th>
-                      <th className="px-4 py-3 text-left pl-8 w-1/3">Progress</th>
+                      <th className="px-4 py-3 text-right">Progress</th>
+                      <th className="px-4 py-3 text-right">%</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 dark:divide-white/5">
                     {teamTargets.map((t) => (
-                      <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5">
-                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-200">{t.name}</td>
-                        <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{formatCurrency(t.targetAmount)}</td>
-                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white font-semibold">{formatCurrency(t.achievedAmount)}</td>
-                        <td className="px-4 py-3 pl-8">
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${t.percentage >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                                style={{ width: `${Math.min(t.percentage, 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-semibold w-10 dark:text-gray-300">{t.percentage.toFixed(0)}%</span>
+                      <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">{t.name}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="text-[10px] text-gray-400 font-medium mb-1">
+                            {t.achievedAmount.toLocaleString()} / {t.targetAmount.toLocaleString()}
+                          </div>
+                          <div className="w-24 h-1.5 bg-gray-100 dark:bg-white/10 rounded-full ml-auto overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${t.percentage >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                              style={{ width: `${Math.min(t.percentage, 100)}%` }}
+                            />
                           </div>
                         </td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-gray-100">{t.percentage.toFixed(0)}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -464,137 +447,137 @@ export function TeamLeaderDashboard() {
               </div>
             </CardContent>
           </Card>
+        )}
+      </div>
 
-
-        </div>
-
-        {/* Right Column (Operational & Info) */}
-        <div className="lg:col-span-1 space-y-6">
-
-          {/* Project Status */}
-          <Card className="rounded-3xl shadow-card-custom overflow-hidden">
-            <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase size={18} /> Project Performance (YTD)
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {permissions.project_performance && (
+          <Card className="rounded-3xl border-0 shadow-lg shadow-gray-200/50 dark:shadow-none ring-1 ring-gray-100 dark:ring-white/10">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <Briefcase className="text-purple-500" size={20} />
+                Project Performance
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[250px] sm:h-[325px] pt-6 flex flex-col">
-              <div className="flex-1 grid grid-cols-2 gap-3 overflow-y-auto">
-                {operational.projects.map((p, i) => (
-                  <div key={i} className="p-3 rounded-xl border border-gray-100 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 hover:shadow-md transition-all flex flex-col justify-between h-24">
-                    <div className="flex justify-between items-start">
-                      <div className="p-1.5 bg-white dark:bg-surface-highlight rounded-lg border border-gray-100 dark:border-white/5 text-indigo-600 dark:text-indigo-400">
-                        <Briefcase size={16} />
-                      </div>
-                      {/* Placeholder for trend or status if needed */}
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {operational.projects.map((p, idx) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 overflow-hidden relative group">
+                    <div className="relative z-10">
+                      <h4 className="font-bold text-gray-800 dark:text-white truncate">{p.name}</h4>
+                      <p className="text-xs text-gray-400 mt-1 font-medium">{p.salesSqFt.toLocaleString()} sq ft sold by team</p>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-gray-800 dark:text-white truncate mb-1">{p.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">
-                        YTD: <span className="text-emerald-600 dark:text-emerald-400 font-bold">{p.salesSqFt.toLocaleString()} Sq. Ft.</span>
-                      </p>
+                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Building size={40} />
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Operational Stats */}
-          {/* Operational Stats */}
-          <Card className="rounded-3xl shadow-card-custom overflow-hidden">
-            <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-              <CardTitle className="flex items-center gap-2">
-                <Activity size={18} /> Operational Overview
+        {permissions.recent_activity && (
+          <Card className="rounded-3xl border-0 shadow-lg shadow-gray-200/50 dark:shadow-none ring-1 ring-gray-100 dark:ring-white/10">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <MapPin className="text-rose-500" size={20} />
+                Operational Overview
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[250px] p-4 flex flex-col justify-center gap-4">
-              <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-500/20 flex-1 flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-2 text-indigo-700 dark:text-indigo-400">
-                  <MapPin size={16} /> <span className="text-xs font-bold uppercase">Visits</span>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-rose-50 dark:bg-rose-500/10 p-4 rounded-2xl text-center">
+                  <span className="block text-2xl font-black text-rose-600 dark:text-rose-400">{operational.siteVisits.total}</span>
+                  <span className="text-[10px] uppercase font-bold text-rose-400 tracking-wider">Site Visits</span>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{operational.siteVisits.total}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Completed</p>
+                <div className="bg-blue-50 dark:bg-blue-500/10 p-4 rounded-2xl text-center">
+                  <span className="block text-2xl font-black text-blue-600 dark:text-blue-400">{operational.siteVisits.avgPerExec.toFixed(1)}</span>
+                  <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">Avg/Exec</span>
                 </div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-500/20 flex-1 flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-2 text-purple-700 dark:text-purple-400">
-                  <Activity size={16} /> <span className="text-xs font-bold uppercase">Conv.</span>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{operational.siteVisits.conversionRate.toFixed(1)}%</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Visit to Sale</p>
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl text-center">
+                  <span className="block text-2xl font-black text-emerald-600 dark:text-emerald-400">{operational.siteVisits.conversionRate.toFixed(1)}%</span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Conversion</span>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-
-
-
-
-          {/* End Right Column */}
-        </div>
-      </div> {/* End Main Split */}
-
-      {/* Leaderboard Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Monthly Leaderboard */}
-        <Card className="rounded-3xl overflow-hidden">
-          <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-            <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-              🏆 Monthly Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-1">
-              {areaLeaderboard.mtd.length > 0 ? (
-                areaLeaderboard.mtd.slice(0, 5).map((item, index) => (
-                  <LeaderboardItem
-                    key={item.id}
-                    rank={index + 1}
-                    name={item.name}
-                    area={item.area}
-                    image_url={item.avatarUrl}
-                  />
-                ))
-              ) : (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6">No sales data for this month yet.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Yearly Leaderboard */}
-        <Card className="rounded-3xl overflow-hidden">
-          <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/5 pb-4">
-            <CardTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-              👑 Yearly Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-1">
-              {areaLeaderboard.ytd.length > 0 ? (
-                areaLeaderboard.ytd.slice(0, 5).map((item, index) => (
-                  <LeaderboardItem
-                    key={item.id}
-                    rank={index + 1}
-                    name={item.name}
-                    area={item.area}
-                    image_url={item.avatarUrl}
-                  />
-                ))
-              ) : (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-6">No sales data for this year yet.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        )}
       </div>
 
-      {/* Employee Milestones Section */}
-      <CelebrationCards />
-    </div >
+      {permissions.leaderboard && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="rounded-3xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+            <CardHeader className="border-b border-slate-50 dark:border-white/5 pb-4 bg-slate-50/50 dark:bg-white/5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
+                  <div className="p-2 bg-amber-50 dark:bg-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-500/30">
+                    <Award size={20} />
+                  </div>
+                  Monthly Top Performers
+                </CardTitle>
+                <div className="px-3 py-1 bg-amber-100 dark:bg-amber-500/20 rounded-full text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider ring-1 ring-amber-200/50 dark:ring-amber-500/30">
+                  MTD
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {areaLeaderboard.mtd.length > 0 ? (
+                  areaLeaderboard.mtd.map((entry, index) => (
+                    <LeaderboardItem
+                      key={entry.id}
+                      rank={index + 1}
+                      name={entry.name}
+                      area={entry.area}
+                      image_url={entry.avatarUrl}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-400 italic">No sales data recorded this month</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+            <CardHeader className="border-b border-slate-50 dark:border-white/5 pb-4 bg-slate-50/50 dark:bg-white/5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100 dark:ring-indigo-500/30">
+                    <Award size={20} />
+                  </div>
+                  Yearly Top Performers
+                </CardTitle>
+                <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 rounded-full text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider ring-1 ring-indigo-200/50 dark:ring-indigo-500/30">
+                  YTD
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {areaLeaderboard.ytd.length > 0 ? (
+                  areaLeaderboard.ytd.map((entry, index) => (
+                    <LeaderboardItem
+                      key={entry.id}
+                      rank={index + 1}
+                      name={entry.name}
+                      area={entry.area}
+                      image_url={entry.avatarUrl}
+                    />
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-400 italic">No sales data recorded this year</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {permissions.upcoming_events && (
+        <CelebrationCards />
+      )}
+    </div>
   );
 }

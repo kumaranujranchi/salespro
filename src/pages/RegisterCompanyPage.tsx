@@ -20,6 +20,7 @@ export function RegisterCompanyPage() {
     companySlug: '',
     fullName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -42,6 +43,11 @@ export function RegisterCompanyPage() {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+
+    if (!formData.phone || formData.phone.trim().length < 10) {
+      setError("Please enter a valid phone number");
       return;
     }
 
@@ -113,7 +119,9 @@ export function RegisterCompanyPage() {
       const { error: rpcError } = await supabase.rpc('register_tenant', {
         company_name: formData.companyName,
         company_slug: formData.companySlug,
-        user_full_name: formData.fullName
+        user_full_name: formData.fullName,
+        contact_email: formData.email,
+        contact_phone: formData.phone
       });
 
       if (rpcError) {
@@ -200,6 +208,18 @@ export function RegisterCompanyPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="john@example.com"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Phone Number"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="+91 98765 43210"
                 />
               </div>
 

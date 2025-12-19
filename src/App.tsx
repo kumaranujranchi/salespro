@@ -32,6 +32,7 @@ import { ShippingPolicy } from './pages/ShippingPolicy';
 import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { ContactUsPage } from './pages/ContactUsPage';
+import { RolesPage } from './pages/RolesPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -123,6 +124,16 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/roles"
+                  element={
+                    <ProtectedRoute allowedRoles={['super_admin']}>
+                      <DashboardLayout>
+                        <RolesPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/departments"
@@ -138,7 +149,7 @@ function App() {
                 <Route
                   path="/projects"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+                    <ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredFeature="inventory">
                       <DashboardLayout>
                         <ProjectsPage />
                       </DashboardLayout>
@@ -171,7 +182,7 @@ function App() {
                 <Route
                   path="/site-visits"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="site_visits">
                       <DashboardLayout>
                         <SiteVisitsPage />
                       </DashboardLayout>
@@ -193,7 +204,7 @@ function App() {
                 <Route
                   path="/incentives"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="incentives">
                       <DashboardLayout>
                         <IncentivesPage />
                       </DashboardLayout>
@@ -204,7 +215,7 @@ function App() {
                 <Route
                   path="/crm"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="crm">
                       <DashboardLayout>
                         <CRMDashboardPage />
                       </DashboardLayout>
@@ -215,7 +226,7 @@ function App() {
                 <Route
                   path="/crm/pipeline"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="crm">
                       <DashboardLayout>
                         <PipelinePage />
                       </DashboardLayout>
@@ -226,7 +237,7 @@ function App() {
                 <Route
                   path="/reports"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="reports">
                       <DashboardLayout>
                         <ReportsPage />
                       </DashboardLayout>
@@ -237,7 +248,7 @@ function App() {
                 <Route
                   path="/leads"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requiredFeature="crm">
                       <DashboardLayout>
                         <LeadsPage />
                       </DashboardLayout>

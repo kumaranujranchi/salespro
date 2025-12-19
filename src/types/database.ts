@@ -1,5 +1,58 @@
 export type UserRole = 'super_admin' | 'admin' | 'director' | 'team_leader' | 'sales_executive' | 'crm_staff' | 'accountant' | 'driver' | 'receptionist' | 'platform_admin';
 
+export interface TenantSettings {
+  features: {
+    crm: boolean;
+    inventory: boolean;
+    reports: boolean;
+    site_visits: boolean;
+    incentives: boolean;
+  };
+  appearance: {
+    primary_color: string;
+    logo_url: string | null;
+  };
+  incentive_plan: {
+    type: string;
+    rules: Record<string, any>;
+  };
+}
+
+export interface RolePermissions {
+  menu: Record<string, 'none' | 'read' | 'edit'>;
+  dashboard: {
+    kpi_cards?: boolean;
+    project_performance?: boolean;
+    leaderboard?: boolean;
+    upcoming_events?: boolean;
+    recent_activity?: boolean;
+    sales_view: 'none' | 'self' | 'team' | 'overall';
+    [key: string]: string | boolean | undefined;
+  };
+}
+
+export interface TenantRole {
+  id: string;
+  name: string;
+  description: string | null;
+  permissions: RolePermissions;
+  is_system: boolean;
+  tenant_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  settings: TenantSettings;
+  subscription_status: string;
+  plan_tier: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Profile {
   id: string;
   employee_id: string;
@@ -16,6 +69,11 @@ export interface Profile {
   tenant_id: string; // Added for SaaS
   is_active: boolean;
   force_password_change: boolean;
+  role_details?: {
+    id: string;
+    name: string;
+    permissions: RolePermissions;
+  };
   created_at: string;
   updated_at: string;
 }

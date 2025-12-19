@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Profile } from '../types/database';
+import { Profile, Tenant } from '../types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
-  tenant: { id: string; name: string; slug: string } | null;
+  tenant: Tenant | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -19,14 +19,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [tenant, setTenant] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(`
+        *,
+        role_details:tenant_roles (
+          id,
+          name,
+          permissions
+        )
+      `)
       .eq('id', userId)
       .maybeSingle();
 
@@ -56,10 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.tenant_id) {
       const { data: tenantData } = await supabase
         .from('tenants')
-        .select('id, name, slug')
+        .select('*')
         .eq('id', data.tenant_id)
         .single();
-      if (tenantData) setTenant(tenantData);
+      if (tenantData) setTenant(tenantData as Tenant);
     }
   };
 

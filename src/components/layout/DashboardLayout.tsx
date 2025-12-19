@@ -14,6 +14,7 @@ import {
   Calendar,
   TrendingUp,
   Award,
+  Shield,
   FileText,
   Menu,
   LogOut,
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
   { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
+  { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
   { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
   { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
@@ -74,7 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { profile, signOut } = useAuth();
+  const { profile, tenant, signOut } = useAuth();
   const { startTutorial } = useTutorial();
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,21 +84,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Module State
   const [activeModule, setActiveModule] = useState<'sales' | 'crm'>('sales');
 
+  // Check if tenant has CRM enabled
+  const isCRMEnabled = tenant?.settings?.features?.crm !== false;
+  
   // Check if user has access to CRM (Sales Department)
   // Assuming 'sales_executive', 'team_leader' are in Sales department + Admins
-  const hasCRMAccess = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
+  const hasCRMAccess = isCRMEnabled && ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
 
   useEffect(() => {
     // Sync module state with URL
     if (location.pathname.startsWith('/crm') || location.pathname.startsWith('/leads')) {
+      if (!isCRMEnabled) {
+        navigate('/dashboard');
+        return;
+      }
       setActiveModule('crm');
     } else {
       setActiveModule('sales');
     }
-  }, [location.pathname]);
+  }, [location.pathname, isCRMEnabled, navigate]);
 
   const handleModuleToggle = (isCRM: boolean) => {
-    if (isCRM) {
+    if (isCRM && isCRMEnabled) {
       setActiveModule('crm');
       navigate('/crm');
     } else {
@@ -115,8 +124,46 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const currentNavItems = activeModule === 'crm' ? crmNavItems : navItems;
 
   const filteredNavItems = currentNavItems.filter((item) => {
-    if (!item.roles) return true;
-    return item.roles.includes(profile?.role || '');
+    // 1. Check dynamic role mapping if role_details exists
+    const permissions = profile?.role_details?.permissions;
+    
+    if (permissions?.menu) {
+      const menuPerms = permissions.menu;
+      // Map path to permission key
+      let permKey: string | null = null;
+      if (item.path === '/dashboard') permKey = 'dashboard';
+      if (item.path === '/crm' || item.path === '/leads' || item.path === '/crm/pipeline') permKey = 'crm';
+      if (item.path === '/projects') permKey = 'inventory';
+      if (item.path === '/site-visits') permKey = 'site_visits';
+      if (item.path === '/incentives') permKey = 'incentives';
+      if (item.path === '/reports') permKey = 'reports';
+      if (item.path === '/users') permKey = 'users';
+      if (item.path === '/roles' || item.path === '/subscription' || item.path === '/settings') permKey = 'settings';
+
+      // If we have a mapped key and it's set to 'none', hide the item
+      if (permKey && menuPerms[permKey] === 'none') return false;
+      
+      // If edit is required but only read is available (we'll enforce this inside pages too)
+      // For now, visibility is enough
+    }
+
+    // 2. Fallback/Initial Role access check
+    const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
+    if (!roleAccess) return false;
+
+    // 3. Global Tenant Feature Flags
+    const features = tenant?.settings?.features;
+    if (features) {
+      if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') {
+        return features.crm !== false;
+      }
+      if (item.path === '/projects') return features.inventory !== false;
+      if (item.path === '/reports') return features.reports !== false;
+      if (item.path === '/site-visits') return features.site_visits !== false;
+      if (item.path === '/incentives') return features.incentives !== false;
+    }
+
+    return true;
   });
 
   if (isMobile) {

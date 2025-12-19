@@ -87,14 +87,14 @@ export function LoginPage() {
           {/* Login Card */}
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-card-custom overflow-hidden transform transition-all duration-500">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-[#1673FF] to-[#0A1C37] px-8 py-10 text-center relative overflow-hidden">
+            <div className="bg-gradient-to-r from-[#1673FF] to-[#0A1C37] px-8 py-6 text-center relative overflow-hidden">
               <div className="absolute inset-0 bg-white/5 backdrop-blur-sm"></div>
 
               <div className="relative z-10">
-                <div className="inline-flex items-center justify-center mb-4 transform transition-transform duration-500 hover:scale-110 hover:rotate-3">
-                  <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="w-72 h-72 object-contain rounded-2xl" />
+                <div className="inline-flex items-center justify-center mb-2 transform transition-transform duration-500 hover:scale-110 hover:rotate-3">
+                  <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="w-24 h-24 object-contain rounded-2xl" />
                 </div>
-                <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Welcome Back</h1>
+                <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">Welcome Back</h1>
                 <p className="text-white/80 text-sm">Sign in to access your RealSalePro dashboard</p>
               </div>
 
@@ -104,7 +104,7 @@ export function LoginPage() {
             </div>
 
             {/* Form Section */}
-            <div className="px-8 py-10">
+            <div className="px-8 py-6">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Email Field */}
                 <div className="space-y-2 animate-fadeInUp" style={{ animationDelay: '100ms' }}>

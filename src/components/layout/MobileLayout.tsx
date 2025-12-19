@@ -21,14 +21,28 @@ interface MobileLayoutProps {
 }
 
 export function MobileLayout({ children, navItems, activeModule, onModuleChange, hasCRMAccess }: MobileLayoutProps) {
-    const { profile, signOut } = useAuth();
+    const { profile, tenant, signOut } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const filteredNavItems = navItems.filter((item) => {
-        if (!item.roles) return true;
-        return item.roles.includes(profile?.role || '');
+        const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
+        if (!roleAccess) return false;
+
+        // Feature Flag System
+        const features = tenant?.settings?.features;
+        if (features) {
+            if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') {
+                return features.crm !== false;
+            }
+            if (item.path === '/projects') return features.inventory !== false;
+            if (item.path === '/reports') return features.reports !== false;
+            if (item.path === '/site-visits') return features.site_visits !== false;
+            if (item.path === '/incentives') return features.incentives !== false;
+        }
+
+        return true;
     });
 
     return (
