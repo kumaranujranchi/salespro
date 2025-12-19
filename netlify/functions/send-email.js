@@ -223,6 +223,38 @@ exports.handler = async (event, context) => {
       `;
       htmlContent = emailWrapper(content);
     }
+    else if (type === 'SUBSCRIPTION_REMINDER') {
+      subject = `Action Required: Your Subscription Ends in ${data.daysRemaining} Days`;
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Subscription Expiring Soon
+        </h2>
+        <p style="margin: 0 0 20px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          This is a reminder that your <strong>${data.planName || 'RealSalePro'}</strong> subscription is set to expire in <strong>${data.daysRemaining} days</strong> on ${data.expiryDate}.
+        </p>
+        <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          To ensure uninterrupted access to your data and premium features, please renew your plan today.
+        </p>
+        
+        <!-- CTA Button -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding: 10px 0 30px 0;">
+              <a href="${BASE_URL}/subscription" style="background-color: #4F46E5; color: #ffffff; padding: 14px 30px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block; font-size: 16px;">
+                Renew Subscription
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <div style="background-color: #FFF4E5; border: 1px solid #FFE0B2; border-radius: 8px; padding: 15px; text-align: center; margin-top: 10px;">
+          <p style="margin: 0; color: #B76E00; font-size: 13px;">
+            <strong>Note:</strong> If you've already made a payment, please disregard this message.
+          </p>
+        </div>
+      `;
+      htmlContent = emailWrapper(content);
+    }
     else {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid email type' }) };
     }
