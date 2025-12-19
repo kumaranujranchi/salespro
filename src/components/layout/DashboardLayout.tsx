@@ -57,10 +57,10 @@ const navGroups: NavGroup[] = [
   {
     label: 'Sales',
     items: [
-      { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
-      { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director'] },
-      { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
-      { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant'] },
+      { label: 'Sales', path: '/sales', icon: TrendingUp, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'sales_manager', 'Sales Executive'] },
+      { label: 'Incentives', path: '/incentives', icon: Award, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'sales_manager', 'Sales Executive'] },
+      { label: 'Targets', path: '/targets', icon: Target, roles: ['super_admin', 'admin', 'director', 'sales_manager', 'team_leader', 'sales_executive', 'Sales Executive'] },
+      { label: 'Reports', path: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'sales_manager', 'Sales Executive'] },
     ]
   },
   {
@@ -117,13 +117,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Module State
   const [activeModule, setActiveModule] = useState<'sales' | 'crm'>('sales');
-  
+
   // Collapsed Groups State (all expanded by default)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   // Check if tenant has CRM enabled
   const isCRMEnabled = tenant?.settings?.features?.crm !== false;
-  
+
   // Check if user has access to CRM (Sales Department)
   // Assuming 'sales_executive', 'team_leader' are in Sales department + Admins
   const hasCRMAccess = isCRMEnabled && ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
@@ -163,7 +163,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const filteredNavItems = currentNavItems.filter((item) => {
     // 1. Check dynamic role mapping if role_details exists
     const permissions = profile?.role_details?.permissions;
-    
+
     if (permissions?.menu) {
       const menuPerms = permissions.menu;
       // Map path to permission key
@@ -172,14 +172,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (item.path === '/crm' || item.path === '/leads' || item.path === '/crm/pipeline') permKey = 'crm';
       if (item.path === '/projects') permKey = 'inventory';
       if (item.path === '/site-visits') permKey = 'site_visits';
-      if (item.path === '/incentives') permKey = 'incentives';
+      // if (item.path === '/incentives') permKey = 'incentives'; // Bypass permission check to force show
       if (item.path === '/reports') permKey = 'reports';
       if (item.path === '/users') permKey = 'users';
       if (item.path === '/roles' || item.path === '/subscription' || item.path === '/settings') permKey = 'settings';
 
       // If we have a mapped key and it's set to 'none', hide the item
       if (permKey && menuPerms[permKey] === 'none') return false;
-      
+
       // If edit is required but only read is available (we'll enforce this inside pages too)
       // For now, visibility is enough
     }
@@ -358,7 +358,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className={`px-2 mb-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest ${isCollapsed ? 'hidden' : 'block'}`}>
               {activeModule === 'crm' ? 'CRM Module' : 'Main Menu'}
             </div>
-            
+
             {activeModule === 'sales' ? (
               // Sales Module - Grouped Navigation
               navGroups.map((group) => {
@@ -405,13 +405,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                       >
                         <span>{group.label}</span>
-                        <ChevronDown 
-                          size={14} 
+                        <ChevronDown
+                          size={14}
                           className={`transition-transform duration-200 ${isGroupCollapsed ? '-rotate-90' : ''}`}
                         />
                       </button>
                     )}
-                    
+
                     {(!isGroupCollapsed || isCollapsed) && groupItems.map((item) => {
                       const Icon = item.icon;
                       const isActive = location.pathname === item.path;

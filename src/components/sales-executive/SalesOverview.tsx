@@ -72,9 +72,9 @@ export function SalesOverview() {
             const yearStart = `${currentYear}-01-01`;
 
             if (salesView === 'none') {
-                 setStats(prev => ({ ...prev, achievementPercent: 0, mySales: 0, myRevenue: 0 }));
-                 setLoading(false);
-                 return;
+                setStats(prev => ({ ...prev, achievementPercent: 0, mySales: 0, myRevenue: 0 }));
+                setLoading(false);
+                return;
             }
 
             // Fetch team members if salesView is 'team'
@@ -105,11 +105,11 @@ export function SalesOverview() {
             ytdSalesQuery = ytdSalesQuery.gte('sale_date', yearStart);
 
             const [
-                { data: salesData }, 
-                { data: targetData }, 
-                { data: incentiveData }, 
-                { data: activityLogs }, 
-                { data: ytdSalesData }, 
+                { data: salesData },
+                { data: targetData },
+                { data: incentiveData },
+                { data: activityLogs },
+                { data: ytdSalesData },
                 { data: projectsData }
             ] = await Promise.all([
                 salesQuery,
@@ -142,7 +142,7 @@ export function SalesOverview() {
             const projectStats = projectsData?.map(p => ({
                 name: p.name,
                 area: projMap.get(p.id) || 0
-            })).sort((a,b) => b.area - a.area).slice(0, 4) || [];
+            })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
 
             setStats({
                 mySales: salesData?.length || 0,
@@ -269,9 +269,22 @@ export function SalesOverview() {
             )}
 
             {permissions.project_performance && stats.projectStats.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                <div
+                    className={`grid gap-3 md:gap-6 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
+                            stats.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                                stats.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                                    'grid-cols-2 md:grid-cols-2 lg:grid-cols-4'
+                        }`}
+                >
                     {stats.projectStats.map((proj, index) => {
                         const style = projectColors[index % projectColors.length];
+                        const count = stats.projectStats.length;
+
+                        // Dynamic class for spanning full width if it's the 5th item in a 5-item list
+                        // or generally last item if odd row in future logic, but strictly for the 5th item requirement:
+                        const isFifthItem = count === 5 && index === 4;
+                        const cardClass = isFifthItem ? "col-span-2 md:col-span-2 lg:col-span-4" : "";
+
                         return (
                             <KPICard
                                 key={index}
@@ -281,6 +294,7 @@ export function SalesOverview() {
                                 subtitle="Total Sold"
                                 iconBgColor={style.bg}
                                 iconColor={style.text}
+                                className={cardClass}
                             />
                         );
                     })}

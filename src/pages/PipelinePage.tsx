@@ -198,7 +198,7 @@ export function PipelinePage() {
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-transparent p-4 md:p-6 space-y-6">
       {/* 1. Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-surface-dark p-4 rounded-lg border border-slate-200 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -235,26 +235,26 @@ export function PipelinePage() {
       )}
 
       {/* 2. Top Section: LEAD FUNNEL BY STAGES */}
-      <Card className="shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 bg-white">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">LEAD FUNNEL BY STAGES</h2>
+      <Card className="shadow-sm border border-slate-200 dark:border-white/10 overflow-hidden dark:bg-surface-dark">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10 bg-white dark:bg-surface-dark">
+          <h2 className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">LEAD FUNNEL BY STAGES</h2>
         </div>
-        <CardContent className="p-6 bg-white dark:bg-slate-800">
+        <CardContent className="p-6 bg-white dark:bg-surface-dark">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {/* Left: KPI Cards Stack */}
             <div className="md:col-span-3 flex flex-col gap-4 justify-center">
               {/* Total Leads */}
-              <div className="border border-slate-300 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-slate-700">
+              <div className="border border-slate-300 dark:border-white/10 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-white/5">
                 <div className="text-xs font-semibold text-slate-400 uppercase mb-1">TOTAL LEADS</div>
                 <div className="text-xl font-bold text-slate-700 dark:text-white">{stats.total}</div>
               </div>
               {/* Total In-Progress */}
-              <div className="border border-slate-300 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-slate-700">
+              <div className="border border-slate-300 dark:border-white/10 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-white/5">
                 <div className="text-xs font-semibold text-slate-400 uppercase mb-1">TOTAL IN-PROGRESS</div>
                 <div className="text-xl font-bold text-slate-700 dark:text-white">{stats.inProgress}</div>
               </div>
               {/* Total Closed */}
-              <div className="border border-slate-300 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-slate-700">
+              <div className="border border-slate-300 dark:border-white/10 rounded p-4 text-center hover:shadow-md transition-all bg-white dark:bg-white/5">
                 <div className="text-xs font-semibold text-slate-400 uppercase mb-1">TOTAL CLOSED</div>
                 <div className="text-xl font-bold text-slate-700 dark:text-white">{stats.closed}</div>
               </div>
@@ -315,11 +315,11 @@ export function PipelinePage() {
       </Card>
 
       {/* 3. Bottom Section: LEADS BY TAGS */}
-      <Card className="shadow-sm border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-100 bg-white">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">LEADS BY TAGS</h2>
+      <Card className="shadow-sm border border-slate-200 dark:border-white/10 dark:bg-surface-dark">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10 bg-white dark:bg-surface-dark">
+          <h2 className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">LEADS BY TAGS</h2>
         </div>
-        <CardContent className="p-6 bg-white dark:bg-slate-800">
+        <CardContent className="p-6 bg-white dark:bg-surface-dark">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
             {/* Left Chart: IN-PROGRESS */}

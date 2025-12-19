@@ -156,7 +156,7 @@ export function SupportPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-surface-dark p-6 rounded-lg shadow-sm border border-gray-200 dark:border-white/10">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">New Support Request</h2>
           <form onSubmit={handleCreateTicket} className="space-y-4">
             <div>
@@ -214,16 +214,16 @@ export function SupportPage() {
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-600" />
         </div>
       ) : tickets.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
+        <div className="text-center py-12 bg-white dark:bg-surface-dark rounded-lg border border-dashed border-gray-300 dark:border-white/10">
           <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tickets yet</h3>
           <p className="mt-1 text-sm text-gray-500">Have an issue? Raise a ticket above.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
+        <div className="bg-white dark:bg-surface-dark shadow overflow-hidden sm:rounded-md border dark:border-white/10">
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {tickets.map((ticket) => (
-              <li key={ticket.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <li key={ticket.id} className="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export function SupportPage() {
       {/* Custom Notification Modal */}
       {notification && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-[#0E1A15] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-scaleIn border border-gray-200 dark:border-white/10">
             {/* Header with gradient background */}
             <div className={`relative p-6 text-center overflow-hidden ${notification.type === 'success'
               ? 'bg-gradient-to-br from-green-500 to-emerald-600'
@@ -288,7 +288,7 @@ export function SupportPage() {
             </div>
 
             {/* Footer with action button */}
-            <div className="p-6 bg-white dark:bg-[#1e1e2d]">
+            <div className="p-6 bg-white dark:bg-[#0E1A15]">
               <button
                 onClick={() => setNotification(null)}
                 className={`w-full py-3 rounded-lg font-bold text-white transition-all shadow-lg transform hover:scale-[1.02] active:scale-[0.98] ${notification.type === 'success'

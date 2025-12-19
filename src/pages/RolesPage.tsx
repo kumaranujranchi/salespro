@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Shield, 
-  Plus, 
-  Search, 
-  Edit2, 
-  Trash2, 
-  Check, 
+import {
+  Shield,
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  Check,
   X,
   Lock,
   Eye,
@@ -158,7 +158,7 @@ export function RolesPage() {
       }
 
       if (error) throw error;
-      
+
       setIsEditorOpen(false);
       fetchRoles();
     } catch (err) {
@@ -202,8 +202,8 @@ export function RolesPage() {
           </h1>
           <p className="text-slate-500 mt-1">Configure custom roles and granular permissions for your team.</p>
         </div>
-        <Button 
-          onClick={handleCreateNew} 
+        <Button
+          onClick={handleCreateNew}
           variant="gradient"
           className="rounded-xl px-6 py-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
         >
@@ -213,7 +213,7 @@ export function RolesPage() {
 
       <div className="relative group">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-        <Input 
+        <Input
           className="pl-12 py-6 rounded-2xl border-slate-200 dark:border-white/10 bg-white dark:bg-surface-dark focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm"
           placeholder="Search roles by name or description..."
           value={searchQuery}
@@ -229,16 +229,16 @@ export function RolesPage() {
                 <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
                   <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
-                {!role.is_system && (
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditRole(role)} className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-600">
-                      <Edit2 size={16} />
-                    </Button>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="sm" onClick={() => handleEditRole(role)} className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-600">
+                    <Edit2 size={16} />
+                  </Button>
+                  {!role.is_system && (
                     <Button variant="ghost" size="sm" onClick={() => { setSelectedRole(role); setDeleteModalOpen(true); }} className="h-8 w-8 p-0 text-slate-400 hover:text-red-600">
                       <Trash2 size={16} />
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               <div className="mt-4">
                 <div className="flex items-center gap-2">
@@ -295,20 +295,19 @@ export function RolesPage() {
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Role Name</label>
-                    <Input 
-                      placeholder="e.g. Regional Manager" 
+                    <Input
+                      placeholder="e.g. Regional Manager"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       disabled={selectedRole?.is_system}
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Description</label>
-                    <Input 
-                      placeholder="Briefly describe what this role can do" 
+                    <Input
+                      placeholder="Briefly describe what this role can do"
                       value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      disabled={selectedRole?.is_system}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
                 </div>
@@ -342,12 +341,12 @@ export function RolesPage() {
                             if (item.id === 'dashboard' && level === 'edit') {
                               return <div key={level} className="w-8" />; // Empty spacer for alignment
                             }
-                            
+
                             return (
                               <button
                                 key={level}
                                 onClick={() => {
-                                  if (selectedRole?.is_system) return;
+                                  // System unlock
                                   setFormData({
                                     ...formData,
                                     permissions: {
@@ -356,11 +355,10 @@ export function RolesPage() {
                                     }
                                   });
                                 }}
-                                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
-                                  currentVal === level 
-                                  ? 'bg-emerald-600 text-white shadow-lg' 
+                                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${currentVal === level
+                                  ? 'bg-emerald-600 text-white shadow-lg'
                                   : 'text-slate-400 hover:text-emerald-500 hover:bg-white dark:hover:bg-white/10'
-                                }`}
+                                  }`}
                               >
                                 {level === 'none' && <X size={16} />}
                                 {level === 'read' && <Eye size={16} />}
@@ -384,7 +382,6 @@ export function RolesPage() {
                   {SALES_PERSPECTIVES.map((opt) => (
                     <button
                       key={opt.id}
-                      disabled={selectedRole?.is_system}
                       onClick={() => setFormData({
                         ...formData,
                         permissions: {
@@ -392,18 +389,17 @@ export function RolesPage() {
                           dashboard: { ...formData.permissions.dashboard, sales_view: opt.id }
                         }
                       })}
-                      className={`flex flex-col p-4 rounded-2xl border text-left transition-all ${
-                        formData.permissions.dashboard?.sales_view === opt.id
+                      className={`flex flex-col p-4 rounded-2xl border text-left transition-all ${formData.permissions.dashboard?.sales_view === opt.id
                         ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 ring-2 ring-emerald-500/20'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 opacity-70'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`text-sm font-bold ${ formData.permissions.dashboard?.sales_view === opt.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <span className={`text-sm font-bold ${formData.permissions.dashboard?.sales_view === opt.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
                           {opt.label}
                         </span>
-                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${ formData.permissions.dashboard?.sales_view === opt.id ? 'border-emerald-500' : 'border-slate-300'}`}>
-                          { formData.permissions.dashboard?.sales_view === opt.id && <div className="h-2 w-2 bg-emerald-500 rounded-full" /> }
+                        <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${formData.permissions.dashboard?.sales_view === opt.id ? 'border-emerald-500' : 'border-slate-300'}`}>
+                          {formData.permissions.dashboard?.sales_view === opt.id && <div className="h-2 w-2 bg-emerald-500 rounded-full" />}
                         </div>
                       </div>
                       <span className="text-xs text-slate-500 leading-tight">{opt.description}</span>
@@ -421,7 +417,6 @@ export function RolesPage() {
                   {DASHBOARD_WIDGETS.map((widget) => (
                     <button
                       key={widget.id}
-                      disabled={selectedRole?.is_system}
                       onClick={() => setFormData({
                         ...formData,
                         permissions: {
@@ -429,11 +424,10 @@ export function RolesPage() {
                           dashboard: { ...formData.permissions.dashboard, [widget.id]: !formData.permissions.dashboard[widget.id] }
                         }
                       })}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        formData.permissions.dashboard[widget.id]
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${formData.permissions.dashboard[widget.id]
                         ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
                         : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-500 grayscale opacity-60'
-                      }`}
+                        }`}
                     >
                       <span className="text-sm font-bold">{widget.label}</span>
                       <div className={`h-6 w-10 rounded-full p-1 transition-colors ${formData.permissions.dashboard[widget.id] ? 'bg-emerald-600' : 'bg-slate-300'}`}>
@@ -447,9 +441,8 @@ export function RolesPage() {
 
             <div className="fixed bottom-0 right-0 w-full max-w-2xl bg-white dark:bg-surface-dark p-6 border-t border-slate-200 dark:border-white/10 flex gap-4">
               <Button variant="outline" onClick={() => setIsEditorOpen(false)} className="flex-1 rounded-xl py-2.5">Cancel</Button>
-              <Button 
-                onClick={handleSaveRole} 
-                disabled={selectedRole?.is_system} 
+              <Button
+                onClick={handleSaveRole}
                 variant="gradient"
                 className="flex-1 rounded-xl py-2.5"
               >
@@ -463,19 +456,19 @@ export function RolesPage() {
       {/* Confirmation Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-           <Card className="max-w-md w-full rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
-             <div className="p-8 space-y-4 text-center">
-               <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center">
-                 <AlertCircle size={32} />
-               </div>
-               <h3 className="text-2xl font-bold">Delete Role?</h3>
-               <p className="text-slate-500">This action cannot be undone. Users currently assigned to this role may lose access.</p>
-               <div className="flex gap-3 pt-4">
-                 <Button variant="outline" onClick={() => setDeleteModalOpen(false)} className="flex-1 rounded-xl py-2.5">Cancel</Button>
-                 <Button onClick={handleDeleteRole} className="flex-1 rounded-xl py-2.5 bg-red-600 hover:bg-red-700 text-white">Delete</Button>
-               </div>
-             </div>
-           </Card>
+          <Card className="max-w-md w-full rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-4 text-center">
+              <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center">
+                <AlertCircle size={32} />
+              </div>
+              <h3 className="text-2xl font-bold">Delete Role?</h3>
+              <p className="text-slate-500">This action cannot be undone. Users currently assigned to this role may lose access.</p>
+              <div className="flex gap-3 pt-4">
+                <Button variant="outline" onClick={() => setDeleteModalOpen(false)} className="flex-1 rounded-xl py-2.5">Cancel</Button>
+                <Button onClick={handleDeleteRole} className="flex-1 rounded-xl py-2.5 bg-red-600 hover:bg-red-700 text-white">Delete</Button>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
     </div>

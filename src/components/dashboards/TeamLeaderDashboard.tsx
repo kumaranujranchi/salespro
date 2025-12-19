@@ -108,7 +108,7 @@ export function TeamLeaderDashboard() {
     mtdSales: 0, mtdRevenue: 0, mtdSalesGrowth: 0, mtdRevenueGrowth: 0,
     ytdSales: 0, ytdRevenue: 0, ytdSalesGrowth: 0, ytdRevenueGrowth: 0
   });
-  const [salesTrend, setSalesTrend] = useState<{name: string; revenue: number; area: number}[]>([]);
+  const [salesTrend, setSalesTrend] = useState<{ name: string; revenue: number; area: number }[]>([]);
   const [areaLeaderboard, setAreaLeaderboard] = useState<{ mtd: LeaderboardEntry[]; ytd: LeaderboardEntry[] }>({ mtd: [], ytd: [] });
   const [teamTargets, setTeamTargets] = useState<TeamTargetStatus[]>([]);
   const [operational, setOperational] = useState<OperationalData>({
@@ -246,9 +246,9 @@ export function TeamLeaderDashboard() {
       const targetStatus = teamMembers?.map(m => {
         const t = targets?.find(target => target.sales_executive_id === m.id);
         const achievedSqft = sales.filter(s => s.sales_executive_id === m.id && isSameMonth(parseISO(s.sale_date), now))
-                                  .reduce((sum, s) => sum + Number(s.area_sqft || 0), 0);
+          .reduce((sum, s) => sum + Number(s.area_sqft || 0), 0);
         const targetSqft = Number(t?.target_sqft || 0);
-        
+
         return {
           id: m.id,
           name: m.full_name,
@@ -460,18 +460,28 @@ export function TeamLeaderDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {operational.projects.map((p, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 overflow-hidden relative group">
-                    <div className="relative z-10">
-                      <h4 className="font-bold text-gray-800 dark:text-white truncate">{p.name}</h4>
-                      <p className="text-xs text-gray-400 mt-1 font-medium">{p.salesSqFt.toLocaleString()} sq ft sold by team</p>
+              <div className={`grid gap-4 ${operational.projects.length === 1 ? 'grid-cols-1' :
+                  operational.projects.length === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+                    operational.projects.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+                }`}>
+                {operational.projects.map((p, idx) => {
+                  const count = operational.projects.length;
+                  const isFifthItem = count === 5 && idx === 4;
+                  const itemClass = isFifthItem ? "col-span-1 sm:col-span-2 lg:col-span-4" : "";
+
+                  return (
+                    <div key={idx} className={`p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 overflow-hidden relative group ${itemClass}`}>
+                      <div className="relative z-10">
+                        <h4 className="font-bold text-gray-800 dark:text-white truncate">{p.name}</h4>
+                        <p className="text-xs text-gray-400 mt-1 font-medium">{p.salesSqFt.toLocaleString()} sq ft sold by team</p>
+                      </div>
+                      <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Building size={40} />
+                      </div>
                     </div>
-                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Building size={40} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

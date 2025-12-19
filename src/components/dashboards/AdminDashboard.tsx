@@ -407,31 +407,6 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      {/* Project Performance Cards (All Time) */}
-      {permissions.project_performance && tenant?.settings?.features?.inventory !== false && stats.projectStats.length > 0 && (
-        <div
-          className={`grid gap-4 md:gap-6 transition-all duration-300 ${stats.projectStats.length === 1
-            ? 'grid-cols-1'
-            : stats.projectStats.length === 2
-              ? 'grid-cols-1 md:grid-cols-2'
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-            }`}
-        >
-          {stats.projectStats.map((project, idx) => (
-            <KPICard
-              key={idx}
-              title={project.name}
-              value={project.area}
-              icon={Building}
-              iconBgColor={idx === 0 ? "bg-amber-500/10" : idx === 1 ? "bg-emerald-500/10" : "bg-blue-500/10"}
-              iconColor={idx === 0 ? "text-amber-600" : idx === 1 ? "text-emerald-600" : "text-blue-600"}
-              formatter={(val) => `${val.toLocaleString()} sqft`}
-              trend={{ value: 100, isPositive: true }}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Financial Metrics (Month vs YTD) */}
       {permissions.kpi_cards && salesView !== 'none' && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -467,6 +442,37 @@ export function AdminDashboard() {
             iconColor="text-emerald-600"
             formatter={(val) => formatCurrency(val, true)}
           />
+        </div>
+      )}
+
+      {/* Project Performance Cards (All Time) */}
+      {permissions.project_performance && tenant?.settings?.features?.inventory !== false && stats.projectStats.length > 0 && (
+        <div
+          className={`grid gap-4 md:gap-6 transition-all duration-300 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
+            stats.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+              stats.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                'grid-cols-2 md:grid-cols-2 lg:grid-cols-4'
+            }`}
+        >
+          {stats.projectStats.map((project, idx) => {
+            const count = stats.projectStats.length;
+            const isFifthItem = count === 5 && idx === 4;
+            const cardClass = isFifthItem ? "col-span-2 md:col-span-2 lg:col-span-4" : "";
+
+            return (
+              <KPICard
+                key={idx}
+                title={project.name}
+                value={project.area}
+                icon={Building}
+                iconBgColor={idx === 0 ? "bg-amber-500/10" : idx === 1 ? "bg-emerald-500/10" : "bg-blue-500/10"}
+                iconColor={idx === 0 ? "text-amber-600" : idx === 1 ? "text-emerald-600" : "text-blue-600"}
+                formatter={(val) => `${val.toLocaleString()} sqft`}
+                trend={{ value: 100, isPositive: true }}
+                className={cardClass}
+              />
+            );
+          })}
         </div>
       )}
 

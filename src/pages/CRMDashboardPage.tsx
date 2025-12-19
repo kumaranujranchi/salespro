@@ -300,28 +300,30 @@ export function CRMDashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-gradient-to-br from-[#1673FF] to-blue-600 text-white">
-          <CardContent className="p-6">
+        <Card className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white border-0 shadow-lg shadow-emerald-900/20 relative overflow-hidden group">
+          <CardContent className="p-6 relative z-10">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-transform group-hover:scale-110"></div>
             <h3 className="text-xl font-bold mb-2">View All Contacts</h3>
-            <p className="text-blue-100 mb-4 text-sm">
+            <p className="text-emerald-100 mb-4 text-sm">
               Access and manage all your leads in one place
             </p>
             <Link to="/leads">
-              <Button variant="outline" className="bg-white text-blue-600 hover:bg-blue-50 border-0">
+              <Button variant="outline" className="bg-white text-emerald-700 hover:bg-emerald-50 border-0 font-semibold shadow-sm">
                 Go to Contacts →
               </Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white">
-          <CardContent className="p-6">
+        <Card className="bg-gradient-to-br from-teal-600 to-teal-800 text-white border-0 shadow-lg shadow-teal-900/20 relative overflow-hidden group">
+          <CardContent className="p-6 relative z-10">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none transition-transform group-hover:scale-110"></div>
             <h3 className="text-xl font-bold mb-2">Sales Pipeline</h3>
-            <p className="text-purple-100 mb-4 text-sm">
+            <p className="text-teal-100 mb-4 text-sm">
               Visualize your lead funnel and conversion rates
             </p>
             <Link to="/crm/pipeline">
-              <Button variant="outline" className="bg-white text-purple-600 hover:bg-purple-50 border-0">
+              <Button variant="outline" className="bg-white text-teal-700 hover:bg-teal-50 border-0 font-semibold shadow-sm">
                 View Pipeline →
               </Button>
             </Link>

@@ -305,7 +305,7 @@ export function SubscriptionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
           {/* Card 1: Current Plan */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-4">
@@ -319,13 +319,13 @@ export function SubscriptionPage() {
                   {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
                 </span>
               </div>
-              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
                 Current Plan
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 {isPro ? 'Pro Subscription' : 'Starter Plan'}
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
+              <div className="text-sm text-slate-600 dark:text-gray-400">
                 {isActive
                   ? `Billed ${tenantData.billing_cycle === 'yearly' ? 'Yearly' : tenantData.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
                   : `${daysRemaining} days left in trial`
@@ -335,7 +335,7 @@ export function SubscriptionPage() {
           </div>
 
           {/* Card 2: Billing Status */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-4">
@@ -343,13 +343,13 @@ export function SubscriptionPage() {
                   <CreditCard className="w-6 h-6" />
                 </div>
               </div>
-              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
                 Upcoming Invoice
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 {formatCurrency(billingAmount)}
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2">
+              <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 <span>Renewing on {getNextBillingDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
@@ -357,7 +357,7 @@ export function SubscriptionPage() {
           </div>
 
           {/* Card 3: Usage / Stats (Placeholder for now) */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-4">
@@ -365,13 +365,13 @@ export function SubscriptionPage() {
                   <Zap className="w-6 h-6" />
                 </div>
               </div>
-              <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wider mb-1">
+              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
                 Plan Benefits
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 All Systems Go
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
+              <div className="text-sm text-slate-600 dark:text-gray-400">
                 You have full access to all Pro features
               </div>
             </div>
@@ -380,7 +380,7 @@ export function SubscriptionPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Plan Features List */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 h-fit">
+          <div className="lg:col-span-1 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 h-fit">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
               <Check className="w-5 h-5 text-green-500" />
               Included in your plan
@@ -409,8 +409,8 @@ export function SubscriptionPage() {
           </div>
 
           {/* Billing History Table */}
-          <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+          <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-slate-400" />
                 Payment History
@@ -433,7 +433,7 @@ export function SubscriptionPage() {
                 </div>
               ) : (
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium">
+                  <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 font-medium">
                     <tr>
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4">Description</th>
