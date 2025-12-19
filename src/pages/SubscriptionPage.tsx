@@ -187,23 +187,24 @@ export function SubscriptionPage() {
 
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Subtotal:', 140, finalY);
-    doc.text('IGST (18%):', 140, finalY + 6);
+    doc.text('Subtotal:', 130, finalY);
+    doc.text('IGST (18%):', 130, finalY + 6);
 
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'bold');
-    doc.text('Grand Total:', 140, finalY + 14);
+    doc.text('Grand Total:', 130, finalY + 14);
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`INR ${baseAmount.toFixed(2)}`, 170, finalY, { align: 'right' });
-    doc.text(`INR ${gstAmount.toFixed(2)}`, 170, finalY + 6, { align: 'right' });
+    // Align values to the right margin (approx 195mm for A4)
+    doc.text(`INR ${baseAmount.toFixed(2)}`, 195, finalY, { align: 'right' });
+    doc.text(`INR ${gstAmount.toFixed(2)}`, 195, finalY + 6, { align: 'right' });
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(primaryColor);
-    doc.text(`INR ${totalAmount.toFixed(2)}`, 170, finalY + 14, { align: 'right' });
+    doc.text(`INR ${totalAmount.toFixed(2)}`, 195, finalY + 14, { align: 'right' });
 
     // Footer
     doc.setFontSize(9);
@@ -312,8 +313,8 @@ export function SubscriptionPage() {
                   <Shield className="w-6 h-6" />
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                    isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                      'bg-red-100 text-red-700'
+                  isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                    'bg-red-100 text-red-700'
                   }`}>
                   {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
                 </span>
