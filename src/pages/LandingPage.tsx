@@ -112,7 +112,7 @@ export function LandingPage() {
                             <img
                                 src={scrollY > 20 ? "/images/RealSalePro_DarkLogo.png" : "/images/RealSalePro_LighLogo.png"}
                                 alt="SalesPro Logo"
-                                className="h-16 w-auto object-contain transition-all duration-300"
+                                className="h-10 w-auto object-contain transition-all duration-300"
                             />
 
                         </div>
@@ -742,7 +742,7 @@ export function LandingPage() {
                     <div className="grid md:grid-cols-4 gap-12 mb-12">
                         <div className="col-span-1 md:col-span-2">
                             <div className="flex items-center space-x-3 mb-3">
-                                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="h-32 w-auto object-contain -ml-4" />
+                                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="h-10 w-auto object-contain" />
 
                             </div>
                             <p className="text-gray-400 max-w-sm leading-relaxed mb-6">

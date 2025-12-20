@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Profile, Tenant } from '../types/database';
+import { Profile, Tenant, ReferralCampaign } from '../types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  affiliate: ReferralCampaign | null; // Added affiliate
   session: Session | null;
   tenant: Tenant | null;
   loading: boolean;
@@ -18,7 +19,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null); // Added affiliate state
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,11 +46,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!data) {
-      // Profile missing - Likely deleted user
+      // Profile missing - CHECK IF AFFILIATE
+      const { data: affiliateData } = await supabase
+        .from('referral_campaigns')
+        .select('*')
+        .eq('created_by', userId)
+        .maybeSingle();
+
+      if (affiliateData) {
+          // Is an Affiliate!
+          setAffiliate(affiliateData);
+          setProfile(null);
+          setTenant(null);
+          return; // Allow access without profile
+      }
+
+      // Neither Profile nor Affiliate - Likely deleted user or inconsistent state
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setProfile(null);
+      setAffiliate(null);
       throw new Error('Account does not exist. It may have been deleted.');
     }
 
@@ -110,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setTenant(null);
+          setAffiliate(null);
         }
         setLoading(false);
       })();
@@ -141,13 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     await supabase.auth.signOut();
     setProfile(null);
+    setAffiliate(null);
     setTenant(null);
     setUser(null);
     setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, tenant, session, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, affiliate, tenant, session, loading, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

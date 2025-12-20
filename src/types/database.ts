@@ -106,6 +106,18 @@ export interface BillingHistory {
   updated_at: string;
 }
 
+export interface ReferralCampaign {
+  id: string;
+  created_at: string;
+  code: string;
+  name: string;
+  created_by: string;
+  referrer_commission_percent: number;
+  referee_discount_percent: number;
+  is_active: boolean;
+  channel?: string;
+}
+
 export interface Profile {
   id: string;
   employee_id: string;

@@ -164,8 +164,8 @@ export function RegisterCompanyPage() {
       </Link>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center flex-col items-center">
-          <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-24 w-auto dark:hidden" />
-          <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-24 w-auto hidden dark:block" />
+          <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto dark:hidden" />
+          <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-12 w-auto hidden dark:block" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           {verificationStep ? 'Verify your Email' : 'Register your Company'}

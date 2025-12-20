@@ -38,6 +38,9 @@ import { RolesPage } from './pages/RolesPage';
 import { AccountantDashboard } from './components/dashboards/AccountantDashboard';
 import { ReferralProgramPage } from './pages/ReferralProgramPage';
 import { TenantsPage } from './pages/admin/TenantsPage';
+import { AffiliateRegistrationPage } from './pages/affiliates/AffiliateRegistrationPage';
+import { AffiliateDashboardPage } from './pages/affiliates/AffiliateDashboardPage';
+import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -61,6 +64,18 @@ function App() {
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/referral-program" element={<ReferralProgramPage />} />
+                
+                {/* Public Affiliate Registration */}
+                <Route path="/affiliate/register" element={<AffiliateRegistrationPage />} />
+                <Route path="/affiliate/terms" element={<AffiliateTermsPage />} />
+
+                {/* Affiliate Routes - Protected */}
+                <Route path="/affiliate/dashboard" element={
+                  <ProtectedRoute>
+                    <AffiliateDashboardPage />
+                  </ProtectedRoute>
+                } />
+
                 <Route path="accountant-dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
             
             {/* Platform Admin Routes */}

@@ -9,8 +9,7 @@ export function ReferralProgramPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
            <Link to="/" className="flex items-center gap-2">
               <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-8 w-auto dark:hidden" />
-              <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-16 w-auto hidden dark:block" />
-              <span className="font-bold text-xl text-gray-900 dark:text-white">RealSalePro</span>
+              <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-10 w-auto hidden dark:block" />
            </Link>
            <div className="flex gap-4 items-center">
              <Link to="/" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium flex items-center gap-2">
@@ -33,10 +32,10 @@ export function ReferralProgramPage() {
             Join our partner program and earn high commissions for every new customer you bring. 
             Give your audience a discount, and build a passive income stream.
           </p>
-          <a href="mailto:support@realsalepro.com?subject=Referral%20Partner%20Application" className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-emerald-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+          <Link to="/affiliate/register" className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-emerald-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1">
              <Mail className="w-5 h-5" />
-             Apply Now via Email
-          </a>
+             Apply Now
+          </Link>
         </div>
       </div>
 
@@ -111,11 +110,11 @@ export function ReferralProgramPage() {
               </div>
            </div>
 
-           <div className="mt-12 text-center">
-              <a href="mailto:support@realsalepro.com?subject=Referral%20Partner%20Application" className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition">
-                 Email Us to Enroll <ArrowRight className="w-4 h-4" />
-              </a>
-           </div>
+            <div className="mt-12 text-center">
+               <Link to="/affiliate/register" className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition">
+                  Enroll Now <ArrowRight className="w-4 h-4" />
+               </Link>
+            </div>
         </div>
       </div>
 

@@ -55,8 +55,24 @@ export function LoginPage() {
       setLoading(false);
     } else {
       setSuccess('Login successful! Redirecting...');
+      
+      // Check if user is affiliate
+      const { data: { user } } = await import('../lib/supabase').then(m => m.supabase.auth.getUser());
+      
+      // We can also check by querying the campaigns table or checking metadata if we stored it
+      // Simpler: Check if they have a campaign
+       const { data: affiliate } = await import('../lib/supabase').then(m => m.supabase
+        .from('referral_campaigns')
+        .select('id')
+        .eq('created_by', user?.id)
+        .maybeSingle());
+
       setTimeout(() => {
-        navigate('/dashboard');
+        if (affiliate) {
+            navigate('/affiliate/dashboard');
+        } else {
+            navigate('/dashboard');
+        }
       }, 1000);
     }
   };
@@ -78,14 +94,14 @@ export function LoginPage() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full max-w-[360px] relative z-10">
+      <div className="w-full max-w-[400px] relative z-10">
         {/* Login Card */}
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden">
           {/* Header Section */}
           <div className="bg-gradient-to-r from-[#10B981] to-[#0E1A15] px-6 py-5 text-center relative overflow-hidden">
             <div className="relative z-10">
               <div className="inline-flex items-center justify-center mb-3 transform transition-transform duration-500 hover:scale-105">
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="w-16 h-16 object-contain rounded-xl bg-white/10 p-1" />
+                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="w-12 h-12 object-contain rounded-xl bg-white/10 p-1" />
               </div>
               <h1 className="text-xl font-bold text-white mb-1 tracking-tight">Welcome Back</h1>
               <p className="text-white/80 text-[11px] uppercase tracking-wider font-medium">Sign in to your dashboard</p>
