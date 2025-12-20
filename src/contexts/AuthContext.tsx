@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (!data) {
-      // Profile missing - CHECK IF AFFILIATE
+      // Profile missing - Could be a very new user or inconsistent state
+      // We'll still try to check for affiliate as a safety fallback for existing users
       const { data: affiliateData } = await supabase
         .from('referral_campaigns')
         .select('*')
@@ -54,14 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (affiliateData) {
-          // Is an Affiliate!
           setAffiliate(affiliateData);
           setProfile(null);
           setTenant(null);
-          return; // Allow access without profile
+          return;
       }
 
-      // Neither Profile nor Affiliate - Likely deleted user or inconsistent state
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
@@ -79,6 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setProfile(data);
+
+    // Load affiliate data if role is affiliate
+    if (data.role === 'affiliate') {
+      const { data: affiliateData } = await supabase
+        .from('referral_campaigns')
+        .select('*')
+        .eq('created_by', userId)
+        .maybeSingle();
+      if (affiliateData) setAffiliate(affiliateData);
+    }
+
     if (data.tenant_id) {
       const { data: tenantData } = await supabase
         .from('tenants')

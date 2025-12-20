@@ -21,19 +21,11 @@ export function ProtectedRoute({ children, allowedRoles, requiredFeature }: Prot
     return <Navigate to="/login" replace />;
   }
 
-  // If just an affiliate, they might be accessing a protected route.
-  // We generally assume Affiliates only access /affiliate/* routes which are protected by this.
-  // Standard roles check below relies on 'profile', so we skip if it's just an affiliate
-  // unless allowedRoles explicitly handles them (which it likely doesn't via UserRole enum).
-  if (affiliate && !profile) {
-      // If allowedRoles is passed, and user is ONLY affiliate, we probably should DENY unless we want to support generic "authenticated"
-      // But for now, let's allow basic access pass, effectively treating them as "authenticated".
-      // Route specific logic should handle redirect if they try to access /dashboard
-      return <>{children}</>;
-  }
+  // Get current role - either from profile or fallback to 'affiliate' if only affiliate record exists
+  const currentRole = profile?.role || (affiliate ? 'affiliate' as UserRole : null);
 
   // Check role access
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+  if (allowedRoles && currentRole && !allowedRoles.includes(currentRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

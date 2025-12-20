@@ -144,7 +144,23 @@ export function AffiliateRegistrationPage() {
          }
       }
 
-       // 2. Create Campaign
+      // 2. Create Profile (Ensure affiliates have a profile record)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          role: 'affiliate',
+          is_active: true
+        });
+
+      if (profileError) {
+        console.error('Failed to create/update affiliate profile', profileError);
+      }
+
+      // 3. Create Campaign
        const { error: dbError } = await supabase
         .from('referral_campaigns')
         .insert({
