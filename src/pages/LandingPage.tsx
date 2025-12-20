@@ -112,7 +112,7 @@ export function LandingPage() {
                             <img
                                 src={scrollY > 20 ? "/images/RealSalePro_DarkLogo.png" : "/images/RealSalePro_LighLogo.png"}
                                 alt="SalesPro Logo"
-                                className="h-10 w-auto object-contain transition-all duration-300"
+                                className="h-16 w-auto object-contain transition-all duration-300"
                             />
 
                         </div>
@@ -203,7 +203,7 @@ export function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-[#0E1A15] overflow-hidden">
+            <section className="relative min-h-screen flex items-center justify-center pt-24 pb-32 lg:pb-80 px-4 sm:px-6 lg:px-8 bg-[#0E1A15] overflow-hidden">
                 {/* Dynamic Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#0E1A15] via-[#113028] to-[#10B981] opacity-90"></div>
 
@@ -776,6 +776,7 @@ export function LandingPage() {
                             <h4 className="font-bold text-lg mb-6">Company</h4>
                             <ul className="space-y-4 text-gray-400">
                                 <li><a href="#about" className="hover:text-[#10B981] transition-colors">About Us</a></li>
+                                <li><Link to="/referral-program" className="hover:text-[#10B981] transition-colors">Refer & Earn</Link></li>
                                 <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Careers</Link></li>
                                 <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Blog</Link></li>
                                 <li><Link to="/contact" className="hover:text-[#10B981] transition-colors">Contact</Link></li>

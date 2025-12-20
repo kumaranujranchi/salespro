@@ -33,7 +33,10 @@ import { PricingPage } from './pages/PricingPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
+import { ReferralManagementPage } from './pages/admin/ReferralManagementPage';
 import { RolesPage } from './pages/RolesPage';
+import { AccountantDashboard } from './components/dashboards/AccountantDashboard';
+import { ReferralProgramPage } from './pages/ReferralProgramPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -56,6 +59,18 @@ function App() {
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/referral-program" element={<ReferralProgramPage />} />
+                <Route path="accountant-dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
+            
+            {/* Platform Admin Routes */}
+            <Route path="referral-management" element={
+              <ProtectedRoute allowedRoles={['platform_admin', 'super_admin']}>
+                <DashboardLayout>
+                  <ReferralManagementPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
                 <Route path="/contact" element={<ContactUsPage />} />
                 <Route path="/integration" element={<IntegrationsPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />

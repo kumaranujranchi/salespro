@@ -22,7 +22,8 @@ export function RegisterCompanyPage() {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    referralCode: ''
   });
 
   const [verificationStep, setVerificationStep] = useState(false);
@@ -72,8 +73,13 @@ export function RegisterCompanyPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send verification email');
+        const text = await response.text();
+        try {
+            const errorData = JSON.parse(text);
+            throw new Error(errorData.error || 'Failed to send verification email');
+        } catch {
+            throw new Error(`Server Error (${response.status}): ${text || response.statusText}`);
+        }
       }
 
       // 3. Move to Verification Step
@@ -136,7 +142,8 @@ export function RegisterCompanyPage() {
 
       // 5. Redirect to pricing checkout if plan was selected, otherwise dashboard
       if (planName && planAmount) {
-        navigate(`/pricing?checkout=true&plan=${encodeURIComponent(planName)}&amount=${planAmount}`);
+        const referralParam = formData.referralCode ? `&referralCode=${encodeURIComponent(formData.referralCode)}` : '';
+        navigate(`/pricing?checkout=true&plan=${encodeURIComponent(planName)}&amount=${planAmount}${referralParam}`);
       } else {
         navigate('/dashboard');
       }
@@ -244,6 +251,16 @@ export function RegisterCompanyPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <Input
+                  label="Referral Code (Optional)"
+                  name="referralCode"
+                  value={formData.referralCode}
+                  onChange={handleInputChange}
+                  placeholder="Enter code if you have one"
                 />
               </div>
 
