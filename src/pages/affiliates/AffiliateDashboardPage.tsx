@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Copy, CheckCircle, ExternalLink, IndianRupee, Users, TrendingUp } from 'lucide-react';
+import { Loader2, Copy, CheckCircle, ExternalLink, IndianRupee, Users, TrendingUp, LogOut } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -17,7 +18,8 @@ interface Stats {
 }
 
 export function AffiliateDashboardPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [stats, setStats] = useState<Stats>({ totalReferrals: 0, totalEarnings: 0, pendingPayouts: 0 });
@@ -50,7 +52,7 @@ export function AffiliateDashboardPage() {
         // 2. Get Referrals
         const { data: refs, error: refError } = await supabase
           .from('user_referrals')
-          .select('*, referred_tenant:referred_tenant_id(name, created_at)')
+          .select('*, referred_tenant:referred_tenant_id(name, created_at, subscription_status, plan_tier)')
           .eq('referrer_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -92,6 +94,15 @@ export function AffiliateDashboardPage() {
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   if (isLoading) {
@@ -144,6 +155,14 @@ export function AffiliateDashboardPage() {
                {copied ? 'Copied!' : 'Copy Link'}
              </button>
           </div>
+          
+          <button 
+            onClick={handleLogout}
+            className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-red-600 transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Share Section */}
@@ -236,10 +255,18 @@ export function AffiliateDashboardPage() {
                                 <th className="px-6 py-3">Tenant Name</th>
                                 <th className="px-6 py-3">Date Joined</th>
                                 <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-3">Plan</th>
+                                <th className="px-6 py-3">Commission</th>
+                                <th className="px-6 py-3">Payout Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {referrals.map((ref) => (
+                            {referrals.map((ref) => {
+                                const isConverted = ref.referred_tenant?.subscription_status === 'active';
+                                const commission = isConverted ? 
+                                    (ref.referred_tenant?.plan_tier === 'enterprise' ? 5000 : 2000) : 0; // Dummy logic
+                                
+                                return (
                                 <tr key={ref.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                         {ref.referred_tenant?.name || 'Unknown'}
@@ -249,15 +276,30 @@ export function AffiliateDashboardPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                            ref.status === 'converted' 
+                                            isConverted 
                                             ? 'bg-green-100 text-green-700' 
-                                            : 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-blue-100 text-blue-700'
                                         }`}>
-                                            {ref.status === 'converted' ? 'Converted' : 'Trial'}
+                                            {isConverted ? 'Active' : 'Trial'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 capitalize">
+                                        {ref.referred_tenant?.plan_tier || 'Starter'}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                        {isConverted ? `₹${commission.toLocaleString()}` : '—'}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                            ref.payout_status === 'paid'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                            {ref.payout_status === 'paid' ? 'Paid' : 'Pending'}
                                         </span>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                 </div>

@@ -23,7 +23,7 @@ export function RegisterCompanyPage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    referralCode: ''
+    referralCode: searchParams.get('ref') || '' // Auto-fill from URL
   });
 
   const [verificationStep, setVerificationStep] = useState(false);

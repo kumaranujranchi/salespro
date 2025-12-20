@@ -19,6 +19,7 @@ DECLARE
     new_tenant_id UUID;
     v_user_id UUID;
     v_campaign_id UUID;
+    v_referrer_id UUID; -- To store the referrer
 BEGIN
     -- Get current user ID
     v_user_id := auth.uid();
@@ -29,7 +30,7 @@ BEGIN
 
     -- Resolve Referral Code if provided
     IF referral_code IS NOT NULL AND referral_code <> '' THEN
-        SELECT id INTO v_campaign_id
+        SELECT id, created_by INTO v_campaign_id, v_referrer_id
         FROM public.referral_campaigns
         WHERE code = referral_code
         AND is_active = true
@@ -60,6 +61,21 @@ BEGIN
         v_campaign_id
     )
     RETURNING id INTO new_tenant_id;
+
+    -- [NEW] Create User Referral Record if campaign exists
+    IF v_campaign_id IS NOT NULL AND v_referrer_id IS NOT NULL THEN
+        INSERT INTO public.user_referrals (
+            campaign_id,
+            referrer_id,
+            referred_tenant_id,
+            status
+        ) VALUES (
+            v_campaign_id,
+            v_referrer_id,
+            new_tenant_id,
+            'pending' -- Starts as pending/trial
+        );
+    END IF;
 
     -- [EXTRA] Backfill existing tenants that have missing contact info
     UPDATE tenants t
