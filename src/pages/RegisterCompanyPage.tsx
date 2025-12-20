@@ -322,6 +322,8 @@ export function RegisterCompanyPage() {
                   value={formData.referralCode}
                   onChange={handleInputChange}
                   placeholder="Enter code if you have one"
+                  disabled={!!searchParams.get('ref')}
+                  helperText={searchParams.get('ref') ? "Referral code applied from link" : ""}
                 />
               </div>
 
