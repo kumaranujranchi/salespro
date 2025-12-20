@@ -33,7 +33,7 @@ export function ProtectedRoute({ children, allowedRoles, requiredFeature }: Prot
   }
 
   // Check role access
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

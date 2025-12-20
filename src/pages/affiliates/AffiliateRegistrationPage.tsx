@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { ArrowRight, AlertCircle, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowRight, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();
-  const { user, signIn } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -144,8 +144,8 @@ export function AffiliateRegistrationPage() {
          }
       }
 
-      // 2. Create Campaign
-      const { data: campaign, error: dbError } = await supabase
+       // 2. Create Campaign
+       const { error: dbError } = await supabase
         .from('referral_campaigns')
         .insert({
           code: formData.referralCode.toUpperCase(),
