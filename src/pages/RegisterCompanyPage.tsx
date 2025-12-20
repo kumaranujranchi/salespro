@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
@@ -10,6 +10,9 @@ export function RegisterCompanyPage() {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); // Added success state
+  const [resendTimer, setResendTimer] = useState(0); // Added resendTimer state
+  const [isResending, setIsResending] = useState(false); // Added isResending state
 
   // Extract plan details from URL if present
   const planName = searchParams.get('plan');
@@ -40,7 +43,61 @@ export function RegisterCompanyPage() {
     }));
   };
 
-  const sendOtp = async (e: React.FormEvent) => {
+  // Effect for resend timer
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResending) return;
+    
+    setIsResending(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      // 1. Generate a random 6-digit OTP
+      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(newOtp);
+
+      // 2. Send OTP via Netlify Function (using Nodemailer)
+      const response = await fetch('/.netlify/functions/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'OTP',
+          email: formData.email,
+          name: formData.fullName,
+          data: { otp: newOtp }
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        try {
+            const errorData = JSON.parse(text);
+            throw new Error(errorData.error || 'Failed to send verification email');
+        } catch {
+            throw new Error(`Server Error (${response.status}): ${text || response.statusText}`);
+        }
+      }
+      setSuccess('A new verification code has been sent to your email.');
+      setResendTimer(30); // Reset timer to 30s
+    } catch (err: any) {
+      console.error('Resend OTP Error:', err);
+      setError(err.message || 'Failed to resend verification code. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => { // Renamed sendOtp to handleSignup
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
@@ -54,6 +111,7 @@ export function RegisterCompanyPage() {
 
     setLoading(true);
     setError(null);
+    setSuccess(null); // Clear success message on new attempt
 
     try {
       // 1. Generate a random 6-digit OTP
@@ -84,7 +142,8 @@ export function RegisterCompanyPage() {
 
       // 3. Move to Verification Step
       setVerificationStep(true);
-
+      setResendTimer(30); // Start timer after sending initial OTP
+      setSuccess('Verification code sent! Please check your email.');
     } catch (err: any) {
       console.error('OTP Error:', err);
       setError(err.message || 'Failed to send verification code. Please try again.');
@@ -97,6 +156,7 @@ export function RegisterCompanyPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     // 1. Verify OTP
     if (otp !== generatedOtp) {
@@ -184,7 +244,7 @@ export function RegisterCompanyPage() {
 
           {!verificationStep ? (
             /* Step 1: Registration Form */
-            <form className="space-y-6" onSubmit={sendOtp}>
+            <form className="space-y-6" onSubmit={handleSignup}> {/* Changed onSubmit to handleSignup */}
               <div>
                 <Input
                   label="Company Name"
@@ -321,6 +381,12 @@ export function RegisterCompanyPage() {
                 </div>
               )}
 
+              {success && (
+                <div className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-3 rounded-md text-sm text-center">
+                  {success}
+                </div>
+              )}
+
               <div className="space-y-3">
                 <Button
                   type="submit"
@@ -336,6 +402,23 @@ export function RegisterCompanyPage() {
                     'Verify & Create Account'
                   )}
                 </Button>
+
+                <div className="text-center">
+                  {resendTimer > 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Resend code in <span className="font-bold">{resendTimer}s</span>
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={isResending}
+                      className="text-sm font-bold text-indigo-600 hover:text-indigo-500 transition disabled:opacity-50"
+                    >
+                      {isResending ? 'Sending...' : "Didn't receive the code? Resend"}
+                    </button>
+                  )}
+                </div>
 
                 <button
                   type="button"
