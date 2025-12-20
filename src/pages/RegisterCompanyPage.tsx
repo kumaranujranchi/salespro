@@ -127,7 +127,8 @@ export function RegisterCompanyPage() {
         company_slug: formData.companySlug,
         user_full_name: formData.fullName,
         contact_email: formData.email,
-        contact_phone: formData.phone
+        contact_phone: formData.phone,
+        referral_code: formData.referralCode // Added referral code
       });
 
       if (rpcError) {
