@@ -89,9 +89,10 @@ export function RegisterCompanyPage() {
       }
       setSuccess('A new verification code has been sent to your email.');
       setResendTimer(30); // Reset timer to 30s
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to resend verification code. Please try again.';
       console.error('Resend OTP Error:', err);
-      setError(err.message || 'Failed to resend verification code. Please try again.');
+      setError(errorMsg);
     } finally {
       setIsResending(false);
     }
@@ -144,9 +145,10 @@ export function RegisterCompanyPage() {
       setVerificationStep(true);
       setResendTimer(30); // Start timer after sending initial OTP
       setSuccess('Verification code sent! Please check your email.');
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to send verification code. Please try again.';
       console.error('OTP Error:', err);
-      setError(err.message || 'Failed to send verification code. Please try again.');
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -209,9 +211,10 @@ export function RegisterCompanyPage() {
         navigate('/dashboard');
       }
 
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to complete registration';
       console.error('Registration Error:', err);
-      setError(err.message || 'Failed to complete registration');
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
