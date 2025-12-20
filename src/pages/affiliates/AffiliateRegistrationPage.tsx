@@ -154,6 +154,7 @@ export function AffiliateRegistrationPage() {
           email: formData.email,
           phone: formData.phone,
           role: 'affiliate',
+          tenant_id: null, // Affiliates don't belong to any tenant
           is_active: true
         });
 

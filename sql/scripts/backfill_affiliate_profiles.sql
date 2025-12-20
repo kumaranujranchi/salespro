@@ -7,13 +7,14 @@ ADD CONSTRAINT profiles_role_check
 CHECK (role IN ('super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist', 'platform_admin', 'affiliate'));
 
 -- 1. Backfill profiles for existing affiliates who only exist in referral_campaigns
-INSERT INTO public.profiles (id, employee_id, full_name, email, role, is_active)
+INSERT INTO public.profiles (id, employee_id, full_name, email, role, tenant_id, is_active)
 SELECT 
     rc.created_by as id,
     CONCAT('AFF-', UPPER(SUBSTRING(rc.created_by::text, 1, 8))) as employee_id,
     rc.name as full_name, -- Use campaign name as fallback or placeholder
     u.email,
     'affiliate' as role,
+    NULL as tenant_id, -- Affiliates don't belong to any tenant
     true as is_active
 FROM public.referral_campaigns rc
 JOIN auth.users u ON u.id = rc.created_by
@@ -21,7 +22,8 @@ LEFT JOIN public.profiles p ON p.id = rc.created_by
 WHERE p.id IS NULL
 ON CONFLICT (id) DO UPDATE SET 
     role = 'affiliate',
-    employee_id = EXCLUDED.employee_id;
+    employee_id = EXCLUDED.employee_id,
+    tenant_id = NULL;
 
 -- 2. Restore user_referrals foreign key to point to profiles(id)
 -- First, drop the recent fix that pointed to auth.users
