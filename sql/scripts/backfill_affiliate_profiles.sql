@@ -1,7 +1,8 @@
 -- 1. Backfill profiles for existing affiliates who only exist in referral_campaigns
-INSERT INTO public.profiles (id, full_name, email, role, is_active)
+INSERT INTO public.profiles (id, employee_id, full_name, email, role, is_active)
 SELECT 
     rc.created_by as id,
+    CONCAT('AFF-', UPPER(SUBSTRING(rc.created_by::text, 1, 8))) as employee_id,
     rc.name as full_name, -- Use campaign name as fallback or placeholder
     u.email,
     'affiliate' as role,
@@ -10,7 +11,9 @@ FROM public.referral_campaigns rc
 JOIN auth.users u ON u.id = rc.created_by
 LEFT JOIN public.profiles p ON p.id = rc.created_by
 WHERE p.id IS NULL
-ON CONFLICT (id) DO UPDATE SET role = 'affiliate';
+ON CONFLICT (id) DO UPDATE SET 
+    role = 'affiliate',
+    employee_id = EXCLUDED.employee_id;
 
 -- 2. Restore user_referrals foreign key to point to profiles(id)
 -- First, drop the recent fix that pointed to auth.users

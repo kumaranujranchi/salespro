@@ -149,6 +149,7 @@ export function AffiliateRegistrationPage() {
         .from('profiles')
         .upsert({
           id: userId,
+          employee_id: `AFF-${userId.substring(0, 8).toUpperCase()}`,
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone,
