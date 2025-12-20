@@ -26,6 +26,7 @@ import {
   Users,
   HelpCircle,
   Zap,
+  Building2,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -49,6 +50,7 @@ const navGroups: NavGroup[] = [
     label: 'Overview',
     items: [
       { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
+      { label: 'Tenants', path: '/platform/tenants', icon: Building2, roles: ['platform_admin'] },
       { label: 'Referrals', path: '/referral-management', icon: Users, roles: ['platform_admin', 'super_admin'] },
       { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },

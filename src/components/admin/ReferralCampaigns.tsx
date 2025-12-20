@@ -157,7 +157,7 @@ export function ReferralCampaigns() {
           const { data: referrals, error: refError } = await supabase
             .from('user_referrals')
             .select('id, created_at')
-            .eq('referral_campaign_id', campaign.id);
+            .eq('campaign_id', campaign.id);
           
           if (refError) throw refError;
 

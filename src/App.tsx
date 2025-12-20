@@ -37,6 +37,7 @@ import { ReferralManagementPage } from './pages/admin/ReferralManagementPage';
 import { RolesPage } from './pages/RolesPage';
 import { AccountantDashboard } from './components/dashboards/AccountantDashboard';
 import { ReferralProgramPage } from './pages/ReferralProgramPage';
+import { TenantsPage } from './pages/admin/TenantsPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -93,6 +94,17 @@ function App() {
                     <ProtectedRoute allowedRoles={['platform_admin']}>
                       <DashboardLayout>
                         <PlatformDashboard />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/platform/tenants"
+                  element={
+                    <ProtectedRoute allowedRoles={['platform_admin']}>
+                      <DashboardLayout>
+                        <TenantsPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

@@ -173,7 +173,7 @@ export function RegisterCompanyPage() {
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           {verificationStep
             ? `We've sent a 6-digit code to ${formData.email}`
-            : 'Start your 14-day free trial. No credit card required.'
+            : 'Start your 30-day free trial. No credit card required.'
           }
         </p>
       </div>
