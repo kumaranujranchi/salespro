@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Toast, ToastType } from '../ui/Toast';
-import { Plus, Copy, ToggleLeft, ToggleRight, Mail, Pencil, BarChart2, Calendar } from 'lucide-react';
+import { Plus, Copy, ToggleLeft, ToggleRight, Mail, Pencil, BarChart2, Calendar, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../../utils/format';
 
 interface Campaign {
@@ -15,6 +15,7 @@ interface Campaign {
   referrer_commission_percent: number;
   referee_discount_percent: number;
   is_active: boolean;
+  created_by: string;
   created_at: string;
 }
 
@@ -193,6 +194,63 @@ export function ReferralCampaigns() {
       }
   };
 
+  const handleDelete = async (campaign: Campaign) => {
+    if (!window.confirm(`Are you sure you want to delete the campaign "${campaign.name}"? This will delete ALL associated referrals, commissions, and the affiliate account.`)) {
+      return;
+    }
+
+    try {
+      // 1. Get Referrals to find Tenants
+      const { data: referrals } = await supabase
+        .from('user_referrals')
+        .select('id, referred_tenant_id')
+        .eq('campaign_id', campaign.id);
+
+      const tenantIds = referrals?.map(r => r.referred_tenant_id).filter(Boolean) || [];
+      const referralIds = referrals?.map(r => r.id) || [];
+
+      // 2. Delete Commissions
+      if (referralIds.length > 0) {
+        await supabase.from('commissions').delete().in('referral_id', referralIds);
+      }
+
+      // 3. Delete Referrals (Explicit delete if not covered by tenant cascade, just in case)
+      await supabase.from('user_referrals').delete().eq('campaign_id', campaign.id);
+
+      // 4. Delete Tenants (This cascades to referrals if constraint exists, but we did step 3 to be safe)
+      if (tenantIds.length > 0) {
+        await supabase.from('tenants').delete().in('id', tenantIds);
+      }
+
+      // 5. Delete Campaign
+      const { error: campaignError } = await supabase.from('referral_campaigns').delete().eq('id', campaign.id);
+      if (campaignError) throw campaignError;
+
+      // 6. Delete Affiliate Profile (if campaign created by an affiliate)
+      if (campaign.created_by) {
+         // Fetch profile role first using created_by (which is the user_id)
+         const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', campaign.created_by)
+            .maybeSingle();
+         
+         if (profile && profile.role === 'affiliate') {
+             // Safe to delete this test affiliate profile
+             await supabase.from('profiles').delete().eq('id', campaign.created_by);
+         }
+      }
+
+      showToast('Campaign and associated test data deleted successfully', 'success');
+
+
+    } catch (error: any) {
+      showToast('Error deleting campaign: ' + error.message, 'error');
+    }
+    // Re-fetch
+    fetchCampaigns();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-end">
@@ -250,6 +308,9 @@ export function ReferralCampaigns() {
                      </button>
                      <button onClick={() => handleViewStats(campaign)} className="text-emerald-600 hover:text-emerald-900">
                           <BarChart2 className="w-4 h-4" />
+                     </button>
+                     <button onClick={() => handleDelete(campaign)} className="text-red-600 hover:text-red-900">
+                          <Trash2 className="w-4 h-4" />
                      </button>
                  </div>
               </div>
@@ -321,6 +382,9 @@ export function ReferralCampaigns() {
                         </button>
                         <button onClick={() => handleViewStats(campaign)} className="text-emerald-600 hover:text-emerald-900" title="View Stats">
                             <BarChart2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(campaign)} className="text-red-600 hover:text-red-900" title="Delete Campaign">
+                            <Trash2 className="w-4 h-4" />
                         </button>
                     </div>
                   </td>
