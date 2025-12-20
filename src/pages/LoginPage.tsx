@@ -11,6 +11,7 @@ import {
   Lock,
   Mail
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -56,24 +57,29 @@ export function LoginPage() {
     } else {
       setSuccess('Login successful! Redirecting...');
       
-      // Check if user is affiliate
-      const { data: { user } } = await import('../lib/supabase').then(m => m.supabase.auth.getUser());
-      
-      // We can also check by querying the campaigns table or checking metadata if we stored it
-      // Simpler: Check if they have a campaign
-       const { data: affiliate } = await import('../lib/supabase').then(m => m.supabase
-        .from('referral_campaigns')
-        .select('id')
-        .eq('created_by', user?.id)
-        .maybeSingle());
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Check if they are an affiliate (have a campaign)
+        const { data: affiliate } = await supabase
+          .from('referral_campaigns')
+          .select('id')
+          .eq('created_by', user?.id)
+          .maybeSingle();
 
-      setTimeout(() => {
-        if (affiliate) {
-            navigate('/affiliate/dashboard');
-        } else {
-            navigate('/dashboard');
-        }
-      }, 1000);
+        setTimeout(() => {
+          if (affiliate) {
+              navigate('/affiliate/dashboard');
+          } else {
+              navigate('/dashboard');
+          }
+        }, 1000);
+      } catch (err) {
+        console.error('Redirection check failed:', err);
+        // Fallback to dashboard if check fails
+        navigate('/dashboard');
+      }
     }
   };
 
