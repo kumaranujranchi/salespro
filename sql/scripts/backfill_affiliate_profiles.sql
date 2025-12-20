@@ -1,3 +1,11 @@
+-- 0. Update Profile Role Constraint to allow 'affiliate'
+ALTER TABLE public.profiles 
+DROP CONSTRAINT IF EXISTS profiles_role_check;
+
+ALTER TABLE public.profiles 
+ADD CONSTRAINT profiles_role_check 
+CHECK (role IN ('super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist', 'platform_admin', 'affiliate'));
+
 -- 1. Backfill profiles for existing affiliates who only exist in referral_campaigns
 INSERT INTO public.profiles (id, employee_id, full_name, email, role, is_active)
 SELECT 
