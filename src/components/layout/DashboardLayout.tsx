@@ -335,16 +335,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-transparent">
           {/* Logo Section */}
           {/* Logo Section */}
-          <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-center px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
+          <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
             {isCollapsed ? (
               <>
-                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-14 h-14 object-contain rounded-xl shadow-sm dark:hidden" />
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-14 h-14 object-contain rounded-xl shadow-sm hidden dark:block" />
+                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm dark:hidden" />
+                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm hidden dark:block" />
               </>
             ) : (
-              <div className="flex items-center justify-center w-full">
-                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-20 w-auto object-contain rounded-xl shadow-sm dark:hidden" />
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-20 w-auto object-contain rounded-xl shadow-sm hidden dark:block" />
+              <div className="flex items-center justify-start w-full">
+                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm dark:hidden" />
+                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm hidden dark:block" />
               </div>
             )}
 

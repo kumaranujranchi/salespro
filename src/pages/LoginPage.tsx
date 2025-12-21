@@ -58,10 +58,17 @@ export function LoginPage() {
       setSuccess('Login successful! Redirecting...');
       
       try {
-        // Get current user
+        // Redirection logic based on role or affiliate status
         const { data: { user } } = await supabase.auth.getUser();
         
-        // Check if they are an affiliate (have a campaign)
+        // 1. Check Profile for role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user?.id)
+          .maybeSingle();
+
+        // 2. Check if they are an affiliate (have a campaign) - fallback/verify
         const { data: affiliate } = await supabase
           .from('referral_campaigns')
           .select('id')
@@ -69,15 +76,16 @@ export function LoginPage() {
           .maybeSingle();
 
         setTimeout(() => {
-          if (affiliate) {
+          if (profile?.role === 'affiliate' || affiliate) {
               navigate('/affiliate/dashboard');
+          } else if (profile?.role === 'platform_admin') {
+              navigate('/platform/dashboard');
           } else {
               navigate('/dashboard');
           }
         }, 1000);
       } catch (err) {
         console.error('Redirection check failed:', err);
-        // Fallback to dashboard if check fails
         navigate('/dashboard');
       }
     }

@@ -138,7 +138,7 @@ export function AffiliateDashboardPage() {
               Partner Dashboard <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full border border-emerald-200">Active</span>
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
-               Welcome back, {user?.user_metadata?.first_name || 'Partner'}.
+               Welcome back, {user?.user_metadata?.full_name || user?.user_metadata?.first_name || 'Partner'}.
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">

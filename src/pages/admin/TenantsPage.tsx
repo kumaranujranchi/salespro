@@ -71,7 +71,17 @@ interface Tenant {
 export function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
+  const [incentiveRuleStr, setIncentiveRuleStr] = useState('');
+  const [builderMode, setBuilderMode] = useState<'visual' | 'json'>('visual');
+
+  useEffect(() => {
+    if (selectedTenant && selectedTenant.settings?.incentive_plan?.rules) {
+      setIncentiveRuleStr(JSON.stringify(selectedTenant.settings.incentive_plan.rules, null, 2));
+    } else {
+      setIncentiveRuleStr('{}');
+    }
+  }, [selectedTenant]);
   const [filter, setFilter] = useState('all'); // all, trial, active
 
   // Add Tenant Modal State
@@ -1045,31 +1055,360 @@ export function TenantsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-amber-900 dark:text-amber-200">Current Plan Type</span>
                         <select
-                          value={selectedTenant.settings?.incentive_plan?.type || 'fixed'}
+                          value={selectedTenant.settings?.incentive_plan?.type || 'manual'}
                           onChange={async (e) => {
-                            const currentSettings = selectedTenant.settings || {
-                              features: { crm: true, inventory: true, reports: true, site_visits: true, incentives: true },
-                              appearance: { primary_color: '#1673FF', logo_url: null },
-                              incentive_plan: { type: 'fixed', rules: {} }
-                            };
-                            const newSettings = { ...currentSettings, incentive_plan: { ...currentSettings.incentive_plan, type: e.target.value } };
-                            const { error } = await supabase.from('tenants').update({ settings: newSettings }).eq('id', selectedTenant.id);
-                            if (!error) {
-                              setSelectedTenant({ ...selectedTenant, settings: newSettings });
+                            try {
+                              const newType = e.target.value;
+                              const currentSettings = selectedTenant.settings || {
+                                features: { crm: true, inventory: true, reports: true, site_visits: true, incentives: true },
+                                appearance: { primary_color: '#1673FF', logo_url: null },
+                                incentive_plan: { type: 'manual', rules: {} }
+                              };
+                              
+                              const newSettings = { 
+                                ...currentSettings, 
+                                incentive_plan: { 
+                                  type: newType,
+                                  rules: newType === 'manual' ? {} : (currentSettings.incentive_plan?.rules || {})
+                                } 
+                              };
+
+                              const { error } = await supabase
+                                .from('tenants')
+                                .update({ settings: newSettings })
+                                .eq('id', selectedTenant.id);
+
+                              if (error) throw error;
+
+                              const updatedTenant = { ...selectedTenant, settings: newSettings };
+                              setSelectedTenant(updatedTenant);
+                              setTenants(prev => prev.map(t => t.id === selectedTenant.id ? updatedTenant : t));
+                              
+                              setNotification({
+                                type: 'success',
+                                title: 'Plan Type Updated',
+                                message: `Incentive plan changed to ${newType}.`
+                              });
+                            } catch (err: any) {
+                              setNotification({
+                                type: 'error',
+                                title: 'Update Failed',
+                                message: err.message
+                              });
                             }
                           }}
                           className="text-sm px-2 py-1 bg-white dark:bg-slate-800 border rounded-md"
                         >
-                          <option value="fixed">Standard (Fixed Installments)</option>
-                          <option value="slab">Slab-Based (Revenue Tiers)</option>
-                          <option value="custom">Custom (JSON Rules)</option>
+                          <option value="manual">Manual Incentive Entry</option>
+                          <option value="custom">Automated (JSON Rules)</option>
                         </select>
                       </div>
                       <p className="text-xs text-amber-700/70 dark:text-amber-400/70">
-                        {selectedTenant.settings?.incentive_plan?.type === 'custom'
-                          ? 'This client uses a fully custom incentive engine. Edit rules directly in the database for now.'
-                          : 'Standard incentive logic applied. Plan type affects how payouts are calculated for this tenant.'}
+                        {(() => {
+                          switch (selectedTenant.settings?.incentive_plan?.type) {
+                            case 'custom': return 'Define automated slabs or project-specific rules in the section below.';
+                            default: return 'Tenant will manually enter incentive amounts for each executive.';
+                          }
+                        })()}
                       </p>
+
+                      {selectedTenant.settings?.incentive_plan?.type === 'custom' && (
+                        <div className="space-y-3 animate-fadeIn">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-amber-900/60 dark:text-amber-200/60 uppercase">
+                              Configuration Rules
+                            </label>
+                            <div className="flex bg-amber-100/50 dark:bg-white/5 p-1 rounded-lg border border-amber-200/50 dark:border-white/10">
+                              <button
+                                onClick={() => setBuilderMode('visual')}
+                                className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${builderMode === 'visual' ? 'bg-amber-600 text-white shadow-sm' : 'text-amber-700/60 dark:text-amber-400/60 hover:text-amber-700'}`}
+                              >
+                                Visual Builder
+                              </button>
+                              <button
+                                onClick={() => {
+                                   setBuilderMode('json');
+                                   // Sync JSON string before switching to editor
+                                   try {
+                                      const currentRules = JSON.parse(incentiveRuleStr || '{}');
+                                      setIncentiveRuleStr(JSON.stringify(currentRules, null, 2));
+                                    } catch(e) { console.warn('JSON Sync Error:', e); }
+                                }}
+                                className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${builderMode === 'json' ? 'bg-amber-600 text-white shadow-sm' : 'text-amber-700/60 dark:text-amber-400/60 hover:text-amber-700'}`}
+                              >
+                                JSON Editor
+                              </button>
+                            </div>
+                          </div>
+
+                          {builderMode === 'visual' ? (
+                            <div className="p-4 bg-white/50 dark:bg-black/20 rounded-xl border border-amber-100 dark:border-white/10 space-y-4">
+                              {(() => {
+                                let rules: any = {};
+                                try { rules = JSON.parse(incentiveRuleStr || '{}'); } catch(e) { console.warn('Visual Builder Parse Error:', e); }
+                                
+                                // Intelligently decide which visual builder to show
+                                const isSlab = rules.tiers !== undefined || (!rules.rules && !rules.tiers);
+
+                                if (isSlab) {
+                                  const tiers = rules.tiers || [];
+                                  return (
+                                    <div className="space-y-4">
+                                       <div className="grid grid-cols-4 gap-2 text-[10px] font-bold text-amber-900/40 dark:text-amber-200/40 uppercase px-2">
+                                          <span>Min Sqft</span>
+                                          <span>Max Sqft</span>
+                                          <span>Rate (%)</span>
+                                          <span></span>
+                                       </div>
+                                       <div className="space-y-2">
+                                          {tiers.map((tier: any, idx: number) => (
+                                            <div key={idx} className="grid grid-cols-4 gap-2 items-center">
+                                              <input 
+                                                type="number" 
+                                                value={tier.min} 
+                                                onChange={(e) => {
+                                                  const newTiers = [...tiers];
+                                                  newTiers[idx].min = Number(e.target.value);
+                                                  rules.tiers = newTiers;
+                                                  setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                }}
+                                                className="p-2 text-xs bg-white dark:bg-slate-800 border rounded-md"
+                                              />
+                                              <input 
+                                                type="number" 
+                                                value={tier.max === null ? '' : tier.max} 
+                                                onChange={(e) => {
+                                                  const newTiers = [...tiers];
+                                                  newTiers[idx].max = e.target.value === '' ? null : Number(e.target.value);
+                                                  rules.tiers = newTiers;
+                                                  setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                }}
+                                                className="p-2 text-xs bg-white dark:bg-slate-800 border rounded-md"
+                                                placeholder="Infinity"
+                                              />
+                                              <input 
+                                                type="number" 
+                                                step="0.01"
+                                                value={tier.rate} 
+                                                onChange={(e) => {
+                                                  const newTiers = [...tiers];
+                                                  newTiers[idx].rate = Number(e.target.value);
+                                                  rules.tiers = newTiers;
+                                                  setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                }}
+                                                className="p-2 text-xs bg-white dark:bg-slate-800 border rounded-md"
+                                              />
+                                              <button 
+                                                onClick={() => {
+                                                  const newTiers = tiers.filter((_: any, i: number) => i !== idx);
+                                                  rules.tiers = newTiers;
+                                                  setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                }}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors flex justify-center"
+                                              >
+                                                <X className="w-4 h-4" />
+                                              </button>
+                                            </div>
+                                          ))}
+                                          <button 
+                                            onClick={() => {
+                                              const newTiers = [...tiers, { min: tiers.length > 0 ? (tiers[tiers.length-1].max || 0) + 1 : 0, max: null, rate: 1.0 }];
+                                              rules.tiers = newTiers;
+                                              delete rules.rules; // Switch to slab mode
+                                              setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                            }}
+                                            className="w-full py-2 border-2 border-dashed border-amber-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-amber-600/60 hover:bg-amber-50 dark:hover:bg-white/5 transition-all flex items-center justify-center gap-1"
+                                          >
+                                            <Plus className="w-3 h-3" /> ADD NEW SQFT SLAB
+                                          </button>
+                                       </div>
+                                    </div>
+                                  );
+                                }
+
+                                const projects = rules.rules || [];
+                                return (
+                                  <div className="space-y-4">
+                                     <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-bold text-amber-900/40 dark:text-amber-200/40 uppercase">Project Specific Overrides</span>
+                                     </div>
+                                     <div className="space-y-3">
+                                        {projects.map((p: any, idx: number) => (
+                                          <div key={idx} className="p-3 bg-white dark:bg-slate-800/50 rounded-lg border border-amber-100 dark:border-white/10 space-y-2">
+                                            <div className="flex justify-between items-center">
+                                              <input 
+                                                value={p.project_id} 
+                                                onChange={(e) => {
+                                                  const newProj = [...projects];
+                                                  newProj[idx].project_id = e.target.value;
+                                                  rules.rules = newProj;
+                                                  setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                }}
+                                                className="bg-transparent border-0 font-bold text-xs p-0 focus:ring-0 w-full"
+                                                placeholder="Project ID (or 'all')"
+                                              />
+                                              <button onClick={() => {
+                                                const newProj = projects.filter((_: any, i: number) => i !== idx);
+                                                rules.rules = newProj;
+                                                setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                              }} className="text-red-400 hover:text-red-600 p-1"><X className="w-3 h-3"/></button>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                              <div>
+                                                <label className="block text-[10px] text-gray-400 mb-1">Base Rate (%)</label>
+                                                <input 
+                                                  type="number" 
+                                                  step="0.01" 
+                                                  value={p.base_rate}
+                                                  onChange={(e) => {
+                                                    const newProj = [...projects];
+                                                    newProj[idx].base_rate = Number(e.target.value);
+                                                    rules.rules = newProj;
+                                                    setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                  }}
+                                                  className="w-full p-2 text-xs bg-gray-50 dark:bg-black/20 border rounded-md"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] text-gray-400 mb-1">Bonus</label>
+                                                <input 
+                                                  type="number" 
+                                                  value={p.milestone_bonus || 0}
+                                                  onChange={(e) => {
+                                                    const newProj = [...projects];
+                                                    newProj[idx].milestone_bonus = Number(e.target.value);
+                                                    rules.rules = newProj;
+                                                    setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                                  }}
+                                                  className="w-full p-2 text-xs bg-gray-50 dark:bg-black/20 border rounded-md"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                        <button 
+                                          onClick={() => {
+                                            const newProj = [...projects, { project_id: "new_project_id", base_rate: 1.5, milestone_bonus: 0 }];
+                                            rules.rules = newProj;
+                                            delete rules.tiers; // Switch to project mode
+                                            setIncentiveRuleStr(JSON.stringify(rules, null, 2));
+                                          }}
+                                          className="w-full py-2 border-2 border-dashed border-amber-200 dark:border-white/10 rounded-lg text-[10px] font-bold text-amber-600/60 hover:bg-amber-50 dark:hover:bg-white/5 transition-all flex items-center justify-center gap-1"
+                                        >
+                                          <Plus className="w-3 h-3" /> ADD PROJECT RULE
+                                        </button>
+                                     </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <>
+                              <textarea
+                                value={incentiveRuleStr}
+                                onChange={(e) => setIncentiveRuleStr(e.target.value)}
+                                rows={10}
+                                className="w-full font-mono text-xs p-3 bg-white dark:bg-black/40 border border-amber-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-amber-500/50 outline-none"
+                                placeholder='{ "tiers": [...] }'
+                              />
+                            </>
+                          )}
+
+                          <div className="flex justify-end gap-2">
+                             {/* ... previous buttons (Import, Load Example, Save Rules) ... */}
+                            <input
+                              type="file"
+                              id="import-json"
+                              className="hidden"
+                              accept=".json"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    try {
+                                      const json = JSON.parse(event.target?.result as string);
+                                      setIncentiveRuleStr(JSON.stringify(json, null, 2));
+                                      setNotification({
+                                        type: 'success',
+                                        title: 'JSON Imported',
+                                        message: 'Rule configuration loaded from file.'
+                                      });
+                                    } catch (err: any) {
+                                      setNotification({
+                                        type: 'error',
+                                        title: 'Import Failed',
+                                        message: 'Invalid JSON file format: ' + err.message
+                                      });
+                                    }
+                                  };
+                                  reader.readAsText(file);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => document.getElementById('import-json')?.click()}
+                              className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              Import File
+                            </button>
+                             <button
+                              onClick={() => {
+                                const placeholder = selectedTenant.settings?.incentive_plan?.type === 'slab' 
+                                  ? { tiers: [{ min: 0, max: 5000000, rate: 1.0, label: "Tier 1" }, { min: 5000001, max: null, rate: 2.0, label: "Tier 2" }] }
+                                  : { rules: [{ project_id: "all", base_rate: 1.5, bonuses: [] }] };
+                                setIncentiveRuleStr(JSON.stringify(placeholder, null, 2));
+                              }}
+                              className="px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-white/10 rounded-md hover:bg-amber-100 dark:hover:bg-white/5 transition-colors"
+                            >
+                              Load Example
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const rules = JSON.parse(incentiveRuleStr);
+                                  const currentSettings = selectedTenant.settings || {
+                                    features: { crm: true, inventory: true, reports: true, site_visits: true, incentives: true },
+                                    appearance: { primary_color: '#1673FF', logo_url: null },
+                                    incentive_plan: { type: selectedTenant.settings?.incentive_plan?.type || 'fixed', rules: {} }
+                                  };
+                                  const newSettings = { 
+                                    ...currentSettings, 
+                                    incentive_plan: { 
+                                      ...currentSettings.incentive_plan, 
+                                      rules 
+                                    } 
+                                  };
+
+                                  const { error } = await supabase
+                                    .from('tenants')
+                                    .update({ settings: newSettings })
+                                    .eq('id', selectedTenant.id);
+
+                                  if (error) throw error;
+                                  
+                                  setSelectedTenant({ ...selectedTenant, settings: newSettings });
+                                  setTenants(prev => prev.map(t => t.id === selectedTenant.id ? { ...t, settings: newSettings } : t));
+                                  setNotification({
+                                    type: 'success',
+                                    title: 'Rules Updated',
+                                    message: 'Incentive configuration has been saved successfully.'
+                                  });
+                                } catch (err: any) {
+                                  setNotification({
+                                    type: 'error',
+                                    title: 'Invalid JSON',
+                                    message: 'Please check your JSON format: ' + err.message
+                                  });
+                                }
+                              }}
+                              className="px-4 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-md hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all"
+                            >
+                              Save Rules
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -35,14 +35,14 @@ export function TableBody({ children }: TableBodyProps) {
   return <tbody className="divide-y divide-gray-200 dark:divide-white/10">{children}</tbody>;
 }
 
-interface TableRowProps {
+interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   children: ReactNode;
   className?: string;
 }
 
-export function TableRow({ children, className = '' }: TableRowProps) {
+export function TableRow({ children, className = '', ...props }: TableRowProps) {
   return (
-    <tr className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150 ${className}`}>
+    <tr className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-150 ${className}`} {...props}>
       {children}
     </tr>
   );

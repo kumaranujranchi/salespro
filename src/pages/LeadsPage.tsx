@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
@@ -13,10 +13,12 @@ import { LeadDetailModal } from '../components/crm/LeadDetailModal';
 import { BulkUploadModal } from '../components/crm/BulkUploadModal';
 import { AssignLeadModal } from '../components/crm/AssignLeadModal';
 import { BulkStatusModal } from '../components/crm/BulkStatusModal';
+import { BulkProjectModal } from '../components/crm/BulkProjectModal';
+import { ActionMenu } from '../components/ui/ActionMenu';
 import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, TrendingDown, Minus, Search, Download, Upload,
-  UserPlus, RefreshCw, Trash2, ChevronDown, Eye, Edit
+  UserPlus, RefreshCw, Trash2, Building, ChevronDown, ChevronLeft, ChevronRight, Eye, Edit, Copy
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -33,10 +35,16 @@ export function LeadsPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<LeadWithRelations | null>(null);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+
   const [isCRMActive, setIsCRMActive] = useState(true);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Filter & Search State
   const [searchTerm, setSearchTerm] = useState('');
@@ -59,6 +67,11 @@ export function LeadsPage() {
       loadLeads();
     }
   }, [isCRMActive, showOnlyMyLeads, statusFilter, scoreFilter, executiveFilter, teamLeaderFilter]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, scoreFilter, executiveFilter, teamLeaderFilter, showOnlyMyLeads]);
 
   // Load Executives and Team Leaders for Filters
   useEffect(() => {
@@ -205,6 +218,11 @@ export function LeadsPage() {
     setSelectedLeadIds([]);
   };
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    // toast.success('Copied to clipboard');
+  };
+
   const handleDeleteLead = async (leadId: string) => {
     if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return;
 
@@ -236,9 +254,40 @@ export function LeadsPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return;
+
+    const confirmed = await dialog.confirm(
+      `Are you sure you want to delete ${selectedLeadIds.length} leads? This action cannot be undone.`,
+      {
+        title: 'Delete Query',
+        variant: 'danger'
+      }
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', selectedLeadIds);
+
+      if (error) throw error;
+
+      handleBulkSuccess();
+    } catch (error) {
+      console.error('Bulk delete error', error);
+      await dialog.alert('Failed to delete leads', { variant: 'danger' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedLeadIds(filteredLeads.map(l => l.id));
+      setSelectedLeadIds(paginatedLeads.map(l => l.id));
     } else {
       setSelectedLeadIds([]);
     }
@@ -297,6 +346,13 @@ export function LeadsPage() {
       lead.lead_id.toLowerCase().includes(search)
     );
   });
+
+  // Calculate Pagination
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Statistics
   const stats = {
@@ -510,9 +566,15 @@ export function LeadsPage() {
             {selectedLeadIds.length} Selected
           </span>
           <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
-          <Button size="sm" variant="primary" onClick={() => setIsAssignModalOpen(true)}>
-            <UserPlus size={16} className="mr-2" />
-            Assign Executive
+          {['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '') && (
+            <Button size="sm" variant="primary" onClick={() => setIsAssignModalOpen(true)}>
+              <UserPlus size={16} className="mr-2" />
+              Assign Executive
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => setIsProjectModalOpen(true)}>
+            <Building size={16} className="mr-2" />
+            Assign Project
           </Button>
           <Button size="sm" variant="outline" onClick={() => setIsStatusModalOpen(true)}>
             <RefreshCw size={16} className="mr-2" />
@@ -521,6 +583,12 @@ export function LeadsPage() {
           <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => setSelectedLeadIds([])}>
             Cancel
           </Button>
+          {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
+            <Button size="sm" variant="danger" onClick={handleBulkDelete}>
+              <Trash2 size={16} className="mr-2" />
+              Delete
+            </Button>
+          )}
         </div>
       )}
 
@@ -554,155 +622,232 @@ export function LeadsPage() {
                         <input
                           type="checkbox"
                           className="rounded border-gray-300 dark:border-gray-600"
-                          checked={filteredLeads.length > 0 && selectedLeadIds.length === filteredLeads.length}
+                          checked={paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeadIds.includes(l.id))}
                           onChange={handleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>Lead ID</TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Project</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Assigned To</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Follow-ups</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-[50px]"><span /></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredLeads.map((lead) => (
-                      <TableRow
-                        key={lead.id}
-                        className={lead.overdue_followup ? 'bg-red-50 dark:bg-red-900/10' : ''}
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 dark:border-gray-600"
-                            checked={selectedLeadIds.includes(lead.id)}
-                            onChange={() => handleSelectLead(lead.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
-                            {lead.lead_id}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(lead.lead_date).toLocaleDateString()}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{lead.customer_name}</div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <MapPin size={12} />
-                            {lead.city || 'N/A'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <a href={`tel:${lead.mobile}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline">
-                              <Phone size={12} />
-                              {lead.mobile}
-                            </a>
-                            {lead.email && (
-                              <a href={`mailto:${lead.email}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline">
-                                <Mail size={12} />
-                                {lead.email}
-                              </a>
+                    {paginatedLeads.map((lead) => (
+                      <Fragment key={lead.id}>
+                        <TableRow
+                          className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.overdue_followup ? 'bg-red-50 dark:bg-red-900/10' : ''} ${expandedLeadId === lead.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                          onClick={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
+                        >
+                          <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 dark:border-gray-600"
+                              checked={selectedLeadIds.includes(lead.id)}
+                              onChange={() => handleSelectLead(lead.id)}
+                            />
+                          </TableCell>
+                          
+                          {/* Customer */}
+                          <TableCell>
+                            <div className="font-medium">{lead.customer_name}</div>
+                            {lead.city && (
+                              <div className="text-xs text-gray-500 flex items-center gap-1">
+                                <MapPin size={12} />
+                                {lead.city}
+                              </div>
                             )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {lead.project?.name || 'Not Assigned'}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getScoreBadge(lead.lead_score)}</TableCell>
-                        <TableCell>{getStatusBadge(lead.lead_status)}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {lead.sales_executive?.full_name || 'Unassigned'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={lead.overdue_followup ? 'danger' : 'secondary'}>
-                              {lead.followup_count} {lead.overdue_followup && '⚠'}
-                            </Badge>
+                          </TableCell>
+
+                          {/* Contact */}
+                          <TableCell>
+                            <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center gap-1 group">
+                                <a href={`tel:${lead.mobile}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline font-medium">
+                                  <Phone size={12} />
+                                  {lead.mobile}
+                                </a>
+                                <button
+                                  onClick={() => handleCopy(lead.mobile)}
+                                  className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                                  title="Copy Mobile"
+                                >
+                                  <Copy size={13} />
+                                </button>
+                              </div>
+                              {lead.email && (
+                                <a href={`mailto:${lead.email}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline">
+                                  <Mail size={12} />
+                                  {lead.email}
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Project */}
+                          <TableCell>
+                            <div className="text-sm">
+                              {lead.project?.name || 'Not Assigned'}
+                            </div>
+                          </TableCell>
+
+                          {/* Executive */}
+                          <TableCell>
+                            <div className="text-sm">
+                              {lead.sales_executive?.full_name || 'Unassigned'}
+                            </div>
+                          </TableCell>
+
+                          {/* Status */}
+                          <TableCell>{getStatusBadge(lead.lead_status)}</TableCell>
+
+                          {/* Follow-ups */}
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {lead.overdue_followup ? (
+                                <Badge variant="danger" className="text-[10px] px-1.5 py-0">
+                                  {lead.followup_count} Overdue
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                  {lead.followup_count} Follow-ups
+                                </Badge>
+                              )}
+                            </div>
                             {lead.latest_followup?.next_followup_date && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-[10px] text-gray-500 mt-1">
                                 Next: {new Date(lead.latest_followup.next_followup_date).toLocaleDateString()}
                               </div>
                             )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            {/* Tablet View (<1024px) - Large Touch Targets (48x48px) */}
-                            <div className="flex lg:hidden items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                className="h-12 w-12 p-0 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 flex items-center justify-center transition-colors"
-                                onClick={() => handleEditLead(lead)}
-                                title="Edit Lead"
-                                aria-label="Edit Lead"
-                              >
-                                <Edit size={20} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                className="h-12 w-12 p-0 rounded-full text-green-600 hover:text-green-700 hover:bg-green-50 flex items-center justify-center transition-colors"
-                                onClick={() => handleViewDetails(lead)}
-                                title="View Details"
-                                aria-label="View Details"
-                              >
-                                <Eye size={20} />
-                              </Button>
-                              {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
-                                <Button
-                                  variant="ghost"
-                                  className="h-12 w-12 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center transition-colors"
-                                  onClick={() => handleDeleteLead(lead.id)}
-                                  title="Delete Lead"
-                                  aria-label="Delete Lead"
-                                >
-                                  <Trash2 size={20} />
-                                </Button>
-                              )}
-                            </div>
+                          </TableCell>
 
-                            {/* Desktop View (>=1024px) - Standard Text Buttons */}
-                            <div className="hidden lg:flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
-                                onClick={() => handleEditLead(lead)}
+                          {/* Actions (Menu) */}
+                          <TableCell className="w-[50px]">
+                            <ActionMenu
+                              actions={[
+                                {
+                                  label: 'Edit',
+                                  icon: Edit,
+                                  onClick: () => handleEditLead(lead)
+                                },
+                                {
+                                  label: 'View Details',
+                                  icon: Eye,
+                                  onClick: () => handleViewDetails(lead)
+                                },
+                                ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
+                                  label: 'Delete',
+                                  icon: Trash2,
+                                  variant: 'danger' as const,
+                                  onClick: () => handleDeleteLead(lead.id)
+                                }] : [])
+                              ]}
+                            />
+                          </TableCell>
+                        </TableRow>
+                        
+                        {/* Expanded Content */}
+                        {expandedLeadId === lead.id && (
+                          <TableRow className="bg-gray-50 dark:bg-slate-900/50">
+                            <TableCell colSpan={8} className="p-0 border-t border-gray-100 dark:border-gray-700">
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
                               >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleViewDetails(lead)}
-                              >
-                                View
-                              </Button>
-                              {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-10 w-10 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 flex items-center justify-center"
-                                  onClick={() => handleDeleteLead(lead.id)}
-                                  title="Delete Lead"
-                                >
-                                  <Trash2 size={18} />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                                <div className="p-4 grid grid-cols-2 gap-6">
+                                  {/* About Lead Section */}
+                                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                      <Users size={16} className="text-blue-500" />
+                                      About Lead
+                                    </h4>
+                                    <div className="text-sm space-y-3">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <p className="text-xs text-gray-500">Lead ID</p>
+                                          <p className="font-mono text-blue-600">{lead.lead_id}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">Created</p>
+                                          <p>{new Date(lead.lead_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">Source</p>
+                                          <p>{lead.lead_source || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">Score</p>
+                                          <p>{lead.lead_score}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">Budget</p>
+                                          <p>{lead.budget_range || '-'}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-gray-500">Purpose</p>
+                                          <p>{lead.purpose || '-'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Timeline Section */}
+                                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                    <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                      <TrendingUp size={16} className="text-green-500" />
+                                      Latest Activity
+                                    </h4>
+                                    
+                                    <div className="space-y-4">
+                                      {lead.latest_followup ? (
+                                        <div className="flex items-start gap-3">
+                                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
+                                          <div>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                              {lead.latest_followup.discussion_summary}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge variant="outline">{lead.latest_followup.new_status}</Badge>
+                                              <span className="text-xs text-gray-400">
+                                                {new Date(lead.latest_followup.followup_date).toLocaleString()}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-gray-500 italic">No interactions yet</p>
+                                      )}
+
+                                      {lead.latest_followup?.next_followup_date && (
+                                        <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-md border border-orange-100 dark:border-orange-900/20">
+                                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
+                                            Upcoming Action
+                                          </p>
+                                          <p className="text-sm text-gray-900 dark:text-white">
+                                            Follow-up due by {new Date(lead.latest_followup.next_followup_date).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      <div className="pt-2">
+                                         <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleViewDetails(lead); }}>
+                                            View Full History
+                                         </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
                     ))}
                   </TableBody>
                 </Table>
@@ -711,7 +856,7 @@ export function LeadsPage() {
               {/* Mobile View */}
               <div className="md:hidden space-y-4">
                 <AnimatePresence>
-                  {filteredLeads.map((lead) => (
+                  {paginatedLeads.map((lead) => (
                     <motion.div
                       key={lead.id}
                       layout
@@ -740,9 +885,6 @@ export function LeadsPage() {
                               <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate pr-2">
                                 {lead.customer_name}
                               </h3>
-                              <div className="text-xs font-mono text-blue-600 dark:text-blue-400">
-                                {lead.lead_id}
-                              </div>
                             </div>
                             <div className="shrink-0">
                               {getScoreBadge(lead.lead_score)}
@@ -772,69 +914,110 @@ export function LeadsPage() {
                             className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-slate-800/50"
                           >
                             <div className="p-4 space-y-4">
-                              <div className="grid grid-cols-1 gap-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                    <Phone size={16} className="text-blue-600 dark:text-blue-400" />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Mobile</div>
-                                    <a href={`tel:${lead.mobile}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600">
-                                      {lead.mobile}
-                                    </a>
-                                  </div>
-                                </div>
-
-                                {lead.email && (
+                              {/* About Lead Section */}
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                  <Users size={16} className="text-blue-500" />
+                                  About Lead
+                                </h4>
+                                <div className="space-y-3">
                                   <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                      <Mail size={16} className="text-blue-600 dark:text-blue-400" />
+                                      <Phone size={16} className="text-blue-600 dark:text-blue-400" />
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">Email</div>
-                                      <a href={`mailto:${lead.email}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 truncate block">
-                                        {lead.email}
-                                      </a>
+                                    <div className="flex-1">
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">Mobile</div>
+                                      <div className="flex items-center gap-2">
+                                        <a href={`tel:${lead.mobile}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600">
+                                          {lead.mobile}
+                                        </a>
+                                        <button
+                                          onClick={() => handleCopy(lead.mobile)}
+                                          className="text-gray-400 hover:text-gray-600 bg-gray-50 dark:bg-gray-700 p-2 rounded-md active:scale-95 transition-transform"
+                                          title="Copy Mobile"
+                                        >
+                                          <Copy size={16} />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
-                                )}
 
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                                    <MapPin size={16} className="text-purple-600 dark:text-purple-400" />
+                                  {lead.email && (
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                        <Mail size={16} className="text-blue-600 dark:text-blue-400" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">Email</div>
+                                        <a href={`mailto:${lead.email}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 truncate block">
+                                          {lead.email}
+                                        </a>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                                      <MapPin size={16} className="text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">Location</div>
+                                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {lead.city || 'N/A'}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">Location</div>
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                      {lead.city || 'N/A'}
+
+                                  <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <div>
+                                      <div className="text-xs text-gray-500">Source</div>
+                                      <div className="text-sm font-medium">{lead.lead_source || '-'}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-xs text-gray-500">Project</div>
+                                      <div className="text-sm font-medium truncate">{lead.project?.name || '-'}</div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                                <div>
-                                  <div className="text-xs text-gray-500">Project</div>
-                                  <div className="text-sm font-medium truncate">{lead.project?.name || 'N/A'}</div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500">Executive</div>
-                                  <div className="text-sm font-medium truncate">{lead.sales_executive?.full_name || 'Unassigned'}</div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500">Follow-ups</div>
-                                  <div className="flex items-center gap-1 text-sm font-medium">
-                                    {lead.followup_count}
-                                    {lead.overdue_followup && <span className="text-red-500 text-xs"> (Overdue)</span>}
+                              {/* Timeline Section */}
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                  <TrendingUp size={16} className="text-green-500" />
+                                  Timeline
+                                </h4>
+                                
+                                <div className="space-y-4">
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
+                                    <div>
+                                      <p className="text-xs text-gray-500">Latest Interaction</p>
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {lead.latest_followup ? lead.latest_followup.discussion_summary : 'No interactions yet'}
+                                      </p>
+                                      {lead.latest_followup && (
+                                        <p className="text-xs text-gray-400 mt-1">
+                                          {new Date(lead.latest_followup.followup_date).toLocaleString()}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500">Next Action</div>
-                                  <div className="text-sm font-medium truncate">
-                                    {lead.latest_followup?.next_followup_date
-                                      ? new Date(lead.latest_followup.next_followup_date).toLocaleDateString()
-                                      : '-'}
-                                  </div>
+
+                                  {lead.latest_followup?.next_followup_date && (
+                                    <div className="flex items-start gap-3">
+                                      <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 shrink-0"></div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">Next Action</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                          Follow-up due
+                                        </p>
+                                        <p className="text-xs text-orange-600 mt-1 font-medium">
+                                          {new Date(lead.latest_followup.next_followup_date).toLocaleString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -851,6 +1034,8 @@ export function LeadsPage() {
                                   </Button>
                                 )}
                               </div>
+
+
                             </div>
                           </motion.div>
                         )}
@@ -859,6 +1044,53 @@ export function LeadsPage() {
                   ))}
                 </AnimatePresence>
               </div>
+
+              {/* Pagination Controls */}
+              {filteredLeads.length > 0 && (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Rows per page:</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-gray-700"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                    <span>
+                      {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredLeads.length)} of {filteredLeads.length}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
@@ -913,6 +1145,15 @@ export function LeadsPage() {
         <BulkStatusModal
           isOpen={isStatusModalOpen}
           onClose={() => setIsStatusModalOpen(false)}
+          leadIds={selectedLeadIds}
+          onSuccess={handleBulkSuccess}
+        />
+      )}
+
+      {isProjectModalOpen && (
+        <BulkProjectModal
+          isOpen={isProjectModalOpen}
+          onClose={() => setIsProjectModalOpen(false)}
           leadIds={selectedLeadIds}
           onSuccess={handleBulkSuccess}
         />

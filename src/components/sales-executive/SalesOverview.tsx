@@ -10,14 +10,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { RecentActivityLog } from '../dashboards/widgets/RecentActivityLog';
 import { CelebrationCards } from './CelebrationCards';
 
-
-const projectColors = [
-    { bg: "bg-blue-50/50", text: "text-blue-600" },
-    { bg: "bg-emerald-50/50", text: "text-emerald-600" },
-    { bg: "bg-amber-50/50", text: "text-amber-600" },
-    { bg: "bg-rose-50/50", text: "text-rose-600" }
-];
-
 export function SalesOverview() {
     const { profile, tenant } = useAuth();
     const [stats, setStats] = useState({
@@ -77,7 +69,6 @@ export function SalesOverview() {
                 return;
             }
 
-            // Fetch team members if salesView is 'team'
             let teamIds: string[] = [];
             if (salesView === 'team') {
                 const { data: teamMembers } = await supabase
@@ -117,7 +108,7 @@ export function SalesOverview() {
                 supabase.from('incentives').select('*').eq('sales_executive_id', profile.id).eq('calculation_year', currentYear),
                 permissions.recent_activity ? supabase.from('activity_logs').select('*, user:user_id(full_name)').order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
                 ytdSalesQuery,
-                permissions.project_performance ? supabase.from('projects').select('id, name') : Promise.resolve({ data: [] }),
+                permissions.project_performance ? supabase.from('projects').select('id, name') : Promise.resolve({ data: [] })
             ]);
 
             const revenue = salesData?.reduce((sum, sale) => sum + Number(sale.total_revenue), 0) || 0;
@@ -125,13 +116,11 @@ export function SalesOverview() {
             const achievement = target > 0 ? (revenue / target) * 100 : 0;
             const totalIncentives = incentiveData?.reduce((sum, inc) => sum + Number(inc.total_incentive_amount), 0) || 0;
 
-            // YTD Calculations
             const ytdSales = ytdSalesData || [];
             const ytdSalesCount = ytdSales.length;
             const ytdRevenue = ytdSales.reduce((sum, sale) => sum + Number(sale.total_revenue), 0);
             const ytdTotalArea = ytdSales.reduce((sum, sale) => sum + Number(sale.area_sqft || 0), 0);
 
-            // Project Stats
             const projMap = new Map<string, number>();
             ytdSales.forEach(s => {
                 if (s.project_id) {
@@ -153,10 +142,10 @@ export function SalesOverview() {
                 ytdSalesCount,
                 ytdTotalArea,
                 ytdRevenue,
-                ytdPaymentCount: 0, // Simplified for brevity in this cleanup
+                ytdPaymentCount: 0,
                 projectStats,
                 activityLogs: activityLogs || [],
-                leaderboard: { monthly: [], yearly: [] } // Handled separately or in a more complex query
+                leaderboard: { monthly: [], yearly: [] }
             });
 
         } catch (error) {
@@ -214,7 +203,7 @@ export function SalesOverview() {
             </div>
 
             {permissions.kpi_cards && (
-                <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
                     <KPICard
                         title={isReceptionist ? "Total Sales (Monthly)" : "My Sales (Monthly)"}
                         value={stats.mySales}
@@ -273,17 +262,16 @@ export function SalesOverview() {
                     className={`grid gap-3 md:gap-6 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
                             stats.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
                                 stats.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
-                                    'grid-cols-2 md:grid-cols-2 lg:grid-cols-4'
+                                    'grid-cols-2 md:grid-cols-4'
                         }`}
                 >
                     {stats.projectStats.map((proj, index) => {
-                        const style = projectColors[index % projectColors.length];
-                        const count = stats.projectStats.length;
-
-                        // Dynamic class for spanning full width if it's the 5th item in a 5-item list
-                        // or generally last item if odd row in future logic, but strictly for the 5th item requirement:
-                        const isFifthItem = count === 5 && index === 4;
-                        const cardClass = isFifthItem ? "col-span-2 md:col-span-2 lg:col-span-4" : "";
+                        const style = [
+                            { bg: "bg-blue-50/50", text: "text-blue-600" },
+                            { bg: "bg-emerald-50/50", text: "text-emerald-600" },
+                            { bg: "bg-amber-50/50", text: "text-amber-600" },
+                            { bg: "bg-rose-50/50", text: "text-rose-600" }
+                        ][index % 4];
 
                         return (
                             <KPICard
@@ -294,7 +282,6 @@ export function SalesOverview() {
                                 subtitle="Total Sold"
                                 iconBgColor={style.bg}
                                 iconColor={style.text}
-                                className={cardClass}
                             />
                         );
                     })}

@@ -3,11 +3,12 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Link } from 'react-router-dom';
+import { KPICard } from '../components/ui/KPICard';
 import {
   Users, TrendingUp, Clock, MapPin, CheckCircle2,
-  XCircle, PhoneCall, Globe
+  XCircle, PhoneCall, Globe, UserPlus, Phone, UserCheck, Calendar
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface DashboardStats {
   totalLeads: number;
@@ -20,6 +21,7 @@ interface DashboardStats {
   adsLeads: number;
   referenceLeads: number;
   channelPartnerLeads: number;
+  dailyStats: { assigned: number; called: number; contacted: number };
 }
 
 export function CRMDashboardPage() {
@@ -34,7 +36,8 @@ export function CRMDashboardPage() {
     walkInLeads: 0,
     adsLeads: 0,
     referenceLeads: 0,
-    channelPartnerLeads: 0
+    channelPartnerLeads: 0,
+    dailyStats: { assigned: 0, called: 0, contacted: 0 }
   });
   const [loading, setLoading] = useState(true);
   const [leadTrends, setLeadTrends] = useState<any[]>([]);
@@ -48,31 +51,58 @@ export function CRMDashboardPage() {
 
     setLoading(true);
     try {
-      // Build base query based on user role
-      let query = supabase.from('leads').select('*', { count: 'exact' });
-
-      // Apply role-based filtering
+      // 1. Resolve Team/User Context
+      let targetIds: string[] = [];
+      
       if (profile.role === 'sales_executive') {
-        query = query.eq('sales_executive_id', profile.id);
+        targetIds = [profile.id];
       } else if (profile.role === 'team_leader') {
-        // Get team members
-        const { data: teamMembers } = await supabase
+         const { data: teamMembers } = await supabase
           .from('profiles')
           .select('id')
           .eq('reporting_manager_id', profile.id);
+        targetIds = [profile.id, ...(teamMembers?.map(m => m.id) || [])];
+      }
+      // For admin/other, targetIds might be empty (implies all, or handled by filtering logic)
+      // But CRMDashboard mainly relies on client filtering? No, lines 52+ used query filtering.
+      // If targetIds is empty and role is admin, we might show all for tenant.
+      
+      // 2. Prepare Queries
+      let mainQuery = supabase.from('leads').select('*', { count: 'exact' });
+      mainQuery = mainQuery.eq('tenant_id', profile.tenant_id);
 
-        const teamIds = [profile.id, ...(teamMembers?.map(m => m.id) || [])];
-        query = query.in('sales_executive_id', teamIds);
+      if (targetIds.length > 0) {
+        mainQuery = mainQuery.in('sales_executive_id', targetIds);
       }
 
-      query = query.eq('tenant_id', profile.tenant_id);
+      // Daily Stats Queries
+      const todayStr = new Date().toISOString().split('T')[0] + 'T00:00:00';
+      let dailyAssignedQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', todayStr).eq('tenant_id', profile.tenant_id);
+      let dailyActivitiesQuery = supabase.from('lead_followups').select('lead_id, new_status, created_by').gte('created_at', todayStr);
 
-      const { data: allLeads, error } = await query;
+      if (targetIds.length > 0) {
+        dailyAssignedQuery = dailyAssignedQuery.in('sales_executive_id', targetIds);
+        dailyActivitiesQuery = dailyActivitiesQuery.in('created_by', targetIds);
+      }
 
-      if (error) throw error;
+      // 3. Execute Queries
+      const [
+        { data: allLeads, error: mainError },
+        { count: dailyAssignedCount },
+        { data: dailyActivities }
+      ] = await Promise.all([
+        mainQuery,
+        dailyAssignedQuery,
+        dailyActivitiesQuery
+      ]);
 
-      // Calculate statistics
+      if (mainError) throw mainError;
+
+      // 4. Process Data
       const leads = allLeads || [];
+      
+      const calledLeads = new Set(dailyActivities?.map((a: any) => a.lead_id));
+      const contactedLeads = new Set(dailyActivities?.filter((a: any) => a.new_status === 'Contacted').map((a: any) => a.lead_id));
 
       setStats({
         totalLeads: leads.length,
@@ -84,7 +114,12 @@ export function CRMDashboardPage() {
         walkInLeads: leads.filter(l => l.lead_source === 'Walk-in').length,
         adsLeads: leads.filter(l => l.lead_source === 'Ads').length,
         referenceLeads: leads.filter(l => l.lead_source === 'Reference').length,
-        channelPartnerLeads: leads.filter(l => l.lead_source === 'Channel Partner').length
+        channelPartnerLeads: leads.filter(l => l.lead_source === 'Channel Partner').length,
+        dailyStats: {
+            assigned: dailyAssignedCount || 0,
+            called: calledLeads.size,
+            contacted: contactedLeads.size
+        }
       });
 
       // Calculate lead trends (last 7 days)
@@ -201,6 +236,40 @@ export function CRMDashboardPage() {
             <div className="text-xs text-gray-500 dark:text-gray-400">Converted</div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Daily Activity Calendar */}
+      <div className="space-y-4">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <Calendar className="text-emerald-600" size={20} />
+            Daily Activity Calendar
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <KPICard
+              title="Leads Assigned Today"
+              value={stats.dailyStats.assigned}
+              icon={UserPlus}
+              subtitle="New Opportunities"
+              iconBgColor="bg-blue-50"
+              iconColor="text-blue-600"
+            />
+            <KPICard
+              title="Leads Called Today"
+              value={stats.dailyStats.called}
+              icon={Phone}
+              subtitle="Active Engagement"
+              iconBgColor="bg-indigo-50"
+              iconColor="text-indigo-600"
+            />
+            <KPICard
+              title="Contacted Today"
+              value={stats.dailyStats.contacted}
+              icon={UserCheck}
+              subtitle="Successful Connections"
+              iconBgColor="bg-emerald-50"
+              iconColor="text-emerald-600"
+            />
+          </div>
       </div>
 
       {/* Lead Trends */}

@@ -145,7 +145,7 @@ export function TeamLeaderDashboard() {
 
       const teamIds = teamMembers?.map(m => m.id) || [];
 
-      if (salesView === 'none') {
+      if ((salesView as string) === 'none') {
         setMetrics({
           mtdSales: 0, mtdRevenue: 0, mtdSalesGrowth: 0, mtdRevenueGrowth: 0,
           ytdSales: 0, ytdRevenue: 0, ytdSalesGrowth: 0, ytdRevenueGrowth: 0
@@ -165,7 +165,7 @@ export function TeamLeaderDashboard() {
 
       const { data: allSales } = await salesQuery;
       const sales = allSales || [];
-
+      
       // 3. Calculate MTD Metrics
       const mtdSalesData = sales.filter(s => isSameMonth(parseISO(s.sale_date), now));
       const lastMonthSalesData = sales.filter(s => {

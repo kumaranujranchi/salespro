@@ -223,6 +223,23 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                     </div>
                 </div>
 
+                {/* 5.5 Custom Fields */}
+                {(sale.metadata as any)?.custom_fields?.length > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white border-b dark:border-white/10 pb-2">
+                            <FileText size={18} className="text-blue-500" /> Additional Project Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {(sale.metadata as any).custom_fields.map((field: any, idx: number) => (
+                                <div key={idx} className="p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-100 dark:border-white/10">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-semibold">{field.label}</div>
+                                    <div className="font-medium text-gray-900 dark:text-gray-200">{field.value}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* 6. Payment Progress Bar */}
                 <div className="space-y-3">
                     <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white border-b dark:border-white/10 pb-2">

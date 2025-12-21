@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Modal } from '../ui/Modal';
-import { Plus, Save, X, User, Edit2, Trash2, Filter, AlertCircle } from 'lucide-react';
+import { Plus, Save, X, User, Edit2, Trash2, Filter, AlertCircle, Target, ChevronDown, CheckCircle, Info } from 'lucide-react';
+import { IncentivePlanSummary } from '../IncentivePlanSummary';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Incentive {
   id: string;
@@ -24,8 +26,11 @@ interface Profile {
 }
 
 export function IncentiveManagement() {
+  const { tenant } = useAuth();
   const [incentives, setIncentives] = useState<Incentive[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,6 +38,7 @@ export function IncentiveManagement() {
   // Modals State
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [expandedUserBreakdown, setExpandedUserBreakdown] = useState<string | null>(null);
 
   // Filters
   const [filterUser, setFilterUser] = useState('');
@@ -46,11 +52,7 @@ export function IncentiveManagement() {
     total_incentive_amount: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       // Fetch incentives with user details
@@ -76,12 +78,33 @@ export function IncentiveManagement() {
       if (profilesError) throw profilesError;
       setProfiles(profilesData || []);
 
+      // Fetch sales for calculation
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('tenant_id', tenant?.id);
+
+      if (salesError) throw salesError;
+      setSales(salesData || []);
+
+      // Fetch all payments for these sales
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select('amount, sale_id');
+
+      if (paymentsError) throw paymentsError;
+      setPayments(paymentsData || []);
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenant?.id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
     if (!formData.sales_executive_id || !formData.total_incentive_amount) {
@@ -194,6 +217,108 @@ export function IncentiveManagement() {
 
   const years = [2024, 2025, 2026, 2027];
 
+  // Automated Calculation Helpers
+  const calculateIncentiveForUser = (userId: string, month: string, year: number) => {
+    const userSales = sales.filter(s => {
+      const saleDate = new Date(s.sale_date);
+      const saleMonth = saleDate.toLocaleString('default', { month: 'long' });
+      const saleYear = saleDate.getFullYear();
+      const isEligible = s.sales_executive_id === userId && saleMonth === month && saleYear === year;
+      
+      // ELIGIBILITY RULE 1: Only if agreement is finalized
+      return isEligible && s.is_agreement_done;
+    });
+
+    if (userSales.length === 0) return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0 };
+
+    const plan = tenant?.settings?.incentive_plan;
+    if (!plan || plan.type === 'manual') return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0 };
+
+    const totalSqft = userSales.reduce((sum, s) => sum + (s.area_sqft || 0), 0);
+    const totalRevenue = userSales.reduce((sum, s) => sum + (s.total_revenue || 0), 0);
+
+    let totalProjected = 0;
+    let currentlyReleasable = 0;
+
+    // 1. Calculate Total Projected based on slabs
+    let baseRate = 0;
+    if (plan.rules?.tiers) {
+      const tiers = plan.rules.tiers || [];
+      // MATCHING IMAGE: Slab 1: <3000 (1%), Slab 2: 3000-5000 (2%), Slab 3: 5000-7000 (3%), Slab 4: >7100 (4%)
+      // Note: We'll use the dynamic tiers from tenant settings if available, otherwise default to image rules
+      const applicableTier = tiers.find((t: any) => totalSqft >= t.min && (t.max === null || totalSqft <= t.max));
+      if (applicableTier) {
+        baseRate = applicableTier.rate;
+      } else {
+        // Fallback to Image Rules if tiers in DB are wrong/missing
+        if (totalSqft >= 7100) baseRate = 4;
+        else if (totalSqft >= 5000) baseRate = 3;
+        else if (totalSqft >= 3000) baseRate = 2;
+        else if (totalSqft >= 0) baseRate = 1;
+      }
+      totalProjected = (totalRevenue * baseRate) / 100;
+    } else if (plan.rules?.rules) {
+      const pRules = plan.rules.rules || [];
+      userSales.forEach(s => {
+        const rule = pRules.find((r: any) => r.project_id === s.project_id) || pRules.find((r: any) => r.project_id === 'all');
+        if (rule) {
+          totalProjected += (s.total_revenue * rule.base_rate) / 100 + (rule.milestone_bonus || 0);
+        }
+      });
+    }
+
+    // 2. Calculate Releasable based on Payment Milestones and Registry
+    const bookingBreakdown = userSales.map(s => {
+      const salePayments = payments.filter(p => p.sale_id === s.id).reduce((sum, p) => sum + p.amount, 0);
+      const paymentPct = (salePayments / s.total_revenue) * 100;
+      
+      let releasePct = 0;
+      if (s.is_registry_done) {
+        releasePct = 100;
+      } else {
+        if (paymentPct >= 75) releasePct = 75;
+        else if (paymentPct >= 50) releasePct = 50;
+        else if (paymentPct >= 30) releasePct = 30;
+      }
+
+      const saleTotalIncentive = plan.rules?.tiers 
+        ? (s.total_revenue * baseRate) / 100 
+        : (s.total_revenue * (plan.rules?.rules?.find((r: any) => r.project_id === s.project_id || r.project_id === 'all')?.base_rate || 0)) / 100;
+      
+      const saleReleasable = (saleTotalIncentive * releasePct) / 100;
+      currentlyReleasable += saleReleasable;
+
+      return {
+        id: s.id,
+        booking_no: s.id.slice(0, 8).toUpperCase(),
+        sqft: s.area_sqft || 0,
+        revenue: s.total_revenue,
+        payment_pct: paymentPct.toFixed(1),
+        is_agreement_done: s.is_agreement_done,
+        is_registry_done: s.is_registry_done,
+        release_pct: releasePct,
+        projected: saleTotalIncentive,
+        releasable: saleReleasable
+      };
+    });
+
+    return { 
+      total: totalProjected, 
+      releasable: currentlyReleasable, 
+      totalSqft, 
+      totalRevenue,
+      bookings: bookingBreakdown
+    };
+  };
+
+  const getActivePlanSummary = () => {
+    const plan = tenant?.settings?.incentive_plan;
+    if (!plan || plan.type === 'manual') return 'Manual Only';
+    if (plan.rules?.tiers) return `Slab-Based (${plan.rules.tiers.length} Tiers)`;
+    if (plan.rules?.rules) return 'Project Specific Overrides';
+    return 'Automated (JSON)';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Actions */}
@@ -243,14 +368,189 @@ export function IncentiveManagement() {
           )}
         </div>
 
-        <button
-          onClick={() => { resetForm(); setIsAdding(true); }}
-          className="flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Add Manual Incentive
-        </button>
-      </div>
+          {tenant?.settings?.incentive_plan?.type !== 'custom' && (
+            <button
+              onClick={() => { resetForm(); setIsAdding(true); }}
+              className="flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg whitespace-nowrap"
+            >
+              <Plus size={20} />
+              Add Manual Incentive
+            </button>
+          )}
+       </div>
+
+      {/* Plan Summary Section */}
+      {tenant?.settings?.incentive_plan?.type === 'custom' && (
+        <>
+          <IncentivePlanSummary tenant={tenant} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-gradient-to-br from-white to-amber-50 dark:from-white/5 dark:to-transparent rounded-xl border border-amber-100 dark:border-white/5 shadow-sm">
+                <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Total Sq Ft (This Month)</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl font-black text-gray-900 dark:text-white">
+                    {sales.filter(s => {
+                      const date = new Date(s.sale_date);
+                      return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
+                    }).reduce((sum, s) => sum + (s.area_sqft || 0), 0).toLocaleString()}
+                  </p>
+                  <span className="text-xs text-gray-400 font-medium">Applied to slabs</span>
+                </div>
+            </div>
+            
+            <div className="p-4 bg-gradient-to-br from-white to-green-50 dark:from-white/5 dark:to-transparent rounded-xl border border-green-100 dark:border-white/5 shadow-sm">
+                <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Estimated Payout Pipeline</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl font-black text-[#00E576]">
+                    {formatCurrency(profiles.reduce((sum, p) => {
+                  const result = calculateIncentiveForUser(p.id, new Date().toLocaleString('default', { month: 'long' }), new Date().getFullYear());
+                  return sum + result.releasable;
+                }, 0))}
+                  </p>
+                  <span className="text-xs text-gray-400 font-medium">Across all executives</span>
+                </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Automated Calculations Table */}
+      {tenant?.settings?.incentive_plan?.type === 'custom' && (
+        <Card className="dark:bg-[#121e18] border border-amber-500/30">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target size={20} className="text-amber-500" />
+              <CardTitle className="dark:text-white">Automated Calculations ({filterMonth || new Date().toLocaleString('default', { month: 'long' })})</CardTitle>
+            </div>
+            <span className="text-[10px] bg-amber-500/20 text-amber-600 px-2 py-1 rounded-full font-bold uppercase tracking-wider">Projected From {getActivePlanSummary()}</span>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+               <table className="w-full text-sm text-left">
+                <thead className="bg-amber-50 dark:bg-amber-900/10 text-amber-900/60 dark:text-amber-200/40 uppercase text-[10px]">
+                  <tr>
+                    <th className="px-4 py-3">Sales Executive</th>
+                    <th className="px-4 py-3 text-right">Total Sq Ft</th>
+                    <th className="px-4 py-3 text-right">Total Revenue</th>
+                    <th className="px-4 py-3 text-right">Calculated Incentive</th>
+                    <th className="px-4 py-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100 dark:divide-white/5">
+                    {profiles.filter(p => p.role === 'sales_executive' || p.role === 'team_leader').map(p => {
+                      const currentMonth = filterMonth || new Date().toLocaleString('default', { month: 'long' });
+                      const currentYear = filterYear ? parseInt(filterYear) : new Date().getFullYear();
+                      const result = calculateIncentiveForUser(p.id, currentMonth, currentYear);
+                      
+                      if (result.total === 0 && result.totalSqft === 0) return null;
+
+                      return (
+                        <React.Fragment key={p.id}>
+                          <tr 
+                            className={`hover:bg-amber-500/5 transition-colors cursor-pointer ${expandedUserBreakdown === p.id ? 'bg-amber-500/10' : ''}`}
+                            onClick={() => setExpandedUserBreakdown(expandedUserBreakdown === p.id ? null : p.id)}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className={`transition-transform ${expandedUserBreakdown === p.id ? 'rotate-180' : ''}`}>
+                                  <ChevronDown size={14} className="text-gray-400" />
+                                </div>
+                                <span className="font-bold text-gray-900 dark:text-white">{p.full_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-500">{result.totalSqft.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-right text-gray-500">{formatCurrency(result.totalRevenue)}</td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex flex-col items-end">
+                                <span className="font-bold text-amber-600">{formatCurrency(result.releasable)}</span>
+                                <span className="text-[10px] text-gray-400">of {formatCurrency(result.total)}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {incentives.some(inc => inc.sales_executive_id === p.id && inc.calculation_month === currentMonth && inc.calculation_year === currentYear) ? (
+                                <span className="text-[10px] bg-green-500/20 text-green-600 px-2 py-1 rounded-full font-bold">ALREADY PAID</span>
+                              ) : (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFormData({
+                                      sales_executive_id: p.id,
+                                      calculation_month: currentMonth,
+                                      calculation_year: currentYear,
+                                      total_incentive_amount: result.releasable.toFixed(2)
+                                    });
+                                    setIsAdding(true);
+                                    window.scrollTo({ top: 300, behavior: 'smooth' });
+                                  }}
+                                  className="text-[10px] bg-amber-500 text-white px-2 py-1 rounded-full font-bold hover:bg-amber-600 transition-colors shadow-sm"
+                                >
+                                  POST MANUAL RECORD
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                          
+                          {/* Expanded Booking Breakdown */}
+                          {expandedUserBreakdown === p.id && (
+                            <tr className="bg-amber-50/30 dark:bg-amber-900/5">
+                              <td colSpan={5} className="px-8 py-4 border-l-4 border-amber-500/50">
+                                <h5 className="text-[11px] font-bold text-amber-900/60 dark:text-amber-200/40 uppercase mb-3 flex items-center gap-2">
+                                  <Info size={14} /> Booking-wise Eligibility & Release Breakdown
+                                </h5>
+                                <div className="overflow-hidden rounded-xl border border-amber-200/30 dark:border-white/5 bg-white/50 dark:bg-black/20 shadow-sm">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-amber-100/30 dark:bg-white/5 text-[10px] uppercase text-gray-500">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left">Booking Ref</th>
+                                        <th className="px-3 py-2 text-right">Area (Sq Ft)</th>
+                                        <th className="px-3 py-2 text-center">Agreement</th>
+                                        <th className="px-3 py-2 text-center">Payment %</th>
+                                        <th className="px-3 py-2 text-center">Registry</th>
+                                        <th className="px-3 py-2 text-right">Release %</th>
+                                        <th className="px-3 py-2 text-right">Releasable (₹)</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-amber-100 dark:divide-white/5">
+                                      {result.bookings?.map((b: any, idx: number) => (
+                                        <tr key={idx} className="hover:bg-amber-50 transition-colors">
+                                          <td className="px-3 py-2 font-mono font-bold text-gray-600 dark:text-gray-400">{b.booking_no}</td>
+                                          <td className="px-3 py-2 text-right">{b.sqft.toLocaleString()}</td>
+                                          <td className="px-3 py-2 text-center">
+                                            {b.is_agreement_done ? (
+                                              <span className="text-green-500 inline-flex items-center gap-1"><CheckCircle size={12} /> Yes</span>
+                                            ) : (
+                                              <span className="text-red-400">No</span>
+                                            )}
+                                          </td>
+                                          <td className="px-3 py-2 text-center font-bold text-blue-600">{b.payment_pct}%</td>
+                                          <td className="px-3 py-2 text-center">
+                                            {b.is_registry_done ? (
+                                              <span className="text-green-600 font-bold uppercase text-[9px]">Completed</span>
+                                            ) : (
+                                              <span className="text-gray-400 uppercase text-[9px]">Pending</span>
+                                            )}
+                                          </td>
+                                          <td className="px-3 py-2 text-right">
+                                            <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 px-1.5 py-0.5 rounded-md font-black">{b.release_pct}%</span>
+                                          </td>
+                                          <td className="px-3 py-2 text-right font-black text-amber-600">{formatCurrency(b.releasable)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                </tbody>
+               </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add/Edit Form */}
       {isAdding && (
@@ -395,9 +695,12 @@ export function IncentiveManagement() {
           <AlertCircle size={20} className="text-[#00E576]" />
         </div>
         <div>
-          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Automation Available</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">Automated Calculation Status</h4>
           <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-            This page is currently for manual incentive management. Automated incentive calculations are available in our customized plans.
+            {tenant?.settings?.incentive_plan?.type !== 'fixed' 
+              ? `System is calculating incentives automatically based on the ${getActivePlanSummary()} plan. You can still post manual records as needed.`
+              : "This page is currently for manual incentive management. Automated incentive calculations are available in our customized plans."
+            }
           </p>
         </div>
       </div>

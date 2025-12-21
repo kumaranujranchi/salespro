@@ -74,7 +74,7 @@ export function AdminDashboard() {
     monthlyRevenue: 0,
     ytdSales: 0,
     ytdRevenue: 0,
-    projectStats: [],
+    projectStats: []
   });
 
   const [salesChartData, setSalesChartData] = useState<ChartData[]>([]);
@@ -159,6 +159,9 @@ export function AdminDashboard() {
         name: p.name,
         area: projectAreaMap.get(p.id) || 0
       })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
+
+      // Calculate Project Performance (All Time)
+
 
       // 2. Fetch Sales Data for Metrics, Charts & Leaderboard
       let salesQuery = supabase
@@ -265,7 +268,7 @@ export function AdminDashboard() {
         monthlyRevenue: mRevenue,
         ytdSales: ySales,
         ytdRevenue: yRevenue,
-        projectStats: topProjects,
+        projectStats: topProjects
       });
 
       // Activities set above in try-catch block

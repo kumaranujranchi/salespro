@@ -60,7 +60,10 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
         bookingAmount: '',
         paymentMode: 'cheque',
         paymentType: 'booking',
-        transactionRef: ''
+        transactionRef: '',
+
+        // Custom Fields
+        customFields: [] as { label: string, value: string }[]
     });
 
     useEffect(() => {
@@ -96,7 +99,10 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                     bookingAmount: '',
                     paymentMode: 'cheque',
                     paymentType: 'booking',
-                    transactionRef: ''
+                    transactionRef: '',
+                    
+                    // Populate Custom Fields from metadata
+                    customFields: (editingSale.metadata as any)?.custom_fields || []
                 });
             } else {
                 resetForm();
@@ -128,7 +134,8 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
             bookingAmount: '',
             paymentMode: 'cheque',
             paymentType: 'booking',
-            transactionRef: ''
+            transactionRef: '',
+            customFields: []
         });
     };
 
@@ -256,8 +263,14 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 is_registry_done: formData.isRegistryDone,
                 registry_date: formData.isRegistryDone ? formData.registryDate || null : null,
 
+                // Metadata including custom fields
+                metadata: {
+                    ...(editingSale?.metadata || {}),
+                    custom_fields: formData.customFields.filter(f => f.label.trim() !== '')
+                },
+
                 ...(editingSale ? {} : {
-                    sale_number: `SALE - ${Date.now()} `,
+                    sale_number: `SALE-${Date.now()}`,
                     booking_amount: 0 // Will be handled by payments
                 })
             };
@@ -503,6 +516,71 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                         </div>
                     </div>
                 )}
+
+                {/* Custom Fields Section */}
+                <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg space-y-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex justify-between items-center">
+                        <h3 className="font-semibold text-[#0A1C37] dark:text-white flex items-center gap-2">
+                            <FileText size={18} className="text-[#1673FF]" />
+                            Additional Project Details
+                        </h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {formData.customFields.map((field, index) => (
+                            <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end p-3 bg-white dark:bg-black/10 rounded-lg border border-gray-100 dark:border-white/5 drop-shadow-sm">
+                                <Input 
+                                    label="Field Name (e.g. Configuration)" 
+                                    value={field.label} 
+                                    onChange={(e) => {
+                                        const newFields = [...formData.customFields];
+                                        newFields[index].label = e.target.value;
+                                        setFormData({ ...formData, customFields: newFields });
+                                    }}
+                                    placeholder="Enter label"
+                                />
+                                <div className="flex gap-2 items-end">
+                                    <Input 
+                                        label="Value" 
+                                        value={field.value} 
+                                        onChange={(e) => {
+                                            const newFields = [...formData.customFields];
+                                            newFields[index].value = e.target.value;
+                                            setFormData({ ...formData, customFields: newFields });
+                                        }}
+                                        placeholder="Enter value"
+                                        className="flex-1"
+                                    />
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-red-500 hover:bg-red-50 h-10 w-10 p-0" 
+                                        onClick={() => {
+                                            const newFields = formData.customFields.filter((_, i) => i !== index);
+                                            setFormData({ ...formData, customFields: newFields });
+                                        }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[#1673FF] hover:bg-blue-50 mt-1" 
+                            onClick={() => setFormData({ 
+                                ...formData, 
+                                customFields: [...formData.customFields, { label: '', value: '' }] 
+                            })}
+                        >
+                            + Add Custom Field
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Legal Status */}
                 <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-lg space-y-4 border border-gray-200 dark:border-white/10">
