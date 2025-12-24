@@ -134,10 +134,16 @@ export interface Profile {
   tenant_id: string; // Added for SaaS
   is_active: boolean;
   force_password_change: boolean;
+  role_id: string | null;
   role_details?: {
     id: string;
     name: string;
     permissions: RolePermissions;
+    is_system: boolean;
+  };
+  department_details?: {
+    id: string;
+    name: string;
   };
   created_at: string;
   updated_at: string;

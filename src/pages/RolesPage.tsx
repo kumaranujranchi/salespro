@@ -11,13 +11,18 @@ import {
   X,
   Lock,
   Eye,
-  Settings,
   LayoutDashboard,
   Users as UsersIcon,
   Building,
   FileText,
   Clock,
   Award,
+  TrendingUp,
+  Megaphone,
+  Contact,
+  Briefcase,
+  Zap,
+  HelpCircle,
   AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
@@ -42,13 +47,19 @@ interface Role {
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'sales', label: 'Sales & Trends', icon: TrendingUp },
   { id: 'crm', label: 'CRM / Leads', icon: UsersIcon },
   { id: 'inventory', label: 'Inventory / Projects', icon: Building },
   { id: 'site_visits', label: 'Site Visits', icon: Clock },
-  { id: 'incentives', label: 'Incentives', icon: Award },
+  { id: 'incentives', label: 'Incentives & Targets', icon: Award },
   { id: 'reports', label: 'Reports', icon: FileText },
+  { id: 'announcements', label: 'Announcements', icon: Megaphone },
+  { id: 'directory', label: 'Directory / Contacts', icon: Contact },
   { id: 'users', label: 'User Management', icon: UsersIcon },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'departments', label: 'Departments', icon: Briefcase },
+  { id: 'roles', label: 'Role Management', icon: Shield },
+  { id: 'subscription', label: 'Subscription & Billing', icon: Zap },
+  { id: 'support', label: 'Help & Support', icon: HelpCircle },
 ];
 
 const DASHBOARD_WIDGETS = [

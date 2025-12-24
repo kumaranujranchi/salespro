@@ -12,7 +12,11 @@ export function DashboardPage() {
   const { profile } = useAuth();
   if (!profile) return null;
 
-  switch (profile.role) {
+  const role = profile.role;
+  const permissions = profile.role_details?.permissions;
+
+  // 1. Precise Match for System Roles
+  switch (role) {
     case 'platform_admin':
       return <PlatformDashboard />;
     case 'super_admin':
@@ -31,7 +35,24 @@ export function DashboardPage() {
       return <DriverDashboard />;
     case 'receptionist':
       return <ReceptionistDashboard />;
-    default:
-      return <div>Dashboard not configured for your role</div>;
   }
+
+  // 2. Dynamic Fallback for Custom Roles based on Permissions
+  if (permissions?.dashboard?.sales_view) {
+    const view = permissions.dashboard.sales_view;
+    if (view === 'overall') return <AdminDashboard />;
+    if (view === 'team') return <TeamLeaderDashboard />;
+    if (view === 'self') return <SalesExecutiveDashboard />;
+  }
+
+  // 3. Last Resort Fallback
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg border border-amber-100 dark:border-amber-900/30 text-center">
+        <h3 className="font-bold text-lg mb-1">Dashboard not configured</h3>
+        <p>Your role ({profile.role_details?.name || role}) does not have a specific dashboard assigned. 
+           Please contact your administrator to configure your dashboard view permissions.</p>
+      </div>
+    </div>
+  );
 }

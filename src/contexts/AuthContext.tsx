@@ -35,6 +35,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id,
           name,
           permissions
+        ),
+        department_details:departments (
+          id,
+          name
         )
       `)
       .eq('id', userId)

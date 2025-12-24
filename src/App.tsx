@@ -80,7 +80,7 @@ function App() {
             
             {/* Platform Admin Routes */}
             <Route path="referral-management" element={
-              <ProtectedRoute allowedRoles={['platform_admin', 'super_admin']}>
+              <ProtectedRoute allowedRoles={['platform_admin']}>
                 <DashboardLayout>
                   <ReferralManagementPage />
                 </DashboardLayout>
@@ -139,7 +139,7 @@ function App() {
                 <Route
                   path="/performance"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="sales">
                       <DashboardLayout>
                         <MyPerformancePage />
                       </DashboardLayout>
@@ -150,7 +150,7 @@ function App() {
                 <Route
                   path="/directory"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="directory">
                       <DashboardLayout>
                         <DirectoryPage />
                       </DashboardLayout>
@@ -161,7 +161,7 @@ function App() {
                 <Route
                   path="/users"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+                    <ProtectedRoute permissionKey="users">
                       <DashboardLayout>
                         <UsersPage />
                       </DashboardLayout>
@@ -171,7 +171,7 @@ function App() {
                 <Route
                   path="/roles"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin']}>
+                    <ProtectedRoute permissionKey="roles">
                       <DashboardLayout>
                         <RolesPage />
                       </DashboardLayout>
@@ -182,7 +182,7 @@ function App() {
                 <Route
                   path="/departments"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+                    <ProtectedRoute permissionKey="departments">
                       <DashboardLayout>
                         <DepartmentsPage />
                       </DashboardLayout>
@@ -193,7 +193,7 @@ function App() {
                 <Route
                   path="/projects"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin', 'admin']} requiredFeature="inventory">
+                    <ProtectedRoute permissionKey="inventory" requiredFeature="inventory">
                       <DashboardLayout>
                         <ProjectsPage />
                       </DashboardLayout>
@@ -204,7 +204,7 @@ function App() {
                 <Route
                   path="/announcements"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="announcements">
                       <DashboardLayout>
                         <AnnouncementsPage />
                       </DashboardLayout>
@@ -215,7 +215,7 @@ function App() {
                 <Route
                   path="/targets"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="incentives">
                       <DashboardLayout>
                         <TargetsPage />
                       </DashboardLayout>
@@ -226,7 +226,7 @@ function App() {
                 <Route
                   path="/site-visits"
                   element={
-                    <ProtectedRoute requiredFeature="site_visits">
+                    <ProtectedRoute permissionKey="site_visits" requiredFeature="site_visits">
                       <DashboardLayout>
                         <SiteVisitsPage />
                       </DashboardLayout>
@@ -237,7 +237,7 @@ function App() {
                 <Route
                   path="/sales"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="sales">
                       <DashboardLayout>
                         <SalesPage />
                       </DashboardLayout>
@@ -248,7 +248,7 @@ function App() {
                 <Route
                   path="/incentives"
                   element={
-                    <ProtectedRoute requiredFeature="incentives">
+                    <ProtectedRoute permissionKey="incentives" requiredFeature="incentives">
                       <DashboardLayout>
                         <IncentivesPage />
                       </DashboardLayout>
@@ -259,7 +259,7 @@ function App() {
                 <Route
                   path="/crm"
                   element={
-                    <ProtectedRoute requiredFeature="crm">
+                    <ProtectedRoute permissionKey="crm" requiredFeature="crm">
                       <DashboardLayout>
                         <CRMDashboardPage />
                       </DashboardLayout>
@@ -270,7 +270,7 @@ function App() {
                 <Route
                   path="/crm/pipeline"
                   element={
-                    <ProtectedRoute requiredFeature="crm">
+                    <ProtectedRoute permissionKey="crm" requiredFeature="crm">
                       <DashboardLayout>
                         <PipelinePage />
                       </DashboardLayout>
@@ -281,7 +281,7 @@ function App() {
                 <Route
                   path="/reports"
                   element={
-                    <ProtectedRoute requiredFeature="reports">
+                    <ProtectedRoute permissionKey="reports" requiredFeature="reports">
                       <DashboardLayout>
                         <ReportsPage />
                       </DashboardLayout>
@@ -292,7 +292,7 @@ function App() {
                 <Route
                   path="/leads"
                   element={
-                    <ProtectedRoute requiredFeature="crm">
+                    <ProtectedRoute permissionKey="crm" requiredFeature="crm">
                       <DashboardLayout>
                         <LeadsPage />
                       </DashboardLayout>
@@ -303,7 +303,7 @@ function App() {
                 <Route
                   path="/support"
                   element={
-                    <ProtectedRoute allowedRoles={['super_admin', 'admin', 'director']}>
+                    <ProtectedRoute permissionKey="support">
                       <DashboardLayout>
                         <SupportPage />
                       </DashboardLayout>
@@ -314,7 +314,7 @@ function App() {
                 <Route
                   path="/subscription"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute permissionKey="subscription">
                       <DashboardLayout>
                         <SubscriptionPage />
                       </DashboardLayout>

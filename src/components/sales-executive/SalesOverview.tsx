@@ -9,6 +9,7 @@ import { TrendingUp, DollarSign, Target, Award, BarChart3, Wallet, Building } fr
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { RecentActivityLog } from '../dashboards/widgets/RecentActivityLog';
 import { CelebrationCards } from './CelebrationCards';
+import { getSubordinateIds } from '../../utils/hierarchy';
 
 export function SalesOverview() {
     const { profile, tenant } = useAuth();
@@ -70,28 +71,23 @@ export function SalesOverview() {
             }
 
             let teamIds: string[] = [];
-            if (salesView === 'team') {
-                const { data: teamMembers } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('reporting_manager_id', profile.id)
-                    .eq('is_active', true);
-                teamIds = teamMembers?.map(m => m.id) || [];
+            if (salesView === 'team' && profile.tenant_id) {
+                teamIds = await getSubordinateIds(profile.id, profile.tenant_id);
             }
 
             let salesQuery = supabase.from('sales').select('total_revenue');
             if (salesView === 'self') {
                 salesQuery = salesQuery.eq('sales_executive_id', profile.id);
-            } else if (salesView === 'team' && teamIds.length > 0) {
-                salesQuery = salesQuery.in('sales_executive_id', teamIds);
+            } else if (salesView === 'team') {
+                salesQuery = salesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
             }
             salesQuery = salesQuery.gte('sale_date', monthStart);
 
             let ytdSalesQuery = supabase.from('sales').select('id, total_revenue, area_sqft, project_id');
             if (salesView === 'self') {
                 ytdSalesQuery = ytdSalesQuery.eq('sales_executive_id', profile.id);
-            } else if (salesView === 'team' && teamIds.length > 0) {
-                ytdSalesQuery = ytdSalesQuery.in('sales_executive_id', teamIds);
+            } else if (salesView === 'team') {
+                ytdSalesQuery = ytdSalesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
             }
             ytdSalesQuery = ytdSalesQuery.gte('sale_date', yearStart);
 
@@ -183,7 +179,7 @@ export function SalesOverview() {
                         </div>
                         <div className="space-y-1 min-w-0">
                             <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-                                Welcome Back, {profile?.full_name?.split(' ')[0]} {isReceptionist ? '👋' : '⚡'}
+                                Welcome Back, {profile?.full_name?.split(' ')[0]}!
                             </h1>
                             <p className="text-orange-100 dark:text-white text-sm font-medium">
                                 {isReceptionist ? "Check out the latest updates and events!" : "Let's crush your targets today!"}

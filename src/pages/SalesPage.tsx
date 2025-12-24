@@ -18,6 +18,7 @@ import { SalesCancellationModal } from '../components/sales/SalesCancellationMod
 import { startOfYear, startOfMonth, endOfMonth, isAfter, isSameMonth, parseISO, format } from 'date-fns';
 
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { getSubordinateIds } from '../utils/hierarchy';
 
 export function SalesPage() {
   const { profile } = useAuth();
@@ -109,27 +110,27 @@ export function SalesPage() {
         `);
 
     // 1. Role-Based Access Control (Base Scope)
-    // Team Leader logic: See own sales + team's sales
+    // Custom roles use the sales_view permission
+    const roleDetails = profile.role_details;
+    const salesView = roleDetails?.permissions?.dashboard?.sales_view || (isSalesExecutive ? 'self' : 'overall');
+
     let teamMemberIds: string[] = [];
-    if (isTeamLeader) {
-      const { data: subordinates } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('reporting_manager_id', profile.id);
+    if (salesView === 'team' && profile.tenant_id) {
+       teamMemberIds = await getSubordinateIds(profile.id, profile.tenant_id);
+       teamMemberIds.push(profile.id); // Also include self
 
-      if (subordinates) teamMemberIds = subordinates.map(s => s.id);
-      teamMemberIds.push(profile.id);
-
-      // If filtering by specific executive, ensure they are in team
-      if (filters.executiveId && !teamMemberIds.includes(filters.executiveId)) {
-        // User trying to filter outside permission - show only allowed matching or none
-        query = query.in('sales_executive_id', teamMemberIds);
-      } else if (!filters.executiveId) {
-        query = query.in('sales_executive_id', teamMemberIds);
-      }
-    } else if (isSalesExecutive) {
-      // Sales Executive only sees own data
+       // If filtering by specific executive, ensure they are in team
+       if (filters.executiveId && !teamMemberIds.includes(filters.executiveId)) {
+         query = query.in('sales_executive_id', teamMemberIds);
+       } else if (!filters.executiveId) {
+         query = query.in('sales_executive_id', teamMemberIds);
+       }
+    } else if (salesView === 'self' || isSalesExecutive) {
+      // Show only own data
       query = query.eq('sales_executive_id', profile.id);
+    } else if (salesView === 'none') {
+      // Hide everything
+      query = query.in('sales_executive_id', ['00000000-0000-0000-0000-000000000000']);
     }
 
     // 2. Apply Filters

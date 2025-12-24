@@ -23,7 +23,7 @@ export function AccountantDashboard() {
                         </div>
                         <div className="space-y-1">
                             <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-                                Accountant, {profile?.full_name?.split(' ')[0]} 📊
+                                Welcome Back, {profile?.full_name?.split(' ')[0]}!
                             </h1>
                             <p className="text-teal-100 text-sm font-medium">
                                 Manage financials and payments seamlessly.

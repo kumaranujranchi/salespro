@@ -16,6 +16,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, startOfYear, isSameMonth, parseISO } from 'date-fns';
+import { getSubordinateIds } from '../../utils/hierarchy';
 
 // --- Interfaces ---
 interface DashboardMetrics {
@@ -115,6 +116,7 @@ export function TeamLeaderDashboard() {
     projects: [],
     siteVisits: { total: 0, avgPerExec: 0, conversionRate: 0 }
   });
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const permissions = profile?.role_details?.permissions?.dashboard || {
     sales_view: 'team',
@@ -136,14 +138,35 @@ export function TeamLeaderDashboard() {
       const lastMonthStart = startOfMonth(subMonths(now, 1)).toISOString();
       const lastMonthEnd = endOfMonth(subMonths(now, 1)).toISOString();
 
-      // 1. Fetch Team Members
-      const { data: teamMembers } = await supabase
-        .from('profiles')
-        .select('id, full_name, image_url, created_at')
-        .eq('reporting_manager_id', profile.id)
-        .eq('is_active', true);
-
-      const teamIds = teamMembers?.map(m => m.id) || [];
+      // 1. Fetch Team Members Recursively
+      let teamIds: string[] = [];
+      let teamProfiles: any[] = [];
+      
+      if (salesView === 'team' && profile.tenant_id) {
+        teamIds = await getSubordinateIds(profile.id, profile.tenant_id);
+        
+        // Fetch full profiles for these IDs for the leaderboard/status cards
+        if (teamIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, image_url, created_at')
+            .in('id', teamIds)
+            .eq('is_active', true);
+          teamProfiles = profiles || [];
+        }
+      } else if (salesView === 'overall' && profile.tenant_id) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, image_url, created_at')
+          .eq('tenant_id', profile.tenant_id)
+          .eq('is_active', true);
+        teamProfiles = profiles || [];
+        teamIds = teamProfiles.map(p => p.id);
+      }
+      
+      setTeamMembers(teamProfiles);
+      // We'll also include the manager themselves for sales data if it's 'team' view
+      const allSalesIds = [...teamIds, profile.id];
 
       if ((salesView as string) === 'none') {
         setMetrics({
@@ -160,7 +183,7 @@ export function TeamLeaderDashboard() {
       if (salesView === 'self') {
         salesQuery = salesQuery.eq('sales_executive_id', profile.id);
       } else if (salesView === 'team') {
-        salesQuery = salesQuery.in('sales_executive_id', teamIds);
+        salesQuery = salesQuery.in('sales_executive_id', allSalesIds.length > 0 ? allSalesIds : ['00000000-0000-0000-0000-000000000000']);
       }
 
       const { data: allSales } = await salesQuery;
@@ -328,7 +351,7 @@ export function TeamLeaderDashboard() {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Team Overview, {profile?.full_name?.split(' ')[0]}! 👋</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {profile?.full_name?.split(' ')[0]}!</h1>
               <p className="text-emerald-50 text-base font-medium opacity-90">Monitor your team's sales performance and operational targets.</p>
             </div>
           </div>

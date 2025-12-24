@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { supabase } from '../../lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { startOfYear, endOfYear, eachMonthOfInterval, format, isSameMonth, parseISO } from 'date-fns';
+import { getSubordinateIds } from '../../utils/hierarchy';
 
 export function TargetAchievement() {
     const { profile } = useAuth();
@@ -12,26 +13,25 @@ export function TargetAchievement() {
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (profile) {
-            loadData();
-        }
-    }, [profile]);
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
+        if (!profile || !profile.tenant_id) return;
         try {
-            // Load My Targets
+            // Get all subordinate IDs
+            const descendants = await getSubordinateIds(profile.id, profile.tenant_id);
+            const userIds = [profile.id, ...descendants];
+
+            // Load Targets for everyone in the hierarchy
             const { data: targetsData } = await supabase
                 .from('sales_targets')
                 .select('*')
-                .eq('user_id', profile?.id)
+                .in('user_id', userIds)
                 .eq('period_type', 'monthly');
 
-            // Load My Sales
+            // Load Sales for everyone in the hierarchy
             const { data: salesData } = await supabase
                 .from('sales')
                 .select('*')
-                .eq('sales_executive_id', profile?.id);
+                .in('sales_executive_id', userIds);
 
             if (targetsData) setTargets(targetsData);
             if (salesData) setSales(salesData);
@@ -40,7 +40,13 @@ export function TargetAchievement() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [profile]);
+
+    useEffect(() => {
+        if (profile) {
+            loadData();
+        }
+    }, [profile, loadData]);
 
     const chartData = useMemo(() => {
         const yearStart = startOfYear(new Date());

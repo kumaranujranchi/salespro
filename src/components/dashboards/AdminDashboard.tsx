@@ -28,6 +28,7 @@ import { ActivityCalendar } from './widgets/ActivityCalendar';
 import { UpcomingEvents } from './widgets/UpcomingEvents';
 import { Select } from '../ui/Select';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getSubordinateIds } from '../../utils/hierarchy';
 
 
 interface DashboardStats {
@@ -105,28 +106,29 @@ export function AdminDashboard() {
 
       // Fetch team members if salesView is 'team'
       let teamIds: string[] = [];
-      if (salesView === 'team') {
-        const { data: teamMembers } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('reporting_manager_id', profile?.id)
-          .eq('is_active', true);
-        teamIds = teamMembers?.map(m => m.id) || [];
+      if (salesView === 'team' && profile?.tenant_id) {
+        teamIds = await getSubordinateIds(profile.id, profile.tenant_id);
       }
 
       // 1. Fetch Basic Metrics
+      let salesMetricQuery = supabase.from('sales').select('project_id, area_sqft');
+      if (salesView === 'self') {
+        salesMetricQuery = salesMetricQuery.eq('sales_executive_id', profile?.id);
+      } else if (salesView === 'team') {
+        salesMetricQuery = salesMetricQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
+      }
+
       const [
         { count: projectCount },
         { count: teamCount },
         { count: departmentCount },
-        // { data: activities } - Fetched separately to prevent crash
         { data: allTimeProjectSales },
         { data: projectsData }
       ] = await Promise.all([
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('sales').select('project_id, area_sqft').filter('sales_executive_id', salesView === 'self' ? 'eq' : 'neq', salesView === 'self' ? profile?.id : '00000000-0000-0000-0000-000000000000'),
+        salesMetricQuery,
         supabase.from('projects').select('id, name')
       ]);
 
@@ -176,8 +178,8 @@ export function AdminDashboard() {
 
       if (salesView === 'self') {
         salesQuery = salesQuery.eq('sales_executive_id', profile?.id);
-      } else if (salesView === 'team' && teamIds.length > 0) {
-        salesQuery = salesQuery.in('sales_executive_id', teamIds);
+      } else if (salesView === 'team') {
+        salesQuery = salesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
       }
 
       const { data: yearSales } = await salesQuery
@@ -188,19 +190,38 @@ export function AdminDashboard() {
         setAllSales(yearSales);
       }
 
-      const { data: recentSalesReal } = await supabase
+      let recentSalesQuery = supabase
         .from('sales')
         .select('*, customer:customer_id(name), project:project_id(name), profile:sales_executive_id(full_name)')
         .order('created_at', { ascending: false })
         .limit(6);
 
+      if (salesView === 'self') {
+        recentSalesQuery = recentSalesQuery.eq('sales_executive_id', profile?.id);
+      } else if (salesView === 'team') {
+        recentSalesQuery = recentSalesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
+      }
+
+      const { data: recentSalesReal } = await recentSalesQuery;
       if (recentSalesReal) setRecentSales(recentSalesReal);
 
-      // Fetch Payments for Collection Graph
-      const { data: yearPayments } = await supabase
+      // Fetch Payments for Collection Graph (Filtered by sales hierarchy)
+      let paymentsQuery = supabase
         .from('payments')
-        .select('amount, payment_date')
+        .select(`
+          amount, 
+          payment_date,
+          sale:sale_id!inner(sales_executive_id)
+        `)
         .gte('payment_date', yearStart);
+
+      if (salesView === 'self') {
+        paymentsQuery = paymentsQuery.eq('sale.sales_executive_id', profile?.id);
+      } else if (salesView === 'team') {
+        paymentsQuery = paymentsQuery.in('sale.sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
+      }
+
+      const { data: yearPayments } = await paymentsQuery;
 
 
       // Process Sales Data for Stats & Chart
@@ -394,7 +415,7 @@ export function AdminDashboard() {
             </div>
             <div className="space-y-1 min-w-0">
               <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-                Welcome {profile?.role === 'director' ? 'Director' : 'Admin'}, {profile?.full_name?.split(' ')[0]}! 🛡️
+                Welcome Back, {profile?.full_name?.split(' ')[0]}!
               </h1>
               <p className="text-blue-100 text-sm font-medium">
                 Here's the system overview for today.

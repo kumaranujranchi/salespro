@@ -11,6 +11,7 @@ import { Select } from '../components/ui/Select';
 import { isSameMonth, parseISO, startOfYear, endOfYear, eachMonthOfInterval, format } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { calculateTeamPerformance } from '../utils/targetCalculations';
+import { getSubordinateIds } from '../utils/hierarchy';
 
 export function TargetsPage() {
   const { profile } = useAuth();
@@ -34,19 +35,7 @@ export function TargetsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
 
-  useEffect(() => {
-    if (profile) {
-      if (isExecutive) {
-        setSelectedUserId(profile.id);
-        setViewBy('individual');
-      }
-      // Auto-select manager for Team Leaders
-      if (profile.role === 'team_leader') {
-        setManagerFilter(profile.id);
-      }
-      loadData();
-    }
-  }, [profile]);
+
 
   // Management Section States
   const [managerFilter, setManagerFilter] = useState('');
@@ -77,28 +66,56 @@ export function TargetsPage() {
   }, [execFilter, dialog]);
 
   const loadData = useCallback(async () => {
+    if (!profile) return;
+
+    const roleDetails = profile.role_details;
+    const salesView = roleDetails?.permissions?.dashboard?.sales_view || (isExecutive ? 'self' : 'team');
+    
+    let allowedUserIds: string[] = [];
+    if (salesView === 'team' && profile.tenant_id) {
+      const descendants = await getSubordinateIds(profile.id, profile.tenant_id);
+      allowedUserIds = [...descendants, profile.id];
+    } else if (salesView === 'self') {
+      allowedUserIds = [profile.id];
+    }
+    // 'overall' results in allowedUserIds being empty, meaning we don't filter by IDs (fetch all for tenant)
+
+    // Load Profiles for Dropdown
+    let profilesQuery = supabase
+      .from('profiles')
+      .select('*')
+      .in('role', ['sales_executive', 'team_leader'])
+      .eq('is_active', true);
+    
+    if (allowedUserIds.length > 0) {
+      profilesQuery = profilesQuery.in('id', allowedUserIds);
+    }
+    
+    const { data: profilesData } = await profilesQuery;
+
     // Load Targets (Monthly Only)
-    const { data: targetsData, error: targetError } = await supabase
+    let targetsQuery = supabase
       .from('sales_targets')
       .select('*, profile:user_id(*)')
       .eq('period_type', 'monthly')
       .order('start_date', { ascending: false });
+
+    if (allowedUserIds.length > 0) {
+      targetsQuery = targetsQuery.in('user_id', allowedUserIds);
+    }
+
+    const { data: targetsData, error: targetError } = await targetsQuery;
 
     if (targetError) {
       console.error("Error loading targets:", targetError);
     }
 
     // Load Sales
-    const { data: salesData } = await supabase
-      .from('sales')
-      .select('*');
-
-    // Load Profiles for Dropdown
-    const { data: profilesData } = await supabase
-      .from('profiles')
-      .select('*')
-      .in('role', ['sales_executive', 'team_leader'])
-      .eq('is_active', true);
+    let salesQuery = supabase.from('sales').select('*');
+    if (allowedUserIds.length > 0) {
+      salesQuery = salesQuery.in('sales_executive_id', allowedUserIds);
+    }
+    const { data: salesData } = await salesQuery;
 
     if (targetsData) setTargets(targetsData as (Target & { profile: Profile })[]);
     if (salesData) setSales(salesData);
@@ -106,9 +123,9 @@ export function TargetsPage() {
 
     // Set default selected user if not set (and not executive)
     if (!isExecutive && profilesData && profilesData.length > 0 && !selectedUserId) {
-      setSelectedUserId(profilesData[0].id);
+      setSelectedUserId(profile.id); // Default to self instead of first profile
     }
-  }, [isExecutive, selectedUserId]); // Removed profilesData dependency to avoid loops, though strictly it should be handled
+  }, [profile, isExecutive, selectedUserId]); // Removed profilesData dependency to avoid loops, though strictly it should be handled
 
   useEffect(() => {
     if (profile) {
@@ -144,7 +161,23 @@ export function TargetsPage() {
 
     let teamMembers: Profile[] = [];
     if (viewBy === 'team') {
-      teamMembers = profiles.filter(p => p.reporting_manager_id === selectedUserId);
+      // For team view, we want to include all descendants in the calculation
+      // Find all profiles that report to this user (direct or indirect)
+      // Since 'profiles' state is already filtered to valid descendants in loadData, 
+      // we can just filter it by those who have selectedUserId in their management path.
+      // However, calculateTeamPerformance is designed for direct members.
+      // Let's redefine 'teamMembers' for this specific view to be ALL descendants.
+      
+      const getDescendants = (managerId: string, allProfiles: Profile[]): Profile[] => {
+        const direct = allProfiles.filter(p => p.reporting_manager_id === managerId);
+        let results = [...direct];
+        direct.forEach(d => {
+          results = [...results, ...getDescendants(d.id, allProfiles)];
+        });
+        return results;
+      };
+      
+      teamMembers = getDescendants(selectedUserId, profiles);
     }
 
     // Import dynamically or assume it's imported at top (I will add import via another tool call or assume previous step did it? No I need to add import)

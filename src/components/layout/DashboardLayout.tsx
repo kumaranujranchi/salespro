@@ -27,6 +27,7 @@ import {
   HelpCircle,
   Zap,
   Building2,
+  LucideIcon
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -36,7 +37,7 @@ interface DashboardLayoutProps {
 interface NavItem {
   label: string;
   path: string;
-  icon: any;
+  icon: LucideIcon;
   roles?: string[];
 }
 
@@ -51,10 +52,10 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
       { label: 'Tenants', path: '/platform/tenants', icon: Building2, roles: ['platform_admin'] },
-      { label: 'Referrals', path: '/referral-management', icon: Users, roles: ['platform_admin', 'super_admin'] },
+      { label: 'Referrals', path: '/referral-management', icon: Users, roles: ['platform_admin'] },
       { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
-      { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['sales_executive', 'team_leader'] },
+      { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'sales_manager'] },
     ]
   },
   {
@@ -103,7 +104,7 @@ import { AppTutorial } from '../tutorial/AppTutorial';
 // Define CRM Nav Items
 const crmNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/crm', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
-  { label: 'Contacts', path: '/leads', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
+  { label: 'Leads', path: '/leads', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
   { label: 'Pipeline', path: '/crm/pipeline', icon: BarChart2, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
 ];
 
@@ -163,53 +164,83 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Determine which nav items to show
   const currentNavItems = activeModule === 'crm' ? crmNavItems : navItems;
 
-  const filteredNavItems = currentNavItems.filter((item) => {
-    // 1. Check dynamic role mapping if role_details exists
-    const permissions = profile?.role_details?.permissions;
+  const canAccessNavItem = (item: NavItem) => {
+    // 0. Master Bypass - Super Admin always has access to tenant-level features
+    // We block platform-level items even for super_admin if not explicitly allowed
+    // Also, Super Admin specifically requested to NOT see 'My Performance'
+    const isPlatformItem = item.path.startsWith('/platform') || item.path === '/referral-management';
+    if (profile?.role === 'super_admin') {
+      if (item.path === '/performance') return false;
+      if (!isPlatformItem) return true;
+    }
+
+    // Special Check: My Performance is only for Sales Department
+    if (item.path === '/performance') {
+      const isSalesDept = profile?.department_details?.name.toUpperCase() === 'SALES';
+      if (!isSalesDept) return false;
+    }
+
+    // 1. Permission-based filtering (Dynamic Roles)
+    const roleDetails = profile?.role_details;
+    const permissions = roleDetails?.permissions;
 
     if (permissions?.menu) {
       const menuPerms = permissions.menu;
-      // Map path to permission key
+      // Precise mapping of path to permission key
       let permKey: string | null = null;
+      
       if (item.path === '/dashboard') permKey = 'dashboard';
+      if (item.path === '/sales' || item.path === '/performance') permKey = 'sales';
       if (item.path === '/crm' || item.path === '/leads' || item.path === '/crm/pipeline') permKey = 'crm';
       if (item.path === '/projects') permKey = 'inventory';
       if (item.path === '/site-visits') permKey = 'site_visits';
-      // if (item.path === '/incentives') permKey = 'incentives'; // Bypass permission check to force show
+      if (item.path === '/incentives' || item.path === '/targets') permKey = 'incentives';
       if (item.path === '/reports') permKey = 'reports';
+      if (item.path === '/announcements') permKey = 'announcements';
+      if (item.path === '/directory') permKey = 'directory';
       if (item.path === '/users') permKey = 'users';
-      if (item.path === '/roles' || item.path === '/subscription' || item.path === '/settings') permKey = 'settings';
+      if (item.path === '/departments') permKey = 'departments';
+      if (item.path === '/roles') permKey = 'roles';
+      if (item.path === '/subscription') permKey = 'subscription';
+      if (item.path === '/support') permKey = 'support';
 
-      // If we have a mapped key and it's set to 'none', hide the item
-      if (permKey && menuPerms[permKey] === 'none') return false;
-
-      // If edit is required but only read is available (we'll enforce this inside pages too)
-      // For now, visibility is enough
+      // If we have a mapped key
+      if (permKey) {
+        const userPerm = menuPerms[permKey];
+        
+        // Strictly block if set to 'none'
+        if (userPerm === 'none') return false;
+        
+        // If it's configured (read or edit), allow it
+        if (userPerm === 'read' || userPerm === 'edit') return true;
+        
+        // If it's a custom role and the key is missing/unconfigured, hide it for safety
+        if (roleDetails && !roleDetails.is_system) return false;
+      }
     }
 
-    // 2. Fallback/Initial Role access check
+    // 2. Fallback/Role-string based check (System Roles or missing permission data)
+    // Only used if permission mapping didn't provide a definitive true/false
     const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
     if (!roleAccess) return false;
 
     // 3. Global Tenant Feature Flags
     const features = tenant?.settings?.features;
     if (features) {
-      if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') {
-        return features.crm !== false;
-      }
+      if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') return features.crm !== false;
       if (item.path === '/projects') return features.inventory !== false;
       if (item.path === '/reports') return features.reports !== false;
       if (item.path === '/site-visits') return features.site_visits !== false;
-      if (item.path === '/incentives') return features.incentives !== false;
+      if (item.path === '/incentives' || item.path === '/targets') return features.incentives !== false;
     }
 
     return true;
-  });
+  };
 
   if (isMobile) {
     return (
       <MobileLayout
-        navItems={filteredNavItems}
+        navItems={currentNavItems.filter(canAccessNavItem)}
         activeModule={activeModule}
         onModuleChange={handleModuleToggle}
         hasCRMAccess={hasCRMAccess}
@@ -223,6 +254,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     await signOut();
     navigate('/login');
   };
+
+  const filteredNavItems = currentNavItems.filter(canAccessNavItem);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-300">
@@ -365,30 +398,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {activeModule === 'sales' ? (
               // Sales Module - Grouped Navigation
               navGroups.map((group) => {
-                const groupItems = group.items.filter(item => {
-                  // 1. Permission-based filtering
-                  const permissions = profile?.role_details?.permissions;
-                  if (permissions) {
-                    const menuKey = item.path.substring(1).replace(/\//g, '_');
-                    const menuPermission = permissions.menu[menuKey];
-                    if (menuPermission === 'none') return false;
-                  }
-
-                  // 2. Role access check
-                  const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
-                  if (!roleAccess) return false;
-
-                  // 3. Feature flags
-                  const features = tenant?.settings?.features;
-                  if (features) {
-                    if (item.path === '/projects') return features.inventory !== false;
-                    if (item.path === '/reports') return features.reports !== false;
-                    if (item.path === '/site-visits') return features.site_visits !== false;
-                    if (item.path === '/incentives') return features.incentives !== false;
-                  }
-
-                  return true;
-                });
+                const groupItems = group.items.filter(canAccessNavItem);
 
                 if (groupItems.length === 0) return null;
 

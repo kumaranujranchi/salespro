@@ -2,47 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-@import 'variables';
-@import 'dark-theme';
-@import 'light-theme';
+@import "variables";
+@import "dark-theme";
+@import "light-theme";
 
 /* 
  * Global Styles & Reset
  */
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   // Apply theme variables
-  background-color: var(--bg-primary); 
+  background-color: var(--bg-primary);
   color: var(--text-primary);
 }
 
 @layer utilities {
-
   // ... (Keeping existing animations from original css)
   html {
     scroll-behavior: smooth;
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.5; }
+    0%,
+    100% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 
-  .animate-fadeIn { animation: fadeIn 0.8s ease-out; }
-  .animate-fadeInUp { animation: fadeInUp 0.8s ease-out; animation-fill-mode: both; }
-  .animate-pulse { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  .animate-fadeIn {
+    animation: fadeIn 0.8s ease-out;
+  }
+  .animate-fadeInUp {
+    animation: fadeInUp 0.8s ease-out;
+    animation-fill-mode: both;
+  }
+  .animate-pulse {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
@@ -55,33 +76,33 @@ body {
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
+    background: #cbd5e1;
     border-radius: 3px;
   }
-  
+
   .dark-theme ::-webkit-scrollbar-thumb {
-      background: #334155;
+    background: #334155;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
+    background: #94a3b8;
   }
 
   // ... (Other utilities)
-  
+
   .glass {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
   }
-  
+
   // Apply logic to use new theme classes based on parent
   .dark-theme .glass {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -91,52 +112,53 @@ body {
  * separated theme classes based on the root theme.
  */
 @layer components {
-    .glass-panel {
-        @extend .light-theme-glass-panel;
-    }
-    
-    .dark-theme .glass-panel {
-        @extend .dark-theme-glass-panel;
-    }
-    
-    .neumorphic-button {
-        @extend .light-theme-neumorphic-button;
-    }
-    
-    .dark-theme .neumorphic-button {
-         @extend .dark-theme-neumorphic-button;
-    }
+  .glass-panel {
+    @extend .light-theme-glass-panel;
+  }
 
-    .green-tint-bg {
-        @extend .light-theme-green-tint-bg;
-    }
+  .dark-theme .glass-panel {
+    @extend .dark-theme-glass-panel;
+  }
 
-    .dark-theme .green-tint-bg {
-        @extend .dark-theme-green-tint-bg;
+  .neumorphic-button {
+    @extend .light-theme-neumorphic-button;
+  }
+
+  .dark-theme .neumorphic-button {
+    @extend .dark-theme-neumorphic-button;
+  }
+
+  .green-tint-bg {
+    @extend .light-theme-green-tint-bg;
+  }
+
+  .dark-theme .green-tint-bg {
+    @extend .dark-theme-green-tint-bg;
+  }
+
+  .loader {
+    width: 60px;
+    aspect-ratio: 1;
+    display: flex;
+    color: $color-primary;
+    border: 4px solid;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: radial-gradient(circle 5px, currentColor 95%, #0000),
+      linear-gradient(currentColor 50%, #0000 0) 50%/4px 60% no-repeat;
+    animation: l1 2s infinite linear;
+  }
+  .loader:before {
+    content: "";
+    flex: 1;
+    background: linear-gradient(currentColor 50%, #0000 0) 50%/4px 80% no-repeat;
+    animation: inherit;
+  }
+  @keyframes l1 {
+    100% {
+      transform: rotate(1turn);
     }
-    
-    .loader {
-        width: 60px;
-        aspect-ratio: 1;
-        display: flex;
-        color: $color-primary; 
-        border: 4px solid;
-        box-sizing: border-box;
-        border-radius: 50%;
-        background: 
-          radial-gradient(circle 5px, currentColor 95%,#0000),
-          linear-gradient(currentColor 50%,#0000 0) 50%/4px 60% no-repeat;
-        animation: l1 2s infinite linear;
-    }
-    .loader:before {
-        content: "";
-        flex: 1;
-        background:linear-gradient(currentColor 50%,#0000 0) 50%/4px 80% no-repeat;
-        animation: inherit;
-    }
-    @keyframes l1 {
-        100% {transform: rotate(1turn)}
-    }
+  }
 }
 
 // React Grid Layout overrides
@@ -147,3 +169,119 @@ body {
   border: 2px dashed rgba(22, 115, 255, 0.3);
 }
 // ... (Other existing RGL styles)
+
+/* 
+ * Organizational Chart Styles 
+ */
+.org-chart-tree {
+  @apply relative p-8 min-w-[max-content] mx-auto;
+
+  ul {
+    @apply relative pt-4 flex transition-all duration-500;
+  }
+
+  li {
+    @apply relative pt-4 px-4 text-center list-none float-left transition-all duration-500 flex flex-col items-center;
+
+    // Horizontal lines
+    &::before,
+    &::after {
+      content: "";
+      @apply absolute top-0 right-1/2 border-t-2 border-slate-200 dark:border-slate-700 w-1/2 h-4;
+    }
+
+    &::after {
+      @apply right-auto left-1/2 border-l-2;
+    }
+
+    // Hide extra lines for edges
+    &:only-child::after,
+    &:only-child::before {
+      @apply hidden;
+    }
+
+    &:only-child {
+      @apply pt-0;
+    }
+
+    &:first-child::before,
+    &:last-child::after {
+      @apply border-0;
+    }
+
+    &:last-child::before {
+      @apply border-r-2 rounded-tr-xl;
+    }
+
+    &:first-child::after {
+      @apply rounded-tl-xl;
+    }
+  }
+
+  // Vertical line from parent
+  ul ul::before {
+    content: "";
+    @apply absolute top-0 left-1/2 border-l-2 border-slate-200 dark:border-slate-700 w-0 h-4;
+  }
+}
+
+.org-node-card {
+  @apply relative min-w-[200px] bg-white dark:bg-[#1e293b] p-3 rounded-xl shadow-md border-2 border-transparent transition-all hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 z-10;
+
+  &.active {
+    @apply border-blue-500 ring-4 ring-blue-500/10;
+  }
+
+  // Downline connector
+  &.has-children::after {
+    content: "";
+    @apply absolute -bottom-4 left-1/2 border-l-2 border-slate-200 dark:border-slate-700 w-0 h-4;
+  }
+}
+
+/* Mobile-Specific Adjustments for Org Chart */
+@media (max-width: 640px) {
+  .org-chart-tree {
+    @apply p-4;
+    
+    // Make connectors slightly thinner on mobile to save space
+    li::before, li::after, ul ul::before, .org-node-card.has-children::after {
+      border-width: 1px;
+    }
+    
+    // Adjust spacing to be tighter
+    li {
+      @apply px-1;
+    }
+  }
+  
+  .org-node-card {
+    @apply min-w-[140px] p-2;
+    
+    h3 {
+      @apply text-xs;
+    }
+    
+    .w-14 {
+      @apply w-10 h-10;
+    }
+  }
+}
+
+// Custom Scaling Utilities
+.org-tree-container {
+  @apply relative w-full overflow-hidden bg-slate-50/50 dark:bg-slate-900/20 rounded-xl border border-slate-100 dark:border-white/5;
+  touch-action: pan-x pan-y;
+  
+  .tree-scroll-pane {
+    @apply overflow-auto p-4 md:p-8;
+    // Improve scrolling on mobile
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    max-height: 70vh;
+  }
+}
+
+.org-zoom-controls {
+  @apply absolute bottom-4 right-4 flex flex-col gap-2 z-20;
+}

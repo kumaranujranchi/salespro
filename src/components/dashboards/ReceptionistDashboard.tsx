@@ -243,7 +243,7 @@ export function ReceptionistDashboard() {
                         </div>
                         <div className="space-y-1 min-w-0">
                             <h1 className="text-xl md:text-3xl font-bold tracking-tight">
-                                Welcome Back, {profile?.full_name?.split(' ')[0]}
+                                Welcome Back, {profile?.full_name?.split(' ')[0]}!
                             </h1>
                             <p className="text-blue-100 dark:text-white text-sm font-medium">
                                 Company Overview Dashboard

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { logActivity } from '../lib/logger';
-import { Profile, Department } from '../types/database';
+import { Profile, Department, TenantRole } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
@@ -14,14 +14,17 @@ import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ImageCropper } from '../components/ImageCropper';
 import { ActionMenu } from '../components/ui/ActionMenu';
-import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, X, Eye } from 'lucide-react';
+import { Users, UserPlus, Trash2, Pencil, Ban, CheckCircle, Lock, X, Eye, Network, Plus, Minus, RotateCcw } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { getSubordinateIds } from '../utils/hierarchy';
+import { buildOrgTree, OrgNode } from '../utils/orgTree';
 
 export function UsersPage() {
-  const { user: _currentUser, profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const dialog = useDialog();
   const [users, setUsers] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<TenantRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,8 +35,64 @@ export function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
-
+  const [viewType, setViewType] = useState<'tree' | 'table'>('tree');
   const isReadOnly = profile?.role === 'director';
+  const [scale, setScale] = useState(1);
+  const handleZoom = (delta: number) => setScale(prev => Math.min(Math.max(prev + delta, 0.5), 1.5));
+  const resetZoom = () => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  // Pan (Drag-to-pointer) logic
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only trigger drag if clicking the background area, not a button or action menu
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.action-menu')) return;
+    
+    setIsDragging(true);
+    setStartPos({ 
+      x: e.clientX - offset.x, 
+      y: e.clientY - offset.y 
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // Touch Support for Mobile/Tablets
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.action-menu')) return;
+    
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setStartPos({ 
+      x: touch.clientX - offset.x, 
+      y: touch.clientY - offset.y 
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    setOffset({
+      x: touch.clientX - startPos.x,
+      y: touch.clientY - startPos.y
+    });
+  };
+
+  const handleTouchEnd = () => setIsDragging(false);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setOffset({
+      x: e.clientX - startPos.x,
+      y: e.clientY - startPos.y
+    });
+  };
 
   // Password Reset State
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
@@ -46,6 +105,7 @@ export function UsersPage() {
     phone: '',
     employeeId: '',
     role: '',
+    roleId: '',
     departmentId: '',
     reportingManagerId: '',
     password: '',
@@ -58,13 +118,29 @@ export function UsersPage() {
 
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    Promise.all([loadUsers(), loadDepartments()]);
-  }, [statusFilter]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
+    if (!profile) return;
     setLoading(true);
+
+    const isSuperAdmin = profile.role === 'super_admin';
+    const isAdmin = profile.role === 'admin';
+    
+    let allowedUserIds: string[] = [];
+
+    if (!isSuperAdmin && tenant?.id) {
+       // Regular users see their sub-tree
+       const descendants = await getSubordinateIds(profile.id, tenant.id);
+       allowedUserIds = [...descendants, profile.id];
+    }
+
     let query = supabase.from('profiles').select('*');
+
+    if (allowedUserIds.length > 0) {
+      query = query.in('id', allowedUserIds);
+    } else if (!isSuperAdmin && !isAdmin) {
+      // Safety: if not admin/super and no tree found, only see self
+      query = query.eq('id', profile.id);
+    }
 
     if (statusFilter !== 'all') {
       query = query.eq('is_active', statusFilter === 'active');
@@ -73,12 +149,26 @@ export function UsersPage() {
     const { data } = await query.order('full_name');
     if (data) setUsers(data);
     setLoading(false);
-  };
+  }, [profile, tenant, statusFilter]);
 
-  const loadDepartments = async () => {
+  const loadDepartments = useCallback(async () => {
     const { data } = await supabase.from('departments').select('*').eq('is_active', true).order('name');
     if (data) setDepartments(data);
-  };
+  }, []);
+
+  const loadRoles = useCallback(async () => {
+    if (!tenant?.id) return;
+    const { data } = await supabase
+      .from('tenant_roles')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .order('name');
+    if (data) setRoles(data);
+  }, [tenant]);
+
+  useEffect(() => {
+    Promise.all([loadUsers(), loadDepartments(), loadRoles()]);
+  }, [statusFilter, loadUsers, loadDepartments, loadRoles]);
 
   const getRoleBadgeVariant = (role: string) => {
     if (role === 'super_admin') return 'danger';
@@ -93,6 +183,82 @@ export function UsersPage() {
     return 'default';
   };
 
+  const orgTree = useMemo(() => {
+    if (viewType !== 'tree') return [];
+    return buildOrgTree(users);
+  }, [users, viewType]);
+
+  const UserNode = ({ node }: { node: OrgNode }) => {
+    const hasChildren = node.children && node.children.length > 0;
+    
+    return (
+      <li>
+        <div className={`org-node-card ${hasChildren ? 'has-children' : ''}`}>
+          <div className="flex flex-col items-center">
+            <div className="relative mb-3">
+              {node.image_url ? (
+                <img src={node.image_url} alt="" className="w-14 h-14 rounded-full border-2 border-white dark:border-slate-800 shadow-sm object-cover" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400">
+                  {node.full_name.charAt(0)}
+                </div>
+              )}
+              {node.is_active ? (
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
+              ) : (
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-gray-400 border-2 border-white dark:border-slate-900 rounded-full"></div>
+              )}
+            </div>
+            
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white text-center leading-tight mb-1">{node.full_name}</h3>
+            <div className="mb-2">
+              <Badge variant={getRoleBadgeVariant(node.role)} className="px-2 py-0 h-5 text-[10px] uppercase">
+                {roles.find(r => r.id === node.role_id)?.name || node.role.replace('_', ' ')}
+              </Badge>
+            </div>
+            
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-3">
+              ID: {node.employee_id || 'N/A'}
+            </div>
+
+            <div className="flex items-center gap-1">
+              <ActionMenu
+                align="left"
+                actions={[
+                  {
+                    label: 'View Details',
+                    icon: Eye,
+                    onClick: () => handleViewUser(node)
+                  },
+                  {
+                    label: 'Edit',
+                    icon: Pencil,
+                    onClick: () => handleEditUser(node),
+                    disabled: isReadOnly
+                  },
+                  {
+                    label: node.is_active ? 'Deactivate' : 'Activate',
+                    icon: node.is_active ? Ban : CheckCircle,
+                    onClick: () => handleToggleStatus(node),
+                    variant: node.is_active ? 'warning' : 'success',
+                    disabled: isReadOnly
+                  }
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+        {hasChildren && (
+          <ul>
+            {node.children!.map(child => (
+              <UserNode key={child.id} node={child} />
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -105,6 +271,7 @@ export function UsersPage() {
       phone: '',
       employeeId: '',
       role: '',
+      roleId: '',
       departmentId: '',
       reportingManagerId: '',
       password: '',
@@ -176,6 +343,7 @@ export function UsersPage() {
       phone: user.phone || '',
       employeeId: user.employee_id,
       role: user.role,
+      roleId: user.role_id || '',
       departmentId: user.department_id || '',
       reportingManagerId: user.reporting_manager_id || '',
       password: '', // Password not editable directly here
@@ -198,6 +366,7 @@ export function UsersPage() {
       phone: user.phone || '',
       employeeId: user.employee_id,
       role: user.role,
+      roleId: user.role_id || '',
       departmentId: user.department_id || '',
       reportingManagerId: user.reporting_manager_id || '',
       password: '',
@@ -285,6 +454,7 @@ export function UsersPage() {
             full_name: formData.fullName,
             phone: formData.phone || null,
             role: formData.role as any,
+            role_id: formData.roleId || null,
             department_id: formData.departmentId || null,
             reporting_manager_id: formData.reportingManagerId || null,
             image_url: formData.imageUrl || null,
@@ -373,6 +543,7 @@ export function UsersPage() {
           phone: formData.phone || null,
           employee_id: formData.employeeId,
           role: formData.role,
+          role_id: formData.roleId || null,
           department_id: formData.departmentId || null,
           reporting_manager_id: formData.reportingManagerId || null,
           image_url: formData.imageUrl || null,
@@ -405,7 +576,12 @@ export function UsersPage() {
 
       // Enhanced debugging for "Database error"
       if (message.includes('Database error')) {
-        message += ` (Details: ${err.details || err.hint || 'No details'})`;
+        message = `${message} (Details: ${err.details || err.hint || 'No details'})`;
+      }
+      
+      // If we have a code (like 23514), show it too
+      if (err.code) {
+        message += ` [Code: ${err.code}]`;
       }
 
       // Detect "User already registered" Auth Error which implies an Orphan (since we passed the Profile check above)
@@ -481,6 +657,22 @@ export function UsersPage() {
           <p className="text-gray-600 dark:text-gray-400">Manage team members and access control</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2">
+            <button
+              onClick={() => setViewType('tree')}
+              className={`p-1.5 rounded-md transition-all ${viewType === 'tree' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              title="Tree View"
+            >
+              <Network size={18} />
+            </button>
+            <button
+              onClick={() => setViewType('table')}
+              className={`p-1.5 rounded-md transition-all ${viewType === 'table' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              title="Table View"
+            >
+              <Users size={18} />
+            </button>
+          </div>
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -516,6 +708,63 @@ export function UsersPage() {
             <LoadingSpinner size="lg" className="min-h-[400px]" />
           ) : users.length === 0 ? (
             <div className="text-center py-8 text-gray-500">No users found.</div>
+          ) : viewType === 'tree' ? (
+            <div className="org-tree-container">
+              <div className="org-zoom-controls">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleZoom(0.1)}
+                  className="bg-white dark:bg-slate-800 shadow-xl border-2 border-slate-200 dark:border-white/20 p-2.5 h-auto rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+                  title="Zoom In"
+                >
+                  <Plus size={18} className="text-slate-900 dark:text-white" strokeWidth={3} />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleZoom(-0.1)}
+                  className="bg-white dark:bg-slate-800 shadow-xl border-2 border-slate-200 dark:border-white/20 p-2.5 h-auto rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+                  title="Zoom Out"
+                >
+                  <Minus size={18} className="text-slate-900 dark:text-white" strokeWidth={3} />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={resetZoom}
+                  className="bg-white dark:bg-slate-800 shadow-xl border-2 border-slate-200 dark:border-white/20 p-2.5 h-auto rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+                  title="Reset Zoom"
+                >
+                  <RotateCcw size={18} className="text-slate-900 dark:text-white" strokeWidth={3} />
+                </Button>
+              </div>
+              <div 
+                className={`tree-scroll-pane ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                <div 
+                  className="org-chart-tree"
+                  style={{ 
+                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                    transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                    transformOrigin: 'center top'
+                  }}
+                >
+                  <ul>
+                    {orgTree.map(node => (
+                      <UserNode key={node.id} node={node} />
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -541,7 +790,7 @@ export function UsersPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role.replace('_', ' ')}
+                        {roles.find(r => r.id === user.role_id)?.name || user.role.replace('_', ' ')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -671,20 +920,40 @@ export function UsersPage() {
               </div>
               <Select
                 label="Role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
+                name="roleId"
+                value={formData.roleId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const selectedRole = roles.find(r => r.id === selectedId);
+                  if (selectedRole) {
+                    const SYSTEM_ROLE_MAP: Record<string, string> = {
+                      'Super Admin': 'super_admin',
+                      'Admin': 'admin',
+                      'Team Leader': 'team_leader',
+                      'Team Leader – Sales': 'team_leader',
+                      'Sales Executive': 'sales_executive',
+                      'Accountant': 'accountant',
+                      'Director': 'director',
+                      'CRM Staff': 'crm_staff',
+                      'CRM (Customer Relationship Manager)': 'crm_staff',
+                      'Receptionist': 'receptionist',
+                      'Driver': 'driver'
+                    };
+                    
+                    const ALLOWED_LEGACY_ROLES = ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist', 'platform_admin', 'affiliate'];
+                    
+                    let slug = SYSTEM_ROLE_MAP[selectedRole.name] || selectedRole.name.toLowerCase().replace(/\s+/g, '_');
+                    
+                    // Fallback for custom roles to pass legacy database constraints
+                    if (!ALLOWED_LEGACY_ROLES.includes(slug)) {
+                      slug = 'sales_executive';
+                    }
+                    
+                    setFormData(prev => ({ ...prev, roleId: selectedId, role: slug }));
+                  }
+                }}
                 required
-                options={[
-                  { value: 'admin', label: 'Admin (Access & Controls)' },
-                  { value: 'director', label: 'Director (Read-Only Access)' },
-                  { value: 'sales_executive', label: 'Sales Executive' },
-                  { value: 'accountant', label: 'Accountant' },
-                  { value: 'crm_staff', label: 'CRM (Customer Relationship Manager)' },
-                  { value: 'team_leader', label: 'Team Leader – Sales' },
-                  { value: 'driver', label: 'Driver' },
-                  { value: 'receptionist', label: 'Receptionist' },
-                ]}
+                options={roles.map(r => ({ value: r.id, label: r.name }))}
               />
               <Select
                 label="Department"
