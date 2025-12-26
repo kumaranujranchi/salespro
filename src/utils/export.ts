@@ -15,55 +15,69 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[], tenant?: Tenant | nu
   const companyProfile = tenant?.settings?.company_profile;
   const companyName = tenant?.name || 'Your Company';
   const logoUrl = companyProfile?.logo_url;
+  
+  let currentY = 15;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const centerX = pageWidth / 2;
 
   if (logoUrl) {
     try {
-      // Adjusted size and position for better alignment
-      doc.addImage(logoUrl, 'PNG', 14, 12, 22, 22);
+      // Centered Logo
+      // Assuming a square-ish aspect ratio desired, let's say 24x24 centered
+      const imgWidth = 24; 
+      const imgHeight = 24;
+      const xPos = (pageWidth - imgWidth) / 2;
+      
+      doc.addImage(logoUrl, 'PNG', xPos, currentY, imgWidth, imgHeight);
+      currentY += imgHeight + 8; // move down past logo
     } catch (e) {
       console.warn('Failed to add logo to ledger:', e);
+      currentY += 10; // Fallback spacing if logo fails
     }
+  } else {
+    currentY += 5;
   }
 
+  // Centered Company Name
   doc.setFontSize(22);
   doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
-  doc.text(companyName, logoUrl ? 42 : 14, 21);
+  doc.text(companyName, centerX, currentY, { align: 'center' });
+  currentY += 8;
 
+  // Centered Company Details
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
   
-  let currentY = 27;
-  const contentX = logoUrl ? 42 : 14;
   if (companyProfile) {
     if (companyProfile.address) {
-      doc.text(companyProfile.address, contentX, currentY);
+      doc.text(companyProfile.address, centerX, currentY, { align: 'center' });
       currentY += 5;
     }
     const contactInfo = [];
     if (companyProfile.email) contactInfo.push(`Email: ${companyProfile.email}`);
     if (companyProfile.phone) contactInfo.push(`Phone: ${companyProfile.phone}`);
     if (contactInfo.length > 0) {
-      doc.text(contactInfo.join(' | '), contentX, currentY);
+      doc.text(contactInfo.join(' | '), centerX, currentY, { align: 'center' });
       currentY += 5;
     }
     if (companyProfile.website) {
-      doc.text(`Website: ${companyProfile.website}`, contentX, currentY);
+      doc.text(`Website: ${companyProfile.website}`, centerX, currentY, { align: 'center' });
       currentY += 5;
     }
     if (companyProfile.tax_id) {
-      doc.text(`GSTIN/TAX: ${companyProfile.tax_id}`, contentX, currentY);
+      doc.text(`GSTIN/TAX: ${companyProfile.tax_id}`, centerX, currentY, { align: 'center' });
       currentY += 5;
     }
   } else if (tenant?.name) {
     // If no profile, at least show the tenant name and a generic placeholder for address
-    doc.text('Authorized Statement', 14, currentY);
+    doc.text('Authorized Statement', centerX, currentY, { align: 'center' });
     currentY += 5;
   } else {
     // Ultimate fallback if everything is missing
     const fallbackTitle = tenant === undefined ? 'Tenant Context Undefined' : 'No Tenant Data';
-    doc.text(fallbackTitle, 14, currentY);
+    doc.text(fallbackTitle, centerX, currentY, { align: 'center' });
     currentY += 5;
   }
 
@@ -86,13 +100,13 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[], tenant?: Tenant | nu
   doc.text(`Phone: ${(sale as any).customer?.phone || 'N/A'}`, 15, startY + 12);
   doc.text(`Booking Date: ${new Date(sale.sale_date).toLocaleDateString()}`, 15, startY + 18);
 
-  // Right Column
+  // Right Column (Aligned Right)
   doc.setFont('helvetica', 'bold');
-  doc.text('Property Details:', 120, startY);
+  doc.text('Property Details:', 195, startY, { align: 'right' });
   doc.setFont('helvetica', 'normal');
-  doc.text(`Project: ${(sale as any).project?.name || 'N/A'}`, 120, startY + 6);
-  doc.text(`Unit Number: ${unitNo}`, 120, startY + 12);
-  doc.text(`Area: ${sale.area_sqft} Sq.ft`, 120, startY + 18);
+  doc.text(`Project: ${(sale as any).project?.name || 'N/A'}`, 195, startY + 6, { align: 'right' });
+  doc.text(`Unit Number: ${unitNo}`, 195, startY + 12, { align: 'right' });
+  doc.text(`Area: ${sale.area_sqft} Sq.ft`, 195, startY + 18, { align: 'right' });
 
   // --- Financial Summary Box ---
   const summaryY = startY + 28;

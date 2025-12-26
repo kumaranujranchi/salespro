@@ -289,7 +289,7 @@ export function SubscriptionPage() {
     }
 
     // Calculations
-    const totalAmount = record.amount;
+    const totalAmount = record.amount / 100; // Convert paise to rupees
     const baseAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - baseAmount;
 

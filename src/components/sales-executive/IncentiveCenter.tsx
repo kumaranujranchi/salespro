@@ -62,7 +62,9 @@ export function IncentiveCenter() {
 
     const calculateIncentiveDetails = (month: string, year: number) => {
         const userSales = sales.filter(s => {
+            if (!s.sale_date) return false;
             const d = new Date(s.sale_date);
+            if (isNaN(d.getTime())) return false;
             return d.toLocaleString('default', { month: 'long' }) === month && d.getFullYear() === year && s.is_agreement_done;
         });
 

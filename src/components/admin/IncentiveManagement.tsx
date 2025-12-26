@@ -220,7 +220,10 @@ export function IncentiveManagement() {
   // Automated Calculation Helpers
   const calculateIncentiveForUser = (userId: string, month: string, year: number) => {
     const userSales = sales.filter(s => {
+      if (!s.sale_date) return false;
       const saleDate = new Date(s.sale_date);
+      if (isNaN(saleDate.getTime())) return false;
+      
       const saleMonth = saleDate.toLocaleString('default', { month: 'long' });
       const saleYear = saleDate.getFullYear();
       const isEligible = s.sales_executive_id === userId && saleMonth === month && saleYear === year;

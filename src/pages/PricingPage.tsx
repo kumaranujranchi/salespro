@@ -233,7 +233,7 @@ export function PricingPage() {
               const { data: billingData, error: billingError } = await supabase.from('billing_history').insert({
                 tenant_id: tenant.id,
                 razorpay_payment_id: response.razorpay_payment_id,
-                amount: finalAmount, // Use final amount
+                amount: Math.round(finalAmount * 100), // Store in paise
                 currency: 'INR',
                 status: 'captured',
                 description: `${planName} Plan Payment ${appliedDiscount > 0 ? '(Referral Applied)' : ''}`,
