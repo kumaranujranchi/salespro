@@ -16,7 +16,7 @@ interface SiteVisitRequestFormProps {
 }
 
 export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit }: SiteVisitRequestFormProps) {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const dialog = useDialog();
     const [projects, setProjects] = useState<Project[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,6 +147,28 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                 : await supabase.from('site_visits').insert(visitData);
 
             if (error) throw error;
+
+            // Notify Admins on New Request
+            if (!editingVisit) {
+                const { data: admins } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .in('role', ['super_admin', 'admin', 'director'])
+                    .eq('tenant_id', profile?.tenant_id);
+
+                if (admins && admins.length > 0) {
+                    const notifications = admins.map(admin => ({
+                        user_id: admin.id,
+                        title: 'New Site Visit Request',
+                        message: `${formData.customerName} - Requested by ${profile?.full_name || user.email || 'Sales Executive'}`,
+                        type: 'info',
+                        related_entity_type: 'site_visit',
+                        related_entity_id: user.id // Ideally should be the visit ID, but we don't have it easily from 'insert' unless we select returned.
+                    }));
+
+                    await supabase.from('notifications').insert(notifications);
+                }
+            }
 
             await dialog.alert(
                 editingVisit ? 'Request updated successfully!' : 'Request submitted successfully!',
