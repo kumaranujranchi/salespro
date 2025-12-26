@@ -51,10 +51,12 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
             if (visit.status === 'approved') {
                 updateData.status = 'trip_started';
                 updateData.start_odometer = reading;
+                updateData.trip_start_time = new Date().toISOString();
                 newStatus = 'Trip Started';
             } else if (visit.status === 'trip_started') {
                 updateData.status = 'completed';
                 updateData.end_odometer = reading;
+                updateData.trip_end_time = new Date().toISOString();
                 newStatus = 'Completed';
             } else {
                 return;

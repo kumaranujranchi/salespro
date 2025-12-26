@@ -242,6 +242,8 @@ export interface SiteVisit {
   clarification_note: string | null;
   start_odometer: number | null;
   end_odometer: number | null;
+  trip_start_time: string | null;
+  trip_end_time: string | null;
   created_at: string;
   updated_at: string;
 }

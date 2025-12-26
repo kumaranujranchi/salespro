@@ -292,6 +292,42 @@ export function SiteVisitsPage() {
                               </div>
                             </div>
                           )}
+
+                          {/* Trip Stats for Admin/Driver */}
+                          {(visit.status === 'trip_started' || visit.status === 'completed') && (
+                             <div className="col-span-1 md:col-span-2 lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 pt-2 border-t border-gray-200 dark:border-white/10">
+                                <div>
+                                    <p className="text-xs text-gray-400">Start Odometer</p>
+                                    <p className="font-mono font-medium">{visit.start_odometer} km</p>
+                                </div>
+                                {visit.end_odometer && (
+                                    <div>
+                                        <p className="text-xs text-gray-400">End Odometer</p>
+                                        <p className="font-mono font-medium">{visit.end_odometer} km</p>
+                                    </div>
+                                )}
+                                {visit.trip_start_time && (
+                                    <div>
+                                        <p className="text-xs text-gray-400">Trip Started</p>
+                                        <p className="font-medium">{new Date(visit.trip_start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                    </div>
+                                )}
+                                {visit.trip_end_time && (
+                                    <div>
+                                        <p className="text-xs text-gray-400">Trip Ended</p>
+                                        <p className="font-medium">{new Date(visit.trip_end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                    </div>
+                                )}
+                                {visit.end_odometer && visit.start_odometer && (
+                                    <div className="md:col-span-4 bg-green-50 dark:bg-green-900/20 p-2 rounded flex justify-between items-center">
+                                        <span className="text-sm font-medium text-green-800 dark:text-green-300">Total Distance Traveled</span>
+                                        <span className="font-bold text-green-700 dark:text-green-400 text-lg">
+                                            {(Number(visit.end_odometer) - Number(visit.start_odometer)).toFixed(1)} km
+                                        </span>
+                                    </div>
+                                )}
+                             </div>
+                          )}
                         </div>
 
                         {/* Status Messages */}
