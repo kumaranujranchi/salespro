@@ -98,7 +98,7 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
                     <Navigation className="text-blue-600 mt-1" size={20} />
                     <div>
                         <h4 className="font-semibold text-blue-900">{visit.pickup_location}</h4>
-                        <p className="text-blue-700 text-sm">Customer: {visit.customer_name} ({visit.customer_phone})</p>
+                        <p className="text-blue-700 text-sm">Customer: {visit.customer_name}</p>
                     </div>
                 </div>
 

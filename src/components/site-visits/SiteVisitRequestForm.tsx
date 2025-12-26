@@ -5,7 +5,6 @@ import { supabase } from '../../lib/supabase';
 import { SiteVisit, Project } from '../../types/database';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { ChevronDown, ChevronUp, AlertCircle, MessageSquare, Info } from 'lucide-react';
 
@@ -30,7 +29,7 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
         customerName: '',
         customerPhone: '',
         pickupLocation: '',
-        projectId: '',
+        projectIds: [] as string[],
         visitDate: '',
         visitTime: '',
         notes: '', // Initial/Existing notes
@@ -48,7 +47,7 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                 customerName: editingVisit.customer_name,
                 customerPhone: editingVisit.customer_phone,
                 pickupLocation: editingVisit.pickup_location || '',
-                projectId: editingVisit.project_ids && editingVisit.project_ids.length > 0 ? editingVisit.project_ids[0] : '',
+                projectIds: editingVisit.project_ids || [],
                 visitDate: editingVisit.visit_date,
                 visitTime: editingVisit.visit_time,
                 notes: editingVisit.notes || '',
@@ -71,7 +70,7 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
             customerName: '',
             customerPhone: '',
             pickupLocation: '',
-            projectId: '',
+            projectIds: [],
             visitDate: '',
             visitTime: '',
             notes: '',
@@ -110,6 +109,11 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                 return;
             }
         }
+        
+        if (formData.projectIds.length === 0) {
+             await dialog.alert('Please select at least one project.', { variant: 'danger' });
+             return;
+        }
 
         setIsSubmitting(true);
 
@@ -127,7 +131,7 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                 customer_name: formData.customerName,
                 customer_phone: formData.customerPhone,
                 pickup_location: formData.pickupLocation,
-                project_ids: formData.projectId ? [formData.projectId] : [],
+                project_ids: formData.projectIds,
                 visit_date: formData.visitDate,
                 visit_time: formData.visitTime,
                 notes: finalNotes,
@@ -192,10 +196,9 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                         required
                     />
                     <Input
-                        label="Customer Phone"
+                        label="Customer Phone (Optional)"
                         value={formData.customerPhone}
                         onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
-                        required
                     />
                 </div>
 
@@ -207,13 +210,29 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                     placeholder="e.g. City Center Metro Station"
                 />
 
-                <Select
-                    label="Project to Visit"
-                    value={formData.projectId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, projectId: e.target.value }))}
-                    required
-                    options={projects.map(p => ({ value: p.id, label: p.name }))}
-                />
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Projects to Visit *</label>
+                    <div className="p-3 border rounded-lg max-h-40 overflow-y-auto space-y-2">
+                        {projects.map(p => (
+                            <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                <input 
+                                    type="checkbox"
+                                    checked={formData.projectIds.includes(p.id)}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setFormData(prev => ({ ...prev, projectIds: [...prev.projectIds, p.id] }));
+                                        } else {
+                                            setFormData(prev => ({ ...prev, projectIds: prev.projectIds.filter(id => id !== p.id) }));
+                                        }
+                                    }}
+                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{p.name}</span>
+                            </label>
+                        ))}
+                        {projects.length === 0 && <p className="text-sm text-gray-500">No projects available.</p>}
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input

@@ -191,7 +191,11 @@ export function SiteVisitsPage() {
                         )}
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-[#0A1C37] dark:text-white text-lg">{visit.customer_name}</h3>
+                            <h3 className="font-semibold text-[#0A1C37] dark:text-white text-lg">
+                              {(canManage || (visit as any).requested_by === profile?.id) 
+                                ? visit.customer_name 
+                                : 'Customer (Hidden)'}
+                            </h3>
                             <Badge variant={getStatusColor(visit.status)}>
                               {visit.status.replace('_', ' ')}
                             </Badge>

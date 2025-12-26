@@ -393,7 +393,9 @@ export function IncentiveManagement() {
                 <div className="flex items-baseline gap-2">
                   <p className="text-3xl font-black text-gray-900 dark:text-white">
                     {sales.filter(s => {
+                      if (!s.sale_date) return false;
                       const date = new Date(s.sale_date);
+                      if (isNaN(date.getTime())) return false;
                       return date.getMonth() === new Date().getMonth() && date.getFullYear() === new Date().getFullYear();
                     }).reduce((sum, s) => sum + (s.area_sqft || 0), 0).toLocaleString()}
                   </p>
@@ -663,7 +665,7 @@ export function IncentiveManagement() {
                         {formatCurrency(inc.total_incentive_amount)}
                       </td>
                       <td className="px-4 py-3 text-right text-xs text-gray-500">
-                        {new Date(inc.created_at || '').toLocaleDateString()}
+                        {inc.created_at ? new Date(inc.created_at).toLocaleDateString() : '-'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
