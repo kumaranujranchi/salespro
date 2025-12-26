@@ -245,8 +245,10 @@ export function IncentiveManagement() {
 
     // 1. Calculate Total Projected based on slabs
     let baseRate = 0;
-    if (plan.rules?.tiers) {
-      const tiers = plan.rules.tiers || [];
+    const tiers = Array.isArray(plan.rules?.tiers) ? plan.rules.tiers : [];
+    const rules = Array.isArray(plan.rules?.rules) ? plan.rules.rules : [];
+
+    if (tiers.length > 0) {
       // MATCHING IMAGE: Slab 1: <3000 (1%), Slab 2: 3000-5000 (2%), Slab 3: 5000-7000 (3%), Slab 4: >7100 (4%)
       // Note: We'll use the dynamic tiers from tenant settings if available, otherwise default to image rules
       const applicableTier = tiers.find((t: any) => totalSqft >= t.min && (t.max === null || totalSqft <= t.max));
@@ -260,10 +262,9 @@ export function IncentiveManagement() {
         else if (totalSqft >= 0) baseRate = 1;
       }
       totalProjected = (totalRevenue * baseRate) / 100;
-    } else if (plan.rules?.rules) {
-      const pRules = plan.rules.rules || [];
+    } else if (rules.length > 0) {
       userSales.forEach(s => {
-        const rule = pRules.find((r: any) => r.project_id === s.project_id) || pRules.find((r: any) => r.project_id === 'all');
+        const rule = rules.find((r: any) => r.project_id === s.project_id) || rules.find((r: any) => r.project_id === 'all');
         if (rule) {
           totalProjected += (s.total_revenue * rule.base_rate) / 100 + (rule.milestone_bonus || 0);
         }
@@ -273,7 +274,7 @@ export function IncentiveManagement() {
     // 2. Calculate Releasable based on Payment Milestones and Registry
     const bookingBreakdown = userSales.map(s => {
       const salePayments = payments.filter(p => p.sale_id === s.id).reduce((sum, p) => sum + p.amount, 0);
-      const paymentPct = (salePayments / s.total_revenue) * 100;
+      const paymentPct = (s.total_revenue > 0) ? (salePayments / s.total_revenue) * 100 : 0;
       
       let releasePct = 0;
       if (s.is_registry_done) {
@@ -284,9 +285,9 @@ export function IncentiveManagement() {
         else if (paymentPct >= 30) releasePct = 30;
       }
 
-      const saleTotalIncentive = plan.rules?.tiers 
+      const saleTotalIncentive = tiers.length > 0
         ? (s.total_revenue * baseRate) / 100 
-        : (s.total_revenue * (plan.rules?.rules?.find((r: any) => r.project_id === s.project_id || r.project_id === 'all')?.base_rate || 0)) / 100;
+        : (s.total_revenue * (rules.find((r: any) => r.project_id === s.project_id || r.project_id === 'all')?.base_rate || 0)) / 100;
       
       const saleReleasable = (saleTotalIncentive * releasePct) / 100;
       currentlyReleasable += saleReleasable;
