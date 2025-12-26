@@ -2,6 +2,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
+import { useToast } from '../contexts/ToastContext';
 import { LeadWithRelations } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
@@ -26,6 +27,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 export function LeadsPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
+  const toast = useToast();
 
   // State Management
   const [leads, setLeads] = useState<LeadWithRelations[]>([]);
@@ -151,7 +153,7 @@ export function LeadsPage() {
       setLeads(leadsWithFollowups);
     } catch (error) {
       console.error('Error loading leads:', error);
-      await dialog.alert('Failed to load leads', { variant: 'danger', title: 'Error' });
+      toast.error('Failed to load leads');
     } finally {
       setLoading(false);
     }
@@ -220,7 +222,7 @@ export function LeadsPage() {
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    // toast.success('Copied to clipboard');
+    toast.success('Copied to clipboard');
   };
 
   const handleDeleteLead = async (leadId: string) => {
@@ -248,7 +250,7 @@ export function LeadsPage() {
       loadLeads();
     } catch (error) {
       console.error('Delete error', error);
-      await dialog.alert('Failed to delete lead', { variant: 'danger' });
+      toast.error('Failed to delete lead');
     } finally {
       setLoading(false);
     }
@@ -279,7 +281,7 @@ export function LeadsPage() {
       handleBulkSuccess();
     } catch (error) {
       console.error('Bulk delete error', error);
-      await dialog.alert('Failed to delete leads', { variant: 'danger' });
+      toast.error('Failed to delete leads');
     } finally {
       setLoading(false);
     }

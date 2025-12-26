@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
@@ -8,8 +8,9 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { Plus, Download, TrendingUp, History, Edit2, X } from 'lucide-react';
+import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { exportPaymentLedgerPDF, sharePaymentLedger, exportPaymentLedgerExcel } from '../../utils/export';
 
 interface PaymentManagerProps {
     isOpen: boolean;
@@ -18,7 +19,7 @@ interface PaymentManagerProps {
 }
 
 export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
-    const { user } = useAuth();
+    const { user, tenant } = useAuth();
     const dialog = useDialog();
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -33,17 +34,11 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
         amount: '',
         paymentType: 'installment',
         paymentMode: 'cheque',
-        remarks: ''
+        remarks: '',
+        transactionReference: ''
     });
 
-    useEffect(() => {
-        if (isOpen && sale) {
-            loadPayments();
-            setShowAddForm(false);
-        }
-    }, [isOpen, sale]);
-
-    const loadPayments = async () => {
+    const loadPayments = useCallback(async () => {
         if (!sale) return;
         setLoading(true);
         const { data } = await supabase
@@ -54,11 +49,18 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
 
         if (data) setPayments(data as Payment[]); // Cast if needed, assuming types match DB
         setLoading(false);
-    };
+    }, [sale]);
+
+    useEffect(() => {
+        if (isOpen && sale) {
+            loadPayments();
+            setShowAddForm(false);
+        }
+    }, [isOpen, sale, loadPayments]);
 
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!sale || !user) return;
+        if (!sale || !user || !tenant) return;
         setIsSubmitting(true);
 
         try {
@@ -72,6 +74,7 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                         payment_type: paymentData.paymentType,
                         payment_mode: paymentData.paymentMode,
                         remarks: paymentData.remarks,
+                        transaction_reference: paymentData.transactionReference
                     })
                     .eq('id', editingPayment.id);
 
@@ -81,11 +84,13 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                 // Insert new payment
                 const { error } = await supabase.from('payments').insert({
                     sale_id: sale.id,
+                    tenant_id: tenant.id,
                     payment_date: paymentData.paymentDate,
                     amount: parseFloat(paymentData.amount),
                     payment_type: paymentData.paymentType,
                     payment_mode: paymentData.paymentMode,
                     remarks: paymentData.remarks,
+                    transaction_reference: paymentData.transactionReference,
                     recorded_by: user.id
                 });
 
@@ -100,7 +105,8 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                 amount: '',
                 paymentType: 'installment',
                 paymentMode: 'cheque',
-                remarks: ''
+                remarks: '',
+                transactionReference: ''
             });
             loadPayments();
         } catch (err: any) {
@@ -118,7 +124,8 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
             amount: payment.amount.toString(),
             paymentType: payment.payment_type || 'installment',
             paymentMode: payment.payment_mode || 'cheque',
-            remarks: payment.remarks || ''
+            remarks: payment.remarks || '',
+            transactionReference: payment.transaction_reference || ''
         });
         setShowAddForm(true);
     };
@@ -131,42 +138,24 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
             amount: '',
             paymentType: 'installment',
             paymentMode: 'cheque',
-            remarks: ''
+            remarks: '',
+            transactionReference: ''
         });
     };
 
     const handleDownloadLedger = () => {
-        if (!payments.length || !sale) return;
+        if (!sale) return;
+        exportPaymentLedgerPDF(sale, payments, tenant);
+    };
 
-        // CSV Headers
-        const headers = ['Date', 'Payment Type', 'Payment Mode', 'Amount', 'Remarks', 'Transaction Ref'];
+    const handleShareLedger = () => {
+        if (!sale) return;
+        sharePaymentLedger(sale, payments, tenant);
+    };
 
-        // CSV Rows
-        const rows = payments.map(p => [
-            new Date(p.payment_date).toLocaleDateString(),
-            p.payment_type?.replace('_', ' ').toUpperCase() || '',
-            p.payment_mode?.replace('_', ' ').toUpperCase() || '',
-            p.amount,
-            `"${p.remarks || ''}"`, // Quote remarks to handle commas
-            `"${(p as any).transaction_reference || ''}"`
-        ]);
-
-        // Combine
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.join(','))
-        ].join('\n');
-
-        // Download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Ledger_${(sale as any).customer?.name || 'Customer'}_${new Date().toISOString().slice(0, 10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleExportExcel = () => {
+        if (!sale) return;
+        exportPaymentLedgerExcel(sale, payments, tenant);
     };
 
     if (!sale) return null;
@@ -185,7 +174,7 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={`Payment Management - ${(sale as any).customer?.name || 'Customer'}`}
+            title={`Payment Management - ${sale.customer?.name || 'Customer'}`}
             size="xl"
         >
             <div className="space-y-6">
@@ -251,12 +240,6 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                             {!showAddForm && <Plus size={16} className="ml-2" />}
                             {showAddForm && <X size={16} className="ml-2" />}
                         </Button>
-                        <Button 
-                            className="w-full bg-transparent hover:bg-gray-50 border border-emerald-500 text-emerald-600 dark:bg-transparent dark:border-[#00d26a] dark:text-[#00d26a] dark:hover:bg-[#00d26a]/10"
-                            onClick={handleDownloadLedger}
-                        >
-                            <Download size={16} className="mr-2" /> Download Ledger
-                        </Button>
                     </div>
                 </div>
 
@@ -286,11 +269,12 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                             value={paymentData.paymentType}
                             onChange={e => setPaymentData({ ...paymentData, paymentType: e.target.value })}
                             options={[
-                                { label: 'EMI', value: 'emi' },
-                                { label: 'Advance', value: 'advance' },
-                                { label: 'Booking', value: 'booking' },
-                                { label: 'Token', value: 'token' },
-                                { label: 'Loan Disbursment', value: 'loan_disbursement' },
+                                { label: 'EMI / Installment', value: 'installment' },
+                                { label: 'Advance Payment', value: 'installment' },
+                                { label: 'Booking Amount', value: 'booking' },
+                                { label: 'Token Amount', value: 'booking' },
+                                { label: 'Final Disbursement', value: 'final' },
+                                { label: 'Other', value: 'other' },
                             ]}
                         />
                         <Select
@@ -301,14 +285,20 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                             options={[
                                 { label: 'Cash', value: 'cash' },
                                 { label: 'Cheque', value: 'cheque' },
-                                { label: 'Account Transfer', value: 'account_transfer' },
-                                { label: 'UPI', value: 'upi' },
-                                { label: 'DD', value: 'dd' },
+                                { label: 'Bank Transfer', value: 'bank_transfer' },
+                                { label: 'UPI / Digital', value: 'upi' },
+                                { label: 'Demand Draft (DD)', value: 'card' },
                             ]}
                         />
                     </div>
                     <Input 
-                        label="Remarks / Transaction Ref" 
+                        label="Transaction Reference # / Chq No" 
+                        className="bg-white dark:bg-[#1a2c25] border-gray-300 dark:border-[#2a3f35] focus:border-[#10B981] dark:focus:border-[#00d26a] text-gray-900 dark:text-white placeholder-gray-500"
+                        value={paymentData.transactionReference} 
+                        onChange={e => setPaymentData({ ...paymentData, transactionReference: e.target.value })} 
+                    />
+                    <Input 
+                        label="Remarks (Internal)" 
                         className="bg-white dark:bg-[#1a2c25] border-gray-300 dark:border-[#2a3f35] focus:border-[#10B981] dark:focus:border-[#00d26a] text-gray-900 dark:text-white placeholder-gray-500"
                         value={paymentData.remarks} 
                         onChange={e => setPaymentData({ ...paymentData, remarks: e.target.value })} 
@@ -324,6 +314,37 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                         </Button>
                     </div>
                 </form>
+
+                <div className="bg-white dark:bg-[#1a2c25] rounded-xl border border-gray-200 dark:border-[#2a3f35] p-6 shadow-sm mb-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleDownloadLedger}
+                                className="bg-white dark:bg-transparent border-gray-200 dark:border-[#2a3f35] text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2a3f35]"
+                            >
+                                <Download size={16} className="mr-2" /> PDF Ledger
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleExportExcel}
+                                className="bg-white dark:bg-transparent border-gray-200 dark:border-[#2a3f35] text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2a3f35]"
+                            >
+                                <FileSpreadsheet size={16} className="mr-2" /> Excel
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={handleShareLedger}
+                                className="bg-white dark:bg-transparent border-gray-200 dark:border-[#2a3f35] text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-[#2a3f35]"
+                            >
+                                <Share2 size={16} className="mr-2" /> Share
+                            </Button>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Payment History List */}
                 <div>

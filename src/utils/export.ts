@@ -2,32 +2,79 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { Sale, Payment } from '../types/database';
+import { Sale, Payment, Tenant } from '../types/database';
 
 // Helper to generate doc
-const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
+const generateLedgerDoc = (sale: Sale, payments: Payment[], tenant?: Tenant | null) => {
   const doc = new jsPDF();
   const customerName = (sale as any).customer?.name || 'Customer';
   const unitNo = sale.unit_number || 'N/A';
+  
+  // Header
+  // The ledger is for the TENANT'S customer, so the TENANT is the seller.
+  const companyProfile = tenant?.settings?.company_profile;
+  const companyName = tenant?.name || 'Your Company';
+  const logoUrl = companyProfile?.logo_url;
 
-  // --- Company Header ---
+  if (logoUrl) {
+    try {
+      // Adjusted size and position for better alignment
+      doc.addImage(logoUrl, 'PNG', 14, 12, 22, 22);
+    } catch (e) {
+      console.warn('Failed to add logo to ledger:', e);
+    }
+  }
+
   doc.setFontSize(22);
-  doc.setTextColor(22, 115, 255); // Company Blue
+  doc.setTextColor(30, 41, 59);
   doc.setFont('helvetica', 'bold');
-  doc.text('Wishluv Buildcon Pvt Ltd', 105, 20, { align: 'center' });
+  doc.text(companyName, logoUrl ? 42 : 14, 21);
 
   doc.setFontSize(10);
-  doc.setTextColor(100);
   doc.setFont('helvetica', 'normal');
-  doc.text('Payment Ledger / Statement of Account', 105, 28, { align: 'center' });
+  doc.setTextColor(100, 116, 139);
+  
+  let currentY = 27;
+  const contentX = logoUrl ? 42 : 14;
+  if (companyProfile) {
+    if (companyProfile.address) {
+      doc.text(companyProfile.address, contentX, currentY);
+      currentY += 5;
+    }
+    const contactInfo = [];
+    if (companyProfile.email) contactInfo.push(`Email: ${companyProfile.email}`);
+    if (companyProfile.phone) contactInfo.push(`Phone: ${companyProfile.phone}`);
+    if (contactInfo.length > 0) {
+      doc.text(contactInfo.join(' | '), contentX, currentY);
+      currentY += 5;
+    }
+    if (companyProfile.website) {
+      doc.text(`Website: ${companyProfile.website}`, contentX, currentY);
+      currentY += 5;
+    }
+    if (companyProfile.tax_id) {
+      doc.text(`GSTIN/TAX: ${companyProfile.tax_id}`, contentX, currentY);
+      currentY += 5;
+    }
+  } else if (tenant?.name) {
+    // If no profile, at least show the tenant name and a generic placeholder for address
+    doc.text('Authorized Statement', 14, currentY);
+    currentY += 5;
+  } else {
+    // Ultimate fallback if everything is missing
+    const fallbackTitle = tenant === undefined ? 'Tenant Context Undefined' : 'No Tenant Data';
+    doc.text(fallbackTitle, 14, currentY);
+    currentY += 5;
+  }
 
   // Divider Line
+  const dividerY = currentY + 2;
   doc.setDrawColor(200);
   doc.setLineWidth(0.5);
-  doc.line(15, 35, 195, 35);
+  doc.line(15, dividerY, 195, dividerY);
 
   // --- Customer & Project Details ---
-  const startY = 45;
+  const startY = dividerY + 10;
   doc.setFontSize(10);
   doc.setTextColor(0);
 
@@ -64,14 +111,14 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
   // Total Value
   doc.text('Total Sale Value', 30, summaryY + 10);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Rs. ${totalRevenue.toLocaleString()}`, 30, summaryY + 18);
+  doc.text(`${totalRevenue.toLocaleString()}`, 30, summaryY + 18);
 
   // Received
   doc.setFont('helvetica', 'normal');
   doc.text('Total Received', 90, summaryY + 10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(22, 163, 74); // Green
-  doc.text(`Rs. ${totalReceived.toLocaleString()}`, 90, summaryY + 18);
+  doc.text(`${totalReceived.toLocaleString()}`, 90, summaryY + 18);
 
   // DUE
   doc.setFont('helvetica', 'normal');
@@ -79,7 +126,7 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
   doc.text('Balance Due', 150, summaryY + 10);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(220, 38, 38); // Red
-  doc.text(`Rs. ${balance.toLocaleString()}`, 150, summaryY + 18);
+  doc.text(`${balance.toLocaleString()}`, 150, summaryY + 18);
   doc.setTextColor(0); // Reset
 
   const tableData: string[][] = [];
@@ -88,7 +135,7 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
     tableData.push([
         new Date(p.payment_date).toLocaleDateString(),
         `${p.payment_type?.toUpperCase().replace('_', ' ')} (${p.payment_mode?.toUpperCase().replace('_', ' ')})\nRef: ${p.transaction_reference || '-'}`,
-        `Rs. ${Number(p.amount).toLocaleString()}`
+        `${Number(p.amount).toLocaleString()}`
     ]);
   });
 
@@ -96,7 +143,7 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
     startY: summaryY + 35,
     head: [['Date', 'Particulars / Reference', 'Credit Amount']],
     body: tableData,
-    foot: [['', 'Total Amount Received', `Rs. ${totalReceived.toLocaleString()}`]],
+    foot: [['', 'Total Amount Received', `${totalReceived.toLocaleString()}`]],
     theme: 'grid',
     styles: { fontSize: 10, cellPadding: 4 },
     headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' }, // Slate-800
@@ -112,7 +159,7 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
         const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text('Wishluv Buildcon Pvt Ltd - Payment Ledger', 15, pageHeight - 10);
+        doc.text(`${companyName} - Payment Ledger`, 15, pageHeight - 10);
         doc.text(`Page ${data.pageNumber}`, 195, pageHeight - 10, { align: 'right' });
     }
   });
@@ -127,15 +174,15 @@ const generateLedgerDoc = (sale: Sale, payments: Payment[]) => {
   return doc;
 };
 
-export const exportPaymentLedgerPDF = (sale: Sale, payments: Payment[]) => {
-  const doc = generateLedgerDoc(sale, payments);
+export const exportPaymentLedgerPDF = (sale: Sale, payments: Payment[], tenant?: Tenant | null) => {
+  const doc = generateLedgerDoc(sale, payments, tenant);
   const customerName = (sale as any).customer?.name || 'Customer';
   const unitNo = sale.unit_number || 'N/A';
   doc.save(`Ledger_${customerName.replace(/\s+/g, '_')}_Unit${unitNo}.pdf`);
 };
 
-export const sharePaymentLedger = async (sale: Sale, payments: Payment[]) => {
-  const doc = generateLedgerDoc(sale, payments);
+export const sharePaymentLedger = async (sale: Sale, payments: Payment[], tenant?: Tenant | null) => {
+  const doc = generateLedgerDoc(sale, payments, tenant);
   const blob = doc.output('blob');
   const customerName = (sale as any).customer?.name || 'Customer';
   const unitNo = sale.unit_number || 'N/A';
@@ -160,14 +207,15 @@ export const sharePaymentLedger = async (sale: Sale, payments: Payment[]) => {
   }
 };
 
-export const exportPaymentLedgerExcel = (sale: Sale, payments: Payment[]) => {
+export const exportPaymentLedgerExcel = (sale: Sale, payments: Payment[], tenant?: Tenant | null) => {
     const customerName = (sale as any).customer?.name || 'Customer';
     const unitNo = sale.unit_number || 'N/A';
+    const companyName = tenant?.name || 'Your Company';
     
     // Prepare Data for Sheet
     const data = [
         ['Payment Ledger'],
-        ['Wishluv Buildcon Pvt Ltd'],
+        [companyName],
         [''],
         ['Customer Name', customerName, 'Project', (sale as any).project?.name || ''],
         ['Phone', (sale as any).customer?.phone || '', 'Unit No', unitNo],

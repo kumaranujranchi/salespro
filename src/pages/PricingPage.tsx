@@ -7,10 +7,12 @@ import { useRazorpay } from '../hooks/useRazorpay';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PaymentSuccessModal } from '../components/ui/PaymentSuccessModal';
+import { useToast } from '../contexts/ToastContext';
 
 export function PricingPage() {
   const { openPaymentModal } = useRazorpay();
   const { user, tenant, refreshProfile } = useAuth();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,7 +105,7 @@ export function PricingPage() {
     }
 
     if (!tenant?.id) {
-      alert('Tenant information not found. Please try again.');
+      toast.error('Tenant information not found. Please try again.');
       return;
     }
 
@@ -221,7 +223,7 @@ export function PricingPage() {
 
             if (updateError) {
               console.error('Error updating subscription:', updateError);
-              alert('Payment successful but failed to activate subscription. Please contact support with Payment ID: ' + response.razorpay_payment_id);
+              toast.error('Payment successful but failed to activate subscription. Please contact support with Payment ID: ' + response.razorpay_payment_id);
               return;
             }
 
@@ -253,7 +255,7 @@ export function PricingPage() {
             setShowSuccessModal(true);
           } catch (error) {
             console.error('❌ Payment Handler Error:', error);
-            alert('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
+            toast.error('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
           }
         },
         prefill: {
@@ -274,7 +276,7 @@ export function PricingPage() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Payment initialization failed:', error);
-      alert(`Failed to initialize payment: ${errorMessage}\n\nPlease try again or contact support.`);
+      toast.error(`Failed to initialize payment: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

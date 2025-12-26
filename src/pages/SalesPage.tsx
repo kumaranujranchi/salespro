@@ -3,6 +3,7 @@ import { formatCurrency } from '../utils/format';
 import { supabase } from '../lib/supabase';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Sale } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -23,6 +24,7 @@ import { getSubordinateIds } from '../utils/hierarchy';
 export function SalesPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
+  const toast = useToast();
   const [sales, setSales] = useState<Sale[]>([]);
   const [payments, setPayments] = useState<any[]>([]); // Fetch all payments for metrics
   const [loading, setLoading] = useState(true);
@@ -239,10 +241,10 @@ export function SalesPage() {
       if (error) throw error;
       loadSales();
       loadPayments();
-      await dialog.alert('Sale record deleted.', { variant: 'success', title: 'Deleted' });
-    } catch (error) {
+      toast.success('Sale record deleted successfully.');
+    } catch (error: any) {
       console.error('Error deleting sale:', error);
-      await dialog.alert('Failed to delete sale record.', { variant: 'danger', title: 'Error' });
+      toast.error('Failed to delete sale record: ' + (error.message || 'Unknown error'));
     }
   };
 

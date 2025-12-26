@@ -22,7 +22,7 @@ interface SalesDetailsModalProps {
 export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onDelete, canEdit }: SalesDetailsModalProps) {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loadingPayments, setLoadingPayments] = useState(false);
-    const { profile } = useAuth();
+    const { profile, tenant } = useAuth();
     
     // Check if user is admin/super_admin for Excel export
     const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
@@ -143,16 +143,16 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         </h3>
                         <div className="grid grid-cols-2 gap-y-2 text-sm">
                             <div className="text-gray-500 dark:text-gray-400">Name:</div>
-                            <div className="font-medium text-gray-900 dark:text-gray-200">{(sale as any).customer?.name || 'N/A'}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-200">{sale.customer?.name || 'N/A'}</div>
 
                             <div className="text-gray-500 dark:text-gray-400">Phone:</div>
-                            <div className="font-medium text-gray-900 dark:text-gray-200">{(sale as any).customer?.phone || 'N/A'}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-200">{sale.customer?.phone || 'N/A'}</div>
 
                             <div className="text-gray-500 dark:text-gray-400">Email:</div>
-                            <div className="font-medium text-gray-900 dark:text-gray-200">{(sale as any).customer?.email || 'N/A'}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-200">{sale.customer?.email || 'N/A'}</div>
 
                             <div className="text-gray-500 dark:text-gray-400">Address:</div>
-                            <div className="font-medium text-gray-900 dark:text-gray-200 col-span-2 md:col-span-1 truncate" title={(sale as any).customer?.address}>{(sale as any).customer?.address || 'N/A'}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-200 col-span-2 md:col-span-1 truncate" title={sale.customer?.address || ''}>{sale.customer?.address || 'N/A'}</div>
                         </div>
                     </div>
 
@@ -163,7 +163,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         </h3>
                         <div className="grid grid-cols-2 gap-y-2 text-sm">
                             <div className="text-gray-500 dark:text-gray-400">Project:</div>
-                            <div className="font-medium text-gray-900 dark:text-gray-200">{(sale as any).project?.name || 'N/A'}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-200">{sale.project?.name || 'N/A'}</div>
 
                             <div className="text-gray-500 dark:text-gray-400">Unit / Plot:</div>
                             <div className="font-medium text-gray-900 dark:text-gray-200">{sale.unit_number || 'N/A'}</div>
@@ -295,7 +295,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => exportPaymentLedgerPDF(sale, payments)}
+                                onClick={() => exportPaymentLedgerPDF(sale, payments, tenant)}
                                 className="text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
                                 title="Download PDF"
                             >
@@ -305,7 +305,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => exportPaymentLedgerExcel(sale, payments)}
+                                    onClick={() => exportPaymentLedgerExcel(sale, payments, tenant)}
                                     className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
                                     title="Download Excel"
                                 >
@@ -315,7 +315,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => sharePaymentLedger(sale, payments)}
+                                onClick={() => sharePaymentLedger(sale, payments, tenant)}
                                 className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                                 title="Share Ledger"
                             >

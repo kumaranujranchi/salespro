@@ -45,14 +45,16 @@ import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TutorialProvider } from './contexts/TutorialContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <DialogProvider>
-            <TutorialProvider>
+          <ToastProvider>
+            <DialogProvider>
+              <TutorialProvider>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
@@ -324,8 +326,9 @@ function App() {
               </Routes>
             </TutorialProvider>
           </DialogProvider>
-        </ThemeProvider>
-      </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </AuthProvider>
     </BrowserRouter>
   );
 }

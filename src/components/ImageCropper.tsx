@@ -9,9 +9,11 @@ interface ImageCropperProps {
   onClose: () => void;
   imageSrc: string;
   onCropComplete: (croppedBlob: Blob) => void;
+  aspect?: number;
+  cropShape?: 'rect' | 'round';
 }
 
-export function ImageCropper({ isOpen, onClose, imageSrc, onCropComplete }: ImageCropperProps) {
+export function ImageCropper({ isOpen, onClose, imageSrc, onCropComplete, aspect = 1, cropShape = 'round' }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
@@ -51,12 +53,12 @@ export function ImageCropper({ isOpen, onClose, imageSrc, onCropComplete }: Imag
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={1} // Square aspect ratio for profile
+            aspect={aspect}
             onCropChange={onCropChange}
             onCropComplete={onCropCompleteHandler}
             onZoomChange={onZoomChange}
-            cropShape="round" // Show circular stencil
-            showGrid={false}
+            cropShape={cropShape}
+            showGrid={true}
           />
         </div>
 

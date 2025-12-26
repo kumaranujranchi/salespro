@@ -491,8 +491,9 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                                 onChange={e => setFormData({ ...formData, paymentType: e.target.value })}
                                 options={[
                                     { label: 'Booking Amount', value: 'booking' },
-                                    { label: 'Token Amount', value: 'token' },
-                                    { label: 'Advance', value: 'advance' },
+                                    { label: 'Token Amount', value: 'booking' },
+                                    { label: 'Advance Payment', value: 'installment' },
+                                    { label: 'Other', value: 'other' },
                                 ]}
                             />
                             <Select
@@ -502,9 +503,9 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                                 options={[
                                     { label: 'Cheque', value: 'cheque' },
                                     { label: 'Cash', value: 'cash' },
-                                    { label: 'Account Transfer', value: 'account_transfer' },
-                                    { label: 'UPI', value: 'upi' },
-                                    { label: 'Demand Draft (DD)', value: 'dd' },
+                                    { label: 'Bank Transfer', value: 'bank_transfer' },
+                                    { label: 'UPI / Digital', value: 'upi' },
+                                    { label: 'Demand Draft (DD)', value: 'card' },
                                 ]}
                             />
                             <Input 

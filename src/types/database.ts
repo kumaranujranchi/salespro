@@ -16,6 +16,14 @@ export interface TenantSettings {
     type: string;
     rules: Record<string, any>;
   };
+  company_profile?: {
+    address: string;
+    email: string;
+    phone: string;
+    website: string;
+    tax_id: string; // GSTIN, etc.
+    logo_url?: string;
+  };
 }
 
 export interface RolePermissions {
@@ -285,6 +293,8 @@ export interface Sale {
     cancelled_by?: string | null;
     [key: string]: any;
   };
+  customer?: { id: string; name: string; email: string | null; phone: string; address: string | null; };
+  project?: { id: string; name: string; };
   created_at: string;
   updated_at: string;
 }

@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,12 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.tenant_id) {
-      const { data: tenantData } = await supabase
+      const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', data.tenant_id)
         .single();
-      if (tenantData) setTenant(tenantData as Tenant);
+      
+      if (tenantError) {
+        console.error('AuthContext: Error fetching tenant:', tenantError);
+      } else if (tenantData) {
+        setTenant(tenantData as Tenant);
+      } else {
+        console.warn('AuthContext: No tenant data found for id:', data.tenant_id);
+      }
     }
   };
 
@@ -152,6 +160,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const refreshTenant = async () => {
+    if (!profile?.tenant_id) {
+      console.warn('AuthContext: refreshTenant called but no tenant_id in profile');
+      return;
+    }
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', profile.tenant_id)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('AuthContext: Error refreshing tenant:', error);
+    } else if (data) {
+      setTenant(data as Tenant);
+    } else {
+      console.warn('AuthContext: refreshTenant found no data for id:', profile.tenant_id);
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -182,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, affiliate, tenant, session, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, affiliate, tenant, session, loading, signIn, signOut, refreshProfile, refreshTenant }}>
       {children}
     </AuthContext.Provider>
   );

@@ -30,8 +30,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           {...props}
         >
           <option value="" className="dark:bg-gray-900">Select an option</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value} className="dark:bg-gray-900">
+          {options.map((option, index) => (
+            <option key={`${option.value}-${index}`} value={option.value} className="dark:bg-gray-900">
               {option.label}
             </option>
           ))}

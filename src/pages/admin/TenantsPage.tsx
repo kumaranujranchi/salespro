@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../contexts/ToastContext';
+import { useDialog } from '../../contexts/DialogContext';
 import {
   Building2,
   Mail,
@@ -14,13 +16,11 @@ import {
   Receipt,
   ChevronDown,
   Bell,
-  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
   Zap,
-  Award,
-  XCircle
+  Award
 } from 'lucide-react';
 
 const formatDate = (dateString: string) => {
@@ -71,6 +71,8 @@ interface Tenant {
 export function TenantsPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
+  const dialog = useDialog();
   const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
   const [incentiveRuleStr, setIncentiveRuleStr] = useState('');
   const [builderMode, setBuilderMode] = useState<'visual' | 'json'>('visual');
@@ -108,8 +110,6 @@ export function TenantsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteSlugInput, setDeleteSlugInput] = useState('');
 
-  // Notification State
-  const [notification, setNotification] = useState<{ type: 'success' | 'error', title: string, message: string } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Billing History State
@@ -168,7 +168,7 @@ export function TenantsPage() {
 
     // Basic validation
     if (!newTenantData.companyName || !newTenantData.email || !newTenantData.phone || !newTenantData.password || newTenantData.password.length < 6) {
-      alert('Please fill all fields. Password must be at least 6 characters.');
+      toast.error('Please fill all fields. Password must be at least 6 characters.');
       return;
     }
 
@@ -259,22 +259,14 @@ export function TenantsPage() {
         referralCode: ''
       });
 
-      setNotification({
-        type: 'success',
-        title: 'Client Onboarded',
-        message: `${newTenantData.companyName} has been successfully created.`
-      });
+      toast.success(`${newTenantData.companyName} has been successfully onboarded.`);
 
       // Refresh list
       fetchTenants();
 
     } catch (error: any) {
       console.error('Error adding tenant:', error);
-      setNotification({
-        type: 'error',
-        title: 'Onboarding Failed',
-        message: error.message || 'An error occurred while creating the tenant.'
-      });
+      toast.error(error.message || 'An error occurred while creating the tenant.');
     } finally {
       setAddTenantLoading(false);
     }
@@ -290,7 +282,12 @@ export function TenantsPage() {
   };
 
   const toggleTenantStatus = async (tenant: Tenant) => {
-    if (!confirm(`Are you sure you want to ${tenant.is_active === false ? 'ACTIVATE' : 'DEACTIVATE'} this tenant?`)) return;
+    const isSuspended = tenant.is_active === false;
+    const confirmed = await dialog.confirm(`Are you sure you want to ${isSuspended ? 'ACTIVATE' : 'DEACTIVATE'} this tenant?`, {
+      variant: isSuspended ? 'default' : 'danger',
+      title: isSuspended ? 'Activate Tenant' : 'Deactivate Tenant'
+    });
+    if (!confirmed) return;
 
     try {
       const newStatus = tenant.is_active === false ? true : false;
@@ -306,20 +303,23 @@ export function TenantsPage() {
       if (selectedTenant && selectedTenant.id === tenant.id) {
         setSelectedTenant({ ...selectedTenant, is_active: newStatus });
       }
-      alert(`Tenant ${newStatus ? 'Activated' : 'Deactivated'} successfully.`);
+      toast.success(`Tenant ${newStatus ? 'Activated' : 'Deactivated'} successfully.`);
     } catch (error) {
       console.error('Error updating tenant status:', error);
-      alert('Failed to update tenant status. Ensure you have permission.');
+      toast.error('Failed to update tenant status.');
     }
   };
 
   const handleSendReminder = async (tenant: Tenant) => {
     if (!tenant.contact_email) {
-      alert('This tenant has no contact email.');
+      toast.error('This tenant has no contact email.');
       return;
     }
 
-    if (!confirm(`Send subscription reminder to ${tenant.contact_email}?`)) return;
+    const confirmed = await dialog.confirm(`Send subscription reminder to ${tenant.contact_email}?`, {
+        title: 'Send Reminder'
+    });
+    if (!confirmed) return;
 
     try {
       // Calculate expiry date and days remaining
@@ -358,21 +358,13 @@ export function TenantsPage() {
       });
 
       if (response.ok) {
-        setNotification({
-          type: 'success',
-          title: 'Reminder Sent',
-          message: `Subscription reminder sent to ${tenant.contact_email}`
-        });
+        toast.success(`Subscription reminder sent to ${tenant.contact_email}`);
       } else {
         throw new Error('Failed to send email');
       }
     } catch (error) {
       console.error('Error sending reminder:', error);
-      setNotification({
-        type: 'error',
-        title: 'Sending Failed',
-        message: 'Could not send the reminder email.'
-      });
+      toast.error('Could not send the reminder email.');
     }
   };
 
@@ -392,7 +384,7 @@ export function TenantsPage() {
 
   const openResetPasswordModal = (tenant: Tenant) => {
     if (!tenant.owner_id) {
-      alert('No owner ID found for this tenant. Cannot reset password.');
+      toast.error('No owner ID found for this tenant.');
       return;
     }
     setResetPassword('');
@@ -405,7 +397,7 @@ export function TenantsPage() {
     if (!selectedTenant || !selectedTenant.owner_id) return;
 
     if (resetPassword.length < 6) {
-      alert('Password must be at least 6 characters.');
+      toast.error('Password must be at least 6 characters.');
       return;
     }
 
@@ -420,10 +412,10 @@ export function TenantsPage() {
 
       setResetModalOpen(false);
       setResetPassword('');
-      alert('Password reset successfully for the tenant owner.');
+      toast.success('Password reset successfully.');
     } catch (error: any) {
       console.error('Error resetting password:', error);
-      alert('Failed to reset password: ' + (error.message || error.error_description || 'Unknown error'));
+      toast.error('Failed to reset password: ' + (error.message || 'Unknown error'));
     } finally {
       setResetLoading(false);
     }
@@ -438,11 +430,7 @@ export function TenantsPage() {
     if (!selectedTenant) return;
 
     if (deleteSlugInput !== selectedTenant.slug) {
-      setNotification({
-        type: 'error',
-        title: 'Verification Failed',
-        message: 'The slug you entered does not match. Please type the exact company slug.'
-      });
+      toast.error('The slug does not match. Please type the exact company slug.');
       return;
     }
 
@@ -458,20 +446,11 @@ export function TenantsPage() {
       setSelectedTenant(null);
       fetchTenants();
 
-      // Show Success Modal
-      setNotification({
-        type: 'success',
-        title: 'Tenant Deleted',
-        message: 'The tenant and all associated data have been permanently removed.'
-      });
+      toast.success('Tenant and all associated data have been permanently removed.');
 
     } catch (error: any) {
       console.error('Error deleting tenant:', error);
-      setNotification({
-        type: 'error',
-        title: 'Deletion Failed',
-        message: error.message || error.error_description || 'An unknown error occurred.'
-      });
+      toast.error(error.message || 'An unknown error occurred during deletion.');
     } finally {
       setLoading(false);
     }
@@ -1084,17 +1063,9 @@ export function TenantsPage() {
                               setSelectedTenant(updatedTenant);
                               setTenants(prev => prev.map(t => t.id === selectedTenant.id ? updatedTenant : t));
                               
-                              setNotification({
-                                type: 'success',
-                                title: 'Plan Type Updated',
-                                message: `Incentive plan changed to ${newType}.`
-                              });
+                               toast.success(`Incentive plan changed to ${newType}.`);
                             } catch (err: any) {
-                              setNotification({
-                                type: 'error',
-                                title: 'Update Failed',
-                                message: err.message
-                              });
+                              toast.error(err.message || 'Failed to update plan type.');
                             }
                           }}
                           className="text-sm px-2 py-1 bg-white dark:bg-slate-800 border rounded-md"
@@ -1329,17 +1300,9 @@ export function TenantsPage() {
                                     try {
                                       const json = JSON.parse(event.target?.result as string);
                                       setIncentiveRuleStr(JSON.stringify(json, null, 2));
-                                      setNotification({
-                                        type: 'success',
-                                        title: 'JSON Imported',
-                                        message: 'Rule configuration loaded from file.'
-                                      });
+                                       toast.success('JSON rules imported successfully.');
                                     } catch (err: any) {
-                                      setNotification({
-                                        type: 'error',
-                                        title: 'Import Failed',
-                                        message: 'Invalid JSON file format: ' + err.message
-                                      });
+                                      toast.error('Import Failed: ' + (err.message || 'Invalid JSON'));
                                     }
                                   };
                                   reader.readAsText(file);
@@ -1389,17 +1352,9 @@ export function TenantsPage() {
                                   
                                   setSelectedTenant({ ...selectedTenant, settings: newSettings });
                                   setTenants(prev => prev.map(t => t.id === selectedTenant.id ? { ...t, settings: newSettings } : t));
-                                  setNotification({
-                                    type: 'success',
-                                    title: 'Rules Updated',
-                                    message: 'Incentive configuration has been saved successfully.'
-                                  });
+                                  toast.success('Incentive configuration saved successfully.');
                                 } catch (err: any) {
-                                  setNotification({
-                                    type: 'error',
-                                    title: 'Invalid JSON',
-                                    message: 'Please check your JSON format: ' + err.message
-                                  });
+                                  toast.error('Invalid JSON: ' + (err.message || 'Check format'));
                                 }
                               }}
                               className="px-4 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-md hover:bg-amber-700 shadow-md shadow-amber-600/20 transition-all"
@@ -1613,32 +1568,7 @@ export function TenantsPage() {
             </div>
           )}
 
-          {/* Notification Modal */}
-          {notification && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-              <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all animate-scaleIn border border-slate-200 dark:border-slate-700">
-                <div className={`p-6 text-center ${notification.type === 'success' ? 'bg-green-50 dark:bg-green-900/10' : 'bg-red-50 dark:bg-red-900/10'}`}>
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${notification.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
-                    {notification.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
-                  </div>
-                  <h3 className={`text-xl font-bold mb-2 ${notification.type === 'success' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                    {notification.title}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-                    {notification.message}
-                  </p>
-                </div>
-                <div className="p-4 bg-white dark:bg-[#1e1e2d] border-t border-slate-100 dark:border-slate-700">
-                  <button
-                    onClick={() => setNotification(null)}
-                    className={`w-full py-2.5 rounded-lg font-bold text-white transition-all shadow-lg ${notification.type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-500/30' : 'bg-red-600 hover:bg-red-700 shadow-red-500/30'}`}
-                  >
-                    Okay, Got it
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Notification Modal REMOVED */}
         </div>
       </div>
     </div>

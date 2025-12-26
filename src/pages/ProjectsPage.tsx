@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useDialog } from '../contexts/DialogContext';
+import { useToast } from '../contexts/ToastContext';
 import { Project } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
@@ -16,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 export function ProjectsPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
+  const toast = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,7 +107,7 @@ export function ProjectsPage() {
       setFormData(prev => ({ ...prev, imageUrl: data.publicUrl }));
     } catch (error) {
       console.error('Error uploading image:', error);
-      await dialog.alert('Error uploading image. Please try again.', { variant: 'danger', title: 'Upload Failed' });
+      toast.error('Error uploading image. Please try again.');
     } finally {
       setUploadingImage(false);
     }
@@ -131,7 +133,7 @@ export function ProjectsPage() {
           .eq('id', editingProjectId);
 
         if (error) throw error;
-        await dialog.alert('Project updated successfully!', { variant: 'success', title: 'Success' });
+        toast.success('Project updated successfully!');
       } else {
         // Create new project
         const { error } = await supabase.from('projects').insert({
@@ -147,14 +149,14 @@ export function ProjectsPage() {
         });
 
         if (error) throw error;
-        await dialog.alert('Project added successfully!', { variant: 'success', title: 'Success' });
+        toast.success('Project added successfully!');
       }
 
       handleCloseModal();
       loadProjects();
     } catch (error) {
       console.error('Error saving project:', error);
-      await dialog.alert('Failed to save project', { variant: 'danger', title: 'Error' });
+      toast.error('Failed to save project');
     } finally {
       setIsSubmitting(false);
     }
@@ -174,10 +176,10 @@ export function ProjectsPage() {
       const { error } = await supabase.from('projects').delete().eq('id', id);
       if (error) throw error;
       loadProjects();
-      await dialog.alert('Project deleted.', { variant: 'success', title: 'Deleted' });
+      toast.success('Project deleted.');
     } catch (error) {
       console.error('Error deleting project:', error);
-      await dialog.alert('Failed to delete project. It might be referenced by other records.', { variant: 'danger', title: 'Error' });
+      toast.error('Failed to delete project. It might be referenced by other records.');
     }
   };
 
