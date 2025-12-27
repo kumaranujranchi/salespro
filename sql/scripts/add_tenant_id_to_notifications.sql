@@ -12,20 +12,24 @@ FROM profiles p
 WHERE n.user_id = p.id
 AND n.tenant_id IS NULL;
 
--- Step 3: Make tenant_id NOT NULL after backfill
+-- Step 3: Delete orphaned notifications (where user doesn't exist in profiles)
+DELETE FROM notifications
+WHERE tenant_id IS NULL;
+
+-- Step 4: Make tenant_id NOT NULL after backfill and cleanup
 ALTER TABLE notifications 
 ALTER COLUMN tenant_id SET NOT NULL;
 
--- Step 4: Add index for performance
+-- Step 5: Add index for performance
 CREATE INDEX IF NOT EXISTS idx_notifications_tenant_id ON notifications(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_tenant_user ON notifications(tenant_id, user_id);
 
--- Step 5: Drop existing RLS policies
+-- Step 6: Drop existing RLS policies
 DROP POLICY IF EXISTS "Users can view their own notifications" ON notifications;
 DROP POLICY IF EXISTS "Users can update their own notifications" ON notifications;
 DROP POLICY IF EXISTS "Users can insert their own notifications" ON notifications;
 
--- Step 6: Create new RLS policies with tenant isolation
+-- Step 7: Create new RLS policies with tenant isolation
 CREATE POLICY "Users can view notifications in their tenant"
 ON notifications FOR SELECT
 USING (
@@ -52,7 +56,7 @@ WITH CHECK (
   )
 );
 
--- Step 7: Enable RLS if not already enabled
+-- Step 8: Enable RLS if not already enabled
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON COLUMN notifications.tenant_id IS 'Tenant ID for multi-tenancy isolation';
