@@ -112,16 +112,14 @@ exports.handler = async function (event, context) {
 
     // --- SUBSCRIPTION CREATION ---
     // Start date: +2 minutes to be safe
-    const startAt = Math.floor(Date.now() / 1000) + 120; 
+    // Start date: Immediate
+    // const startAt = Math.floor(Date.now() / 1000) + 120;  // Removed to avoid 'Hosted page not available' error 
     const totalCount = planType === 'yearly' ? 10 : 120; // 10 years or 10 years months
 
-    const subscription = await instance.subscriptions.create({
       plan_id: planId,
       customer_id: customerId,
       total_count: totalCount,
       quantity: 1,
-      start_at: startAt,
-      expire_by: startAt + (15 * 60), // Link expires in 15 mins if not authorized? No, usually start_at is enough.
       customer_notify: 1,
       notes: { tenant_id: tenantId, user_id: user.id }
     });
