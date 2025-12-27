@@ -28,22 +28,15 @@ export function SalesOverview() {
         leaderboard: {
             monthly: [] as { name: string; area: number; rank: number; image_url?: string }[],
             yearly: [] as { name: string; area: number; rank: number; image_url?: string }[]
-        }
+        },
+        salesTrend: [] as { name: string; sales: number }[]
     });
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     const isReceptionist = profile?.role === 'receptionist';
 
-    // Mock data for charts
-    const salesTrendData = [
-        { name: 'Jan', sales: 400000 },
-        { name: 'Feb', sales: 300000 },
-        { name: 'Mar', sales: 600000 },
-        { name: 'Apr', sales: 800000 },
-        { name: 'May', sales: 500000 },
-        { name: 'Jun', sales: 900000 },
-    ];
+
 
     const permissions = profile?.role_details?.permissions?.dashboard || {
         sales_view: isReceptionist ? 'overall' : 'self',
@@ -91,20 +84,33 @@ export function SalesOverview() {
             }
             ytdSalesQuery = ytdSalesQuery.gte('sale_date', yearStart);
 
+            let trendQuery = supabase.from('sales').select('sale_date, total_revenue');
+            if (salesView === 'self') {
+                trendQuery = trendQuery.eq('sales_executive_id', profile.id);
+            } else if (salesView === 'team') {
+                trendQuery = trendQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
+            }
+            const trendStart = new Date();
+            trendStart.setMonth(trendStart.getMonth() - 5);
+            trendStart.setDate(1);
+            trendQuery = trendQuery.gte('sale_date', trendStart.toISOString().split('T')[0]);
+
             const [
                 { data: salesData },
                 { data: targetData },
                 { data: incentiveData },
                 { data: activityLogs },
                 { data: ytdSalesData },
-                { data: projectsData }
+                { data: projectsData },
+                { data: trendDataRaw }
             ] = await Promise.all([
                 salesQuery,
                 supabase.from('targets').select('target_amount').eq('user_id', profile.id).gte('period_start', monthStart).limit(1).maybeSingle(),
                 supabase.from('incentives').select('*').eq('sales_executive_id', profile.id).eq('calculation_year', currentYear),
                 permissions.recent_activity ? supabase.from('activity_logs').select('*, user:user_id(full_name)').order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
                 ytdSalesQuery,
-                permissions.project_performance ? supabase.from('projects').select('id, name') : Promise.resolve({ data: [] })
+                permissions.project_performance ? supabase.from('projects').select('id, name') : Promise.resolve({ data: [] }),
+                trendQuery
             ]);
 
             const revenue = salesData?.reduce((sum, sale) => sum + Number(sale.total_revenue), 0) || 0;
@@ -129,6 +135,30 @@ export function SalesOverview() {
                 area: projMap.get(p.id) || 0
             })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
 
+            // Process Trend Data
+            const last6Months = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                last6Months.push({
+                    name: d.toLocaleString('default', { month: 'short' }),
+                    key: d.toISOString().slice(0, 7), // YYYY-MM
+                    sales: 0
+                });
+            }
+
+            if (trendDataRaw) {
+                trendDataRaw.forEach(sale => {
+                    if (sale.sale_date) {
+                        const saleMonth = sale.sale_date.slice(0, 7);
+                        const monthObj = last6Months.find(m => m.key === saleMonth);
+                        if (monthObj) {
+                            monthObj.sales += Number(sale.total_revenue || 0);
+                        }
+                    }
+                });
+            }
+
             setStats({
                 mySales: salesData?.length || 0,
                 myRevenue: revenue,
@@ -141,7 +171,8 @@ export function SalesOverview() {
                 ytdPaymentCount: 0,
                 projectStats,
                 activityLogs: activityLogs || [],
-                leaderboard: { monthly: [], yearly: [] }
+                leaderboard: { monthly: [], yearly: [] }, // Leaderboard data not fetched in this snippet, keeping empty
+                salesTrend: last6Months
             });
 
         } catch (error) {
@@ -292,7 +323,7 @@ export function SalesOverview() {
                         </CardHeader>
                         <CardContent className="h-80 relative">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+                                <LineChart data={stats.salesTrend} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} vertical={false} />
                                     <XAxis dataKey="name" stroke="#6b7280" tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} dy={10} />
                                     <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} dx={-10} />

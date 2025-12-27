@@ -196,18 +196,20 @@ export function TestimonialsSection() {
                 {/* Featured In / Client Logos */}
                 <div className="mt-16 text-center">
                     <p className="text-emerald-100 text-sm uppercase tracking-wider mb-8">
-                        Trusted by 500+ Real Estate Agencies
+                        Trusted by 50+ Real Estate Agencies
                     </p>
-                    <div className="flex flex-wrap justify-center items-center gap-8 opacity-70">
-                        {/* Placeholder for client logos */}
-                        <div className="bg-white/10 backdrop-blur-sm px-8 py-4 rounded-lg">
-                            <span className="text-white font-semibold">Client Logo 1</span>
+                    <div className="flex flex-wrap justify-center items-center gap-8">
+                        <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
+                            <img src="/images/omav-logo-transparent.png" alt="Omav Op Constructions" className="w-full h-full object-contain" />
                         </div>
-                        <div className="bg-white/10 backdrop-blur-sm px-8 py-4 rounded-lg">
-                            <span className="text-white font-semibold">Client Logo 2</span>
+                        <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
+                            <img src="/images/manokamna-logo.jpg" alt="Manokamna Marketing" className="w-full h-full object-contain" />
                         </div>
-                        <div className="bg-white/10 backdrop-blur-sm px-8 py-4 rounded-lg">
-                            <span className="text-white font-semibold">Client Logo 3</span>
+                        <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
+                            <img src="/images/dehliz-logo-transparent.png" alt="Dehliz Infratech" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
+                            <img src="/images/wishluv-logo.png" alt="Wishluv Buildcon" className="w-full h-full object-contain" />
                         </div>
                     </div>
                 </div>

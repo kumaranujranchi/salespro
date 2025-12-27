@@ -700,7 +700,7 @@ export function LandingPage() {
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Sell Out Your Next Project?</h2>
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-                                Join 500+ Real Estate Developers who trust RealSalePro.
+                                Join 50+ Real Estate Developers who trust RealSalePro.
                                 <br />
                                 <span className="font-bold text-white">Start your 30-day free trial now.</span>
                             </p>

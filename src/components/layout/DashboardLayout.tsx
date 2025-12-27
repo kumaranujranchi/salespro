@@ -27,6 +27,7 @@ import {
   HelpCircle,
   Zap,
   Building2,
+  Settings,
   LucideIcon
 } from 'lucide-react';
 
@@ -89,6 +90,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
+      { label: 'Settings', path: '/settings', icon: Settings, roles: ['super_admin'] },
     ]
   }
 ];
@@ -251,6 +253,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   const handleSignOut = async () => {
+    if (profile?.id) {
+        sessionStorage.removeItem(`hasSeenNotificationPopup_${profile.id}`);
+    }
+    // Also clear legacy key just in case
+    sessionStorage.removeItem('hasSeenNotificationPopup');
+    
     await signOut();
     navigate('/login');
   };

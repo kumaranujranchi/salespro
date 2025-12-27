@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -16,6 +17,7 @@ interface TargetFormModalProps {
 }
 
 export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: TargetFormModalProps) {
+    const { tenant } = useAuth();
     const dialog = useDialog();
     const [executives, setExecutives] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(false);
@@ -23,8 +25,16 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
     const [formData, setFormData] = useState({
         userId: '',
         month: new Date().toISOString().slice(0, 7), // 2023-11
-        sqft: ''
+        sqft: '',
+        units: '',
+        amount: ''
     });
+
+    // Determine active target model (default to 'area' for backward compatibility)
+    const targetModel = tenant?.settings?.general?.target_model || 'area';
+    const showArea = targetModel === 'area' || targetModel === 'hybrid';
+    const showUnits = targetModel === 'units' || targetModel === 'hybrid';
+    const showAmount = targetModel === 'revenue' || targetModel === 'hybrid';
 
     useEffect(() => {
         if (isOpen) {
@@ -33,13 +43,17 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
                 setFormData({
                     userId: editingTarget.user_id,
                     month: editingTarget.start_date.slice(0, 7),
-                    sqft: (editingTarget.target_sqft || 0).toString()
+                    sqft: (editingTarget.target_sqft || 0).toString(),
+                    units: (editingTarget.target_units || 0).toString(),
+                    amount: (editingTarget.target_amount || 0).toString()
                 });
             } else {
                 setFormData({
                     userId: '',
                     month: new Date().toISOString().slice(0, 7),
-                    sqft: ''
+                    sqft: '',
+                    units: '',
+                    amount: ''
                 });
             }
         }
@@ -69,10 +83,9 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
                 period_type: 'monthly',
                 start_date: format(startDate, 'yyyy-MM-dd'),
                 end_date: format(endDate, 'yyyy-MM-dd'),
-                target_sqft: parseFloat(formData.sqft) || 0,
-                // Zero out unused fields
-                target_amount: 0,
-                target_units: 0
+                target_sqft: showArea ? (parseFloat(formData.sqft) || 0) : 0,
+                target_amount: showAmount ? (parseFloat(formData.amount) || 0) : 0,
+                target_units: showUnits ? (parseFloat(formData.units) || 0) : 0
             };
 
             const { error } = editingTarget
@@ -120,19 +133,46 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
                         onChange={e => setFormData({ ...formData, month: e.target.value })}
                         required
                     />
-                    <Input
-                        label="Target Area (Sq Ft)"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.sqft}
-                        onChange={e => setFormData({ ...formData, sqft: e.target.value })}
-                        required
-                    />
+                    
+                    {showArea && (
+                        <Input
+                            label="Target Area (Sq Ft)"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={formData.sqft}
+                            onChange={e => setFormData({ ...formData, sqft: e.target.value })}
+                            required={showArea}
+                        />
+                    )}
+
+                    {showUnits && (
+                        <Input
+                            label="Target Units"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={formData.units}
+                            onChange={e => setFormData({ ...formData, units: e.target.value })}
+                            required={showUnits}
+                        />
+                    )}
+
+                    {showAmount && (
+                        <Input
+                            label="Target Revenue (Amount)"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={formData.amount}
+                            onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                            required={showAmount}
+                        />
+                    )}
                 </div>
 
                 <p className="text-xs text-gray-500">
-                    * Targets are strictly monthly and measured in Square Feet.
+                    * Targets are strictly monthly.
                 </p>
 
                 <div className="flex justify-end pt-4">

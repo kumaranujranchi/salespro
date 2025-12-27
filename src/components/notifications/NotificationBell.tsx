@@ -16,6 +16,20 @@ export function NotificationBell() {
 
     useEffect(() => {
         if (user) {
+            const loadNotifications = async () => {
+                const { data } = await supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (data) {
+                    setNotifications(data);
+                    setUnreadCount(data.filter(n => !n.is_read).length);
+                }
+            };
+            
             loadNotifications();
 
             // Subscribe to new notifications
@@ -49,19 +63,23 @@ export function NotificationBell() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef]);
 
-    const loadNotifications = async () => {
-        const { data } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', user?.id)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-        if (data) {
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.is_read).length);
+    // Show popup on fresh login if unread notifications exist
+    const [showPopup, setShowPopup] = useState(false);
+    useEffect(() => {
+        if (unreadCount > 0 && user?.id) {
+            const storageKey = `hasSeenNotificationPopup_${user.id}`;
+            const hasSeen = sessionStorage.getItem(storageKey);
+            
+            if (!hasSeen) {
+                setShowPopup(true);
+                sessionStorage.setItem(storageKey, 'true');
+                
+                // Auto-hide after 5 seconds
+                const timer = setTimeout(() => setShowPopup(false), 5000);
+                return () => clearTimeout(timer);
+            }
         }
-    };
+    }, [unreadCount, user?.id]);
 
     const markAsRead = async (id: string) => {
         // Optimistic update
@@ -90,7 +108,10 @@ export function NotificationBell() {
         <div className="relative" ref={dropdownRef}>
             <Tooltip content="Notifications" position="bottom">
                 <button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={() => {
+                        setIsOpen(!isOpen);
+                        setShowPopup(false);
+                    }}
                     className="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-[#1673FF]"
                 >
                     <Bell size={20} />
@@ -101,6 +122,20 @@ export function NotificationBell() {
                     )}
                 </button>
             </Tooltip>
+
+            {/* Fresh Login Notification Popup */}
+            {showPopup && (
+                <div className="absolute top-12 -right-4 w-48 bg-[#00C853] text-[#0A1C37] text-sm p-3 rounded-lg shadow-xl z-50 animate-bounce cursor-pointer" 
+                    onClick={() => {
+                        setIsOpen(true);
+                        setShowPopup(false);
+                    }}
+                >
+                    <div className="absolute -top-1 right-6 w-3 h-3 bg-[#00C853] rotate-45 transform"></div>
+                    <div className="font-bold mb-1">New Notifications! 🔔</div>
+                    <div className="text-xs font-medium opacity-90">Check out the latest announcements and updates.</div>
+                </div>
+            )}
 
             {isOpen && (
                 <div className="fixed left-4 right-4 top-[72px] w-auto sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:left-auto sm:w-80 max-w-[calc(100vw-2rem)] sm:max-w-[320px] bg-white rounded-lg shadow-lg py-1 border border-gray-100 z-50 animate-fadeIn">

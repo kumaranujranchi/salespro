@@ -14,10 +14,24 @@ import { calculateTeamPerformance } from '../utils/targetCalculations';
 import { getSubordinateIds } from '../utils/hierarchy';
 
 export function TargetsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const dialog = useDialog();
   const [targets, setTargets] = useState<(Target & { profile: Profile })[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  
+  // Determine active target model (default to 'area' for backward compatibility)
+  const targetModel = tenant?.settings?.general?.target_model || 'area';
+  
+  // For Hybrid mode, we allow toggling the view. For others, it's fixed.
+  const [activeMetric, setActiveMetric] = useState<'area' | 'revenue' | 'units'>('revenue');
+
+  useEffect(() => {
+    // Set default metric based on model
+    if (targetModel === 'area') setActiveMetric('area');
+    else if (targetModel === 'units') setActiveMetric('units');
+    else if (targetModel === 'revenue') setActiveMetric('revenue');
+    else setActiveMetric('revenue'); // Default for Hybrid
+  }, [targetModel]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
 
   // Roles
@@ -34,8 +48,6 @@ export function TargetsPage() {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
-
-
 
   // Management Section States
   const [managerFilter, setManagerFilter] = useState('');
@@ -180,10 +192,6 @@ export function TargetsPage() {
       teamMembers = getDescendants(selectedUserId, profiles);
     }
 
-    // Import dynamically or assume it's imported at top (I will add import via another tool call or assume previous step did it? No I need to add import)
-    // For now, implementing logic using the util structure
-    // We need to map over months and call calculateTeamPerformance
-
     return months.map(monthDate => {
       const monthStr = format(monthDate, 'MMM');
       const monthFilter = (dateStr: string) => isSameMonth(parseISO(dateStr), monthDate);
@@ -212,8 +220,12 @@ export function TargetsPage() {
           monthDate,
           target: targetSqft,
           achievement: achievedSqft,
-          targetSqft, // Keep compat with chart
-          achievedSqft, // Keep compat with chart
+          targetSqft,
+          achievedSqft,
+          targetUnits: Number(userTarget?.target_units) || 0,
+          achievedUnits: userSales.length,
+          targetRevenue: Number(userTarget?.target_amount) || 0,
+          achievedRevenue: userSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0),
           leaderTarget: targetSqft,
           teamTarget: 0,
           leaderAchievement: achievedSqft,
@@ -227,20 +239,59 @@ export function TargetsPage() {
 
   }, [selectedUserId, viewBy, selectedYear, targets, sales, profiles]);
 
-  const chartData = useMemo(() => {
-    return calculationResults.map(c => ({
-      month: c.month,
-      targetSqft: c.target,
-      achievedSqft: c.achievement,
-      shortfall: c.shortfall,
-      surplus: c.surplus
-    }));
-  }, [calculationResults]);
+  // Determine which metric to show based on tenant settings
+  
+  // Helper to format values based on model
+  const formatValue = (val: number, model: string = targetModel) => {
+      // In hybrid mode, use the active metric for formatting unless specific model override is passed
+      const mode = model === 'hybrid' ? activeMetric : model;
+      
+      if (mode === 'revenue') return `₹${val.toLocaleString()}`;
+      if (mode === 'units') return val.toString();
+      return `${val.toLocaleString()} Sq Ft`;
+  };
 
+  const activeData = useMemo(() => {
+    return calculationResults.map(c => {
+        let target = c.targetSqft || 0;
+        let achievement = c.achievedSqft || 0;
+
+        // Determine which main metric to use for Chart/Summary based on activeMetric state
+        const metricToUse = targetModel === 'hybrid' ? activeMetric : targetModel;
+
+        if (metricToUse === 'revenue') {
+            target = c.targetRevenue || 0;
+            achievement = c.achievedRevenue || 0;
+        } else if (metricToUse === 'units') {
+            target = c.targetUnits || 0;
+            achievement = c.achievedUnits || 0;
+        } else {
+            // Default to area
+            target = c.targetSqft || 0;
+            achievement = c.achievedSqft || 0;
+        }
+
+        const diff = achievement - target;
+        
+        return {
+            month: c.month,
+            target,
+            achievement,
+            targetSqft: c.targetSqft || 0,
+            achievedSqft: c.achievedSqft || 0,
+            targetRevenue: c.targetRevenue || 0,
+            achievedRevenue: c.achievedRevenue || 0,
+            targetUnits: c.targetUnits || 0,
+            achievedUnits: c.achievedUnits || 0,
+            shortfall: diff < 0 ? Math.abs(diff) : 0,
+            surplus: diff > 0 ? diff : 0
+        };
+    });
+  }, [calculationResults, targetModel, activeMetric]);
 
   const annualSummary = useMemo(() => {
-    const totalTarget = calculationResults.reduce((sum, d) => sum + d.target, 0);
-    const totalAchieved = calculationResults.reduce((sum, d) => sum + d.achievement, 0);
+    const totalTarget = activeData.reduce((sum, d) => sum + d.target, 0);
+    const totalAchieved = activeData.reduce((sum, d) => sum + d.achievement, 0);
     const diff = totalAchieved - totalTarget;
 
     // Aggregate missing targets across the year for unique list
@@ -257,17 +308,7 @@ export function TargetsPage() {
       bgClass: diff >= 0 ? 'bg-green-100' : 'bg-red-100',
       missingTargetsList
     };
-  }, [calculationResults]);
-
-  // Breakdown Calculation for Team View (Annual)
-  const breakdown = useMemo(() => {
-    if (viewBy !== 'team' || !selectedUserId) return null;
-
-    const tlTotal = calculationResults.reduce((sum, r) => sum + r.leaderTarget, 0);
-    const teamTotal = calculationResults.reduce((sum, r) => sum + r.teamTarget, 0);
-
-    return { tlTotal, teamTotal };
-  }, [calculationResults, viewBy, selectedUserId]);
+  }, [activeData, calculationResults]);
 
   const userOptions = useMemo(() => {
     if (viewBy === 'individual') {
@@ -282,7 +323,12 @@ export function TargetsPage() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Target Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Track Sq Ft Targets Monthly</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {targetModel === 'hybrid' 
+                ? 'Track Revenue, Area, and Unit Targets' 
+                : `Track ${targetModel === 'area' ? 'Sq Ft' : targetModel === 'units' ? 'Unit' : 'Revenue'} Targets Monthly`
+            }
+          </p>
         </div>
         {canAssign && (
           <div className="flex gap-2">
@@ -301,8 +347,8 @@ export function TargetsPage() {
               <Select
                 label="View"
                 value={viewBy}
-                onChange={(e: any) => {
-                  setViewBy(e.target.value as any);
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  setViewBy(e.target.value as 'individual' | 'team');
                   setSelectedUserId('');
                 }}
                 options={[
@@ -314,7 +360,7 @@ export function TargetsPage() {
               <Select
                 label={viewBy === 'team' ? "Select Team Leader" : "Select Sales Executive"}
                 value={selectedUserId}
-                onChange={(e: any) => setSelectedUserId(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
                 options={userOptions.map(p => ({ label: p.full_name, value: p.id }))}
                 className="w-64 text-slate-900 dark:text-white"
               />
@@ -338,6 +384,30 @@ export function TargetsPage() {
         </CardContent>
       </Card>
 
+      {/* Hybrid View Toggle */}
+      {targetModel === 'hybrid' && (
+        <div className="flex justify-center md:justify-start gap-2 bg-gray-100 dark:bg-white/5 p-1 rounded-lg w-fit">
+            <button
+                onClick={() => setActiveMetric('revenue')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeMetric === 'revenue' ? 'bg-white dark:bg-surface-highlight shadow-sm text-green-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                Revenue (₹)
+            </button>
+            <button
+                onClick={() => setActiveMetric('area')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeMetric === 'area' ? 'bg-white dark:bg-surface-highlight shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                Area (Sq Ft)
+            </button>
+            <button
+                onClick={() => setActiveMetric('units')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeMetric === 'units' ? 'bg-white dark:bg-surface-highlight shadow-sm text-purple-600' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+                Units (No.)
+            </button>
+        </div>
+      )}
+
       {/* Visualization & Table */}
       {selectedUserId && (
         <>
@@ -350,36 +420,22 @@ export function TargetsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Target (Sq Ft)</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{annualSummary.totalTarget.toLocaleString()}</p>
-                    {breakdown && (
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1 pl-2 border-l-2 border-gray-200 dark:border-white/10">
-                        <div className="flex justify-between">
-                          <span>Personal:</span>
-                          <span>{breakdown.tlTotal.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Team Members:</span>
-                          <span>{breakdown.teamTotal.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    )}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Target ({activeMetric === 'area' ? 'Sq Ft' : activeMetric === 'units' ? 'Units' : 'Revenue'})</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatValue(annualSummary.totalTarget, activeMetric)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Achieved (Sq Ft)</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{annualSummary.totalAchieved.toLocaleString()}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Achieved ({activeMetric === 'area' ? 'Sq Ft' : activeMetric === 'units' ? 'Units' : 'Revenue'})</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatValue(annualSummary.totalAchieved, activeMetric)}</p>
                   </div>
-                  <div className={`p-4 rounded-lg bg-opacity-20 ${annualSummary.diffAbs >= 0 && annualSummary.status === 'Surplus' ? 'bg-green-500/10 dark:bg-green-500/20' : 'bg-red-500/10 dark:bg-red-500/20'}`}>
-                    <p className={`text-sm font-medium mb-1 ${annualSummary.diffAbs >= 0 && annualSummary.status === 'Surplus' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>{annualSummary.status}</p>
+                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                    <p className={`text-sm font-medium mb-1 ${annualSummary.diffAbs >= 0 && annualSummary.status === 'Surplus' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{annualSummary.status}</p>
                     <p className={`text-3xl font-bold ${annualSummary.colorClass} dark:${annualSummary.status === 'Surplus' ? 'text-green-400' : 'text-red-400'}`}>
-                      {annualSummary.diffAbs.toLocaleString()} Sq Ft
+                      {formatValue(annualSummary.diffAbs, activeMetric)}
                     </p>
                   </div>
                 </CardContent>
               </Card>
             </div>
-
-
 
             {/* Right Column: Chart & Warning */}
             <div className="lg:col-span-2 flex flex-col gap-6">
@@ -408,19 +464,19 @@ export function TargetsPage() {
                 <CardContent className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={chartData}
+                      data={activeData}
                       margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number) => [`${value.toLocaleString()} Sq Ft`, '']}
+                        formatter={(value: number) => [formatValue(value), '']}
                         labelStyle={{ color: '#111' }}
                       />
                       <Legend />
-                      <Bar dataKey="targetSqft" name="Target" fill="#94a3b8" />
-                      <Bar dataKey="achievedSqft" name="Achieved" fill="#00E576" />
+                      <Bar dataKey="target" name="Target" fill="#94a3b8" />
+                      <Bar dataKey="achievement" name="Achieved" fill="#00E576" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -441,23 +497,70 @@ export function TargetsPage() {
                   <thead className="bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 font-medium">
                     <tr>
                       <th className="px-4 py-3 text-left">Month</th>
-                      <th className="px-4 py-3 text-right">Target (Sq Ft)</th>
-                      <th className="px-4 py-3 text-right">Achieved (Sq Ft)</th>
+                      <th className="px-4 py-3 text-right">Target</th>
+                      <th className="px-4 py-3 text-right">Achieved</th>
                       <th className="px-4 py-3 text-right">Difference</th>
                       <th className="px-4 py-3 text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                    {chartData.map((data, index) => {
-                      const diff = data.achievedSqft - data.targetSqft;
+                    {activeData.map((data, index) => {
+                      const diff = data.achievement - data.target;
                       const isSurplus = diff >= 0;
+                      
+                      // For Hybrid Table Row Logic
+                      const renderHybridCell = (valArea: number, valRev: number, valUnits: number) => (
+                        <div className="flex flex-col gap-1 items-end">
+                            {valRev > 0 && <span className="text-green-600 dark:text-green-400 text-xs font-semibold">₹{valRev.toLocaleString()}</span>}
+                            {valArea > 0 && <span className="text-blue-600 dark:text-blue-400 text-xs">{valArea.toLocaleString()} Sq Ft</span>}
+                            {valUnits > 0 && <span className="text-purple-600 dark:text-purple-400 text-xs">{valUnits} Unit{valUnits !== 1 ? 's' : ''}</span>}
+                            {valRev === 0 && valArea === 0 && valUnits === 0 && <span className="text-gray-400">-</span>}
+                        </div>
+                      );
+
                       return (
                         <tr key={index} className="hover:bg-gray-50 dark:hover:bg-white/5">
                           <td className="px-4 py-3 font-medium text-[#0A1C37] dark:text-white">{data.month}</td>
-                          <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{data.targetSqft.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-right text-[#1673FF] dark:text-blue-400 font-medium">{data.achievedSqft.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
+                             {targetModel === 'hybrid' 
+                                ? renderHybridCell(data.targetSqft || 0, data.targetRevenue || 0, data.targetUnits || 0)
+                                : formatValue(data.target)
+                             }
+                          </td>
+                          <td className="px-4 py-3 text-right text-[#1673FF] dark:text-blue-400 font-medium">
+                            {targetModel === 'hybrid' 
+                                ? renderHybridCell(data.achievedSqft || 0, data.achievedRevenue || 0, data.achievedUnits || 0)
+                                : formatValue(data.achievement)
+                             }
+                          </td>
                           <td className={`px-4 py-3 text-right font-medium ${isSurplus ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                            {isSurplus ? '+' : '-'}{Math.abs(diff).toLocaleString()}
+                            {targetModel === 'hybrid' ? (
+                                <div className="flex flex-col gap-1 items-end">
+                                    {(data.achievedRevenue || 0) - (data.targetRevenue || 0) !== 0 && (
+                                        <span className={((data.achievedRevenue || 0) - (data.targetRevenue || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                            {((data.achievedRevenue || 0) - (data.targetRevenue || 0)) > 0 ? '+' : ''}₹{((data.achievedRevenue || 0) - (data.targetRevenue || 0)).toLocaleString()}
+                                        </span>
+                                    )}
+                                     {((data.achievedSqft || 0) - (data.targetSqft || 0)) !== 0 && (
+                                        <span className={((data.achievedSqft || 0) - (data.targetSqft || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                            {((data.achievedSqft || 0) - (data.targetSqft || 0)) > 0 ? '+' : ''}{((data.achievedSqft || 0) - (data.targetSqft || 0)).toLocaleString()} Sq Ft
+                                        </span>
+                                    )}
+                                     {((data.achievedUnits || 0) - (data.targetUnits || 0)) !== 0 && (
+                                        <span className={((data.achievedUnits || 0) - (data.targetUnits || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                            {((data.achievedUnits || 0) - (data.targetUnits || 0)) > 0 ? '+' : ''}{((data.achievedUnits || 0) - (data.targetUnits || 0))} Units
+                                        </span>
+                                    )}
+                                    {/* If all zero diff */}
+                                    {((data.achievedRevenue || 0) - (data.targetRevenue || 0)) === 0 && ((data.achievedSqft || 0) - (data.targetSqft || 0)) === 0 && ((data.achievedUnits || 0) - (data.targetUnits || 0)) === 0 && (
+                                        <span className="text-gray-400">-</span>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                {isSurplus ? '+' : '-'}{formatValue(Math.abs(diff)).replace(' Sq Ft', '').replace('units', '')}
+                                </>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className={`px-2 py-1 rounded-full text-xs ${isSurplus ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300'}`}>
@@ -489,7 +592,7 @@ export function TargetsPage() {
               <Select
                 label="Select Team Leader"
                 value={managerFilter}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                   setManagerFilter(e.target.value);
                   setExecFilter(''); // Reset exec when TL changes
                   setAssignmentsLoaded(false); // Reset data
@@ -505,7 +608,7 @@ export function TargetsPage() {
               <Select
                 label="Select Sales Executive"
                 value={execFilter}
-                onChange={(e: any) => {
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                   setExecFilter(e.target.value);
                   setAssignmentsLoaded(false);
                 }}
@@ -517,7 +620,7 @@ export function TargetsPage() {
                 className="w-full md:w-64"
                 disabled={!managerFilter}
               />
-
+              
               <div className="flex gap-2">
                 <Button
                   onClick={loadAssignments}
@@ -560,7 +663,7 @@ export function TargetsPage() {
                       <tr>
                         <th className="px-4 py-3 text-left">User</th>
                         <th className="px-4 py-3 text-left">Month</th>
-                        <th className="px-4 py-3 text-right">Target (Sq Ft)</th>
+                        <th className="px-4 py-3 text-right">Target</th>
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -571,7 +674,20 @@ export function TargetsPage() {
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                             {t.start_date ? format(parseISO(t.start_date), 'MMMM yyyy') : 'N/A'}
                           </td>
-                          <td className="px-4 py-3 text-right font-medium dark:text-gray-200">{(t.target_sqft || 0).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right font-medium dark:text-gray-200">
+                            {targetModel === 'hybrid' ? (
+                                <div className="flex flex-col gap-1 items-end">
+                                    {(t.target_amount || 0) > 0 && <div className="text-xs text-green-600">₹{(t.target_amount || 0).toLocaleString()}</div>}
+                                    {(t.target_sqft || 0) > 0 && <div className="text-xs text-blue-600">{(t.target_sqft || 0).toLocaleString()} Sq Ft</div>}
+                                    {(t.target_units || 0) > 0 && <div className="text-xs text-purple-600">{(t.target_units || 0)} Units</div>}
+                                    {!(t.target_amount || 0) && !(t.target_sqft || 0) && !(t.target_units || 0) && <span>-</span>}
+                                </div>
+                            ) : (
+                                targetModel === 'area' ? `${(t.target_sqft || 0).toLocaleString()} Sq Ft` :
+                                targetModel === 'units' ? `${(t.target_units || 0).toString()}` :
+                                `₹${(t.target_amount || 0).toLocaleString()}`
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-right">
                             {!isReadOnly && (
                               <div className="flex justify-end gap-2">

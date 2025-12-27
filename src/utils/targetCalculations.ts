@@ -3,7 +3,13 @@ import { Target, Sale, Profile } from '../types/database';
 interface CalculationResult {
   target: number;
   achievement: number;
+  targetUnits: number;
+  achievedUnits: number;
+  targetRevenue: number;
+  achievedRevenue: number;
+  
   missingTargets: string[];
+  
   leaderTarget: number;
   teamTarget: number;
   leaderAchievement: number;
@@ -45,15 +51,21 @@ export const calculateTeamPerformance = (
   // Split targets
   const leaderTargetObj = relevantTargets.find(t => t.user_id === leaderId);
   const leaderTarget = Number(leaderTargetObj?.target_sqft) || 0;
+  const leaderTargetUnits = Number(leaderTargetObj?.target_units) || 0;
+  const leaderTargetRevenue = Number(leaderTargetObj?.target_amount) || 0;
 
   // Calculate sum of members' targets
   let memberSum = 0;
+  let memberSumUnits = 0;
+  let memberSumRevenue = 0;
   const missingTargets: string[] = [];
 
   activeMembers.forEach(member => {
     const memberTarget = relevantTargets.find(t => t.user_id === member.id);
     if (memberTarget) {
       memberSum += (Number(memberTarget.target_sqft) || 0);
+      memberSumUnits += (Number(memberTarget.target_units) || 0);
+      memberSumRevenue += (Number(memberTarget.target_amount) || 0);
     } else {
       // Log warning / track missing target
       missingTargets.push(member.full_name || 'Unknown User');
@@ -61,6 +73,8 @@ export const calculateTeamPerformance = (
   });
 
   const totalTarget = leaderTarget + memberSum;
+  const totalTargetUnits = leaderTargetUnits + memberSumUnits;
+  const totalTargetRevenue = leaderTargetRevenue + memberSumRevenue;
 
   // 3. Calculate Achievement (Actuals)
   // Achievement is sum of all actuals from the group (Leader + Team)
@@ -74,12 +88,26 @@ export const calculateTeamPerformance = (
 
   const leaderAchievement = leaderSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0);
   const teamAchievement = teamSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0);
-  
   const totalAchievement = leaderAchievement + teamAchievement;
+
+  // Units (Count of sales)
+  const leaderAchievementUnits = leaderSales.length; 
+  const teamAchievementUnits = teamSales.length;
+  const totalAchievementUnits = leaderAchievementUnits + teamAchievementUnits;
+
+  // Revenue
+  const leaderAchievementRevenue = leaderSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0);
+  const teamAchievementRevenue = teamSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0);
+  const totalAchievementRevenue = leaderAchievementRevenue + teamAchievementRevenue;
 
   return {
     target: totalTarget,
     achievement: totalAchievement,
+    targetUnits: totalTargetUnits,
+    achievedUnits: totalAchievementUnits,
+    targetRevenue: totalTargetRevenue,
+    achievedRevenue: totalAchievementRevenue,
+    
     missingTargets,
     leaderTarget,
     teamTarget: memberSum,

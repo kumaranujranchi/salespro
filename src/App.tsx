@@ -41,6 +41,7 @@ import { TenantsPage } from './pages/admin/TenantsPage';
 import { AffiliateRegistrationPage } from './pages/affiliates/AffiliateRegistrationPage';
 import { AffiliateDashboardPage } from './pages/affiliates/AffiliateDashboardPage';
 import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -319,6 +320,17 @@ function App() {
                     <ProtectedRoute permissionKey="subscription">
                       <DashboardLayout>
                         <SubscriptionPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute allowedRoles={['super_admin']}>
+                      <DashboardLayout>
+                        <SettingsPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

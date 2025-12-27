@@ -12,6 +12,9 @@ export interface TenantSettings {
     primary_color: string;
     logo_url: string | null;
   };
+  general?: {
+    target_model?: 'units' | 'area' | 'revenue' | 'hybrid';
+  };
   incentive_plan: {
     type: string;
     rules: Record<string, any>;
