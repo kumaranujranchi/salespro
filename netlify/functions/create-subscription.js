@@ -115,8 +115,7 @@ exports.handler = async function (event, context) {
     }
 
     // --- SUBSCRIPTION CREATION ---
-    // Start date: Immediate
-    // const totalCount = planType === 'yearly' ? 10 : 120; // 10 years or 10 years months // Moved inside try block? No, keep it clean.
+    console.log('Initializing subscription creation...');
     const totalCount = planType === 'yearly' ? 10 : 120;
 
     const subscription = await instance.subscriptions.create({
@@ -127,6 +126,7 @@ exports.handler = async function (event, context) {
       customer_notify: 1,
       notes: { tenant_id: tenantId, user_id: user.id }
     });
+    console.log('Razorpay Subscription Created:', subscription.id);
 
     // --- DB RECORD ---
     const { data: subRecord, error: subError } = await supabase
@@ -148,8 +148,7 @@ exports.handler = async function (event, context) {
       .single();
 
     if (subError) {
-        console.error("DB Error:", subError);
-        // Continue returning the link even if DB fails initially? No, dangerous.
+        console.error("DB Insert Error:", subError);
         throw new Error(`DB Error: ${subError.message}`);
     }
 
@@ -157,7 +156,7 @@ exports.handler = async function (event, context) {
       statusCode: 200,
       headers: { 
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' // Add CORS header just in case
+        'Access-Control-Allow-Origin': '*' 
       },
       body: JSON.stringify({
         subscriptionId: subscription.id,
@@ -167,12 +166,21 @@ exports.handler = async function (event, context) {
     };
 
   } catch (error) {
-    console.error('Create Subscription Error:', error);
-    // Return detailed error for debugging
+    console.error('Create Subscription Error Dump:', JSON.stringify(error, null, 2));
+    
+    // Extract meaningful error message
+    let errorMessage = 'Unknown server error';
+    if (error.message) errorMessage = error.message; // Standard JS Error
+    else if (error.error && error.error.description) errorMessage = error.error.description; // Razorpay Error
+    else if (error.description) errorMessage = error.description; // Some API errors
+
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message || 'Unknown server error', stack: error.stack })
+      body: JSON.stringify({ 
+        error: errorMessage, 
+        details: error 
+      })
     };
   }
 };
