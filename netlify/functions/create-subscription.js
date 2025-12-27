@@ -99,19 +99,41 @@ exports.handler = async function (event, context) {
       // Create Customer in Razorpay
       const phone = tenant.settings?.company_profile?.phone || undefined;
       
-      const customer = await instance.customers.create({
-        name: tenant.name || 'SalesPro User',
-        email: user.email,
-        contact: phone,
-        notes: { tenant_id: tenantId }
-      });
-      customerId = customer.id;
+      try {
+        const customer = await instance.customers.create({
+            name: tenant.name || 'SalesPro User',
+            email: user.email,
+            contact: phone,
+            notes: { tenant_id: tenantId }
+        });
+        customerId = customer.id;
+      } catch (custError) {
+          console.log('Error creating customer:', custError);
+          // Check if error is "Customer already exists"
+          const errDesc = custError.error?.description || custError.description || custError.message || '';
+          if (errDesc.includes('already exists')) {
+              console.log('Customer conflict detected. Fetching existing customer by email...');
+              // Fetch existing customer by email
+              const existingCustomers = await instance.customers.all({ count: 1, email: user.email });
+              if (existingCustomers.items && existingCustomers.items.length > 0) {
+                  customerId = existingCustomers.items[0].id;
+                  console.log('Resolved existing customer ID:', customerId);
+              } else {
+                  console.warn('Customer exists but query by email returned empty.');
+                  throw custError; // Re-throw if we can't resolve it
+              }
+          } else {
+              throw custError;
+          }
+      }
 
       // Update Tenant
-      await supabase
-        .from('tenants')
-        .update({ razorpay_customer_id: customerId })
-        .eq('id', tenantId);
+      if (customerId) {
+          await supabase
+            .from('tenants')
+            .update({ razorpay_customer_id: customerId })
+            .eq('id', tenantId);
+      }
     }
 
     // --- SUBSCRIPTION CREATION ---
