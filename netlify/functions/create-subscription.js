@@ -42,10 +42,12 @@ exports.handler = async function (event, context) {
     const instance = new Razorpay({ key_id, key_secret });
 
     // --- PLAN MANAGEMENT ---
-    // Try to get Plan ID from Env, else find/create it
-    let planId = process.env[`RAZORPAY_PLAN_ID_${planType.toUpperCase()}`];
+    // Start fresh: Ignore Env Vars to ensure we use a valid, auto-generated Live plan
+    let planId = null; 
+    // let planId = process.env[`RAZORPAY_PLAN_ID_${planType.toUpperCase()}`];
     
     // Validate Env Plan ID if present
+    /*
     if (planId) {
         try {
             console.log(`Validating Env Plan ID: ${planId}`);
@@ -56,13 +58,14 @@ exports.handler = async function (event, context) {
             planId = null; // Reset to trigger auto-creation
         }
     }
+    */
 
     if (!planId) {
       // Auto-provision logic if env var is missing or invalid
       const planConfigs = {
-        monthly: { period: 'monthly', interval: 1, name: 'SalesPro Monthly', amount: 150000, currency: 'INR', description: 'Monthly Subscription' },
-        semi_annual: { period: 'monthly', interval: 6, name: 'SalesPro Semi-Annual', amount: 720000, currency: 'INR', description: '6-Month Subscription' },
-        yearly: { period: 'yearly', interval: 1, name: 'SalesPro Yearly', amount: 1200000, currency: 'INR', description: 'Yearly Subscription' }
+        monthly: { period: 'monthly', interval: 1, name: 'SalesPro Monthly (Live)', amount: 150000, currency: 'INR', description: 'Monthly Subscription' },
+        semi_annual: { period: 'monthly', interval: 6, name: 'SalesPro Semi-Annual (Live)', amount: 720000, currency: 'INR', description: '6-Month Subscription' },
+        yearly: { period: 'yearly', interval: 1, name: 'SalesPro Yearly (Live)', amount: 1200000, currency: 'INR', description: 'Yearly Subscription' }
       };
 
       const config = planConfigs[planType];
