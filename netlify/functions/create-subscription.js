@@ -91,7 +91,9 @@ exports.handler = async function (event, context) {
 
     if (tenantError || !tenant) throw new Error('Tenant not found');
 
-    let customerId = tenant.razorpay_customer_id;
+    // Force create new customer to avoid Test/Live ID mismatch
+    // let customerId = tenant.razorpay_customer_id;
+    let customerId = null; 
 
     if (!customerId) {
       // Create Customer in Razorpay
