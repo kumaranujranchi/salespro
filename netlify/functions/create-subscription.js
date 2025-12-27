@@ -116,6 +116,7 @@ exports.handler = async function (event, context) {
     // const startAt = Math.floor(Date.now() / 1000) + 120;  // Removed to avoid 'Hosted page not available' error 
     const totalCount = planType === 'yearly' ? 10 : 120; // 10 years or 10 years months
 
+    const subscription = await instance.subscriptions.create({
       plan_id: planId,
       customer_id: customerId,
       total_count: totalCount,
