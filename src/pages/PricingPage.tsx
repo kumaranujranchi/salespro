@@ -131,7 +131,7 @@ export function PricingPage() {
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.razorpay_subscription_id,
-        name: tenant.name || 'SalesPro',
+        name: 'RealSalePro',
         description: `${planName} Subscription`,
         image: tenant.settings?.appearance?.logo_url || tenant.settings?.company_profile?.logo_url || undefined,
         prefill: {
