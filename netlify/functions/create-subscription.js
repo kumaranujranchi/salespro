@@ -97,10 +97,12 @@ exports.handler = async function (event, context) {
 
     if (!customerId) {
       // Create Customer in Razorpay
+      const phone = tenant.settings?.company_profile?.phone || undefined;
+      
       const customer = await instance.customers.create({
         name: tenant.name || 'SalesPro User',
         email: user.email,
-        contact: tenant.phone || undefined,
+        contact: phone,
         notes: { tenant_id: tenantId }
       });
       customerId = customer.id;
@@ -113,10 +115,9 @@ exports.handler = async function (event, context) {
     }
 
     // --- SUBSCRIPTION CREATION ---
-    // Start date: +2 minutes to be safe
     // Start date: Immediate
-    // const startAt = Math.floor(Date.now() / 1000) + 120;  // Removed to avoid 'Hosted page not available' error 
-    const totalCount = planType === 'yearly' ? 10 : 120; // 10 years or 10 years months
+    // const totalCount = planType === 'yearly' ? 10 : 120; // 10 years or 10 years months // Moved inside try block? No, keep it clean.
+    const totalCount = planType === 'yearly' ? 10 : 120;
 
     const subscription = await instance.subscriptions.create({
       plan_id: planId,
@@ -148,13 +149,16 @@ exports.handler = async function (event, context) {
 
     if (subError) {
         console.error("DB Error:", subError);
-        // Continue returning the link, but this is risky. Better to throw.
-        throw subError;
+        // Continue returning the link even if DB fails initially? No, dangerous.
+        throw new Error(`DB Error: ${subError.message}`);
     }
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*' // Add CORS header just in case
+      },
       body: JSON.stringify({
         subscriptionId: subscription.id,
         shortUrl: subscription.short_url,
@@ -164,9 +168,11 @@ exports.handler = async function (event, context) {
 
   } catch (error) {
     console.error('Create Subscription Error:', error);
+    // Return detailed error for debugging
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: error.message || 'Unknown server error', stack: error.stack })
     };
   }
 };
