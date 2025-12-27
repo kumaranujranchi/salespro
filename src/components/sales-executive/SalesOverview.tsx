@@ -136,7 +136,7 @@ export function SalesOverview() {
             })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
 
             // Process Trend Data
-            const last6Months = [];
+            const last6Months: { name: string; key: string; sales: number }[] = [];
             for (let i = 5; i >= 0; i--) {
                 const d = new Date();
                 d.setMonth(d.getMonth() - i);
