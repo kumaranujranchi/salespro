@@ -1,25 +1,16 @@
-
-
-
+```javascript
 import { useState, useEffect } from 'react';
 import { Check, Loader2, ArrowLeft } from 'lucide-react';
-import { useRazorpay } from '../hooks/useRazorpay';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { PaymentSuccessModal } from '../components/ui/PaymentSuccessModal';
 import { useToast } from '../contexts/ToastContext';
 
 export function PricingPage() {
-  const { openPaymentModal } = useRazorpay();
-  const { user, tenant, refreshProfile } = useAuth();
+  const { user, tenant } = useAuth();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Payment Success Modal State
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState({ paymentId: '', planName: '' });
 
   // Referral State
   const [referralCode, setReferralCode] = useState('');
@@ -57,7 +48,7 @@ export function PricingPage() {
       // but the original code auto-triggered.
       // Let's trigger handleSubscribe but pass the referral code to it.
       
-      handleSubscribe(decodeURIComponent(plan), parseInt(amount), refCode || undefined);
+      handleSubscribe(decodeURIComponent(plan), parseInt(amount));
     }
   }, [searchParams, user]);
 
@@ -86,9 +77,7 @@ export function PricingPage() {
           referrerEmail: campaignDetails?.referrer_email,
           referrerName: campaignDetails?.name
         });
-        console.log('Referral Applied:', data[0], campaignDetails);
       } else {
-        console.warn('Invalid Referral Code');
         setReferralData(null);
       }
     } catch (err) {
@@ -98,7 +87,7 @@ export function PricingPage() {
     }
   };
 
-  const handleSubscribe = async (planName: string, originalAmount: number, autoReferralCode?: string) => {
+  const handleSubscribe = async (planName: string, originalAmount: number) => {
     if (!user) {
       navigate(`/register?plan=${encodeURIComponent(planName)}&amount=${originalAmount}`);
       return;
@@ -109,170 +98,32 @@ export function PricingPage() {
       return;
     }
 
-    // Determine discount
-    let finalAmount = originalAmount;
-    let appliedDiscount = 0;
-    let activeCampaignId = null;
-
-    // Use state if available, or fetch if autoReferralCode provided (edge case)
-    // For now, rely on state or the passed code (but we can't await async state update easily here).
-    // If autoReferralCode is passed, we might need to validate it strictly before payment?
-    // Let's rely on the state having been set if useEffect ran.
-    
-    if (referralData && referralData.discount > 0) {
-        appliedDiscount = referralData.discount;
-        activeCampaignId = referralData.campaignId;
-        finalAmount = originalAmount - (originalAmount * (appliedDiscount / 100));
-    } else if (autoReferralCode) {
-        // Fallback for auto-checkout: validate quickly
-        try {
-            const { supabase } = await import('../lib/supabase');
-            const { data } = await supabase.rpc('validate_referral_code', { code_input: autoReferralCode });
-            if (data && data.length > 0 && data[0].is_valid) {
-                appliedDiscount = data[0].discount_percent;
-                activeCampaignId = data[0].campaign_id;
-                finalAmount = originalAmount - (originalAmount * (appliedDiscount / 100));
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
     setLoading(true);
 
     try {
       const billingCycle = planName === '6 Months' ? 'semi_annual' : planName === 'Yearly' ? 'yearly' : 'monthly';
 
-      // Simple Razorpay checkout (no subscription API)
-      await openPaymentModal({
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_RtAvLpEfuEbGu2',
-        amount: Math.round(finalAmount * 100), // Amount in paise (round to avoid float issues)
-        currency: 'INR',
-        name: 'RealSalePro',
-        description: `${planName} Plan ${appliedDiscount > 0 ? `(${appliedDiscount}% OFF)` : ''}`,
-        image: '/images/RealSalePro_Favicon.png',
-        handler: async (response) => {
-          try {
-            console.log('🎉 Payment Response:', response);
-            console.log('📋 Tenant ID:', tenant.id);
-            console.log('📋 Billing Cycle:', billingCycle);
+      // Import service dynamically
+      const { createRazorpaySubscription } = await import('../lib/subscriptionService');
 
-            // Import supabase
-            const { supabase } = await import('../lib/supabase');
-            
-            // 0. If Referral Used, Record it!
-            if (activeCampaignId) {
-                try {
-                    await supabase.from('user_referrals').insert({
-                        campaign_id: activeCampaignId,
-                        referred_user_id: user.id, // Or tenant owner ID
-                        tenant_id: tenant.id,
-                        status: 'converted', // Since they paid immediately
-                        metadata: {
-                            payment_id: response.razorpay_payment_id,
-                            original_amount: originalAmount,
-                            final_amount: finalAmount,
-                            discount_percent: appliedDiscount
-                        }
-                    });
-                    console.log('Referral Recorded');
-
-                    // 0.5 Send Notification Email to Referrer (if email exists)
-                    // We need to pass the referrer email from state or fetch it
-                    let referrerEmailToSend = referralData?.referrerEmail; 
-                    let referrerNameToSend = referralData?.referrerName || 'Partner';
-                    
-                    // If we don't have it in state (auto-applied), try to fetch quickly (though state should have it if validated)
-                    // Assuming state has it for now.
-                    
-                    if (referrerEmailToSend) {
-                        fetch('/.netlify/functions/send-referral-notification', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                email: referrerEmailToSend,
-                                referrerName: referrerNameToSend,
-                                refereeName: tenant.name || user.email,
-                                rewardAmount: (originalAmount * 0.20), // Approx 20% commission - or fetch actual logic
-                                totalReferrals: '1+' // Placeholder or fetch count
-                            })
-                        }).then(res => console.log('Notification sent:', res.status))
-                          .catch(err => console.error('Notification failed:', err));
-                    }
-
-                } catch (refError) {
-                    console.error('Error recording referral:', refError);
-                }
-            }
-
-            // Update tenant subscription
-            console.log('🔄 Updating tenant subscription...');
-            const { data: updateData, error: updateError } = await supabase
-              .from('tenants')
-              .update({
-                plan_tier: 'pro',
-                billing_cycle: billingCycle,
-                is_active: true,
-                subscription_status: 'active',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', tenant.id)
-              .select();
-
-            console.log('✅ Update Response:', updateData);
-            console.log('❌ Update Error:', updateError);
-
-            if (updateError) {
-              console.error('Error updating subscription:', updateError);
-              toast.error('Payment successful but failed to activate subscription. Please contact support with Payment ID: ' + response.razorpay_payment_id);
-              return;
-            }
-
-            // Record payment in billing history
-            try {
-              console.log('💾 Recording payment in billing history...');
-              const { data: billingData, error: billingError } = await supabase.from('billing_history').insert({
-                tenant_id: tenant.id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                amount: Math.round(finalAmount * 100), // Store in paise
-                currency: 'INR',
-                status: 'captured',
-                description: `${planName} Plan Payment ${appliedDiscount > 0 ? '(Referral Applied)' : ''}`,
-                email: user.email || undefined,
-              }).select();
-
-              console.log('✅ Billing Record:', billingData);
-              console.log('❌ Billing Error:', billingError);
-            } catch (billingError) {
-              console.error('Error recording billing:', billingError);
-              // Don't fail the whole flow if billing record fails
-            }
-
-            // Show success modal instead of alert
-            setPaymentDetails({
-              paymentId: response.razorpay_payment_id,
-              planName: planName
-            });
-            setShowSuccessModal(true);
-          } catch (error) {
-            console.error('❌ Payment Handler Error:', error);
-            toast.error('Payment successful but failed to update account. Please contact support with Payment ID: ' + response.razorpay_payment_id);
-          }
-        },
-        prefill: {
-          name: tenant.name,
-          email: user.email || 'customer@example.com',
-          contact: '9999999999',
-        },
-        theme: {
-          color: '#0F172A',
-        },
-        notes: {
-          tenant_id: tenant.id,
-          plan_name: planName,
-          billing_cycle: billingCycle,
-          referral_campaign_id: activeCampaignId || '',
-        },
+      // Create subscription via backend (Netlify Function)
+      // This ensures we use LIVE keys and create a proper recurring subscription
+      const { shortUrl } = await createRazorpaySubscription({
+        tenantId: tenant.id,
+        planId: '', // Handled by backend auto-provisioning
+        customerName: tenant.name,
+        customerEmail: user.email || '',
+        customerContact: tenant.settings?.company_profile?.phone || '', 
+        billingCycle: billingCycle
       });
+
+      if (shortUrl) {
+        // Redirect to Razorpay Hosted Payment Page
+        window.location.href = shortUrl;
+      } else {
+        throw new Error('Failed to generate payment link');
+      }
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Payment initialization failed:', error);
@@ -411,20 +262,7 @@ export function PricingPage() {
           </div>
         </div>
       </div>
-
-      {/* Payment Success Modal */}
-      <PaymentSuccessModal
-        isOpen={showSuccessModal}
-        onClose={async () => {
-          setShowSuccessModal(false);
-          // Refresh tenant data from database
-          await refreshProfile();
-          // Navigate to dashboard with refreshed data
-          navigate('/dashboard');
-        }}
-        paymentId={paymentDetails.paymentId}
-        planName={paymentDetails.planName}
-      />
     </>
   );
 }
+```
