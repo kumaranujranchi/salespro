@@ -107,8 +107,7 @@ export function PricingPage() {
       const { createRazorpaySubscription } = await import('../lib/subscriptionService');
 
       // Create subscription via backend (Netlify Function)
-      // This ensures we use LIVE keys and create a proper recurring subscription
-      const { shortUrl } = await createRazorpaySubscription({
+      const { subscription } = await createRazorpaySubscription({
         tenantId: tenant.id,
         planId: '', // Handled by backend auto-provisioning
         customerName: tenant.name,
@@ -117,18 +116,55 @@ export function PricingPage() {
         billingCycle: billingCycle
       });
 
-      if (shortUrl) {
-        // Redirect to Razorpay Hosted Payment Page
-        window.location.href = shortUrl;
-      } else {
-        throw new Error('Failed to generate payment link');
+      // Load Razorpay Checkout script if not already loaded
+      if (!(window as any).Razorpay) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
       }
+
+      // Initialize Razorpay Checkout with subscription_id
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        subscription_id: subscription.razorpay_subscription_id,
+        name: 'SalesPro',
+        description: `${planName} Subscription`,
+        image: '/logo.png',
+        prefill: {
+          name: tenant.name,
+          email: user.email,
+          contact: tenant.settings?.company_profile?.phone || ''
+        },
+        theme: {
+          color: '#3b82f6'
+        },
+        handler: async function (response: any) {
+          // Payment successful
+          console.log('Payment successful:', response);
+          toast.success('Subscription activated successfully!');
+          
+          // Redirect to dashboard
+          navigate('/dashboard');
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Payment initialization failed:', error);
       toast.error(`Failed to initialize payment: ${errorMessage}`);
-    } finally {
       setLoading(false);
     }
   };
