@@ -131,16 +131,16 @@ export function PricingPage() {
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.razorpay_subscription_id,
-        name: 'SalesPro',
+        name: tenant.name || 'SalesPro',
         description: `${planName} Subscription`,
-        image: '/logo.png',
+        image: tenant.settings?.appearance?.logo_url || tenant.settings?.company_profile?.logo_url || undefined,
         prefill: {
           name: tenant.name,
           email: user.email,
           contact: tenant.settings?.company_profile?.phone || ''
         },
         theme: {
-          color: '#3b82f6'
+          color: tenant.settings?.appearance?.primary_color || '#3b82f6'
         },
         handler: async function (response: any) {
           // Payment successful
