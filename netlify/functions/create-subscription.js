@@ -44,9 +44,21 @@ exports.handler = async function (event, context) {
     // --- PLAN MANAGEMENT ---
     // Try to get Plan ID from Env, else find/create it
     let planId = process.env[`RAZORPAY_PLAN_ID_${planType.toUpperCase()}`];
+    
+    // Validate Env Plan ID if present
+    if (planId) {
+        try {
+            console.log(`Validating Env Plan ID: ${planId}`);
+            await instance.plans.fetch(planId);
+            console.log('Plan ID is valid.');
+        } catch (planError) {
+            console.warn(`Env Plan ID ${planId} is invalid (likely Test ID in Live mode). Ignoring...`);
+            planId = null; // Reset to trigger auto-creation
+        }
+    }
 
     if (!planId) {
-      // Auto-provision logic if env var is missing
+      // Auto-provision logic if env var is missing or invalid
       const planConfigs = {
         monthly: { period: 'monthly', interval: 1, name: 'SalesPro Monthly', amount: 150000, currency: 'INR', description: 'Monthly Subscription' },
         semi_annual: { period: 'monthly', interval: 6, name: 'SalesPro Semi-Annual', amount: 720000, currency: 'INR', description: '6-Month Subscription' },
@@ -54,6 +66,7 @@ exports.handler = async function (event, context) {
       };
 
       const config = planConfigs[planType];
+      // ... rest of creation existing logic
       if (!config) throw new Error('Invalid plan type');
 
       // Fetch existing plans to check for duplicates
