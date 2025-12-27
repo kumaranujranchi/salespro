@@ -82,58 +82,81 @@ exports.handler = async function (event, context) {
     }
 
     // --- CUSTOMER MANAGEMENT ---
-    // Get Tenant details
+    console.log('Step 1: Fetching tenant details...');
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select('*')
       .eq('id', tenantId)
       .single();
 
-    if (tenantError || !tenant) throw new Error('Tenant not found');
+    if (tenantError || !tenant) {
+      console.error('Tenant not found:', tenantError);
+      throw new Error('Tenant not found');
+    }
+    console.log('Tenant found:', tenant.name);
 
-    // Force create new customer to avoid Test/Live ID mismatch
-    // let customerId = tenant.razorpay_customer_id;
-    let customerId = null; 
+    let customerId = tenant.razorpay_customer_id;
+    console.log('Stored Customer ID:', customerId || 'None');
 
+    // Step 2: Validate existing customer ID (if any)
+    if (customerId) {
+      console.log('Step 2: Validating existing customer ID...');
+      try {
+        // Try to fetch the customer to verify it exists in current mode (test/live)
+        const existingCustomer = await instance.customers.fetch(customerId);
+        console.log('Existing customer validated:', existingCustomer.id);
+        // Customer is valid, we can use it
+      } catch (fetchError) {
+        console.warn('Stored customer ID is invalid (likely from different mode):', fetchError);
+        // Customer ID is invalid (probably test mode ID with live keys or vice versa)
+        customerId = null; // Clear it so we create a new one
+        // Also clear it from database
+        await supabase
+          .from('tenants')
+          .update({ razorpay_customer_id: null })
+          .eq('id', tenantId);
+        console.log('Cleared invalid customer ID from database');
+      }
+    }
+
+    // Step 3: Create new customer if needed
     if (!customerId) {
-      // Create Customer in Razorpay
+      console.log('Step 3: Creating new customer in Razorpay...');
       const phone = tenant.settings?.company_profile?.phone || undefined;
       
       try {
         const customer = await instance.customers.create({
-            name: tenant.name || 'SalesPro User',
-            email: user.email,
-            contact: phone,
-            notes: { tenant_id: tenantId }
+          name: tenant.name || 'SalesPro User',
+          email: user.email,
+          contact: phone,
+          notes: { tenant_id: tenantId }
         });
         customerId = customer.id;
-      } catch (custError) {
-          console.log('Error creating customer:', custError);
-          // Check if error is "Customer already exists"
-          const errDesc = custError.error?.description || custError.description || custError.message || '';
-          if (errDesc.includes('already exists')) {
-              console.log('Customer conflict detected. Fetching existing customer by email...');
-              // Fetch existing customer by email
-              const existingCustomers = await instance.customers.all({ count: 1, email: user.email });
-              if (existingCustomers.items && existingCustomers.items.length > 0) {
-                  customerId = existingCustomers.items[0].id;
-                  console.log('Resolved existing customer ID:', customerId);
-              } else {
-                  console.warn('Customer exists but query by email returned empty.');
-                  throw custError; // Re-throw if we can't resolve it
-              }
-          } else {
-              throw custError;
-          }
-      }
+        console.log('New customer created:', customerId);
 
-      // Update Tenant
-      if (customerId) {
-          await supabase
-            .from('tenants')
-            .update({ razorpay_customer_id: customerId })
-            .eq('id', tenantId);
+        // Update Tenant with new customer ID
+        await supabase
+          .from('tenants')
+          .update({ razorpay_customer_id: customerId })
+          .eq('id', tenantId);
+        console.log('Database updated with new customer ID');
+        
+      } catch (custError) {
+        console.error('Customer creation failed:', custError);
+        const errDesc = custError.error?.description || custError.description || custError.message || '';
+        
+        if (errDesc.toLowerCase().includes('already exists') || errDesc.toLowerCase().includes('duplicate')) {
+          // This shouldn't happen since we validated above, but handle it anyway
+          throw new Error('Customer already exists in Razorpay but with different credentials. Please contact support to resolve this issue.');
+        } else {
+          // Some other error
+          throw new Error(`Failed to create customer: ${errDesc}`);
+        }
       }
+    }
+
+    if (!customerId) {
+      throw new Error('Failed to obtain valid customer ID');
     }
 
     // --- SUBSCRIPTION CREATION ---

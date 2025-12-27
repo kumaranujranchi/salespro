@@ -51,7 +51,10 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.error || 'Failed to create subscription');
+        // Extract user-friendly error message
+        const errorMessage = data.error || data.message || 'Failed to create subscription';
+        console.error('Subscription creation failed:', data);
+        throw new Error(errorMessage);
     }
 
     // The edge function already creates the DB record, so we just return the needed details
@@ -82,6 +85,7 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
     };
   } catch (error) {
     console.error('Error creating subscription:', error);
+    // Re-throw with the same message so UI can display it
     throw error;
   }
 }
