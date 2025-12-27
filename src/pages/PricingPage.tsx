@@ -1,4 +1,4 @@
-```javascript
+
 import { useState, useEffect } from 'react';
 import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -265,4 +265,4 @@ export function PricingPage() {
     </>
   );
 }
-```
+
