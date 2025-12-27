@@ -87,22 +87,26 @@ export function SiteVisitApprovalModal({ isOpen, onClose, onSuccess, visit }: Si
             if (error) throw error;
 
             // Create Notification for the Requester
+            const { data: requesterProfile } = await supabase.from('profiles').select('tenant_id').eq('id', visit.requested_by).single();
             await supabase.from('notifications').insert({
                 user_id: visit.requested_by,
+                tenant_id: requesterProfile?.tenant_id,
                 title: `Site Visit ${action === 'approve' ? 'Approved' : action === 'decline' ? 'Declined' : 'Needs Clarification'}`,
                 message: `Your request for ${visit.customer_name} has been ${action === 'clarify' ? 'returned for clarification' : action === 'approve' ? 'approved' : 'declined'}. ${note ? `Note: ${note}` : ''}`,
-                type: action === 'approve' ? 'success' : action === 'decline' ? 'error' : 'warning',
+                type: action === 'approve' ? 'success' as const : action === 'decline' ? 'error' as const : 'warning' as const,
                 related_entity_type: 'site_visit',
                 related_entity_id: visit.id
             });
 
             // Notify Driver if approved
             if (action === 'approve') {
+                const { data: driverProfile } = await supabase.from('profiles').select('tenant_id').eq('id', driverId).single();
                 await supabase.from('notifications').insert({
                     user_id: driverId,
+                    tenant_id: driverProfile?.tenant_id,
                     title: 'New Site Visit Assigned',
                     message: `You have been assigned a site visit for ${visit.customer_name} on ${new Date(visit.visit_date).toLocaleDateString()}.`,
-                    type: 'info',
+                    type: 'info' as const,
                     related_entity_type: 'site_visit',
                     related_entity_id: visit.id
                 });

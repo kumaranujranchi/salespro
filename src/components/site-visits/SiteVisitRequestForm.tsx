@@ -159,9 +159,10 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                 if (admins && admins.length > 0) {
                     const notifications = admins.map(admin => ({
                         user_id: admin.id,
+                        tenant_id: profile?.tenant_id, // Add tenant_id for isolation
                         title: 'New Site Visit Request',
                         message: `${formData.customerName} - Requested by ${profile?.full_name || user.email || 'Sales Executive'}`,
-                        type: 'info',
+                        type: 'info' as const,
                         related_entity_type: 'site_visit',
                         related_entity_id: user.id // Ideally should be the visit ID, but we don't have it easily from 'insert' unless we select returned.
                     }));

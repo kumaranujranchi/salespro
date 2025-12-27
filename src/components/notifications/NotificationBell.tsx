@@ -17,10 +17,20 @@ export function NotificationBell() {
     useEffect(() => {
         if (user) {
             const loadNotifications = async () => {
+                // Get user's tenant_id first
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('tenant_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!profile?.tenant_id) return;
+
                 const { data } = await supabase
                     .from('notifications')
                     .select('*')
                     .eq('user_id', user.id)
+                    .eq('tenant_id', profile.tenant_id) // Add tenant isolation
                     .order('created_at', { ascending: false })
                     .limit(10);
 

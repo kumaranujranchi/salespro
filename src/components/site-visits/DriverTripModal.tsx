@@ -70,11 +70,13 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
             if (error) throw error;
 
             // Notify Requester
+            const { data: requesterProfile } = await supabase.from('profiles').select('tenant_id').eq('id', visit.requested_by).single();
             await supabase.from('notifications').insert({
                 user_id: visit.requested_by,
+                tenant_id: requesterProfile?.tenant_id,
                 title: `Site Visit ${newStatus}`,
                 message: `The site visit for ${visit.customer_name} has been marked as ${newStatus}. ${visit.status === 'trip_started' ? `Total distance: ${(reading - (visit.start_odometer || 0)).toFixed(1)} km` : ''}`,
-                type: 'info',
+                type: 'info' as const,
                 related_entity_type: 'site_visit',
                 related_entity_id: visit.id
             });

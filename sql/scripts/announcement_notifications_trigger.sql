@@ -7,12 +7,18 @@ BEGIN
     -- Only proceed if the announcement is published and (it's a new record OR it was previously unpublished)
     IF (NEW.is_published = true) AND (TG_OP = 'INSERT' OR OLD.is_published = false) THEN
         
-        -- Iterate through all active users (excluding the creator if you want, but usually everyone gets it)
-        -- We'll include everyone for broad announcements.
-        FOR user_record IN SELECT id FROM public.profiles WHERE is_active = true LOOP
+        -- Iterate through all active users in the same tenant as the announcement
+        FOR user_record IN 
+            SELECT p.id, p.tenant_id 
+            FROM public.profiles p
+            INNER JOIN public.announcements a ON a.tenant_id = p.tenant_id
+            WHERE p.is_active = true 
+            AND a.id = NEW.id
+        LOOP
             
             INSERT INTO public.notifications (
                 user_id,
+                tenant_id,
                 title,
                 message,
                 type,
@@ -21,6 +27,7 @@ BEGIN
                 is_read
             ) VALUES (
                 user_record.id,
+                user_record.tenant_id,
                 'New Announcement: ' || NEW.title,
                 NEW.content, -- You might want to truncate this if it's too long, generally handled by UI
                 'info',

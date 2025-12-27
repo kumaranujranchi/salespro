@@ -254,6 +254,7 @@ export interface SiteVisit {
 export interface Notification {
   id: string;
   user_id: string;
+  tenant_id: string; // Added for tenant isolation
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
