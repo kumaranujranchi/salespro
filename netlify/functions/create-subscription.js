@@ -146,8 +146,27 @@ exports.handler = async function (event, context) {
         const errDesc = custError.error?.description || custError.description || custError.message || '';
         
         if (errDesc.toLowerCase().includes('already exists') || errDesc.toLowerCase().includes('duplicate')) {
-          // This shouldn't happen since we validated above, but handle it anyway
-          throw new Error('Customer already exists in Razorpay but with different credentials. Please contact support to resolve this issue.');
+           console.log('Customer conflict detected (Already Exists). Fetching existing customer by email...');
+           // Fetch existing customer by email
+           try {
+             const existingCustomers = await instance.customers.all({ count: 1, email: user.email });
+             if (existingCustomers.items && existingCustomers.items.length > 0) {
+                 customerId = existingCustomers.items[0].id;
+                 console.log('Resolved existing customer ID:', customerId);
+                 
+                 // Update Tenant with new customer ID
+                 await supabase
+                   .from('tenants')
+                   .update({ razorpay_customer_id: customerId })
+                   .eq('id', tenantId);
+             } else {
+                 console.warn('Customer exists but query by email returned empty. This is unexpected.');
+                 throw new Error('Customer exists in Razorpay but could not be retrieved. Please check dashboard.');
+             }
+           } catch (fetchErr) {
+               console.error('Failed to fetch existing customer:', fetchErr);
+               throw fetchErr;
+           }
         } else {
           // Some other error
           throw new Error(`Failed to create customer: ${errDesc}`);
