@@ -203,13 +203,16 @@ export function TestimonialsSection() {
                             <img src="/images/omav-logo-transparent.png" alt="Omav Op Constructions" className="w-full h-full object-contain" />
                         </div>
                         <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
-                            <img src="/images/manokamna-logo.jpg" alt="Manokamna Marketing" className="w-full h-full object-contain" />
+                            <img src="/images/mithila-realinfra-logo.png" alt="Mithila RealInfra" className="w-full h-full object-contain" />
                         </div>
                         <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
-                            <img src="/images/dehliz-logo-transparent.png" alt="Dehliz Infratech" className="w-full h-full object-contain" />
+                            <img src="/images/dutta-realty-logo.png" alt="Dutta Realty" className="w-full h-full object-contain" />
                         </div>
                         <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
                             <img src="/images/wishluv-logo.png" alt="Wishluv Buildcon" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="w-48 h-28 bg-white rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06),0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center p-4 overflow-hidden border border-gray-100">
+                            <img src="/images/dehliz-new-logo.png" alt="Dehliz Infratech" className="w-full h-full object-contain" />
                         </div>
                     </div>
                 </div>
