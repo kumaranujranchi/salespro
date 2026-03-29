@@ -12,6 +12,18 @@ export const listAllProjects = query({
   },
 });
 
+export const listRunningProjects = query({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    const allProjects = await ctx.db
+      .query("projects")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .order("desc")
+      .collect();
+    return allProjects.filter((p) => p.is_active);
+  },
+});
+
 export const createProject = mutation({
   args: {
     tenant_id: v.id("tenants"),
