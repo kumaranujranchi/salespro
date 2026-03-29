@@ -22,7 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Local state for "session" simulation since we're migrating
   // In a real app, this would come from useConvexAuth() or Clerk
   const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Start loading as false — only go to true while resolving a session
+  const [loading, setLoading] = useState(false);
 
   // Fetch profile via Convex query
   const profileData = useQuery(api.profiles.getByUserId, 
@@ -44,21 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null);
 
   useEffect(() => {
-    if (profileData) {
+    if (profileData !== undefined) {
+      // profileData resolved from Convex (either a profile or null)
       setProfile(profileData as any);
-    } else if (profileData === null && sessionUser) {
-      setLoading(false);
+      if (!profileData || !(profileData as any).tenant_id) {
+        // No profile or no tenant — stop loading immediately
+        setLoading(false);
+      }
     }
-  }, [profileData, sessionUser]);
+  }, [profileData]);
 
   useEffect(() => {
-    if (tenantData) {
+    if (tenantData !== undefined) {
+      // tenantData resolved (either a tenant or null)
       setTenant(tenantData as any);
       setLoading(false);
-    } else if (tenantData === null && profile) {
-      setLoading(false);
     }
-  }, [tenantData, profile]);
+  }, [tenantData]);
 
   useEffect(() => {
     if (affiliateData) {
@@ -69,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, _password: string) => {
     // Placeholder sign-in logic
     // You would replace this with actual Convex Auth or Clerk sign-in
+    setLoading(true);
     setSessionUser({ id: email, email });
     return { error: null };
   };
