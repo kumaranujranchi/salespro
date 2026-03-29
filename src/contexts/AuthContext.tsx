@@ -70,7 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (tenantData !== undefined) {
       // tenantData resolved (either a tenant or null)
-      setTenant(tenantData as any);
+      const t = tenantData;
+      setTenant(t ? { ...t, id: t._id as string } as Tenant : null);
       setLoading(false);
     }
   }, [tenantData]);
