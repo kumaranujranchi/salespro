@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useQuery } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
+import { Id } from '../../../../convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { Calendar, Gift, Heart, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import {
     format, addYears, differenceInDays,
     parseISO, setYear, startOfDay, getYear, isValid
 } from 'date-fns';
-import { Profile } from '../../../types/database';
+import { Profile } from '../../../types/database'; // We can keep this for type reference or use Doc<"profiles">
 
 interface EventItem {
     id: string;
@@ -19,33 +22,23 @@ interface EventItem {
 }
 
 export function UpcomingEvents() {
+    const { profile } = useAuth();
     const [events, setEvents] = useState<EventItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
 
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const profilesData = useQuery(api.profiles.listUsersByTenant, 
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
+
     useEffect(() => {
-        loadEvents();
-    }, []);
-
-    const loadEvents = async () => {
-        try {
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select('id, full_name, image_url, dob, marriage_anniversary, joining_date')
-                .eq('is_active', true);
-
-            if (error) throw error;
-
-            if (profiles) {
-                const processedEvents = processEvents(profiles);
-                setEvents(processedEvents);
-            }
-        } catch (err) {
-            console.error('Error loading events:', err);
-        } finally {
+        if (profilesData) {
+            const processedEvents = processEvents(profilesData as any[]);
+            setEvents(processedEvents);
             setLoading(false);
         }
-    };
+    }, [profilesData]);
 
     const processEvents = (profiles: Partial<Profile>[]): EventItem[] => {
         const today = startOfDay(new Date());

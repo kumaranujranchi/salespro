@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useDialog } from '../contexts/DialogContext';
-import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
+import { useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
@@ -9,8 +10,9 @@ import { Settings, Target, Save } from 'lucide-react';
 
 export function SettingsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
-  const dialog = useDialog();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
+  const updateTenantMutation = useMutation(api.tenants.update);
   
   const [settings, setSettings] = useState({
     targetModel: 'area'
@@ -25,30 +27,28 @@ export function SettingsPage() {
   }, [tenant]);
 
   const handleSave = async () => {
-    if (!tenant) return;
+    if (!tenant?._id) return;
     setLoading(true);
 
     try {
       const updatedSettings = {
         ...tenant.settings,
         general: {
-          ...tenant.settings.general,
+          ...tenant.settings?.general,
           target_model: settings.targetModel
         }
       };
 
-      const { error } = await supabase
-        .from('tenants')
-        .update({ settings: updatedSettings })
-        .eq('id', tenant.id);
-
-      if (error) throw error;
+      await updateTenantMutation({
+        id: tenant._id,
+        settings: updatedSettings
+      });
 
       await refreshTenant();
-      dialog.alert('Settings saved successfully!', { variant: 'success' });
+      toast.success('Settings saved successfully!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      dialog.alert(error.message || 'Failed to save settings.', { variant: 'danger' });
+      toast.error(error.message || 'Failed to save settings.');
     } finally {
       setLoading(false);
     }

@@ -1,66 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { Notification } from '../../types/database';
 import { Bell, Info, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 
 export function NotificationBell() {
-    const { user } = useAuth();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const { profile } = useAuth();
+    const notifications = useQuery(api.notifications.list, 
+        profile?._id ? { user_id: profile._id as Id<"profiles">, limit: 10 } : "skip"
+    ) || [];
+    
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const markReadMutation = useMutation(api.notifications.markRead);
+    const markAllReadMutation = useMutation(api.notifications.markAllRead);
+    
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if (user) {
-            const loadNotifications = async () => {
-                // Get user's tenant_id first
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('tenant_id')
-                    .eq('id', user.id)
-                    .single();
-
-                if (!profile?.tenant_id) return;
-
-                const { data } = await supabase
-                    .from('notifications')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .eq('tenant_id', profile.tenant_id) // Add tenant isolation
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-
-                if (data) {
-                    setNotifications(data);
-                    setUnreadCount(data.filter(n => !n.is_read).length);
-                }
-            };
-            
-            loadNotifications();
-
-            // Subscribe to new notifications
-            const subscription = supabase
-                .channel('public:notifications')
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notifications',
-                    filter: `user_id=eq.${user.id}`
-                }, (payload) => {
-                    setNotifications(prev => [payload.new as Notification, ...prev]);
-                    setUnreadCount(prev => prev + 1);
-                })
-                .subscribe();
-
-            return () => {
-                supabase.removeChannel(subscription);
-            };
-        }
-    }, [user]);
 
     // Handle click outside to close
     useEffect(() => {
@@ -76,8 +35,8 @@ export function NotificationBell() {
     // Show popup on fresh login if unread notifications exist
     const [showPopup, setShowPopup] = useState(false);
     useEffect(() => {
-        if (unreadCount > 0 && user?.id) {
-            const storageKey = `hasSeenNotificationPopup_${user.id}`;
+        if (unreadCount > 0 && profile?._id) {
+            const storageKey = `hasSeenNotificationPopup_${profile._id}`;
             const hasSeen = sessionStorage.getItem(storageKey);
             
             if (!hasSeen) {
@@ -89,20 +48,16 @@ export function NotificationBell() {
                 return () => clearTimeout(timer);
             }
         }
-    }, [unreadCount, user?.id]);
+    }, [unreadCount, profile?._id]);
 
     const markAsRead = async (id: string) => {
-        // Optimistic update
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
-
-        await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+        await markReadMutation({ id: id as Id<"notifications"> });
     };
 
     const markAllRead = async () => {
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-        setUnreadCount(0);
-        await supabase.from('notifications').update({ is_read: true }).eq('user_id', user?.id).eq('is_read', false);
+        if (profile?._id) {
+            await markAllReadMutation({ user_id: profile._id as Id<"profiles"> });
+        }
     };
 
     const getIcon = (type: string) => {

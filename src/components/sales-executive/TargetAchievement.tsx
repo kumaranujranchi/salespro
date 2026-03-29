@@ -1,84 +1,56 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { supabase } from '../../lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { startOfYear, endOfYear, eachMonthOfInterval, format, isSameMonth, parseISO } from 'date-fns';
-import { getSubordinateIds } from '../../utils/hierarchy';
-
 export function TargetAchievement() {
     const { profile } = useAuth();
-    const [targets, setTargets] = useState<any[]>([]);
-    const [sales, setSales] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const userId = profile?._id as Id<"profiles">;
 
-    const loadData = useCallback(async () => {
-        if (!profile || !profile.tenant_id) return;
-        try {
-            // Get all subordinate IDs
-            const descendants = await getSubordinateIds(profile.id, profile.tenant_id);
-            const userIds = [profile.id, ...descendants];
+    // Convex Queries
+    const targetsData = useQuery(api.targets.listTargets, 
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
+    const salesData = useQuery(api.sales.listSales, 
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
 
-            // Load Targets for everyone in the hierarchy
-            const { data: targetsData } = await supabase
-                .from('sales_targets')
-                .select('*')
-                .in('user_id', userIds)
-                .eq('period_type', 'monthly');
-
-            // Load Sales for everyone in the hierarchy
-            const { data: salesData } = await supabase
-                .from('sales')
-                .select('*')
-                .in('sales_executive_id', userIds);
-
-            if (targetsData) setTargets(targetsData);
-            if (salesData) setSales(salesData);
-        } catch (error) {
-            console.error('Error loading performance data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [profile]);
-
-    useEffect(() => {
-        if (profile) {
-            loadData();
-        }
-    }, [profile, loadData]);
+    const loading = !targetsData || !salesData;
 
     const chartData = useMemo(() => {
-        const yearStart = startOfYear(new Date());
-        const yearEnd = endOfYear(new Date());
-        const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+        const start = startOfYear(new Date());
+        const end = endOfYear(new Date());
+        const months = eachMonthOfInterval({ start, end });
 
         return months.map(monthDate => {
             const monthStr = format(monthDate, 'MMM');
-
-            const monthTargets = targets.filter(t =>
-                t.start_date &&
+            
+            const monthTargets = (targetsData || []).filter((t: Doc<"sales_targets">) => 
                 isSameMonth(parseISO(t.start_date), monthDate)
             );
-            const totalTarget = monthTargets.reduce((sum, t) => sum + (Number(t.target_sqft) || 0), 0);
+            const totalTarget = monthTargets.reduce((sum: number, t: Doc<"sales_targets">) => sum + t.target_amount, 0);
 
-            const monthSales = sales.filter(s =>
-                s.sale_date &&
+            const monthSales = (salesData || []).filter((s: Doc<"sales">) => 
                 isSameMonth(parseISO(s.sale_date), monthDate)
             );
-            const totalAchieved = monthSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0);
+            const totalSales = monthSales.reduce((sum: number, s: Doc<"sales">) => sum + s.total_revenue, 0);
 
             return {
                 name: monthStr,
                 target: totalTarget,
-                achieved: totalAchieved
+                achievement: totalSales
             };
         });
-    }, [targets, sales]);
+    }, [targetsData, salesData]);
 
     const summary = useMemo(() => {
         const totalTarget = chartData.reduce((sum, d) => sum + d.target, 0);
-        const totalAchieved = chartData.reduce((sum, d) => sum + d.achieved, 0);
+        const totalAchieved = chartData.reduce((sum, d) => sum + d.achievement, 0);
         const diff = totalAchieved - totalTarget;
         const percent = totalTarget > 0 ? (totalAchieved / totalTarget) * 100 : 0;
 

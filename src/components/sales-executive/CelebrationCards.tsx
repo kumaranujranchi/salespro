@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Gift, Heart, Briefcase } from 'lucide-react'; // Icons
+import { Gift, Heart, Briefcase } from 'lucide-react'; 
 import { format, parseISO, getYear, setYear, differenceInDays, isValid, addYears, startOfDay } from 'date-fns';
-import { Profile } from '../../types/database';
 
 interface CelebrationEvent {
     id: string;
@@ -13,44 +15,34 @@ interface CelebrationEvent {
     daysUntil: number;
     details?: string;
 }
-
 export function CelebrationCards() {
+    const { profile } = useAuth();
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    
+    // Convex Query
+    const profiles = useQuery(api.profiles.listUsersByTenant, 
+        tenantId ? { tenant_id: tenantId, is_active: true } : "skip"
+    );
+
     const [birthdays, setBirthdays] = useState<CelebrationEvent[]>([]);
     const [anniversaries, setAnniversaries] = useState<CelebrationEvent[]>([]);
     const [workAnniversaries, setWorkAnniversaries] = useState<CelebrationEvent[]>([]);
-    const [loading, setLoading] = useState(true);
+    const loading = !profiles;
 
     useEffect(() => {
-        loadCelebrations();
-    }, []);
-
-    const loadCelebrations = async () => {
-        try {
-            const { data: profiles, error } = await supabase
-                .from('profiles')
-                .select('id, full_name, image_url, dob, marriage_anniversary, joining_date')
-                .eq('is_active', true);
-
-            if (error) throw error;
-
-            if (profiles) {
-                processCelebrations(profiles);
-            }
-        } catch (err) {
-            console.error('Error loading celebrations:', err);
-        } finally {
-            setLoading(false);
+        if (profiles) {
+            processCelebrations(profiles as any);
         }
-    };
+    }, [profiles]);
 
-    const processCelebrations = (profiles: Partial<Profile>[]) => {
+    const processCelebrations = (profiles: Doc<"profiles">[]) => {
         const today = startOfDay(new Date());
         const bdays: CelebrationEvent[] = [];
         const annivs: CelebrationEvent[] = [];
         const works: CelebrationEvent[] = [];
 
         profiles.forEach((profile) => {
-            const { id, full_name, image_url, dob, marriage_anniversary, joining_date } = profile;
+            const { _id: id, full_name, image_url, dob, marriage_anniversary, joining_date } = profile;
             if (!full_name || !id) return;
 
             // Birthday

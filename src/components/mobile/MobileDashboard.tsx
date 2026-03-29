@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import {
     TrendingUp,
     DollarSign,
@@ -21,161 +22,54 @@ import { formatCurrency } from '../../utils/format';
 
 export function MobileDashboard() {
     const { profile } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const userId = profile?._id as Id<"profiles">;
 
-    // State from AdminDashboard logic
-    const [stats, setStats] = useState<any>({
-        monthlySales: 0,
-        monthlyRevenue: 0,
-        ytdSales: 0,
-        ytdRevenue: 0,
-        totalProjects: 0,
-        totalTeamMembers: 0,
-        totalDepartments: 0,
-        projectStats: [],
-    });
-    const [salesChartData, setSalesChartData] = useState<any[]>([]);
-    const [recentSales, setRecentSales] = useState<any[]>([]);
-    const [announcements, setAnnouncements] = useState<any[]>([]);
-    const [topPerformers, setTopPerformers] = useState<any[]>([]);
+    // Convex Queries
+    const overview = useQuery(api.sales.getSalesOverview, 
+        tenantId && userId ? { tenant_id: tenantId, executive_id: userId, view: 'overall' } : "skip"
+    );
+    
+    const leaderboard = useQuery(api.sales.getLeaderboard,
+        tenantId ? { tenant_id: tenantId, timeFilter: 'this_month', roleFilter: 'all' } : "skip"
+    );
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const announcements = useQuery(api.announcements.listPublished,
+        tenantId ? { tenant_id: tenantId, limit: 3 } : "skip"
+    ) || [];
 
-    const loadData = async () => {
-        try {
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-            const yearStart = `${currentYear}-01-01`;
-            const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    const recentSales = useQuery(api.sales.listSales,
+        tenantId ? { tenant_id: tenantId } : "skip"
+    )?.slice(0, 5) || [];
 
-            // 1. Fetch Metrics
-            const [
-                { count: projectCount },
-                { count: teamCount },
-                { count: deptCount },
-                { data: projectsData },
-                { data: allSales },
-                { data: allPayments }
-            ] = await Promise.all([
-                supabase.from('projects').select('*', { count: 'exact', head: true }).eq('is_active', true),
-                supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_active', true),
-                supabase.from('departments').select('*', { count: 'exact', head: true }).eq('is_active', true),
-                supabase.from('projects').select('id, name'),
-                supabase.from('sales').select('*, profile:sales_executive_id(full_name, image_url, role)').gte('sale_date', yearStart),
-                supabase.from('payments').select('*').gte('payment_date', yearStart)
-            ]);
+    const staff = useQuery(api.profiles.listUsersByTenant,
+        tenantId ? { tenant_id: tenantId, is_active: true } : "skip"
+    ) || [];
 
-            // Calculate Stats
-            let mSales = 0, mRevenue = 0, ySales = 0, yRevenue = 0;
-            const projectAreaMap = new Map();
-            const salesByMonth = new Map();
-            const leaderboardMap = new Map();
+    const departments = useQuery(api.departments.list,
+        tenantId ? { tenant_id: tenantId } : "skip"
+    ) || [];
 
-            // Init months
-            for (let i = 0; i < 12; i++) {
-                const d = new Date(currentYear, i, 1);
-                if (d > now) break;
-                const key = d.toLocaleString('default', { month: 'short' });
-                salesByMonth.set(key, { sales: 0, revenue: 0, collections: 0 });
-            }
+    if (!overview || !leaderboard) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div></div>;
 
-            allSales?.forEach((sale: any) => {
-                ySales++;
-                yRevenue += Number(sale.total_revenue);
-                if (sale.sale_date >= monthStart) {
-                    mSales++;
-                    mRevenue += Number(sale.total_revenue);
-                }
-
-                // Helper for project stats
-                if (sale.project_id) {
-                    const cur = projectAreaMap.get(sale.project_id) || 0;
-                    projectAreaMap.set(sale.project_id, cur + Number(sale.area_sqft || 0));
-                }
-
-                // Chart Data
-                const d = new Date(sale.sale_date);
-                const key = d.toLocaleString('default', { month: 'short' });
-                if (salesByMonth.has(key)) {
-                    const cur = salesByMonth.get(key);
-                    cur.sales += 1;
-                    cur.revenue += Number(sale.total_revenue);
-                    salesByMonth.set(key, cur);
-                }
-
-                // Leaderboard
-                if (sale.sales_executive_id) {
-                    const u = leaderboardMap.get(sale.sales_executive_id) || {
-                        id: sale.sales_executive_id,
-                        name: sale.profile?.full_name || 'Unknown',
-                        image: sale.profile?.image_url,
-                        sales: 0
-                    };
-                    u.sales++;
-                    leaderboardMap.set(sale.sales_executive_id, u);
-                }
-            });
-
-            allPayments?.forEach((pay: any) => {
-                const d = new Date(pay.payment_date);
-                const key = d.toLocaleString('default', { month: 'short' });
-                if (salesByMonth.has(key)) {
-                    const cur = salesByMonth.get(key);
-                    cur.collections += Number(pay.amount);
-                    salesByMonth.set(key, cur);
-                }
-            });
-
-            // Format Project Stats
-            const projStats = projectsData?.map(p => ({
-                name: p.name,
-                area: projectAreaMap.get(p.id) || 0
-            })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
-
-            // Format Chart
-            const chartData = Array.from(salesByMonth.entries()).map(([name, val]) => ({
-                name, ...val
-            }));
-
-            // Top Performers
-            const topUsers = Array.from(leaderboardMap.values()).sort((a, b) => b.sales - a.sales).slice(0, 5);
-
-            setStats({
-                monthlySales: mSales,
-                monthlyRevenue: mRevenue,
-                ytdSales: ySales,
-                ytdRevenue: yRevenue,
-                totalProjects: projectCount || 0,
-                totalTeamMembers: teamCount || 0,
-                totalDepartments: deptCount || 0,
-                projectStats: projStats
-            });
-            setSalesChartData(chartData);
-            setTopPerformers(topUsers);
-
-            // Recent Sales (detailed)
-            const { data: recent } = await supabase.from('sales')
-                .select('*, customer:customer_id(name), project:project_id(name), profile:sales_executive_id(full_name)')
-                .order('sale_date', { ascending: false }).limit(5);
-            setRecentSales(recent || []);
-
-            // Announcements
-            const { data: ann } = await supabase.from('announcements')
-                .select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(3);
-            setAnnouncements(ann || []);
-
-            setLoading(false);
-
-        } catch (e) {
-            console.error(e);
-            setLoading(false);
-        }
+    const stats = {
+        monthlySales: overview.mySales,
+        monthlyRevenue: overview.monthlyRevenue,
+        ytdSales: overview.ytdSalesCount,
+        ytdRevenue: overview.ytdRevenue,
+        totalProjects: overview.projectStats.length,
+        totalTeamMembers: staff.length,
+        totalDepartments: departments.length,
+        projectStats: overview.projectStats
     };
 
-    if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div></div>;
+    const salesChartData = overview.salesTrend;
+    const topPerformers = leaderboard.map(l => ({
+        id: l.id,
+        name: l.name,
+        image: l.image_url,
+        sales: l.salesCount
+    }));
 
     return (
         <div className="space-y-6 pb-4">

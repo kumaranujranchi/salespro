@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { LeadStatus } from '../../types/database';
@@ -25,6 +27,8 @@ export function BulkStatusModal({ isOpen, onClose, leadIds, onSuccess }: BulkSta
     'Lost', 'Disqualified', 'Converted'
   ];
 
+  const bulkUpdateLeadStatus = useMutation(api.leads.bulkUpdateLeadStatus);
+
   const handleUpdate = async () => {
     if (!status) {
       await dialog.alert('Please select a status', { variant: 'danger' });
@@ -33,15 +37,11 @@ export function BulkStatusModal({ isOpen, onClose, leadIds, onSuccess }: BulkSta
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .update({
-          lead_status: status,
-          updated_by: profile?.id
-        })
-        .in('id', leadIds);
-
-      if (error) throw error;
+      await bulkUpdateLeadStatus({
+        ids: leadIds.map(id => id as Id<"leads">),
+        lead_status: status,
+        updated_by: profile?.id as Id<"profiles">
+      });
 
       await dialog.alert(`Successfully updated status for ${leadIds.length} leads!`, { variant: 'success' });
       onSuccess();

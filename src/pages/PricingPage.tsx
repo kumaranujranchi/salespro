@@ -1,12 +1,14 @@
-
 import { useState, useEffect } from 'react';
 import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useConvex } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export function PricingPage() {
   const { user, tenant } = useAuth();
+  const convex = useConvex();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -32,22 +34,6 @@ export function PricingPage() {
     if (checkout === 'true' && plan && amount && user) {
       // Clear the checkout params
       setSearchParams({});
-      
-      // If there's a referral code, wait for validation? 
-      // Actually creating a slight delay or dependency is better.
-      // But for simplicity, we pass the raw values to handleSubscribe 
-      // which will re-calculate based on state if possible, 
-      // but state might not be ready. 
-      // Better: let the user click 'Pay' if they want. 
-      // OR: trigger it.
-      
-      // Issue: validation is async. handleSubscribe uses 'amount' param.
-      // We should probably show the pricing page with the applied discount 
-      // and let the user click, OR handle it if state is ready.
-      // Let's rely on the user seeing the summary if we can, 
-      // but the original code auto-triggered.
-      // Let's trigger handleSubscribe but pass the referral code to it.
-      
       handleSubscribe(decodeURIComponent(plan), parseInt(amount));
     }
   }, [searchParams, user]);
@@ -56,29 +42,21 @@ export function PricingPage() {
     if (!code) return;
     setValidatingReferral(true);
     try {
-      const { supabase } = await import('../lib/supabase');
-      const { data, error } = await supabase.rpc('validate_referral_code', { code_input: code });
+      const data = await convex.query(api.referrals.validateCode, { code });
       
-      if (error) throw error;
-      
-      // RPC returns an array (setof table)
-      if (data && data.length > 0 && data[0].is_valid) {
-        // Fetch full campaign details including email
-        const { data: campaignDetails } = await supabase
-            .from('referral_campaigns')
-            .select('referrer_email, name')
-            .eq('id', data[0].campaign_id)
-            .single();
-
+      if (data && (data as any).is_valid) {
         setReferralData({
           code: code,
-          discount: data[0].discount_percent,
-          campaignId: data[0].campaign_id,
-          referrerEmail: campaignDetails?.referrer_email,
-          referrerName: campaignDetails?.name
+          discount: (data as any).discount_percent,
+          campaignId: (data as any).campaign_id,
+          referrerEmail: (data as any).referrer_email,
+          referrerName: (data as any).name
         });
       } else {
         setReferralData(null);
+        if (code !== searchParams.get('referralCode')) {
+           toast.error('Invalid referral code');
+        }
       }
     } catch (err) {
       console.error('Error validating referral:', err);

@@ -1,22 +1,31 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Search, Download, Eye, Network, LayoutGrid, User as UserIcon, Briefcase, Plus, Minus, RotateCcw } from 'lucide-react';
-import { Profile, TenantRole, Department } from '../../types/database';
-import { useAuth } from '../../contexts/AuthContext';
 import { buildOrgTree } from '../../utils/orgTree';
 import { Badge } from '../ui/Badge';
 import { ActionMenu } from '../ui/ActionMenu';
-
 export function EmployeeDirectory() {
-    const { tenant } = useAuth();
-    const [employees, setEmployees] = useState<Profile[]>([]);
-    const [roles, setRoles] = useState<TenantRole[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
+    const { profile } = useAuth();
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+
+    // Convex Queries
+    const employeesData = useQuery(api.profiles.listUsersByTenant, 
+        tenantId ? { tenant_id: tenantId, is_active: true } : "skip"
+    );
+    const rolesData = useQuery(api.roles.list, 
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
+    const departmentsData = useQuery(api.departments.list, 
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
+
     const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(true);
     const [viewType, setViewType] = useState<'grid' | 'tree'>('tree');
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -79,53 +88,17 @@ export function EmployeeDirectory() {
 
     const handleTouchEnd = () => setIsDragging(false);
 
-    const loadDepartments = useCallback(async () => {
-        const { data } = await supabase.from('departments').select('*').eq('is_active', true).order('name');
-        if (data) setDepartments(data);
-    }, []);
+    const employees = (employeesData || []).filter((e: Doc<"profiles">) => e.role !== 'super_admin');
+    const roles = rolesData || [];
+    const departments = departmentsData || [];
+    const loading = !employeesData || !rolesData || !departmentsData;
 
-    const loadEmployees = useCallback(async () => {
-        if (!tenant?.id) return;
-        setLoading(true);
-        try {
-            // Directory shows ALL active employees in the tenant, not just subordinates
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('tenant_id', tenant.id)
-                .eq('is_active', true)
-                .neq('role', 'super_admin')
-                .order('full_name');
-
-            if (error) throw error;
-            setEmployees(data || []);
-        } catch (error) {
-            console.error('Error loading employees:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [tenant]);
-
-    const loadRoles = useCallback(async () => {
-        if (!tenant?.id) return;
-        const { data } = await supabase
-            .from('tenant_roles')
-            .select('*')
-            .eq('tenant_id', tenant.id);
-        if (data) setRoles(data);
-    }, [tenant]);
-
-    useEffect(() => {
-        loadEmployees();
-        loadRoles();
-        loadDepartments();
-    }, [loadEmployees, loadRoles, loadDepartments]);
-
-    const filteredEmployees = employees.filter(emp =>
-        emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp.phone && emp.phone.includes(searchTerm))
-    );
+    const filteredEmployees = employees.filter((emp: Doc<"profiles">) => {
+        const matchesSearch = emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             (emp.employee_id && emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase()));
+        return matchesSearch;
+    });
 
     const getRoleBadgeVariant = (role: string) => {
         if (role === 'super_admin') return 'danger';
@@ -141,7 +114,7 @@ export function EmployeeDirectory() {
         
         // Only show departments that have at least one employee in our current employee set
         const deptsWithEmployees = departments.filter(dept => 
-            employees.some(emp => emp.department_id === dept.id)
+            employees.some(emp => emp.department_id === dept._id)
         );
 
         if (deptsWithEmployees.length === 0 && employees.length > 0) {
@@ -150,9 +123,9 @@ export function EmployeeDirectory() {
         }
 
         return deptsWithEmployees.map(dept => {
-            const deptEmployees = employees.filter(emp => emp.department_id === dept.id);
+            const deptEmployees = employees.filter(emp => emp.department_id === dept._id);
             return {
-                id: dept.id,
+                id: dept._id,
                 name: dept.name,
                 type: 'department' as const,
                 children: buildOrgTree(deptEmployees) as unknown as TreeNodeData[]

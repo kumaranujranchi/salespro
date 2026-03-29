@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -21,8 +23,18 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
   const dialog = useDialog();
 
   const [loading, setLoading] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [salesExecutives, setSalesExecutives] = useState<Profile[]>([]);
+
+  // Convex Queries
+  const projects = useQuery(api.projects.listRunningProjects, 
+    profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+  const salesExecutives = useQuery(api.profiles.listActiveStaff,
+    profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+
+  // Convex Mutations
+  const createLeadMutation = useMutation(api.leads.createLead);
+  const updateLeadMutation = useMutation(api.leads.updateLead);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -45,9 +57,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
   const [locationInput, setLocationInput] = useState('');
 
   useEffect(() => {
-    loadProjects();
-    loadSalesExecutives();
-
     if (lead) {
       setFormData({
         lead_source: lead.lead_source,
@@ -65,31 +74,10 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
         internal_notes: lead.internal_notes || '',
         lead_date: lead.lead_date ? new Date(lead.lead_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
       });
+    } else if (profile) {
+      setFormData(prev => ({ ...prev, sales_executive_id: profile.id }));
     }
   }, [lead, profile]);
-
-  const loadProjects = async () => {
-    if (!profile) return;
-    const { data } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('tenant_id', profile.tenant_id)
-      .eq('status', 'Running')
-      .order('name');
-    if (data) setProjects(data);
-  };
-
-  const loadSalesExecutives = async () => {
-    if (!profile) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('tenant_id', profile.tenant_id)
-      .in('role', ['sales_executive', 'team_leader'])
-      .eq('is_active', true)
-      .order('full_name');
-    if (data) setSalesExecutives(data as Profile[]);
-  };
 
   const handleAddLocation = () => {
     if (locationInput.trim() && !formData.preferred_locations.includes(locationInput.trim())) {
@@ -138,61 +126,13 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
 
     setLoading(true);
     try {
-      // Check for duplicates (Unified)
-      const { data: existing } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('tenant_id', profile.tenant_id)
-        .eq('mobile', formData.mobile)
-        .neq('id', lead?.id || '00000000-0000-0000-0000-000000000000')
-        .maybeSingle();
-
-      if (existing) {
-        await dialog.alert('A lead with this mobile number already exists', { variant: 'danger', title: 'Duplicate Lead' });
-        setLoading(false);
-        return;
-      }
-
       if (lead) {
         // Update existing lead
-        const { error } = await supabase
-          .from('leads')
-          .update({
-            lead_source: formData.lead_source,
-            project_id: formData.project_id || null,
-            sales_executive_id: formData.sales_executive_id,
-            customer_name: formData.customer_name,
-            mobile: formData.mobile,
-            email: formData.email || null,
-            city: formData.city || null,
-            budget_range: formData.budget_range,
-            purpose: formData.purpose,
-            preferred_locations: formData.preferred_locations,
-            lead_status: formData.lead_status,
-            lead_score: formData.lead_score,
-            internal_notes: formData.internal_notes || null,
-            lead_date: new Date(formData.lead_date).toISOString(),
-            updated_by: profile.id
-          })
-          .eq('id', lead.id);
-
-        if (error) throw error;
-        await dialog.alert('Lead updated successfully!', { variant: 'success', title: 'Success' });
-      } else {
-
-        // Generate Lead ID using RPC function
-        const { data: leadId, error: rpcError } = await supabase
-          .rpc('generate_lead_id', { tenant_uuid: profile.tenant_id });
-
-        if (rpcError) throw rpcError;
-
-        // Create new lead
-        const { error } = await supabase.from('leads').insert({
-          tenant_id: profile.tenant_id,
-          lead_id: leadId,
+        await updateLeadMutation({
+          id: lead.id as Id<"leads">,
           lead_source: formData.lead_source,
-          project_id: formData.project_id || null,
-          sales_executive_id: formData.sales_executive_id,
+          project_id: (formData.project_id as Id<"projects">) || null,
+          sales_executive_id: formData.sales_executive_id as Id<"profiles">,
           customer_name: formData.customer_name,
           mobile: formData.mobile,
           email: formData.email || null,
@@ -204,11 +144,29 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           lead_score: formData.lead_score,
           internal_notes: formData.internal_notes || null,
           lead_date: new Date(formData.lead_date).toISOString(),
-          created_by: profile.id,
-          metadata: {}
         });
-
-        if (error) throw error;
+        await dialog.alert('Lead updated successfully!', { variant: 'success', title: 'Success' });
+      } else {
+        // Create new lead
+        // The mutation handles ID generation and duplicate checking
+        await createLeadMutation({
+          tenant_id: profile.tenant_id as Id<"tenants">,
+          lead_source: formData.lead_source,
+          project_id: (formData.project_id as Id<"projects">) || null,
+          sales_executive_id: formData.sales_executive_id as Id<"profiles">,
+          customer_name: formData.customer_name,
+          mobile: formData.mobile,
+          email: formData.email || null,
+          city: formData.city || null,
+          budget_range: formData.budget_range,
+          purpose: formData.purpose,
+          preferred_locations: formData.preferred_locations,
+          lead_status: formData.lead_status,
+          lead_score: formData.lead_score,
+          internal_notes: formData.internal_notes || null,
+          lead_date: new Date(formData.lead_date).toISOString(),
+          created_by: profile.id as Id<"profiles">,
+        });
         await dialog.alert('Lead created successfully!', { variant: 'success', title: 'Success' });
       }
 
@@ -229,7 +187,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Lead Source & Project */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -258,8 +215,8 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             >
               <option value="">Select Project</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
+              {(projects || []).map(project => (
+                <option key={project._id} value={project._id}>
                   {project.name}
                 </option>
               ))}
@@ -267,7 +224,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           </div>
         </div>
 
-        {/* Lead Date & Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
             label="Lead Date"
@@ -314,7 +270,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           </div>
         </div>
 
-        {/* Customer Details */}
         <div className="border-t pt-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Details</h3>
 
@@ -354,7 +309,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           </div>
         </div>
 
-        {/* Requirement Details */}
         <div className="border-t pt-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Requirement Details</h3>
 
@@ -404,7 +358,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
             </div>
           </div>
 
-          {/* Preferred Locations */}
           <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Preferred Locations
@@ -442,7 +395,6 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           </div>
         </div>
 
-        {/* Assignment & Notes */}
         <div className="border-t pt-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Assignment & Notes</h3>
 
@@ -457,8 +409,8 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
               required
             >
               <option value="">Select Sales Executive</option>
-              {salesExecutives.map(exec => (
-                <option key={exec.id} value={exec.id}>
+              {(salesExecutives || []).map(exec => (
+                <option key={exec._id} value={exec._id}>
                   {exec.full_name}
                 </option>
               ))}

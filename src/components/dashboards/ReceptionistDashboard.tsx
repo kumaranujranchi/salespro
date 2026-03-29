@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
 import { KPICard } from '../ui/KPICard';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -12,35 +14,31 @@ import { CelebrationCards } from '../sales-executive/CelebrationCards';
 
 export function ReceptionistDashboard() {
     const { profile } = useAuth();
-    const [stats, setStats] = useState({
-        totalSales: 0,
-        totalRevenue: 0,
-        totalTarget: 0,
-        achievementPercent: 0,
-        totalIncentives: 0,
-        ytdSalesCount: 0,
-        ytdTotalArea: 0,
-        ytdRevenue: 0,
-        ytdPaymentCount: 0,
-        projectStats: [] as { name: string; area: number }[],
-        recentAnnouncements: [] as any[],
-        activityLogs: [] as any[],
-        leaderboard: {
-            monthly: [] as { name: string; area: number; rank: number; image_url?: string }[],
-            yearly: [] as { name: string; area: number; rank: number; image_url?: string }[]
-        }
-    });
-    const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    const salesTrendData = [
-        { name: 'Jan', sales: 400000 },
-        { name: 'Feb', sales: 300000 },
-        { name: 'Mar', sales: 600000 },
-        { name: 'Apr', sales: 800000 },
-        { name: 'May', sales: 500000 },
-        { name: 'Jun', sales: 900000 },
-    ];
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const profileId = profile?.id as Id<"profiles">;
+
+    // Convex Queries
+    const overview = useQuery(api.sales.getSalesOverview, 
+        (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: 'overall' } : "skip"
+    );
+
+    const announcements = useQuery(api.announcements.listPublished, 
+        tenantId ? { tenant_id: tenantId, limit: 5 } : "skip"
+    );
+
+    const activityLogs = useQuery(api.activity_logs.listRecent, 
+        tenantId ? { tenant_id: tenantId, limit: 10 } : "skip"
+    );
+
+    const mtdLeaderboard = useQuery(api.sales.getLeaderboard, 
+        tenantId ? { tenant_id: tenantId, timeFilter: 'this_month', roleFilter: 'all' } : "skip"
+    );
+    
+    const ytdLeaderboard = useQuery(api.sales.getLeaderboard, 
+        tenantId ? { tenant_id: tenantId, timeFilter: 'this_year', roleFilter: 'all' } : "skip"
+    );
 
     const productMixData = [
         { name: 'Residential', value: 65 },
@@ -51,128 +49,11 @@ export function ReceptionistDashboard() {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
     useEffect(() => {
-        loadOverviewData();
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
-    }, [profile]);
+    }, []);
 
-    const loadOverviewData = async () => {
-        if (!profile?.id) return;
-        try {
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-            const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-            const yearStart = `${currentYear}-01-01`;
-
-            const [{ data: salesData }, { data: targetData }, { data: incentiveData }, { data: announcements }, { data: activityLogs }, { data: ytdSalesData }, { data: projectsData }] = await Promise.all([
-                supabase.from('sales').select('total_revenue').gte('sale_date', monthStart),
-                supabase.from('sales_targets').select('target_amount').gte('period_start', monthStart).limit(1).maybeSingle(),
-                supabase.from('incentives').select('*').eq('calculation_year', currentYear),
-                supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }).limit(5),
-                supabase.from('activity_log').select('*, user:user_id(full_name)').eq('action', 'SALE_CREATED').order('created_at', { ascending: false }).limit(10),
-                supabase.from('sales').select('id, total_revenue, area_sqft, project_id').gte('sale_date', yearStart),
-                supabase.from('projects').select('id, name'),
-            ]);
-
-            const revenue = salesData?.reduce((sum, sale) => sum + Number(sale.total_revenue), 0) || 0;
-            const target = targetData?.target_amount || 0;
-            const achievement = target > 0 ? (revenue / target) * 100 : 0;
-            const totalIncentives = incentiveData?.reduce((sum, inc) => sum + Number(inc.total_incentive_amount), 0) || 0;
-
-            const ytdSales = ytdSalesData || [];
-            const ytdSalesCount = ytdSales.length;
-            const ytdRevenue = ytdSales.reduce((sum, sale) => sum + Number(sale.total_revenue), 0);
-            const ytdTotalArea = ytdSales.reduce((sum, sale) => sum + Number(sale.area_sqft || 0), 0);
-
-            let ytdPaymentCount = 0;
-            if (ytdSales.length > 0) {
-                const saleIds = ytdSales.map(s => s.id);
-                const { count } = await supabase
-                    .from('payments')
-                    .select('*', { count: 'exact', head: true })
-                    .in('sale_id', saleIds);
-                ytdPaymentCount = count || 0;
-            }
-
-            const projectAreaMap = new Map<string, number>();
-            projectsData?.forEach(p => projectAreaMap.set(p.id, 0));
-
-            ytdSales.forEach(sale => {
-                if (sale.project_id) {
-                    const current = projectAreaMap.get(sale.project_id) || 0;
-                    projectAreaMap.set(sale.project_id, current + Number(sale.area_sqft || 0));
-                }
-            });
-
-            const projectStats = projectsData?.map(p => ({
-                name: p.name,
-                area: projectAreaMap.get(p.id) || 0
-            })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
-
-            const { data: allYearSales } = await supabase
-                .from('sales')
-                .select('sales_executive_id, area_sqft, sale_date')
-                .gte('sale_date', yearStart);
-
-            const { data: allProfiles } = await supabase
-                .from('profiles')
-                .select('id, full_name, image_url');
-
-            const profileMap = new Map(allProfiles?.map(p => [p.id, { name: p.full_name, image: p.image_url }]) || []);
-
-            const calculateLeaderboard = (sales: any[]) => {
-                const map = new Map<string, number>();
-                sales.forEach(s => {
-                    const current = map.get(s.sales_executive_id) || 0;
-                    map.set(s.sales_executive_id, current + Number(s.area_sqft || 0));
-                });
-
-                return Array.from(map.entries())
-                    .map(([id, area]) => {
-                        const user = profileMap.get(id);
-                        return {
-                            name: user?.name || 'Unknown',
-                            image_url: user?.image,
-                            area,
-                            id
-                        };
-                    })
-                    .sort((a, b) => b.area - a.area)
-                    .slice(0, 5)
-                    .map((item, index) => ({ ...item, rank: index + 1 }));
-            };
-
-            const yearlyLeaderboard = calculateLeaderboard(allYearSales || []);
-            const monthlyLeaderboardSales = (allYearSales || []).filter(s => s.sale_date >= monthStart);
-            const monthlyLeaderboard = calculateLeaderboard(monthlyLeaderboardSales);
-
-            setStats({
-                totalSales: salesData?.length || 0,
-                totalRevenue: revenue,
-                totalTarget: target,
-                achievementPercent: achievement,
-                totalIncentives: totalIncentives,
-                ytdSalesCount,
-                ytdTotalArea,
-                ytdRevenue,
-                ytdPaymentCount,
-                projectStats,
-                recentAnnouncements: announcements || [],
-                activityLogs: activityLogs || [],
-                leaderboard: {
-                    monthly: monthlyLeaderboard,
-                    yearly: yearlyLeaderboard
-                }
-            });
-        } catch (error) {
-            console.error('Error loading overview:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) return <LoadingSpinner fullScreen />;
+    if (!overview) return <LoadingSpinner fullScreen />;
 
     const projectColors = [
         { bg: 'bg-emerald-50', text: 'text-emerald-600' },
@@ -181,7 +62,7 @@ export function ReceptionistDashboard() {
         { bg: 'bg-amber-50', text: 'text-amber-600' },
     ];
 
-    const LeaderboardItem = ({ rank, name, area, image_url }: { rank: number, name: string, area: number, image_url?: string }) => {
+    const LeaderboardItem = ({ rank, name, area, image_url }: { rank: number, name: string, area: number, image_url?: string | null }) => {
         const getBorderColor = (rank: number) => {
             if (rank === 1) return 'border-yellow-400';
             if (rank === 2) return 'border-gray-300';
@@ -265,7 +146,7 @@ export function ReceptionistDashboard() {
             <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-6">
                 <KPICard
                     title="Total Sales (Monthly)"
-                    value={stats.totalSales}
+                    value={overview.mySales}
                     icon={TrendingUp}
                     subtitle="Deals Closed"
                     iconBgColor="bg-blue-50"
@@ -274,34 +155,34 @@ export function ReceptionistDashboard() {
                 />
                 <KPICard
                     title="Revenue (Monthly)"
-                    value={formatCurrency(stats.totalRevenue, true)}
+                    value={formatCurrency(overview.monthlyRevenue, true)}
                     icon={DollarSign}
-                    subtitle={`Target: ${formatCurrency(stats.totalTarget, true)}`}
+                    subtitle={`Target: ${formatCurrency(overview.myTarget, true)}`}
                     iconBgColor="bg-green-50"
                     iconColor="text-green-600"
                     className="order-2 lg:order-2"
                 />
                 <KPICard
                     title="Total Sales (YTD)"
-                    value={stats.ytdSalesCount}
+                    value={overview.ytdSalesCount}
                     icon={BarChart3}
-                    subtitle={`Total Area: ${stats.ytdTotalArea.toLocaleString()} sqft`}
+                    subtitle={`Total Area: ${overview.ytdTotalArea.toLocaleString()} sqft`}
                     iconBgColor="bg-teal-50"
                     iconColor="text-teal-600"
                     className="order-3 lg:order-5"
                 />
                 <KPICard
                     title="Total Revenue (YTD)"
-                    value={formatCurrency(stats.ytdRevenue, true)}
+                    value={formatCurrency(overview.ytdRevenue, true)}
                     icon={Wallet}
-                    subtitle={`${stats.ytdPaymentCount} Payments Received`}
+                    subtitle="Payments Received"
                     iconBgColor="bg-cyan-50"
                     iconColor="text-cyan-600"
                     className="order-4 lg:order-6"
                 />
                 <KPICard
                     title="Achievement"
-                    value={`${stats.achievementPercent.toFixed(1)}%`}
+                    value={`${overview.achievementPercent.toFixed(1)}%`}
                     icon={Target}
                     subtitle="Monthly Goal"
                     iconBgColor="bg-yellow-50"
@@ -310,7 +191,7 @@ export function ReceptionistDashboard() {
                 />
                 <KPICard
                     title="Incentives (YTD)"
-                    value={formatCurrency(stats.totalIncentives)}
+                    value={formatCurrency(overview.totalIncentives)}
                     icon={Award}
                     subtitle="Total Earnings"
                     iconBgColor="bg-rose-50"
@@ -319,9 +200,9 @@ export function ReceptionistDashboard() {
                 />
             </div>
 
-            {stats.projectStats.length > 0 && (
+            {overview.projectStats.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-                    {stats.projectStats.map((proj, index) => {
+                    {overview.projectStats.map((proj: any, index: number) => {
                         const style = projectColors[index % projectColors.length];
                         return (
                             <KPICard
@@ -347,9 +228,9 @@ export function ReceptionistDashboard() {
                     </CardHeader>
                     <CardContent className="pt-4">
                         <div className="space-y-1">
-                            {stats.leaderboard?.monthly.length > 0 ? (
-                                stats.leaderboard.monthly.map((item) => (
-                                    <LeaderboardItem key={item.rank} {...item} />
+                            {(mtdLeaderboard || []).length > 0 ? (
+                                mtdLeaderboard?.map((item, index) => (
+                                    <LeaderboardItem key={index} rank={index + 1} name={item.name} area={item.revenue} image_url={item.image_url} />
                                 ))
                             ) : (
                                 <p className="text-center text-gray-500 dark:text-gray-400 py-6">No sales data for this month yet.</p>
@@ -366,9 +247,9 @@ export function ReceptionistDashboard() {
                     </CardHeader>
                     <CardContent className="pt-4">
                         <div className="space-y-1">
-                            {stats.leaderboard?.yearly.length > 0 ? (
-                                stats.leaderboard.yearly.map((item) => (
-                                    <LeaderboardItem key={item.rank} {...item} />
+                            {(ytdLeaderboard || []).length > 0 ? (
+                                ytdLeaderboard?.map((item, index) => (
+                                    <LeaderboardItem key={index} rank={index + 1} name={item.name} area={item.revenue} image_url={item.image_url} />
                                 ))
                             ) : (
                                 <p className="text-center text-gray-500 dark:text-gray-400 py-6">No sales data for this year yet.</p>
@@ -387,7 +268,7 @@ export function ReceptionistDashboard() {
                         <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none dark:block hidden" />
 
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={salesTrendData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+                            <LineChart data={overview.salesTrend} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
                                 <defs>
                                     <filter id="neon-glow" height="300%" width="300%" x="-75%" y="-75%">
                                         <feGaussianBlur stdDeviation="4" result="coloredBlur" />
@@ -396,10 +277,6 @@ export function ReceptionistDashboard() {
                                             <feMergeNode in="SourceGraphic" />
                                         </feMerge>
                                     </filter>
-                                    <linearGradient id="line-gradient" x1="0" y1="0" x2="1" y2="0">
-                                        <stop offset="0%" stopColor="#00E576" />
-                                        <stop offset="100%" stopColor="#00C853" />
-                                    </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} vertical={false} />
                                 <XAxis
@@ -467,19 +344,19 @@ export function ReceptionistDashboard() {
                     <CardHeader className="bg-white dark:bg-surface-dark border-b border-slate-50 dark:border-white/10 pb-4"><CardTitle className="flex items-center gap-2 dark:text-white"><Bell size={20} /> Latest Updates</CardTitle></CardHeader>
                     <CardContent>
                         <div className="divide-y divide-gray-100 dark:divide-white/5">
-                            {stats.recentAnnouncements.map((ann) => (
-                                <div key={ann.id} className="py-3">
+                            {(announcements || []).map((ann) => (
+                                <div key={ann._id} className="py-3">
                                     <p className="font-semibold text-gray-800 dark:text-white">{ann.title}</p>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{ann.content}</p>
                                     <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(ann.created_at).toLocaleDateString()}</span>
                                 </div>
                             ))}
-                            {stats.recentAnnouncements.length === 0 && <p className="text-gray-500 dark:text-gray-400 py-2">No new announcements.</p>}
+                            {(announcements || []).length === 0 && <p className="text-gray-500 dark:text-gray-400 py-2">No new announcements.</p>}
                         </div>
                     </CardContent>
                 </Card>
 
-                <RecentActivityLog activities={stats.activityLogs} />
+                <RecentActivityLog activities={activityLogs || []} />
             </div>
 
             <CelebrationCards />

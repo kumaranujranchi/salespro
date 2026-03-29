@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { SiteVisit } from '../../types/database';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id, Doc } from "../../../convex/_generated/dataModel";
 import { DriverTripModal } from '../site-visits/DriverTripModal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -10,32 +11,20 @@ import { MapPin, Clock, Calendar, Car, Navigation, CheckCircle2 } from 'lucide-r
 
 export function DriverDashboard() {
     const { profile } = useAuth();
-    const [visits, setVisits] = useState<SiteVisit[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedVisit, setSelectedVisit] = useState<SiteVisit | null>(null);
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const userId = profile?._id as Id<"profiles">;
+    const userRole = profile?.role || "driver";
+
+    const [selectedVisit, setSelectedVisit] = useState<Doc<"site_visits"> | null>(null);
     const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
-    useEffect(() => {
-        loadVisits();
-    }, []);
+    // Convex Query
+    const visitsData = useQuery(api.site_visits.listSiteVisits, 
+        tenantId ? { tenant_id: tenantId, userId: userId, role: userRole } : "skip"
+    );
 
-    const loadVisits = async () => {
-        setLoading(true);
-        // Fetch visits where driver_id is current user
-        // The RLS already filters this, but explicit filtering helps clarity
-        const { data, error } = await supabase
-            .from('site_visits')
-            .select('*')
-            .order('visit_date', { ascending: true }) // Upcoming first
-            .neq('status', 'cancelled'); // Don't show cancelled? Maybe show them but marked.
-
-        if (error) {
-            console.error('Error loading visits:', error);
-        } else {
-            setVisits(data || []);
-        }
-        setLoading(false);
-    };
+    const loading = !visitsData;
+    const visits = (visitsData || []) as any[];
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -47,15 +36,19 @@ export function DriverDashboard() {
     };
 
     // Group visits by Date
-    const groupedVisits = visits.reduce((acc, visit) => {
-        const date = new Date(visit.visit_date).toDateString();
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(visit);
-        return acc;
-    }, {} as Record<string, SiteVisit[]>);
+    const groupedVisits = useMemo(() => {
+        return visits.reduce((acc: Record<string, any[]>, visit: any) => {
+            const date = new Date(visit.visit_date).toDateString();
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(visit);
+            return acc;
+        }, {});
+    }, [visits]);
 
     // Sort dates
-    const sortedDates = Object.keys(groupedVisits).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const sortedDates = useMemo(() => {
+        return Object.keys(groupedVisits).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    }, [groupedVisits]);
 
     return (
         <div className="space-y-8 animate-fadeIn">
@@ -108,14 +101,14 @@ export function DriverDashboard() {
                             </h3>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {groupedVisits[date].map(visit => {
+                                {groupedVisits[date].map((visit: any) => {
                                     const isStarted = visit.status === 'trip_started';
                                     const isApproved = visit.status === 'approved';
                                     const isCompleted = visit.status === 'completed';
 
                                     return (
                                         <div 
-                                            key={visit.id} 
+                                            key={visit._id} 
                                             className={`
                                                 relative bg-white dark:bg-slate-800 rounded-2xl p-5 border transition-all duration-300
                                                 ${isStarted ? 'border-blue-500 shadow-lg shadow-blue-100 dark:shadow-blue-900/20 ring-1 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md'}
@@ -145,7 +138,7 @@ export function DriverDashboard() {
                                                     <div>
                                                         <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Customer</p>
                                                         <p className="font-medium text-slate-700 dark:text-slate-200">{visit.customer_name}</p>
-                                                        <a href={`tel:${visit.customer_phone}`} className="text-blue-600 dark:text-blue-400 text-sm hover:underline">{visit.customer_phone}</a>
+                                                        <a href={`tel:${visit.customer_phone}`} className="text-blue-600 dark:text-blue-400 text-sm hover:underline">{visit.mobile}</a>
                                                     </div>
                                                 </div>
                                                 
@@ -189,8 +182,8 @@ export function DriverDashboard() {
             <DriverTripModal
                 isOpen={isDriverModalOpen}
                 onClose={() => setIsDriverModalOpen(false)}
-                onSuccess={loadVisits}
-                visit={selectedVisit}
+                onSuccess={() => {}}
+                visit={selectedVisit as any}
             />
         </div>
     );

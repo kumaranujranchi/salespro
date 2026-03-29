@@ -11,7 +11,7 @@ import {
   Lock,
   Mail
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -56,40 +56,27 @@ export function LoginPage() {
       setLoading(false);
     } else {
       setSuccess('Login successful! Redirecting...');
-      
-      try {
-        // Redirection logic based on role or affiliate status
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // 1. Check Profile for role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user?.id)
-          .maybeSingle();
-
-        // 2. Check if they are an affiliate (have a campaign) - fallback/verify
-        const { data: affiliate } = await supabase
-          .from('referral_campaigns')
-          .select('id')
-          .eq('created_by', user?.id)
-          .maybeSingle();
-
-        setTimeout(() => {
-          if (profile?.role === 'affiliate' || affiliate) {
-              navigate('/affiliate/dashboard');
-          } else if (profile?.role === 'platform_admin') {
-              navigate('/platform/dashboard');
-          } else {
-              navigate('/dashboard');
-          }
-        }, 1000);
-      } catch (err) {
-        console.error('Redirection check failed:', err);
-        navigate('/dashboard');
-      }
+      // The actual redirection is handled by the useEffect above once profile loads
+      // or we can just wait a bit for the reactive AuthContext to update
     }
   };
+
+  // Handle redirection reactively when profile/affiliate data becomes available
+  const { profile, affiliate } = useAuth();
+  useEffect(() => {
+    if (success && profile) {
+      const timer = setTimeout(() => {
+        if (profile.role === 'affiliate' || affiliate) {
+          navigate('/affiliate/dashboard');
+        } else if (profile.role === 'platform_admin') {
+          navigate('/platform/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [success, profile, affiliate, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">

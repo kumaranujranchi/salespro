@@ -1,5 +1,7 @@
 import { useState, useEffect, Fragment } from 'react';
-import { supabase } from '../lib/supabase';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
@@ -29,9 +31,11 @@ export function LeadsPage() {
   const dialog = useDialog();
   const toast = useToast();
 
+  // Convex Mutations
+  const deleteLeadMutation = useMutation(api.leads.deleteLead);
+  const bulkDeleteLeadsMutation = useMutation(api.leads.bulkDeleteLeads);
+
   // State Management
-  const [leads, setLeads] = useState<LeadWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -54,110 +58,30 @@ export function LeadsPage() {
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
-  const [executives, setExecutives] = useState<{ id: string, full_name: string }[]>([]);
-  const [teamLeaders, setTeamLeaders] = useState<{ id: string, full_name: string }[]>([]);
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
     profile?.role === 'sales_executive'
   );
+
+  // Fetch Leads using Convex
+  const leadsData = useQuery(api.leads.listLeadsByTenant, 
+    profile?.tenant_id ? { 
+      tenant_id: profile.tenant_id as Id<"tenants">,
+      showOnlyMyLeads,
+      profileId: profile.id as Id<"profiles">
+    } : "skip"
+  );
+
+  const leads = (leadsData || []) as LeadWithRelations[];
+  const loading = leadsData === undefined;
 
   // Permissions
   const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
   const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(profile?.role || '');
 
-  useEffect(() => {
-    if (isCRMActive) {
-      loadLeads();
-    }
-  }, [isCRMActive, showOnlyMyLeads, statusFilter, scoreFilter, executiveFilter, teamLeaderFilter]);
-
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, scoreFilter, executiveFilter, teamLeaderFilter, showOnlyMyLeads]);
-
-  // Load Executives and Team Leaders for Filters
-  useEffect(() => {
-    if (canViewAllLeads) {
-      const loadUsers = async () => {
-        const { data } = await supabase
-          .from('profiles')
-          .select('id, full_name, role')
-          .in('role', ['sales_executive', 'team_leader'])
-          .order('full_name');
-
-        if (data) {
-          setExecutives(data.filter(u => u.role === 'sales_executive'));
-          setTeamLeaders(data.filter(u => u.role === 'team_leader'));
-        }
-      };
-      loadUsers();
-    }
-  }, [canViewAllLeads]);
-
-  const loadLeads = async () => {
-    if (!profile) return;
-
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('leads')
-        .select(`
-          *,
-          project:projects(id, name, address),
-          sales_executive:profiles!sales_executive_id(id, full_name, email, phone, reporting_manager_id)
-        `)
-        .eq('tenant_id', profile.tenant_id)
-        .order('created_at', { ascending: false });
-
-      // Apply filters
-      if (showOnlyMyLeads && !canViewAllLeads) {
-        query = query.eq('sales_executive_id', profile.id);
-      }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('lead_status', statusFilter);
-      }
-
-      if (scoreFilter !== 'all') {
-        query = query.eq('lead_score', scoreFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Fetch follow-up counts and latest follow-up for each lead
-      const leadsWithFollowups = await Promise.all(
-        (data || []).map(async (lead) => {
-          const { data: followups } = await supabase
-            .from('lead_followups')
-            .select('*')
-            .eq('lead_id', lead.id)
-            .order('followup_date', { ascending: false });
-
-          const latestFollowup = followups?.[0];
-          const overdueFollowup = latestFollowup?.next_followup_date
-            ? new Date(latestFollowup.next_followup_date) < new Date()
-            : false;
-
-          return {
-            ...lead,
-            followups: followups || [],
-            latest_followup: latestFollowup,
-            followup_count: followups?.length || 0,
-            overdue_followup: overdueFollowup
-          };
-        })
-      );
-
-      setLeads(leadsWithFollowups);
-    } catch (error) {
-      console.error('Error loading leads:', error);
-      toast.error('Failed to load leads');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateLead = () => {
     setSelectedLead(null);
@@ -202,13 +126,11 @@ export function LeadsPage() {
   const handleFormClose = () => {
     setIsFormModalOpen(false);
     setSelectedLead(null);
-    loadLeads();
   };
 
   const handleDetailClose = () => {
     setIsDetailModalOpen(false);
     setSelectedLead(null);
-    loadLeads();
   };
 
   const handleBulkImport = () => {
@@ -216,7 +138,6 @@ export function LeadsPage() {
   };
 
   const handleBulkSuccess = () => {
-    loadLeads();
     setSelectedLeadIds([]);
   };
 
@@ -238,21 +159,12 @@ export function LeadsPage() {
 
     if (!confirmed) return;
 
-    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .delete()
-        .eq('id', leadId);
-
-      if (error) throw error;
-
-      loadLeads();
+      await deleteLeadMutation({ id: leadId as Id<"leads"> });
+      toast.success('Lead deleted successfully');
     } catch (error) {
       console.error('Delete error', error);
       toast.error('Failed to delete lead');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -269,21 +181,13 @@ export function LeadsPage() {
 
     if (!confirmed) return;
 
-    setLoading(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .delete()
-        .in('id', selectedLeadIds);
-
-      if (error) throw error;
-
+      await bulkDeleteLeadsMutation({ ids: selectedLeadIds as Id<"leads">[] });
       handleBulkSuccess();
+      toast.success('Leads deleted successfully');
     } catch (error) {
       console.error('Bulk delete error', error);
       toast.error('Failed to delete leads');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -516,33 +420,6 @@ export function LeadsPage() {
               <option value="Warm">Warm</option>
               <option value="Cold">Cold</option>
             </select>
-
-            {/* Admin Filters - Executive & Team Leader */}
-            {canViewAllLeads && (
-              <>
-                <select
-                  value={executiveFilter}
-                  onChange={(e) => setExecutiveFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                >
-                  <option value="all">All Executives</option>
-                  {executives.map(ex => (
-                    <option key={ex.id} value={ex.id}>{ex.full_name}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={teamLeaderFilter}
-                  onChange={(e) => setTeamLeaderFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                >
-                  <option value="all">All Team Leaders</option>
-                  {teamLeaders.map(tl => (
-                    <option key={tl.id} value={tl.id}>{tl.full_name}</option>
-                  ))}
-                </select>
-              </>
-            )}
 
             {/* My Leads Toggle */}
             {canViewAllLeads && (
@@ -798,52 +675,6 @@ export function LeadsPage() {
                                       </div>
                                     </div>
                                   </div>
-
-                                  {/* Timeline Section */}
-                                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                      <TrendingUp size={16} className="text-green-500" />
-                                      Latest Activity
-                                    </h4>
-                                    
-                                    <div className="space-y-4">
-                                      {lead.latest_followup ? (
-                                        <div className="flex items-start gap-3">
-                                          <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
-                                          <div>
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                              {lead.latest_followup.discussion_summary}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <Badge variant="outline">{lead.latest_followup.new_status}</Badge>
-                                              <span className="text-xs text-gray-400">
-                                                {new Date(lead.latest_followup.followup_date).toLocaleString()}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <p className="text-sm text-gray-500 italic">No interactions yet</p>
-                                      )}
-
-                                      {lead.latest_followup?.next_followup_date && (
-                                        <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-md border border-orange-100 dark:border-orange-900/20">
-                                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">
-                                            Upcoming Action
-                                          </p>
-                                          <p className="text-sm text-gray-900 dark:text-white">
-                                            Follow-up due by {new Date(lead.latest_followup.next_followup_date).toLocaleDateString()}
-                                          </p>
-                                        </div>
-                                      )}
-                                      
-                                      <div className="pt-2">
-                                         <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleViewDetails(lead); }}>
-                                            View Full History
-                                         </Button>
-                                      </div>
-                                    </div>
-                                  </div>
                                 </div>
                               </motion.div>
                             </TableCell>
@@ -855,237 +686,28 @@ export function LeadsPage() {
                 </Table>
               </div>
 
-              {/* Mobile View */}
-              <div className="md:hidden space-y-4">
-                <AnimatePresence>
-                  {paginatedLeads.map((lead) => (
-                    <motion.div
-                      key={lead.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden"
-                    >
-                      {/* Collapsed Header */}
-                      <div
-                        className="p-4 flex items-start gap-4 cursor-pointer active:bg-gray-50 dark:active:bg-slate-700 transition-colors touch-manipulation"
-                        onClick={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
-                      >
-                        <div onClick={(e) => e.stopPropagation()} className="pt-1">
-                          <input
-                            type="checkbox"
-                            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                            checked={selectedLeadIds.includes(lead.id)}
-                            onChange={() => handleSelectLead(lead.id)}
-                          />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 dark:text-white text-base truncate pr-2">
-                                {lead.customer_name}
-                              </h3>
-                            </div>
-                            <div className="shrink-0">
-                              {getScoreBadge(lead.lead_score)}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            {getStatusBadge(lead.lead_status)}
-                            <motion.div
-                              animate={{ rotate: expandedLeadId === lead.id ? 180 : 0 }}
-                              transition={{ duration: 0.3 }}
-                              className="text-gray-400"
-                            >
-                              <ChevronDown size={24} />
-                            </motion.div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Expanded Content */}
-                      <AnimatePresence>
-                        {expandedLeadId === lead.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                            className="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-slate-800/50"
-                          >
-                            <div className="p-4 space-y-4">
-                              {/* About Lead Section */}
-                              <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                                <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                  <Users size={16} className="text-blue-500" />
-                                  About Lead
-                                </h4>
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                      <Phone size={16} className="text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">Mobile</div>
-                                      <div className="flex items-center gap-2">
-                                        <a href={`tel:${lead.mobile}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600">
-                                          {lead.mobile}
-                                        </a>
-                                        <button
-                                          onClick={() => handleCopy(lead.mobile)}
-                                          className="text-gray-400 hover:text-gray-600 bg-gray-50 dark:bg-gray-700 p-2 rounded-md active:scale-95 transition-transform"
-                                          title="Copy Mobile"
-                                        >
-                                          <Copy size={16} />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {lead.email && (
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                        <Mail size={16} className="text-blue-600 dark:text-blue-400" />
-                                      </div>
-                                      <div className="min-w-0">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">Email</div>
-                                        <a href={`mailto:${lead.email}`} className="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 truncate block">
-                                          {lead.email}
-                                        </a>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                                      <MapPin size={16} className="text-purple-600 dark:text-purple-400" />
-                                    </div>
-                                    <div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">Location</div>
-                                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {lead.city || 'N/A'}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-3 pt-2">
-                                    <div>
-                                      <div className="text-xs text-gray-500">Source</div>
-                                      <div className="text-sm font-medium">{lead.lead_source || '-'}</div>
-                                    </div>
-                                    <div>
-                                      <div className="text-xs text-gray-500">Project</div>
-                                      <div className="text-sm font-medium truncate">{lead.project?.name || '-'}</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Timeline Section */}
-                              <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                                <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                  <TrendingUp size={16} className="text-green-500" />
-                                  Timeline
-                                </h4>
-                                
-                                <div className="space-y-4">
-                                  <div className="flex items-start gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
-                                    <div>
-                                      <p className="text-xs text-gray-500">Latest Interaction</p>
-                                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {lead.latest_followup ? lead.latest_followup.discussion_summary : 'No interactions yet'}
-                                      </p>
-                                      {lead.latest_followup && (
-                                        <p className="text-xs text-gray-400 mt-1">
-                                          {new Date(lead.latest_followup.followup_date).toLocaleString()}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {lead.latest_followup?.next_followup_date && (
-                                    <div className="flex items-start gap-3">
-                                      <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 shrink-0"></div>
-                                      <div>
-                                        <p className="text-xs text-gray-500">Next Action</p>
-                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                          Follow-up due
-                                        </p>
-                                        <p className="text-xs text-orange-600 mt-1 font-medium">
-                                          {new Date(lead.latest_followup.next_followup_date).toLocaleString()}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-3 gap-3 pt-2">
-                                <Button variant="outline" size="sm" onClick={() => handleEditLead(lead)} className="w-full">
-                                  Edit
-                                </Button>
-                                <Button variant="primary" size="sm" onClick={() => handleViewDetails(lead)} className="w-full">
-                                  View
-                                </Button>
-                                {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
-                                  <Button variant="ghost" size="sm" onClick={() => handleDeleteLead(lead.id)} className="w-full text-red-500 hover:text-red-600 hover:bg-red-50">
-                                    <Trash2 size={18} />
-                                  </Button>
-                                )}
-                              </div>
-
-
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {/* Pagination Controls */}
-              {filteredLeads.length > 0 && (
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-t border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span>Rows per page:</span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-gray-700"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                    <span>
-                      {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredLeads.length)} of {filteredLeads.length}
-                    </span>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLeads.length)} of {filteredLeads.length} leads
                   </div>
-
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft size={16} />
                     </Button>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="text-sm font-medium">
                       Page {currentPage} of {totalPages}
-                    </span>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
                     >
                       <ChevronRight size={16} />
@@ -1098,68 +720,40 @@ export function LeadsPage() {
         </CardContent>
       </Card>
 
-      {/* Floating Action Button for Mobile */}
-      {canCreateLead && (
-        <button
-          onClick={handleCreateLead}
-          className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-[#1673FF] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 active:scale-95 transition-all z-30"
-          aria-label="Create new lead"
-        >
-          <Plus size={24} />
-        </button>
-      )}
-
       {/* Modals */}
-      {isFormModalOpen && (
-        <LeadFormModal
-          isOpen={isFormModalOpen}
-          onClose={handleFormClose}
-          lead={selectedLead}
-        />
-      )}
-
-      {isDetailModalOpen && selectedLead && (
-        <LeadDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={handleDetailClose}
-          lead={selectedLead}
-        />
-      )}
-
-      {isBulkModalOpen && (
-        <BulkUploadModal
-          isOpen={isBulkModalOpen}
-          onClose={() => setIsBulkModalOpen(false)}
-          onSuccess={handleBulkSuccess}
-        />
-      )}
-
-      {isAssignModalOpen && (
-        <AssignLeadModal
-          isOpen={isAssignModalOpen}
-          onClose={() => setIsAssignModalOpen(false)}
-          leadIds={selectedLeadIds}
-          onSuccess={handleBulkSuccess}
-        />
-      )}
-
-      {isStatusModalOpen && (
-        <BulkStatusModal
-          isOpen={isStatusModalOpen}
-          onClose={() => setIsStatusModalOpen(false)}
-          leadIds={selectedLeadIds}
-          onSuccess={handleBulkSuccess}
-        />
-      )}
-
-      {isProjectModalOpen && (
-        <BulkProjectModal
-          isOpen={isProjectModalOpen}
-          onClose={() => setIsProjectModalOpen(false)}
-          leadIds={selectedLeadIds}
-          onSuccess={handleBulkSuccess}
-        />
-      )}
+      <LeadFormModal
+        isOpen={isFormModalOpen}
+        onClose={handleFormClose}
+        lead={selectedLead}
+      />
+      <LeadDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailClose}
+        lead={selectedLead}
+      />
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSuccess={handleBulkSuccess}
+      />
+      <AssignLeadModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        leadIds={selectedLeadIds}
+        onSuccess={handleBulkSuccess}
+      />
+      <BulkStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        leadIds={selectedLeadIds}
+        onSuccess={handleBulkSuccess}
+      />
+      <BulkProjectModal
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
+        leadIds={selectedLeadIds}
+        onSuccess={handleBulkSuccess}
+      />
     </div>
   );
 }

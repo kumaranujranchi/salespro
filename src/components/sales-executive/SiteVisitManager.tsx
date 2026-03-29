@@ -1,18 +1,33 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { supabase } from '../../lib/supabase';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { SiteVisit } from '../../types/database';
 import { Plus, MapPin, Calendar, CheckSquare, XSquare, Clock } from 'lucide-react';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 export function SiteVisitManager() {
     const { profile } = useAuth();
     const dialog = useDialog();
-    const [visits, setVisits] = useState<SiteVisit[]>([]);
-    const [loading, setLoading] = useState(true);
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const userId = profile?._id as Id<"profiles">;
+
+    // Convex Queries
+    const visits = useQuery(api.site_visits.listSiteVisits, 
+        tenantId && profile ? { 
+            tenant_id: tenantId, 
+            role: profile.role, 
+            userId: userId 
+        } : "skip"
+    );
+
+    // Convex Mutations
+    const createSiteVisit = useMutation(api.site_visits.createSiteVisit);
+
     const [showForm, setShowForm] = useState(false);
 
     // Form State
@@ -22,53 +37,29 @@ export function SiteVisitManager() {
     const [visitDate, setVisitDate] = useState('');
     const [visitTime, setVisitTime] = useState('');
 
-    useEffect(() => {
-        loadVisits();
-    }, [profile]);
-
-    const loadVisits = async () => {
-        if (!profile?.id) return;
-        try {
-            const { data, error } = await supabase
-                .from('site_visits')
-                .select('*')
-                .eq('requested_by', profile.id)
-                .order('visit_date', { ascending: false });
-
-            if (error) throw error;
-            setVisits(data || []);
-        } catch (error) {
-            console.error('Error loading visits:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!profile?.id) return;
+        if (!profile?._id) return;
 
         try {
-            const { error } = await supabase.from('site_visits').insert({
-                requested_by: profile.id,
+            await createSiteVisit({
+                tenant_id: tenantId,
+                requested_by: userId,
                 customer_name: customerName,
-                customer_phone: customerPhone,
+                mobile: customerPhone,
                 pickup_location: pickupLocation,
                 visit_date: visitDate,
                 visit_time: visitTime,
-                project_ids: [], // Simplified for demo
                 status: 'pending',
-                is_public: false
+                notes: ''
             });
 
-            if (error) throw error;
             setShowForm(false);
             resetForm();
-            loadVisits();
             await dialog.alert('Site visit request submitted successfully!', { variant: 'success', title: 'Success' });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting request:', error);
-            await dialog.alert('Failed to submit request.', { variant: 'danger', title: 'Error' });
+            await dialog.alert(error.message || 'Failed to submit request.', { variant: 'danger', title: 'Error' });
         }
     };
 
@@ -90,7 +81,7 @@ export function SiteVisitManager() {
         const icons = {
             pending: Clock,
             approved: CheckSquare,
-            completed: CheckSquare, // Or another done icon
+            completed: CheckSquare,
             cancelled: XSquare
         };
         const Icon = icons[status as keyof typeof icons] || Clock;
@@ -101,6 +92,8 @@ export function SiteVisitManager() {
             </span>
         );
     };
+
+    if (visits === undefined) return <LoadingSpinner fullScreen />;
 
     return (
         <div className="space-y-6">
@@ -133,8 +126,8 @@ export function SiteVisitManager() {
 
             {/* Visits List */}
             <div className="grid grid-cols-1 gap-4">
-                {visits.map((visit) => (
-                    <div key={visit.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                {visits.map((visit: any) => (
+                    <div key={visit._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
                                 <h3 className="font-bold text-lg text-[#0A1C37]">{visit.customer_name}</h3>
@@ -146,12 +139,12 @@ export function SiteVisitManager() {
                         <div>
                             <div className="text-right">
                                 <p className="text-xs text-gray-400">Request ID</p>
-                                <p className="font-mono text-sm text-gray-600">{visit.id.slice(0, 8)}</p>
+                                <p className="font-mono text-sm text-gray-600">{visit._id.slice(0, 8)}</p>
                             </div>
                         </div>
                     </div>
                 ))}
-                {!loading && visits.length === 0 && (
+                {visits.length === 0 && (
                     <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl">No site visits found. Create one to get started.</div>
                 )}
             </div>

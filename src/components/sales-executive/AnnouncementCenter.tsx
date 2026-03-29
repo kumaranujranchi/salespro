@@ -1,37 +1,25 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id, Doc } from "../../../convex/_generated/dataModel";
 import { Card, CardContent } from '../ui/Card';
-import { Announcement } from '../../types/database';
 import { Search, Bookmark } from 'lucide-react';
 import { Input } from '../ui/Input';
 
 export function AnnouncementCenter() {
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { profile } = useAuth();
+    const tenantId = profile?.tenant_id as Id<"tenants">;
     const [filter, setFilter] = useState('');
 
-    useEffect(() => {
-        loadAnnouncements();
-    }, []);
+    const announcementsData = useQuery(api.announcements.listPublished, 
+        tenantId ? { tenant_id: tenantId, limit: 50 } : "skip"
+    );
 
-    const loadAnnouncements = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('announcements')
-                .select('*')
-                .eq('is_published', true)
-                .order('created_at', { ascending: false });
+    const loading = !announcementsData;
+    const announcements = announcementsData || [];
 
-            if (error) throw error;
-            setAnnouncements(data || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const filteredList = announcements.filter(a =>
+    const filteredList = (announcements as Doc<"announcements">[]).filter((a: Doc<"announcements">) =>
         a.title.toLowerCase().includes(filter.toLowerCase()) ||
         a.content.toLowerCase().includes(filter.toLowerCase())
     );
@@ -46,8 +34,8 @@ export function AnnouncementCenter() {
             </div>
 
             <div className="space-y-4">
-                {filteredList.map((ann) => (
-                    <Card key={ann.id} className={`border-l-4 ${ann.is_important ? 'border-l-red-500' : 'border-l-blue-500'}`}>
+                {filteredList.map((ann: Doc<"announcements">) => (
+                    <Card key={ann._id} className={`border-l-4 ${ann.is_important ? 'border-l-red-500' : 'border-l-blue-500'}`}>
                         <CardContent className="p-6">
                             <div className="flex justify-between items-start">
                                 <div className="space-y-2">

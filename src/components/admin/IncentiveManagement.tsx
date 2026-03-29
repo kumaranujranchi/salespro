@@ -1,42 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Modal } from '../ui/Modal';
 import { Plus, Save, X, User, Edit2, Trash2, Filter, AlertCircle, Target, ChevronDown, CheckCircle, Info } from 'lucide-react';
 import { IncentivePlanSummary } from '../IncentivePlanSummary';
 import { useAuth } from '../../contexts/AuthContext';
-
-interface Incentive {
-  id: string;
-  sales_executive_id: string;
-  calculation_month: string;
-  calculation_year: number;
-  total_incentive_amount: number;
-  created_at?: string;
-  profiles?: {
-    full_name: string;
-  };
-}
-
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-}
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 export function IncentiveManagement() {
-  const { tenant } = useAuth();
-  const [incentives, setIncentives] = useState<Incentive[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [sales, setSales] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  const { tenant, profile } = useAuth();
+  const tenantId = profile?.tenant_id as Id<"tenants">;
+
+  // Convex Queries
+  const calculationData = useQuery(api.incentives.getIncentiveCalculationData, tenantId ? { tenant_id: tenantId } : "skip");
+  const incentives = useQuery(api.incentives.listIncentives, tenantId ? { tenant_id: tenantId } : "skip");
+
+  // Convex Mutations
+  const createIncentive = useMutation(api.incentives.createIncentive);
+  const updateIncentiveMutation = useMutation(api.incentives.updateIncentive);
+  const deleteIncentiveMutation = useMutation(api.incentives.deleteIncentive);
+
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<Id<"incentives"> | null>(null);
 
   // Modals State
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<Id<"incentives"> | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [expandedUserBreakdown, setExpandedUserBreakdown] = useState<string | null>(null);
 
@@ -52,59 +44,11 @@ export function IncentiveManagement() {
     total_incentive_amount: ''
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Fetch incentives with user details
-      const { data: incentivesData, error: incentivesError } = await supabase
-        .from('incentives')
-        .select(`
-          *,
-          profiles:sales_executive_id (
-            full_name
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (incentivesError) throw incentivesError;
-      setIncentives(incentivesData || []);
-
-      // Fetch all potential sales executives (profiles)
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, role')
-        .order('full_name');
-
-      if (profilesError) throw profilesError;
-      setProfiles(profilesData || []);
-
-      // Fetch sales for calculation
-      const { data: salesData, error: salesError } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('tenant_id', tenant?.id);
-
-      if (salesError) throw salesError;
-      setSales(salesData || []);
-
-      // Fetch all payments for these sales
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('payments')
-        .select('amount, sale_id');
-
-      if (paymentsError) throw paymentsError;
-      setPayments(paymentsData || []);
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
+  useEffect(() => {
+    if (incentives !== undefined && calculationData !== undefined) {
       setLoading(false);
     }
-  }, [tenant?.id]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [incentives, calculationData]);
 
   const handleSave = async () => {
     if (!formData.sales_executive_id || !formData.total_incentive_amount) {
@@ -117,59 +61,43 @@ export function IncentiveManagement() {
       if (isNaN(amount)) throw new Error('Invalid amount');
 
       const recordData = {
-        sales_executive_id: formData.sales_executive_id,
+        tenant_id: tenantId,
+        sales_executive_id: formData.sales_executive_id as Id<"profiles">,
         calculation_month: formData.calculation_month,
         calculation_year: formData.calculation_year,
         total_incentive_amount: amount,
+        status: 'paid', // Default to paid for manual records in this UI
       };
 
       if (editingId) {
-        // Update existing record
-        const { error } = await supabase
-          .from('incentives')
-          .update(recordData)
-          .eq('id', editingId);
-
-        if (error) throw error;
-      } else {
-        // Create new record
-        const newRecord = {
+        await updateIncentiveMutation({
+          id: editingId,
           ...recordData,
-          sale_id: crypto.randomUUID(), // Generate valid UUID
-          installment_1_amount: amount,
-          installment_1_paid: false,
-          is_locked: false
-        };
-
-        const { error } = await supabase
-          .from('incentives')
-          .insert([newRecord]);
-
-        if (error) throw error;
+        });
+      } else {
+        await createIncentive(recordData);
       }
 
       resetForm();
-      fetchData();
     } catch (error: any) {
       console.error('Error saving incentive:', error);
-      setErrorMessage(error.message || error.error_description || 'Unknown error');
+      setErrorMessage(error.message || 'Unknown error');
     }
   };
 
-  const handleEdit = (inc: Incentive) => {
+  const handleEdit = (inc: any) => {
     setFormData({
       sales_executive_id: inc.sales_executive_id,
       calculation_month: inc.calculation_month,
       calculation_year: inc.calculation_year,
       total_incentive_amount: inc.total_incentive_amount.toString()
     });
-    setEditingId(inc.id);
+    setEditingId(inc._id);
     setIsAdding(true);
-    // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteClick = (id: Id<"incentives">) => {
     setDeleteId(id);
   };
 
@@ -177,14 +105,8 @@ export function IncentiveManagement() {
     if (!deleteId) return;
 
     try {
-      const { error } = await supabase
-        .from('incentives')
-        .delete()
-        .eq('id', deleteId);
-
-      if (error) throw error;
+      await deleteIncentiveMutation({ id: deleteId });
       setDeleteId(null);
-      fetchData();
     } catch (error: any) {
       console.error('Error deleting incentive:', error);
       setErrorMessage('Failed to delete incentive');
@@ -202,8 +124,12 @@ export function IncentiveManagement() {
     });
   };
 
+  if (loading || !calculationData || !incentives) return <LoadingSpinner fullScreen />;
+
+  const { sales, payments, profiles } = calculationData;
+
   // Filter Logic
-  const filteredIncentives = incentives.filter(inc => {
+  const filteredIncentives = (incentives || []).filter((inc: any) => {
     const matchesUser = filterUser ? inc.sales_executive_id === filterUser : true;
     const matchesMonth = filterMonth ? inc.calculation_month === filterMonth : true;
     const matchesYear = filterYear ? inc.calculation_year.toString() === filterYear : true;
@@ -228,14 +154,13 @@ export function IncentiveManagement() {
       const saleYear = saleDate.getFullYear();
       const isEligible = s.sales_executive_id === userId && saleMonth === month && saleYear === year;
       
-      // ELIGIBILITY RULE 1: Only if agreement is finalized
       return isEligible && s.is_agreement_done;
     });
 
-    if (userSales.length === 0) return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0 };
+    if (userSales.length === 0) return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0, bookings: [] };
 
     const plan = tenant?.settings?.incentive_plan;
-    if (!plan || plan.type === 'manual') return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0 };
+    if (!plan || plan.type === 'manual') return { total: 0, releasable: 0, totalSqft: 0, totalRevenue: 0, bookings: [] };
 
     const totalSqft = userSales.reduce((sum, s) => sum + (s.area_sqft || 0), 0);
     const totalRevenue = userSales.reduce((sum, s) => sum + (s.total_revenue || 0), 0);
@@ -243,19 +168,15 @@ export function IncentiveManagement() {
     let totalProjected = 0;
     let currentlyReleasable = 0;
 
-    // 1. Calculate Total Projected based on slabs
     let baseRate = 0;
     const tiers = Array.isArray(plan.rules?.tiers) ? plan.rules.tiers : [];
     const rules = Array.isArray(plan.rules?.rules) ? plan.rules.rules : [];
 
     if (tiers.length > 0) {
-      // MATCHING IMAGE: Slab 1: <3000 (1%), Slab 2: 3000-5000 (2%), Slab 3: 5000-7000 (3%), Slab 4: >7100 (4%)
-      // Note: We'll use the dynamic tiers from tenant settings if available, otherwise default to image rules
       const applicableTier = tiers.find((t: any) => totalSqft >= t.min && (t.max === null || totalSqft <= t.max));
       if (applicableTier) {
         baseRate = applicableTier.rate;
       } else {
-        // Fallback to Image Rules if tiers in DB are wrong/missing
         if (totalSqft >= 7100) baseRate = 4;
         else if (totalSqft >= 5000) baseRate = 3;
         else if (totalSqft >= 3000) baseRate = 2;
@@ -271,9 +192,8 @@ export function IncentiveManagement() {
       });
     }
 
-    // 2. Calculate Releasable based on Payment Milestones and Registry
     const bookingBreakdown = userSales.map(s => {
-      const salePayments = payments.filter(p => p.sale_id === s.id).reduce((sum, p) => sum + p.amount, 0);
+      const salePayments = payments.filter(p => p.sale_id === s._id).reduce((sum, p) => sum + p.amount, 0);
       const paymentPct = (s.total_revenue > 0) ? (salePayments / s.total_revenue) * 100 : 0;
       
       let releasePct = 0;
@@ -293,8 +213,8 @@ export function IncentiveManagement() {
       currentlyReleasable += saleReleasable;
 
       return {
-        id: s.id,
-        booking_no: s.id.slice(0, 8).toUpperCase(),
+        id: s._id,
+        booking_no: s._id.slice(0, 8).toUpperCase(),
         sqft: s.area_sqft || 0,
         revenue: s.total_revenue,
         payment_pct: paymentPct.toFixed(1),
@@ -340,7 +260,7 @@ export function IncentiveManagement() {
               className="p-2 text-xs sm:text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white w-full sm:min-w-[150px]"
             >
               <option value="" className="dark:bg-[#121e18]">All Users</option>
-              {profiles.map(p => <option key={p.id} value={p.id} className="dark:bg-[#121e18]">{p.full_name}</option>)}
+              {profiles.map(p => <option key={p._id} value={p._id} className="dark:bg-[#121e18]">{p.full_name}</option>)}
             </select>
 
             <select
@@ -358,7 +278,7 @@ export function IncentiveManagement() {
               className="p-2 text-xs sm:text-sm rounded-md border bg-gray-50 dark:bg-black/20 dark:border-white/10 dark:text-white w-full"
             >
               <option value="" className="dark:bg-[#121e18]">All Years</option>
-              {years.map(y => <option key={y} value={y} className="dark:bg-[#121e18]">{y}</option>)}
+              {years.map(y => <option key={y.toString()} value={y.toString()} className="dark:bg-[#121e18]">{y}</option>)}
             </select>
           </div>
 
@@ -409,7 +329,7 @@ export function IncentiveManagement() {
                 <div className="flex items-baseline gap-2">
                   <p className="text-3xl font-black text-[#00E576]">
                     {formatCurrency(profiles.reduce((sum, p) => {
-                  const result = calculateIncentiveForUser(p.id, new Date().toLocaleString('default', { month: 'long' }), new Date().getFullYear());
+                  const result = calculateIncentiveForUser(p._id, new Date().toLocaleString('default', { month: 'long' }), new Date().getFullYear());
                   return sum + result.releasable;
                 }, 0))}
                   </p>
@@ -446,19 +366,19 @@ export function IncentiveManagement() {
                     {profiles.filter(p => p.role === 'sales_executive' || p.role === 'team_leader').map(p => {
                       const currentMonth = filterMonth || new Date().toLocaleString('default', { month: 'long' });
                       const currentYear = filterYear ? parseInt(filterYear) : new Date().getFullYear();
-                      const result = calculateIncentiveForUser(p.id, currentMonth, currentYear);
+                      const result = calculateIncentiveForUser(p._id, currentMonth, currentYear);
                       
                       if (result.total === 0 && result.totalSqft === 0) return null;
 
                       return (
-                        <React.Fragment key={p.id}>
+                        <React.Fragment key={p._id}>
                           <tr 
-                            className={`hover:bg-amber-500/5 transition-colors cursor-pointer ${expandedUserBreakdown === p.id ? 'bg-amber-500/10' : ''}`}
-                            onClick={() => setExpandedUserBreakdown(expandedUserBreakdown === p.id ? null : p.id)}
+                            className={`hover:bg-amber-500/5 transition-colors cursor-pointer ${expandedUserBreakdown === p._id ? 'bg-amber-500/10' : ''}`}
+                            onClick={() => setExpandedUserBreakdown(expandedUserBreakdown === p._id ? null : p._id)}
                           >
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
-                                <div className={`transition-transform ${expandedUserBreakdown === p.id ? 'rotate-180' : ''}`}>
+                                <div className={`transition-transform ${expandedUserBreakdown === p._id ? 'rotate-180' : ''}`}>
                                   <ChevronDown size={14} className="text-gray-400" />
                                 </div>
                                 <span className="font-bold text-gray-900 dark:text-white">{p.full_name}</span>
@@ -473,14 +393,14 @@ export function IncentiveManagement() {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              {incentives.some(inc => inc.sales_executive_id === p.id && inc.calculation_month === currentMonth && inc.calculation_year === currentYear) ? (
+                              {incentives.some((inc: any) => inc.sales_executive_id === p._id && inc.calculation_month === currentMonth && inc.calculation_year === currentYear) ? (
                                 <span className="text-[10px] bg-green-500/20 text-green-600 px-2 py-1 rounded-full font-bold">ALREADY PAID</span>
                               ) : (
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setFormData({
-                                      sales_executive_id: p.id,
+                                      sales_executive_id: p._id,
                                       calculation_month: currentMonth,
                                       calculation_year: currentYear,
                                       total_incentive_amount: result.releasable.toFixed(2)
@@ -497,7 +417,7 @@ export function IncentiveManagement() {
                           </tr>
                           
                           {/* Expanded Booking Breakdown */}
-                          {expandedUserBreakdown === p.id && (
+                          {expandedUserBreakdown === p._id && (
                             <tr className="bg-amber-50/30 dark:bg-amber-900/5">
                               <td colSpan={5} className="px-8 py-4 border-l-4 border-amber-500/50">
                                 <h5 className="text-[11px] font-bold text-amber-900/60 dark:text-amber-200/40 uppercase mb-3 flex items-center gap-2">
@@ -575,7 +495,7 @@ export function IncentiveManagement() {
                 >
                   <option value="" className="dark:bg-[#121e18]">Select User</option>
                   {profiles.map(p => (
-                    <option key={p.id} value={p.id} className="dark:bg-[#121e18]">{p.full_name} ({p.role})</option>
+                    <option key={p._id} value={p._id} className="dark:bg-[#121e18]">{p.full_name} ({p.role})</option>
                   ))}
                 </select>
               </div>
@@ -597,7 +517,7 @@ export function IncentiveManagement() {
                     value={formData.calculation_year}
                     onChange={(e) => setFormData({ ...formData, calculation_year: Number(e.target.value) })}
                   >
-                    {years.map(y => <option key={y} value={y} className="dark:bg-[#121e18]">{y}</option>)}
+                    {years.map(y => <option key={y.toString()} value={y.toString()} className="dark:bg-[#121e18]">{y}</option>)}
                   </select>
                 </div>
               </div>
@@ -654,8 +574,8 @@ export function IncentiveManagement() {
                 ) : filteredIncentives.length === 0 ? (
                   <tr><td colSpan={6} className="text-center py-4 text-gray-500">No records found.</td></tr>
                 ) : (
-                  filteredIncentives.map((inc) => (
-                    <tr key={inc.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                  filteredIncentives.map((inc: any) => (
+                    <tr key={inc._id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-4 py-3 font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         <User size={16} className="text-gray-400" />
                         {inc.profiles?.full_name || 'Unknown User'}
@@ -678,7 +598,7 @@ export function IncentiveManagement() {
                             <Edit2 size={16} />
                           </button>
                           <button
-                            onClick={() => handleDeleteClick(inc.id)}
+                            onClick={() => handleDeleteClick(inc._id)}
                             className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors"
                             title="Delete"
                           >

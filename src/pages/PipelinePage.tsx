@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { Id } from '../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -9,6 +11,7 @@ import {
   FunnelChart, Funnel, LabelList, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 // Colors from the reference image
 const COLORS = {
@@ -20,153 +23,107 @@ const COLORS = {
 export function PipelinePage() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  const [stats, setStats] = useState({
-    total: 3479, // Default/Mock for visual matching if 0
-    inProgress: 1482,
-    closed: 1600
-  });
+  // Convex Query
+  const leads = useQuery(api.leads.listLeadsByTenant, tenantId ? { tenant_id: tenantId } : "skip");
 
-  const [funnelData, setFunnelData] = useState<any[]>([]);
-  const [inProgressData, setInProgressData] = useState<any[]>([]);
-  const [lostData, setLostData] = useState<any[]>([]);
+  const { stats, funnelData, inProgressData, lostData } = useMemo(() => {
+    if (!leads) return { stats: { total: 0, inProgress: 0, closed: 0 }, funnelData: [], inProgressData: [], lostData: [] };
 
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    const currentLeads = leads;
 
-  useEffect(() => {
-    loadPipelineData();
-    // Refresh every 5 minutes
-    const interval = setInterval(loadPipelineData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [profile]);
+    // 2. Process Statistics
+    const total = currentLeads.length;
+    const closed = currentLeads.filter((l: any) => l.lead_status === 'Converted').length;
 
-  const loadPipelineData = async () => {
-    if (!profile) return;
-    setLoading(true);
-    setError(null);
+    const inProgressStatuses = ['In Progress', 'Contacted', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done'];
+    const inProgressCount = currentLeads.filter((l: any) => inProgressStatuses.includes(l.lead_status)).length;
 
-    try {
-      // 1. Fetch Real Data
-      const { data: leads, error: fetchError } = await supabase
-        .from('leads')
-        .select('id, lead_status, lead_score, lead_source, created_at, city, metadata, lead_followups(id, followup_type, next_followup_date)')
-        .eq('tenant_id', profile.tenant_id);
+    const stats = {
+      total: total,
+      inProgress: inProgressCount,
+      closed: closed
+    };
 
-      if (fetchError) throw fetchError;
+    // 3. Funnel Data (Open -> In Progress -> Scheduled -> Done)
+    const openLeads = currentLeads.filter((l: any) => l.lead_status === 'New').length;
+    const funnelInProgress = currentLeads.filter((l: any) => ['In Progress', 'Contacted', 'Qualified'].includes(l.lead_status)).length;
+    const svScheduled = currentLeads.filter((l: any) => l.lead_status === 'Site Visit Scheduled').length;
+    const svDone = currentLeads.filter((l: any) => l.lead_status === 'Site Visit Done').length;
 
-      const currentLeads = leads || [];
+    const funnelData = [
+      { name: 'OPEN', value: openLeads, fill: COLORS.funnel[0] },
+      { name: 'IN PROGRESS', value: funnelInProgress, fill: COLORS.funnel[1] },
+      { name: 'Site Visit Scheduled', value: svScheduled, fill: COLORS.funnel[2] },
+      { name: 'Site Visit Done', value: svDone, fill: COLORS.funnel[3] },
+    ];
 
-      // 2. Process Statistics
-      const total = currentLeads.length;
-      const closed = currentLeads.filter(l => l.lead_status === 'Converted').length;
+    // 4. In-Progress Donut Data (Tags)
+    const ipLeads = currentLeads.filter((l: any) => inProgressStatuses.includes(l.lead_status));
 
-      // Update: Include 'In Progress' status
-      const inProgressStatuses = ['In Progress', 'Contacted', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done'];
-      const inProgressCount = currentLeads.filter(l => inProgressStatuses.includes(l.lead_status)).length;
+    let d_cold = 0;
+    let d_pending = 0; // Overdue
+    let d_warm = 0;
+    let d_engaged = 0; // Hot
+    let d_qualified = 0;
+    let d_general = 0; // Fallback
 
-      setStats({
-        total: total,
-        inProgress: inProgressCount,
-        closed: closed
-      });
+    ipLeads.forEach((l: any) => {
+      let matched = false;
 
-      // 3. Funnel Data (Open -> In Progress -> Scheduled -> Done)
-      const openLeads = currentLeads.filter(l => l.lead_status === 'New').length;
+      // Priority 1: Status Qualified
+      if (l.lead_status === 'Qualified') {
+        d_qualified++;
+        matched = true;
+      }
 
-      // "In Progress" for funnel: 'In Progress', 'Contacted', 'Qualified'
-      const funnelInProgress = currentLeads.filter(l => ['In Progress', 'Contacted', 'Qualified'].includes(l.lead_status)).length;
+      // Priority 2: Overdue Follow-up
+      if (!matched && l.overdue_followup) {
+        d_pending++;
+        matched = true;
+      }
 
-      const svScheduled = currentLeads.filter(l => l.lead_status === 'Site Visit Scheduled').length;
-      const svDone = currentLeads.filter(l => l.lead_status === 'Site Visit Done').length;
+      // Priority 3: Score
+      if (!matched) {
+        if (l.lead_score === 'Hot') d_engaged++;
+        else if (l.lead_score === 'Warm') d_warm++;
+        else if (l.lead_score === 'Cold') d_cold++;
+        else d_general++;
+      }
+    });
 
-      const fData = [
-        { name: 'OPEN', value: openLeads, fill: COLORS.funnel[0] },
-        { name: 'IN PROGRESS', value: funnelInProgress, fill: COLORS.funnel[1] },
-        { name: 'Site Visit Scheduled', value: svScheduled, fill: COLORS.funnel[2] },
-        { name: 'Site Visit Done', value: svDone, fill: COLORS.funnel[3] },
-      ];
-      setFunnelData(fData);
+    const inProgressData = [
+      { name: 'Cold', value: d_cold, color: COLORS.inProgress[0] },
+      { name: 'Follow-Up Pending', value: d_pending, color: COLORS.inProgress[1] },
+      { name: 'Warm', value: d_warm, color: COLORS.inProgress[2] },
+      { name: 'Engaged Lead', value: d_engaged, color: COLORS.inProgress[3] },
+      { name: 'Qualified Lead', value: d_qualified, color: COLORS.inProgress[5] },
+      { name: 'General In-Progress', value: d_general, color: '#607D8B' },
+    ].filter(d => d.value > 0);
 
+    // 5. Lost Chart Data breakdown by Reason
+    const lostLeadsList = currentLeads.filter((l: any) => ['Lost', 'Disqualified'].includes(l.lead_status));
 
-      // 4. In-Progress Donut Data (Tags)
-      const ipLeads = currentLeads.filter(l => inProgressStatuses.includes(l.lead_status));
+    const lostReasonCounts: Record<string, number> = {};
+    lostLeadsList.forEach((l: any) => {
+      let reason = 'General';
+      if (l.lead_status === 'Disqualified') reason = 'Disqualified';
+      else if (l.metadata && (l.metadata as any).lost_reason) reason = (l.metadata as any).lost_reason;
 
-      let d_cold = 0;
-      let d_pending = 0; // Overdue
-      let d_warm = 0;
-      let d_engaged = 0; // Hot
-      let d_qualified = 0;
-      let d_general = 0; // Fallback
+      lostReasonCounts[reason] = (lostReasonCounts[reason] || 0) + 1;
+    });
 
-      ipLeads.forEach(l => {
-        let matched = false;
+    const lostData = Object.entries(lostReasonCounts).map(([name, value], index) => ({
+      name: name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      value,
+      color: COLORS.lost[index % COLORS.lost.length]
+    }));
 
-        // Priority 1: Status Qualified
-        if (l.lead_status === 'Qualified') {
-          d_qualified++;
-          matched = true;
-        }
+    return { stats, funnelData, inProgressData, lostData };
+  }, [leads]);
 
-        // Priority 2: Overdue Follow-up
-        if (!matched && l.lead_followups && l.lead_followups.length > 0) {
-          // Check if latest followup next_date is past
-          // Simplification: if array exists, check last item
-          d_pending++; // Broad categorization for demo
-          matched = true;
-        }
-
-        // Priority 3: Score
-        if (!matched) {
-          if (l.lead_score === 'Hot') d_engaged++;
-          else if (l.lead_score === 'Warm') d_warm++;
-          else if (l.lead_score === 'Cold') d_cold++;
-          else d_general++;
-        }
-      });
-
-      const ipData = [
-        { name: 'Cold', value: d_cold, color: COLORS.inProgress[0] },
-        { name: 'Follow-Up Pending', value: d_pending, color: COLORS.inProgress[1] },
-        { name: 'Warm', value: d_warm, color: COLORS.inProgress[2] },
-        { name: 'Engaged Lead', value: d_engaged, color: COLORS.inProgress[3] },
-        { name: 'Qualified Lead', value: d_qualified, color: COLORS.inProgress[5] },
-        { name: 'General In-Progress', value: d_general, color: '#607D8B' }, // Add fallback color
-      ].filter(d => d.value > 0);
-
-      setInProgressData(ipData);
-
-
-      // 5. Lost Chart Data breakdown by Reason
-      const lostLeadsList = currentLeads.filter(l => ['Lost', 'Disqualified'].includes(l.lead_status));
-
-      const lostReasonCounts: Record<string, number> = {};
-      lostLeadsList.forEach(l => {
-        // Check metadata for 'lost_reason'. If Disqualified, maybe group separately or use reason if exists.
-        let reason = 'General';
-        if (l.lead_status === 'Disqualified') reason = 'Disqualified';
-        else if (l.metadata && l.metadata.lost_reason) reason = l.metadata.lost_reason;
-
-        lostReasonCounts[reason] = (lostReasonCounts[reason] || 0) + 1;
-      });
-
-      const lData = Object.entries(lostReasonCounts).map(([name, value], index) => ({
-        name: name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        value,
-        color: COLORS.lost[index % COLORS.lost.length]
-      }));
-
-      setLostData(lData);
-      setLastUpdated(new Date());
-
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to load pipeline data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (leads === undefined) return <LoadingSpinner fullScreen />;
 
   const CustomLegend = ({ data }: { data: any[] }) => (
     <div className="mt-6 flex flex-col gap-2 w-full max-h-64 overflow-y-auto pr-2 custom-scrollbar">
@@ -187,14 +144,6 @@ export function PipelinePage() {
     </div>
   );
 
-  if (loading && !stats.total) { // Initial load
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-transparent p-4 md:p-6 space-y-6">
       {/* 1. Header */}
@@ -212,27 +161,9 @@ export function PipelinePage() {
             <h1 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white">
               For Land Sales Pipeline
             </h1>
-            {lastUpdated && (
-              <div className="text-xs text-gray-500 mt-1">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </div>
-            )}
           </div>
         </div>
-
-        {loading && (
-          <div className="flex items-center gap-2 text-sm text-blue-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-            Refreshing...
-          </div>
-        )}
       </div>
-
-      {error && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 text-sm">
-          Error: {error}
-        </div>
-      )}
 
       {/* 2. Top Section: LEAD FUNNEL BY STAGES */}
       <Card className="shadow-sm border border-slate-200 dark:border-white/10 overflow-hidden dark:bg-surface-dark">
@@ -262,7 +193,7 @@ export function PipelinePage() {
 
             {/* Right: Funnel Chart */}
             <div className="md:col-span-9 h-[300px]">
-              {funnelData.every(d => d.value === 0) ? (
+              {funnelData.every((d: any) => d.value === 0) ? (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">
                   No data available for funnel
                 </div>
@@ -291,8 +222,6 @@ export function PipelinePage() {
                           const total = funnelData.reduce((acc, curr) => acc + curr.value, 0);
                           const percent = total > 0 ? ((numericValue / total) * 100).toFixed(2) : '0';
 
-                          // Calculate right edge position
-                          // Recharts Funnel x is top-left, width is slice width.
                           const startX = x + width;
 
                           return (

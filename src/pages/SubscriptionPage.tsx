@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { Id } from '../convex/_generated/dataModel';
 import {
   Check,
   Zap,
-  AlertCircle,
   Loader2,
   Save,
   Upload,
@@ -27,36 +28,37 @@ import autoTable from 'jspdf-autotable';
 import { ImageCropper } from '../components/ImageCropper';
 import { useToast } from '../contexts/ToastContext';
 
-interface TenantData {
-  id: string;
-  name: string;
-  plan_tier: string;
-  billing_cycle: string;
-  trial_ends_at: string | null;
-  subscription_status: string;
-  is_active: boolean;
-  next_billing_date?: string;
-  created_at?: string;
+// Helper to resolve logo URL
+function LogoPreview({ storageId }: { storageId: string }) {
+  const url = useQuery(api.files.getUrl, storageId.length > 20 ? { storageId: storageId as Id<"_storage"> } : "skip");
+  
+  if (storageId.startsWith('http')) return <img src={storageId} alt="Logo" className="max-w-[85%] max-h-[85%] object-contain" />;
+  if (!url) return <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700" />;
+  
+  return <img src={url} alt="Logo" className="max-w-[85%] max-h-[85%] object-contain" />;
 }
 
-interface BillingRecord {
-  id: string;
-  created_at: string;
-  amount: number;
-  status: string;
-  razorpay_payment_id: string;
-  description: string;
+interface TenantSettings {
+  company_profile?: {
+    address?: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+    tax_id?: string;
+    logo_url?: string;
+  };
 }
 
 export function SubscriptionPage() {
-  const { tenant, user, refreshTenant } = useAuth();
+  const { tenant } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const [tenantData, setTenantData] = useState<TenantData | null>(null);
-  const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  
+  // Convex Queries
+  const billingHistory = useQuery(api.tenants.listBillingHistory, 
+    tenant?._id ? { tenant_id: tenant._id as Id<"tenants"> } : "skip"
+  ) || [];
+
   const [activeTab, setActiveTab] = useState<'subscription' | 'profile'>('subscription');
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -70,93 +72,40 @@ export function SubscriptionPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const initialLoadDone = useRef(false);
 
+  // Convex Mutations
+  const updateTenant = useMutation(api.tenants.update);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+
   // Logo Upload State
   const [showCropper, setShowCropper] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchTenantData = useCallback(async () => {
-    if (!tenant?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('tenants')
-        .select('id, name, plan_tier, billing_cycle, trial_ends_at, subscription_status, is_active, next_billing_date, created_at, settings')
-        .eq('id', tenant.id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      if (!data) {
-        throw new Error('Tenant data not found');
-      }
-
-      setTenantData(data as TenantData);
-
-      // Calculate days remaining
-      let endDate: Date;
-
-      if (data.trial_ends_at) {
-        endDate = new Date(data.trial_ends_at);
-      } else {
-        const now = new Date();
-        endDate = new Date(now.setDate(now.getDate() + 14));
-      }
-
-      const now = new Date();
-      const diffTime = endDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      setDaysRemaining(diffDays);
-
-      // Only populate form if it's the first load or if name is empty (initial state)
-      if (!initialLoadDone.current || !profileForm.name) {
+  // Sync profile form with tenant data on load
+  useEffect(() => {
+     if (tenant && !initialLoadDone.current) {
+        const settings = tenant.settings as TenantSettings | undefined;
         setProfileForm({
-          name: data.name || '',
-          address: (data as any).settings?.company_profile?.address || '',
-          email: (data as any).settings?.company_profile?.email || '',
-          phone: (data as any).settings?.company_profile?.phone || '',
-          website: (data as any).settings?.company_profile?.website || '',
-          tax_id: (data as any).settings?.company_profile?.tax_id || '',
-          logo_url: (data as any).settings?.company_profile?.logo_url || ''
+          name: tenant.name || '',
+          address: settings?.company_profile?.address || '',
+          email: settings?.company_profile?.email || '',
+          phone: settings?.company_profile?.phone || '',
+          website: settings?.company_profile?.website || '',
+          tax_id: settings?.company_profile?.tax_id || '',
+          logo_url: settings?.company_profile?.logo_url || ''
         });
         initialLoadDone.current = true;
-      }
+     }
+  }, [tenant]);
 
-    } catch (err: any) {
-      console.error('Error fetching tenant data:', err);
-      setError(err.message || 'Failed to load subscription data');
-    } finally {
-      setLoading(false);
-    }
-  }, [tenant?.id, profileForm.name]); // Re-fetch only if tenant ID or if name is empty
-
-  const fetchBillingHistory = useCallback(async () => {
-    if (!tenant?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('billing_history')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn('Could not fetch billing history', error);
-        return;
-      }
-
-      if (data) {
-        setBillingHistory(data);
-      }
-    } catch (err) {
-      console.warn('Error fetching billing history:', err);
-    }
-  }, [tenant?.id]); // Only recreate if tenant ID changes
+  const daysRemaining = useMemo(() => {
+    if (!tenant?.trial_ends_at) return 0;
+    const endDate = new Date(tenant.trial_ends_at);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  }, [tenant?.trial_ends_at]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,7 +116,6 @@ export function SubscriptionPage() {
       return;
     }
 
-    setSelectedFile(file);
     const reader = new FileReader();
     reader.addEventListener('load', () => {
       setCropImageSrc(reader.result?.toString() || null);
@@ -178,29 +126,23 @@ export function SubscriptionPage() {
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
-    if (!tenant?.id) return;
+    if (!tenant?._id) return;
     setShowCropper(false);
     setIsUploadingLogo(true);
     
     try {
-      const fileExt = selectedFile?.name.split('.').pop() || 'jpg';
-      const fileName = `logo-${tenant.id}-${Math.random()}.${fileExt}`;
-      const filePath = `tenant-logos/${fileName}`;
+      // 1. Generate Upload URL from Convex
+      const postUrl = await generateUploadUrl();
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars') // Using avatars bucket as it already exists
-        .upload(filePath, croppedBlob, {
-          contentType: croppedBlob.type,
-          upsert: true
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      setProfileForm(prev => ({ ...prev, logo_url: publicUrl }));
+      // 2. Post file to Convex Storage
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": croppedBlob.type },
+        body: croppedBlob,
+      });
+      const { storageId } = await result.json();
+      
+      setProfileForm(prev => ({ ...prev, logo_url: storageId }));
       toast.success('Logo cropped and ready to save!');
     } catch (error: any) {
       console.error('Error uploading logo:', error);
@@ -210,12 +152,7 @@ export function SubscriptionPage() {
     }
   };
 
-  useEffect(() => {
-    fetchTenantData();
-    fetchBillingHistory();
-  }, [fetchTenantData, fetchBillingHistory]);
-
-  const generateInvoice = (record: BillingRecord) => {
+  const generateInvoice = (record: any) => {
     const doc = new jsPDF();
 
     // Brand Colors
@@ -240,13 +177,13 @@ export function SubscriptionPage() {
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     const rightColX = 140;
-    doc.text(`Invoice Date: ${new Date(record.created_at).toLocaleDateString()}`, rightColX, 40);
-    doc.text(`Invoice #: ${record.id.slice(0, 8).toUpperCase()}`, rightColX, 46);
+    doc.text(`Invoice Date: ${new Date(record.created_at || record._creationTime).toLocaleDateString()}`, rightColX, 40);
+    doc.text(`Invoice #: ${record._id?.slice(0, 8).toUpperCase()}`, rightColX, 46);
     doc.text(`Payment ID: ${record.razorpay_payment_id}`, rightColX, 52);
 
     // --- Bill To (Buyer: Tenant Company Profile) ---
-    const companyProfile = (tenantData as any).settings?.company_profile;
-    const companyName = tenantData?.name || 'Valued Customer';
+    const companyProfile = (tenant as any)?.settings?.company_profile;
+    const companyName = tenant?.name || 'Valued Customer';
     const billToY = 75;
 
     doc.setFontSize(10);
@@ -284,8 +221,8 @@ export function SubscriptionPage() {
 
     if (companyProfile?.tax_id) {
       doc.text(`GSTIN: ${companyProfile.tax_id}`, 14, currentBillToY);
-    } else if (!companyProfile && user?.email) {
-      doc.text(user.email, 14, currentBillToY);
+    } else if (tenant?.email) {
+      doc.text((tenant as any).email, 14, currentBillToY);
     }
 
     // Calculations
@@ -311,7 +248,7 @@ export function SubscriptionPage() {
     });
 
     // Total Section
-    // @ts-ignore
+    // @ts-expect-error - lastAutoTable exists on jsPDF instance
     const finalY = doc.lastAutoTable.finalY + 10;
 
     doc.setFontSize(10);
@@ -343,25 +280,16 @@ export function SubscriptionPage() {
     doc.text('This is a computer generated invoice and does not require a signature.', 14, pageHeight - 20);
 
     // Save
-    doc.save(`Invoice_${record.id.slice(0, 8)}.pdf`);
+    doc.save(`Invoice_${record._id?.slice(0, 8)}.pdf`);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenant?.id) return;
+    if (!tenant?._id) return;
     setIsSavingProfile(true);
 
     try {
-      // 1. Update Tenant Name
-      const { error: nameError } = await supabase
-        .from('tenants')
-        .update({ name: profileForm.name })
-        .eq('id', tenant.id);
-
-      if (nameError) throw nameError;
-
-      // 2. Update Settings
-      const currentSettings = tenant.settings || {};
+      const currentSettings = (tenant.settings as TenantSettings) || {};
       const newSettings = {
         ...currentSettings,
         company_profile: {
@@ -374,18 +302,13 @@ export function SubscriptionPage() {
         }
       };
 
-      const { error: settingsError } = await supabase
-        .from('tenants')
-        .update({ settings: newSettings })
-        .eq('id', tenant.id);
-
-      if (settingsError) throw settingsError;
-
-      // 3. Refresh Auth Context
-      await refreshTenant();
+      await updateTenant({
+        id: tenant._id as Id<"tenants">,
+        name: profileForm.name,
+        settings: newSettings
+      });
 
       toast.success('Company profile updated successfully!');
-      fetchTenantData();
     } catch (err: any) {
       console.error('Error saving profile:', err);
       toast.error('Failed to save profile: ' + err.message);
@@ -405,7 +328,7 @@ export function SubscriptionPage() {
     'Custom Reports'
   ];
 
-  if (loading) {
+  if (!tenant) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
@@ -413,45 +336,27 @@ export function SubscriptionPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-red-900">Error Loading Subscription</h3>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tenantData) {
-    return null;
-  }
-
-  const isPro = tenantData.plan_tier === 'pro';
-  const isTrial = tenantData.subscription_status === 'trial';
-  const isActive = tenantData.subscription_status === 'active';
+  const isPro = tenant.plan_tier === 'pro';
+  const isTrial = tenant.subscription_status === 'trial';
+  const isActive = tenant.subscription_status === 'active';
 
   // Calculate generic next billing date if not in DB
   const getNextBillingDate = () => {
-    if (tenantData.next_billing_date) return new Date(tenantData.next_billing_date);
+    if (tenant.next_billing_date) return new Date(tenant.next_billing_date);
 
     // Fallback based on last update or creation
     // This is just for display if real data is missing
     const baseDate = new Date();
-    if (tenantData.billing_cycle === 'yearly') {
+    if (tenant.billing_cycle === 'yearly') {
       return new Date(baseDate.setFullYear(baseDate.getFullYear() + 1));
-    } else if (tenantData.billing_cycle === 'semi_annual') {
+    } else if (tenant.billing_cycle === 'semi_annual') {
       return new Date(baseDate.setMonth(baseDate.getMonth() + 6));
     } else {
       return new Date(baseDate.setMonth(baseDate.getMonth() + 1));
     }
   };
 
-  const billingAmount = tenantData.billing_cycle === 'yearly' ? 12000 : tenantData.billing_cycle === 'semi_annual' ? 7200 : 1500;
+  const billingAmount = tenant.billing_cycle === 'yearly' ? 12000 : tenant.billing_cycle === 'semi_annual' ? 7200 : 1500;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0E1A15] py-8 transition-colors duration-300">
@@ -588,11 +493,7 @@ export function SubscriptionPage() {
                     <div className="relative group">
                       <div className="w-32 h-32 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-sm relative">
                         {profileForm.logo_url ? (
-                          <img 
-                            src={profileForm.logo_url} 
-                            alt="Logo Preview" 
-                            className="max-w-[85%] max-h-[85%] object-contain"
-                          />
+                          <LogoPreview storageId={profileForm.logo_url} />
                         ) : (
                           <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                         )}
@@ -825,10 +726,10 @@ export function SubscriptionPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {billingHistory.map((record) => (
-                      <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    {billingHistory.map((record: any) => (
+                      <tr key={record._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                          {new Date(record.created_at).toLocaleDateString()}
+                          {new Date(record._creationTime).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
                           {record.description || 'Pro Subscription'}
@@ -871,7 +772,6 @@ export function SubscriptionPage() {
           onClose={() => {
             setShowCropper(false);
             setCropImageSrc(null);
-            setSelectedFile(null);
           }}
           imageSrc={cropImageSrc}
           onCropComplete={handleCropComplete}

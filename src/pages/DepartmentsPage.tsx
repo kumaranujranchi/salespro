@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { Id } from '../convex/_generated/dataModel';
 import { useDialog } from '../contexts/DialogContext';
 import { Department } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -8,16 +10,22 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Briefcase, Plus, Trash2, Pencil } from 'lucide-react';
-
-
+import { Briefcase, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function DepartmentsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const dialog = useDialog();
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const departmentsData = useQuery(api.departments.list, 
+    tenant?._id ? { tenant_id: tenant._id } : "skip" as any
+  );
+  const departments = (departmentsData || []) as Department[];
+  
+  const createDept = useMutation(api.departments.create);
+  const updateDept = useMutation(api.departments.update);
+  const deleteDept = useMutation(api.departments.remove);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingDepartmentId, setEditingDepartmentId] = useState<string | null>(null);
@@ -29,16 +37,6 @@ export function DepartmentsPage() {
     description: ''
   });
 
-  useEffect(() => {
-    loadDepartments();
-  }, []);
-
-  const loadDepartments = async () => {
-    const { data } = await supabase.from('departments').select('*').order('name');
-    if (data) setDepartments(data);
-    setLoading(false);
-  };
-
   const resetForm = () => {
     setFormData({ name: '', description: '' });
     setEditingDepartmentId(null);
@@ -46,7 +44,7 @@ export function DepartmentsPage() {
 
   const handleEditDepartment = (dept: Department) => {
     if (isReadOnly) return;
-    setEditingDepartmentId(dept.id);
+    setEditingDepartmentId(dept._id);
     setFormData({
       name: dept.name,
       description: dept.description || ''
@@ -61,35 +59,26 @@ export function DepartmentsPage() {
 
   const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnly) return;
+    if (isReadOnly || !tenant) return;
     setIsSubmitting(true);
     try {
       if (editingDepartmentId) {
-        // Update existing department
-        const { error } = await supabase
-          .from('departments')
-          .update({
-            name: formData.name,
-            description: formData.description
-          })
-          .eq('id', editingDepartmentId);
-
-        if (error) throw error;
+        await updateDept({
+          id: editingDepartmentId as Id<"departments">,
+          name: formData.name,
+          description: formData.description
+        });
         await dialog.alert('Department updated successfully!', { variant: 'success', title: 'Success' });
       } else {
-        // Create new department
-        const { error } = await supabase.from('departments').insert({
+        await createDept({
+          tenant_id: tenant._id,
           name: formData.name,
           description: formData.description,
-          is_active: true
         });
-
-        if (error) throw error;
         await dialog.alert('Department added successfully!', { variant: 'success', title: 'Success' });
       }
 
       handleCloseModal();
-      loadDepartments();
     } catch (error) {
       console.error('Error saving department:', error);
       await dialog.alert('Failed to save department', { variant: 'danger', title: 'Error' });
@@ -109,9 +98,7 @@ export function DepartmentsPage() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from('departments').delete().eq('id', id);
-      if (error) throw error;
-      loadDepartments();
+      await deleteDept({ id: id as Id<"departments"> });
       await dialog.alert('Department deleted.', { variant: 'success', title: 'Deleted' });
     } catch (error) {
       console.error('Error deleting department:', error);
@@ -142,9 +129,9 @@ export function DepartmentsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {departmentsData === undefined ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
+              <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
             </div>
           ) : (
             <Table>
@@ -158,7 +145,7 @@ export function DepartmentsPage() {
               </TableHeader>
               <TableBody>
                 {departments.map((dept) => (
-                  <TableRow key={dept.id}>
+                  <TableRow key={dept._id}>
                     <TableCell className="font-medium">{dept.name}</TableCell>
                     <TableCell>{dept.description || '-'}</TableCell>
                     <TableCell>
@@ -176,7 +163,7 @@ export function DepartmentsPage() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                            onClick={() => handleDelete(dept.id)}
+                            onClick={() => handleDelete(dept._id)}
                             >
                             <Trash2 size={16} />
                             </Button>

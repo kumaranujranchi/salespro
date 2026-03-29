@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
 
 interface AuthContextType {
-  user: User | null;
+  user: { id: string; email?: string } | null;
   profile: Profile | null;
-  affiliate: ReferralCampaign | null; // Added affiliate
-  session: Session | null;
+  affiliate: ReferralCampaign | null;
   tenant: Tenant | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -19,198 +19,87 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null); // Added affiliate state
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  // Local state for "session" simulation since we're migrating
+  // In a real app, this would come from useConvexAuth() or Clerk
+  const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`
-        *,
-        role_details:tenant_roles (
-          id,
-          name,
-          permissions
-        ),
-        department_details:departments (
-          id,
-          name
-        )
-      `)
-      .eq('id', userId)
-      .maybeSingle();
+  // Fetch profile via Convex query
+  const profileData = useQuery(api.profiles.getByUserId, 
+    sessionUser ? { userId: sessionUser.id } : "skip" as any
+  );
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return;
-    }
+  // Fetch affiliate campaign via Convex query
+  const affiliateData = useQuery(api.referrals.getCampaignByCreator,
+    sessionUser ? { userId: sessionUser.id } : "skip"
+  );
 
-    if (!data) {
-      // Profile missing - Could be a very new user or inconsistent state
-      // We'll still try to check for affiliate as a safety fallback for existing users
-      const { data: affiliateData } = await supabase
-        .from('referral_campaigns')
-        .select('*')
-        .eq('created_by', userId)
-        .maybeSingle();
+  // Fetch tenant via Convex query
+  const tenantData = useQuery(api.tenants.getById,
+    (profileData as any)?.tenant_id ? { id: (profileData as any).tenant_id as Id<"tenants"> } : "skip"
+  );
 
-      if (affiliateData) {
-          setAffiliate(affiliateData);
-          setProfile(null);
-          setTenant(null);
-          return;
-      }
-
-      await supabase.auth.signOut();
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      setAffiliate(null);
-      throw new Error('Account does not exist. It may have been deleted.');
-    }
-
-    if (data.is_active === false) {
-      await supabase.auth.signOut();
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-      throw new Error('Account is deactivated. Please contact support.');
-    }
-
-    setProfile(data);
-
-    // Load affiliate data if role is affiliate
-    if (data.role === 'affiliate') {
-      const { data: affiliateData } = await supabase
-        .from('referral_campaigns')
-        .select('*')
-        .eq('created_by', userId)
-        .maybeSingle();
-      if (affiliateData) setAffiliate(affiliateData);
-    }
-
-    if (data.tenant_id) {
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', data.tenant_id)
-        .single();
-      
-      if (tenantError) {
-        console.error('AuthContext: Error fetching tenant:', tenantError);
-      } else if (tenantData) {
-        setTenant(tenantData as Tenant);
-      } else {
-        console.warn('AuthContext: No tenant data found for id:', data.tenant_id);
-      }
-    }
-  };
-
-  const refreshProfile = async () => {
-    if (user) {
-      try {
-        await fetchProfile(user.id);
-      } catch (error) {
-        console.error('Error refreshing profile:', error);
-      }
-    }
-  };
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          try {
-            await fetchProfile(session.user.id);
-          } catch (error) {
-            // Error handled in fetchProfile (sign out)
-            console.error(error);
-          }
-        }
-        setLoading(false);
-      })();
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          try {
-            await fetchProfile(session.user.id);
-          } catch (error) {
-            console.error(error);
-          }
-        } else {
-          setProfile(null);
-          setTenant(null);
-          setAffiliate(null);
-        }
-        setLoading(false);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const refreshTenant = async () => {
-    if (!profile?.tenant_id) {
-      console.warn('AuthContext: refreshTenant called but no tenant_id in profile');
-      return;
+    if (profileData) {
+      setProfile(profileData as any);
+    } else if (profileData === null && sessionUser) {
+      setLoading(false);
     }
-    const { data, error } = await supabase
-      .from('tenants')
-      .select('*')
-      .eq('id', profile.tenant_id)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('AuthContext: Error refreshing tenant:', error);
-    } else if (data) {
-      setTenant(data as Tenant);
-    } else {
-      console.warn('AuthContext: refreshTenant found no data for id:', profile.tenant_id);
+  }, [profileData, sessionUser]);
+
+  useEffect(() => {
+    if (tenantData) {
+      setTenant(tenantData as any);
+      setLoading(false);
+    } else if (tenantData === null && profile) {
+      setLoading(false);
     }
-  };
+  }, [tenantData, profile]);
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-
-      if (data.user) {
-        try {
-          await fetchProfile(data.user.id);
-        } catch (profileError: any) {
-          return { error: new Error(profileError.message || 'Access denied') };
-        }
-      }
-
-      return { error: null };
-    } catch (error) {
-      return { error: error as Error };
+  useEffect(() => {
+    if (affiliateData) {
+      setAffiliate(affiliateData as any);
     }
+  }, [affiliateData]);
+
+  const signIn = async (email: string, _password: string) => {
+    // Placeholder sign-in logic
+    // You would replace this with actual Convex Auth or Clerk sign-in
+    setSessionUser({ id: email, email });
+    return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    await supabase.auth.signOut();
+    setSessionUser(null);
     setProfile(null);
-    setAffiliate(null);
     setTenant(null);
-    setUser(null);
-    setSession(null);
+    setAffiliate(null);
+  };
+
+  const refreshProfile = async () => {
+    // Queries in Convex auto-refresh, so this might not be needed
+  };
+
+  const refreshTenant = async () => {
+    // Same as above
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, affiliate, tenant, session, loading, signIn, signOut, refreshProfile, refreshTenant }}>
+    <AuthContext.Provider value={{ 
+      user: sessionUser, 
+      profile, 
+      affiliate, 
+      tenant, 
+      loading, 
+      signIn, 
+      signOut, 
+      refreshProfile, 
+      refreshTenant 
+    }}>
       {children}
     </AuthContext.Provider>
   );

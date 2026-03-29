@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { useDialog } from '../contexts/DialogContext';
-import { Announcement } from '../types/database';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -11,13 +12,22 @@ import { Modal, ModalFooter } from '../components/ui/Modal';
 import { Megaphone, Plus, Trash2, Pencil } from 'lucide-react';
 
 export function AnnouncementsPage() {
-  const { user, profile } = useAuth();
+  const { profile } = useAuth();
   const dialog = useDialog();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Convex Queries
+  const announcements = useQuery(api.announcements.listAll, 
+    profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+  
+  // Convex Mutations
+  const createAnnouncement = useMutation(api.announcements.createAnnouncement);
+  const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
+  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<Id<"announcements"> | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -27,19 +37,7 @@ export function AnnouncementsPage() {
   });
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
-
-  useEffect(() => {
-    loadAnnouncements();
-  }, []);
-
-  const loadAnnouncements = async () => {
-    const { data } = await supabase
-      .from('announcements')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setAnnouncements(data);
-    setLoading(false);
-  };
+  const loading = announcements === undefined;
 
   const resetForm = () => {
     setFormData({
@@ -51,8 +49,8 @@ export function AnnouncementsPage() {
     setEditingAnnouncementId(null);
   };
 
-  const handleEditAnnouncement = (announcement: Announcement) => {
-    setEditingAnnouncementId(announcement.id);
+  const handleEditAnnouncement = (announcement: { _id: Id<"announcements">, title: string, content: string, is_important: boolean, is_published: boolean }) => {
+    setEditingAnnouncementId(announcement._id);
     setFormData({
       title: announcement.title,
       content: announcement.content,
@@ -69,7 +67,7 @@ export function AnnouncementsPage() {
 
   const handleSaveAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!profile) return;
     if (!isAdmin) {
       await dialog.alert('You do not have permission to perform this action.', { variant: 'danger' });
       return;
@@ -78,35 +76,27 @@ export function AnnouncementsPage() {
     setIsSubmitting(true);
     try {
       if (editingAnnouncementId) {
-        // Update existing announcement
-        const { error } = await supabase
-          .from('announcements')
-          .update({
-            title: formData.title,
-            content: formData.content,
-            is_important: formData.isImportant,
-            is_published: formData.isPublished
-          })
-          .eq('id', editingAnnouncementId);
-
-        if (error) throw error;
+        await updateAnnouncement({
+          id: editingAnnouncementId,
+          title: formData.title,
+          content: formData.content,
+          is_important: formData.isImportant,
+          is_published: formData.isPublished
+        });
         await dialog.alert('Announcement updated successfully!', { variant: 'success', title: 'Success' });
       } else {
-        // Create new announcement
-        const { error } = await supabase.from('announcements').insert({
+        await createAnnouncement({
+          tenant_id: profile.tenant_id as Id<"tenants">,
           title: formData.title,
           content: formData.content,
           is_important: formData.isImportant,
           is_published: formData.isPublished,
-          created_by: user.id
+          created_by: profile.id as Id<"profiles">
         });
-
-        if (error) throw error;
         await dialog.alert('Announcement created successfully!', { variant: 'success', title: 'Success' });
       }
 
       handleCloseModal();
-      loadAnnouncements();
     } catch (error) {
       console.error('Error saving announcement:', error);
       await dialog.alert('Failed to save announcement', { variant: 'danger', title: 'Error' });
@@ -115,7 +105,7 @@ export function AnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: Id<"announcements">) => {
     if (!isAdmin) return;
 
     const confirmed = await dialog.confirm('Are you sure you want to delete this announcement?', {
@@ -127,9 +117,7 @@ export function AnnouncementsPage() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from('announcements').delete().eq('id', id);
-      if (error) throw error;
-      loadAnnouncements();
+      await deleteAnnouncement({ id });
       await dialog.alert('Announcement deleted.', { variant: 'success', title: 'Deleted' });
     } catch (error) {
       console.error('Error deleting announcement:', error);
@@ -165,7 +153,7 @@ export function AnnouncementsPage() {
           </Card>
         ) : (
           announcements.map((announcement) => (
-            <Card key={announcement.id}>
+            <Card key={announcement._id}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -179,7 +167,7 @@ export function AnnouncementsPage() {
                       )}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(announcement.created_at).toLocaleDateString()}
+                      {new Date(announcement._creationTime).toLocaleDateString()}
                     </p>
                   </div>
                   {isAdmin && (

@@ -43,7 +43,9 @@ export interface RolePermissions {
 }
 
 export interface TenantRole {
-  id: string;
+  id: string; // Legacy UUID support
+  _id: string; // Convex ID
+  _creationTime: number; // Convex creation time
   name: string;
   description: string | null;
   permissions: RolePermissions;
@@ -55,6 +57,8 @@ export interface TenantRole {
 
 export interface Tenant {
   id: string;
+  _id: string;
+  _creationTime: number;
   name: string;
   slug: string;
   settings: TenantSettings;
@@ -119,6 +123,8 @@ export interface BillingHistory {
 
 export interface ReferralCampaign {
   id: string;
+  _id: string;
+  _creationTime: number;
   created_at: string;
   code: string;
   name: string;
@@ -131,6 +137,8 @@ export interface ReferralCampaign {
 
 export interface Profile {
   id: string;
+  _id: string;
+  _creationTime: number;
   employee_id: string;
   full_name: string;
   email: string;
@@ -161,7 +169,9 @@ export interface Profile {
 }
 
 export interface Department {
-  id: string;
+  id: string; // Legacy UUID support
+  _id: string; // Convex ID
+  _creationTime: number; // Convex creation time
   name: string;
   description: string | null;
   is_active: boolean;
@@ -188,6 +198,8 @@ export interface Project {
 
 export interface Announcement {
   id: string;
+  _id?: string;
+  _creationTime?: number;
   title: string;
   content: string;
   is_important: boolean;

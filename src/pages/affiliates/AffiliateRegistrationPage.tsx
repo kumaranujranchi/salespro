@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
 import { ArrowRight, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
+  const registerAffiliate = useMutation(api.referrals.affiliateRegister);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -30,7 +32,7 @@ export function AffiliateRegistrationPage() {
     if (user) {
       setFormData(prev => ({
         ...prev,
-        fullName: user.user_metadata?.full_name || prev.fullName,
+        fullName: prev.fullName || '',
         email: user.email || prev.email,
       }));
     }
@@ -75,116 +77,25 @@ export function AffiliateRegistrationPage() {
     setError(null);
 
     try {
-      let userId = user?.id;
+      // 1. Register with Convex (simulating auth with email as userId for now)
+      // In a real app, you'd use Clerk/Convex Auth first.
+      const userId = user?.id || formData.email;
 
-      // 1. If no user, create account first
-      if (!userId) {
-         const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-               data: {
-                  full_name: formData.fullName,
-                  role: 'affiliate' // Or default role, permissions handled by RLS
-               }
-            }
-         });
+      await registerAffiliate({
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        referralCode: formData.referralCode,
+        channel: formData.channel,
+        userId: userId,
+      });
 
-         if (authError) {
-             // If user already exists, try to sign in
-             if (authError.message.includes('already registered')) {
-                 const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                    email: formData.email,
-                    password: formData.password
-                 });
-
-                 if (signInError) {
-                     if (signInError.message.includes('Invalid login credentials')) {
-                         throw new Error('Account exists with a different password. Please log in first.');
-                     } else if (signInError.message.includes('Email not confirmed')) {
-                         throw new Error('Account exists but email is not confirmed. Please check your inbox.');
-                     }
-                     throw signInError;
-                 }
-                 
-                 // If sign in successful, use this user ID
-                 if (signInData.user) {
-                     userId = signInData.user.id;
-                 } else {
-                     throw new Error('Login failed during registration.');
-                 }
-             } else {
-                 throw authError;
-             }
-         } else if (authData.user) {
-             userId = authData.user.id;
-
-             // Auto sign in immediately to proceed (if not implicit)
-             const { error: signInError } = await supabase.auth.signInWithPassword({
-                email: formData.email,
-                password: formData.password
-             });
-             
-             // Ignore 'Email not confirmed' error here if we want to block them later, 
-             // but for now, we assume we might need it.
-             // However, for pure new signup, Supabase might not allow sign in if 'Confirm Email' is on.
-             // If we can't sign in, we can't create the campaign due to RLS.
-             if (signInError) {
-                  if (signInError.message.includes('Email not confirmed')) {
-                      // Special case: New user, email needs confirmation.
-                      // We can't create campaign yet.
-                      setError('Please check your email to confirm your account, then log in to complete setup.');
-                      setIsLoading(false);
-                      return;
-                  }
-                  throw signInError;
-             }
-         } else {
-             throw new Error('Registration failed.');
-         }
+      // 2. Sign in locally if not already logged in
+      if (!user) {
+        await signIn(formData.email, formData.password);
       }
 
-      // 2. Create Profile (Ensure affiliates have a profile record)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          employee_id: `AFF-${userId.substring(0, 8).toUpperCase()}`,
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          role: 'affiliate',
-          tenant_id: null, // Affiliates don't belong to any tenant
-          is_active: true
-        });
-
-      if (profileError) {
-        console.error('Failed to create/update affiliate profile', profileError);
-      }
-
-      // 3. Create Campaign
-       const { error: dbError } = await supabase
-        .from('referral_campaigns')
-        .insert({
-          code: formData.referralCode.toUpperCase(),
-          name: `${formData.fullName}'s Campaign`,
-          created_by: userId,
-          referrer_commission_percent: 20.00,
-          referee_discount_percent: 10.00,
-          is_active: true,
-          channel: formData.channel // Store channel info
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        if (dbError.code === '23505') {
-          throw new Error('This referral code is already taken. Please try another.');
-        }
-        throw dbError;
-      }
-
-      // 3. Trigger Welcome Email
+      // 3. Trigger Welcome Email (optional, keep it for now)
       try {
         await fetch('/.netlify/functions/send-affiliate-welcome', {
           method: 'POST',

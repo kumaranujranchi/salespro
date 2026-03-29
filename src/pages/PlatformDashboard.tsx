@@ -1,64 +1,42 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../convex/_generated/api';
 import {
   Users,
   TrendingUp,
   Clock,
   CheckCircle,
+  Loader2
 } from 'lucide-react';
 
 interface Tenant {
-  id: string;
-  name: string;
-  slug: string;
+  _id: string;
+  _creationTime: number;
   subscription_status: string;
-  created_at: string;
-  trial_ends_at?: string;
-  plan_tier?: string;
-  billing_cycle?: string;
-  is_active?: boolean;
 }
 
 export function PlatformDashboard() {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const tenants = useQuery(api.tenants.list) as Tenant[] | undefined;
 
-  useEffect(() => {
-    fetchTenants();
-  }, []);
+  const stats = useMemo(() => {
+    if (!tenants) return { total: 0, newThisMonth: 0, trial: 0, active: 0 };
+    
+    return {
+      total: tenants.length,
+      newThisMonth: tenants.filter((t: Tenant) => {
+        const d = new Date(t._creationTime);
+        const now = new Date();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }).length,
+      trial: tenants.filter((t: Tenant) => t.subscription_status === 'trial' || t.subscription_status === 'trialing').length,
+      active: tenants.filter((t: Tenant) => t.subscription_status === 'active').length
+    };
+  }, [tenants]);
 
-  const fetchTenants = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTenants(data || []);
-    } catch (error) {
-      console.error('Error fetching tenants:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const stats = {
-    total: tenants.length,
-    newThisMonth: tenants.filter(t => {
-      const d = new Date(t.created_at);
-      const now = new Date();
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length,
-    trial: tenants.filter(t => t.subscription_status === 'trial').length,
-    active: tenants.filter(t => t.subscription_status === 'active').length
-  };
-
-  if (loading) {
+  if (tenants === undefined) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
     );
   }

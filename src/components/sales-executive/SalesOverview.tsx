@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id, Doc } from '../../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
 import { KPICard } from '../ui/KPICard';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -9,34 +11,12 @@ import { TrendingUp, DollarSign, Target, Award, BarChart3, Wallet, Building } fr
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { RecentActivityLog } from '../dashboards/widgets/RecentActivityLog';
 import { CelebrationCards } from './CelebrationCards';
-import { getSubordinateIds } from '../../utils/hierarchy';
 
 export function SalesOverview() {
     const { profile, tenant } = useAuth();
-    const [stats, setStats] = useState({
-        mySales: 0,
-        myRevenue: 0,
-        myTarget: 0,
-        achievementPercent: 0,
-        totalIncentives: 0,
-        ytdSalesCount: 0,
-        ytdTotalArea: 0,
-        ytdRevenue: 0,
-        ytdPaymentCount: 0,
-        projectStats: [] as { name: string; area: number }[],
-        activityLogs: [] as any[],
-        leaderboard: {
-            monthly: [] as { name: string; area: number; rank: number; image_url?: string }[],
-            yearly: [] as { name: string; area: number; rank: number; image_url?: string }[]
-        },
-        salesTrend: [] as { name: string; sales: number }[]
-    });
-    const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     const isReceptionist = profile?.role === 'receptionist';
-
-
 
     const permissions = profile?.role_details?.permissions?.dashboard || {
         sales_view: isReceptionist ? 'overall' : 'self',
@@ -48,145 +28,23 @@ export function SalesOverview() {
     };
     const salesView = permissions.sales_view || (isReceptionist ? 'overall' : 'self');
 
-    const loadOverviewData = useCallback(async () => {
-        if (!profile?.id) return;
-        try {
-            const now = new Date();
-            const currentMonth = now.getMonth() + 1;
-            const currentYear = now.getFullYear();
-            const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-            const yearStart = `${currentYear}-01-01`;
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const profileId = profile?._id as Id<"profiles">;
 
-            if (salesView === 'none') {
-                setStats(prev => ({ ...prev, achievementPercent: 0, mySales: 0, myRevenue: 0 }));
-                setLoading(false);
-                return;
-            }
+    // Convex Queries
+    const overviewData = useQuery(api.sales.getSalesOverview, 
+        (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: salesView } : "skip"
+    );
+    const activityLogs = useQuery(api.activity_logs.listRecent, 
+        tenantId ? { tenant_id: tenantId, limit: 10 } : "skip"
+    );
 
-            let teamIds: string[] = [];
-            if (salesView === 'team' && profile.tenant_id) {
-                teamIds = await getSubordinateIds(profile.id, profile.tenant_id);
-            }
-
-            let salesQuery = supabase.from('sales').select('total_revenue');
-            if (salesView === 'self') {
-                salesQuery = salesQuery.eq('sales_executive_id', profile.id);
-            } else if (salesView === 'team') {
-                salesQuery = salesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
-            }
-            salesQuery = salesQuery.gte('sale_date', monthStart);
-
-            let ytdSalesQuery = supabase.from('sales').select('id, total_revenue, area_sqft, project_id');
-            if (salesView === 'self') {
-                ytdSalesQuery = ytdSalesQuery.eq('sales_executive_id', profile.id);
-            } else if (salesView === 'team') {
-                ytdSalesQuery = ytdSalesQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
-            }
-            ytdSalesQuery = ytdSalesQuery.gte('sale_date', yearStart);
-
-            let trendQuery = supabase.from('sales').select('sale_date, total_revenue');
-            if (salesView === 'self') {
-                trendQuery = trendQuery.eq('sales_executive_id', profile.id);
-            } else if (salesView === 'team') {
-                trendQuery = trendQuery.in('sales_executive_id', teamIds.length > 0 ? teamIds : ['00000000-0000-0000-0000-000000000000']);
-            }
-            const trendStart = new Date();
-            trendStart.setMonth(trendStart.getMonth() - 5);
-            trendStart.setDate(1);
-            trendQuery = trendQuery.gte('sale_date', trendStart.toISOString().split('T')[0]);
-
-            const [
-                { data: salesData },
-                { data: targetData },
-                { data: incentiveData },
-                { data: activityLogs },
-                { data: ytdSalesData },
-                { data: projectsData },
-                { data: trendDataRaw }
-            ] = await Promise.all([
-                salesQuery,
-                supabase.from('targets').select('target_amount').eq('user_id', profile.id).gte('period_start', monthStart).limit(1).maybeSingle(),
-                supabase.from('incentives').select('*').eq('sales_executive_id', profile.id).eq('calculation_year', currentYear),
-                permissions.recent_activity ? supabase.from('activity_logs').select('*, user:user_id(full_name)').order('created_at', { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
-                ytdSalesQuery,
-                permissions.project_performance ? supabase.from('projects').select('id, name') : Promise.resolve({ data: [] }),
-                trendQuery
-            ]);
-
-            const revenue = salesData?.reduce((sum, sale) => sum + Number(sale.total_revenue), 0) || 0;
-            const target = targetData?.target_amount || 0;
-            const achievement = target > 0 ? (revenue / target) * 100 : 0;
-            const totalIncentives = incentiveData?.reduce((sum, inc) => sum + Number(inc.total_incentive_amount), 0) || 0;
-
-            const ytdSales = ytdSalesData || [];
-            const ytdSalesCount = ytdSales.length;
-            const ytdRevenue = ytdSales.reduce((sum, sale) => sum + Number(sale.total_revenue), 0);
-            const ytdTotalArea = ytdSales.reduce((sum, sale) => sum + Number(sale.area_sqft || 0), 0);
-
-            const projMap = new Map<string, number>();
-            ytdSales.forEach(s => {
-                if (s.project_id) {
-                    projMap.set(s.project_id, (projMap.get(s.project_id) || 0) + Number(s.area_sqft || 0));
-                }
-            });
-
-            const projectStats = projectsData?.map(p => ({
-                name: p.name,
-                area: projMap.get(p.id) || 0
-            })).sort((a, b) => b.area - a.area).slice(0, 4) || [];
-
-            // Process Trend Data
-            const last6Months: { name: string; key: string; sales: number }[] = [];
-            for (let i = 5; i >= 0; i--) {
-                const d = new Date();
-                d.setMonth(d.getMonth() - i);
-                last6Months.push({
-                    name: d.toLocaleString('default', { month: 'short' }),
-                    key: d.toISOString().slice(0, 7), // YYYY-MM
-                    sales: 0
-                });
-            }
-
-            if (trendDataRaw) {
-                trendDataRaw.forEach(sale => {
-                    if (sale.sale_date) {
-                        const saleMonth = sale.sale_date.slice(0, 7);
-                        const monthObj = last6Months.find(m => m.key === saleMonth);
-                        if (monthObj) {
-                            monthObj.sales += Number(sale.total_revenue || 0);
-                        }
-                    }
-                });
-            }
-
-            setStats({
-                mySales: salesData?.length || 0,
-                myRevenue: revenue,
-                myTarget: target,
-                achievementPercent: achievement,
-                totalIncentives: totalIncentives,
-                ytdSalesCount,
-                ytdTotalArea,
-                ytdRevenue,
-                ytdPaymentCount: 0,
-                projectStats,
-                activityLogs: activityLogs || [],
-                leaderboard: { monthly: [], yearly: [] }, // Leaderboard data not fetched in this snippet, keeping empty
-                salesTrend: last6Months
-            });
-
-        } catch (error) {
-            console.error('Error loading overview data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [profile, salesView, permissions.recent_activity, permissions.project_performance]);
+    const loading = !overviewData;
 
     useEffect(() => {
-        loadOverviewData();
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
-    }, [loadOverviewData]);
+    }, []);
 
     if (loading) return <LoadingSpinner size="lg" fullScreen />;
 
@@ -233,7 +91,7 @@ export function SalesOverview() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-6">
                     <KPICard
                         title={isReceptionist ? "Total Sales (Monthly)" : "My Sales (Monthly)"}
-                        value={stats.mySales}
+                        value={overviewData.mySales}
                         icon={TrendingUp}
                         subtitle="Deals Closed"
                         iconBgColor="bg-blue-50"
@@ -241,23 +99,23 @@ export function SalesOverview() {
                     />
                     <KPICard
                         title={isReceptionist ? "Total Revenue" : "Revenue (Monthly)"}
-                        value={formatCurrency(stats.myRevenue, true)}
+                        value={formatCurrency(overviewData.monthlyRevenue, true)}
                         icon={DollarSign}
-                        subtitle={isReceptionist ? "Company Wide" : `Target: ${formatCurrency(stats.myTarget, true)}`}
+                        subtitle={isReceptionist ? "Company Wide" : `Target: ${formatCurrency(overviewData.myTarget, true)}`}
                         iconBgColor="bg-green-50"
                         iconColor="text-green-600"
                     />
                     <KPICard
                         title="Total Sales (YTD)"
-                        value={stats.ytdSalesCount}
+                        value={overviewData.ytdSalesCount}
                         icon={BarChart3}
-                        subtitle={`Total Area: ${stats.ytdTotalArea.toLocaleString()} sqft`}
+                        subtitle={`Total Area: ${overviewData.ytdTotalArea.toLocaleString()} sqft`}
                         iconBgColor="bg-indigo-50"
                         iconColor="text-indigo-600"
                     />
                     <KPICard
                         title="Total Revenue (YTD)"
-                        value={formatCurrency(stats.ytdRevenue, true)}
+                        value={formatCurrency(overviewData.ytdRevenue, true)}
                         icon={Wallet}
                         subtitle="YTD Performance"
                         iconBgColor="bg-teal-50"
@@ -265,7 +123,7 @@ export function SalesOverview() {
                     />
                     <KPICard
                         title="Achievement"
-                        value={`${stats.achievementPercent.toFixed(1)}% `}
+                        value={`${overviewData.achievementPercent.toFixed(1)}% `}
                         icon={Target}
                         subtitle="Monthly Goal"
                         iconBgColor="bg-yellow-50"
@@ -274,7 +132,7 @@ export function SalesOverview() {
                     {tenant?.settings?.features?.incentives !== false && (
                         <KPICard
                             title="Incentives (YTD)"
-                            value={formatCurrency(stats.totalIncentives)}
+                            value={formatCurrency(overviewData.totalIncentives)}
                             icon={Award}
                             subtitle="Total Earnings"
                             iconBgColor="bg-purple-50"
@@ -284,15 +142,15 @@ export function SalesOverview() {
                 </div>
             )}
 
-            {permissions.project_performance && stats.projectStats.length > 0 && (
+            {permissions.project_performance && overviewData.projectStats.length > 0 && (
                 <div
-                    className={`grid gap-3 md:gap-6 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
-                            stats.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                                stats.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
+                    className={`grid gap-3 md:gap-6 ${overviewData.projectStats.length === 1 ? 'grid-cols-1' :
+                            overviewData.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                                overviewData.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
                                     'grid-cols-2 md:grid-cols-4'
                         }`}
                 >
-                    {stats.projectStats.map((proj, index) => {
+                    {overviewData.projectStats.map((proj: any, index: number) => {
                         const style = [
                             { bg: "bg-blue-50/50", text: "text-blue-600" },
                             { bg: "bg-emerald-50/50", text: "text-emerald-600" },
@@ -323,7 +181,7 @@ export function SalesOverview() {
                         </CardHeader>
                         <CardContent className="h-80 relative">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={stats.salesTrend} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
+                                <LineChart data={overviewData.salesTrend} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} vertical={false} />
                                     <XAxis dataKey="name" stroke="#6b7280" tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} dy={10} />
                                     <YAxis stroke="#6b7280" tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} dx={-10} />
@@ -334,7 +192,7 @@ export function SalesOverview() {
                         </CardContent>
                     </Card>
 
-                    <RecentActivityLog activities={stats.activityLogs} />
+                    <RecentActivityLog activities={activityLogs || []} />
                 </div>
             )}
 

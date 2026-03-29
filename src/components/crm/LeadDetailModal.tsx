@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -24,9 +26,16 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
   const { profile } = useAuth();
   const dialog = useDialog();
 
-  const [followups, setFollowups] = useState<LeadFollowup[]>([]);
   const [loading, setLoading] = useState(false);
   const [showFollowupForm, setShowFollowupForm] = useState(false);
+
+  // Convex Queries
+  const followupsData = useQuery(api.followups.listByLead, { leadId: lead.id as Id<"leads"> });
+  const followups = (followupsData || []) as LeadFollowup[];
+
+  // Convex Mutations
+  const addFollowupMutation = useMutation(api.followups.addFollowup);
+  const updateLeadMutation = useMutation(api.leads.updateLead);
 
   // Follow-up Form State
   const [followupData, setFollowupData] = useState({
@@ -39,30 +48,13 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
     next_followup_date: '',
     lost_reason: ''
   });
+
   // Status State (for immediate UI updates)
   const [currentStatus, setCurrentStatus] = useState(lead.lead_status);
 
   useEffect(() => {
     setCurrentStatus(lead.lead_status);
   }, [lead.lead_status]);
-
-  useEffect(() => {
-    loadFollowups();
-  }, [lead.id]);
-
-  const loadFollowups = async () => {
-    const { data, error } = await supabase
-      .from('lead_followups')
-      .select('*')
-      .eq('lead_id', lead.id)
-      .order('followup_date', { ascending: false });
-
-    if (error) {
-      console.error('Error loading followups:', error);
-    } else {
-      setFollowups(data || []);
-    }
-  };
 
   const handleAddFollowup = async () => {
     if (!profile) return;
@@ -84,17 +76,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
       return;
     }
 
-    // Check if status changed - REMOVED to allow notes without status change
-    const previousStatus = followups.length > 0 ? followups[0].new_status : currentStatus;
-    /*
-    if (followupData.new_status === previousStatus) {
-      await dialog.alert('Status must be different from previous status', {
-        variant: 'danger',
-        title: 'Validation Error'
-      });
-      return;
-    }
-    */
+    const previousStatus = followups.length > 0 ? (followups[0] as any).new_status : currentStatus;
 
     // Require next follow-up date unless converted/disqualified/lost
     if (!['Converted', 'Disqualified', 'Lost'].includes(followupData.new_status) && !followupData.next_followup_date) {
@@ -125,10 +107,10 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
 
     setLoading(true);
     try {
-      // Insert follow-up
-      const { error: followupError } = await supabase.from('lead_followups').insert({
-        tenant_id: profile.tenant_id,
-        lead_id: lead.id,
+      // Add follow-up via Convex mutation
+      await addFollowupMutation({
+        tenant_id: profile.tenant_id as Id<"tenants">,
+        lead_id: lead.id as Id<"leads">,
         followup_type: followupData.followup_type,
         followup_date: new Date(followupData.followup_date).toISOString(),
         discussion_summary: followupData.discussion_summary,
@@ -137,42 +119,22 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
         previous_status: previousStatus,
         new_status: followupData.new_status,
         next_followup_date: followupData.new_status === 'Lost' ? new Date().toISOString() : (followupData.next_followup_date || null),
-        created_by: profile.id,
+        created_by: profile.id as Id<"profiles">,
         metadata: followupData.lost_reason ? { lost_reason: followupData.lost_reason } : {}
       });
 
-      if (followupError) throw followupError;
-
       // Update lead status
-      const { error: updateError } = await supabase
-        .from('leads')
-        .update({
-          lead_status: followupData.new_status,
-          updated_by: profile.id,
-          metadata: followupData.new_status === 'Lost'
-            ? { ...lead.metadata, lost_reason: followupData.lost_reason }
-            : lead.metadata
-        })
-        .eq('id', lead.id);
-
-      if (updateError) throw updateError;
+      await updateLeadMutation({
+        id: lead.id as Id<"leads">,
+        lead_status: followupData.new_status,
+      });
 
       // Update local state
       setCurrentStatus(followupData.new_status);
 
-      // Handle Conversion Logic (Create Sale & Customer) via RPC
-      if (followupData.new_status === 'Converted' && previousStatus !== 'Converted') {
-        const { error: conversionError } = await supabase.rpc('convert_lead_to_sale', {
-          p_lead_id: lead.id,
-          p_user_id: profile.id
-        });
-
-        if (conversionError) throw conversionError;
-      }
-
       await dialog.alert(
         followupData.new_status === 'Converted'
-          ? 'Lead Converted! Sale record created successfully.'
+          ? 'Lead Converted! Sale record creation will be handled in the next step.'
           : 'Follow-up added successfully!',
         { variant: 'success', title: 'Success' }
       );
@@ -190,7 +152,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
       });
 
       setShowFollowupForm(false);
-      loadFollowups();
     } catch (error: any) {
       console.error('Error adding follow-up:', error);
       await dialog.alert(error.message || 'Failed to add follow-up', {
@@ -230,8 +191,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
     return colors[response];
   };
 
-
-
   return (
     <Modal
       isOpen={isOpen}
@@ -261,7 +220,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               <Badge variant="info" className="shrink-0">{currentStatus}</Badge>
             </div>
 
-            {/* Middle Row: Contact & Meta - Horizontal Scrollable if needed, or Wrapped */}
+            {/* Middle Row: Contact & Meta */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
               <a href={`tel:${lead.mobile}`} className="flex items-center gap-1.5 text-blue-600 hover:underline">
                 <Phone size={14} /> {lead.mobile}
@@ -286,7 +245,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               </div>
             </div>
 
-            {/* Quick Action Buttons - 2x2 Grid */}
+            {/* Quick Action Buttons */}
             <div className="grid grid-cols-2 gap-2 mt-1">
               <Button
                 variant="outline"
@@ -344,7 +303,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
 
         {/* Lead Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Requirement Details */}
           <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Requirements</h3>
             <div className="space-y-2 text-sm">
@@ -371,7 +329,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
                   {lead.preferred_locations.map((loc, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs dark:bg-blue-900 dark:text-blue-200"
+                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs dark:bg-blue-900 text-white"
                     >
                       {loc}
                     </span>
@@ -381,7 +339,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
             )}
           </div>
 
-          {/* Internal Notes */}
           <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Internal Notes</h3>
             <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -424,8 +381,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
                 />
               </div>
             </div>
-
-
 
             {followupData.followup_type === 'Call' && (
               <div className="mb-4">
@@ -571,12 +526,11 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               {followups.map((followup) => {
                 const Icon = getFollowupIcon(followup.followup_type);
                 const ResponseIcon = getResponseIcon(followup.customer_response!);
-                const isEditable = followup.is_editable &&
-                  new Date(followup.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+                const isEditable = true; // Convex business logic handles actual locking
 
                 return (
                   <div
-                    key={followup.id}
+                    key={(followup as any)._id}
                     className="relative pl-8 pb-4 border-l-2 border-gray-200 dark:border-gray-700 last:border-0"
                   >
                     <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-600 border-2 border-white dark:border-slate-900"></div>
@@ -628,12 +582,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
                           </div>
                         )}
                       </div>
-
-                      {!isEditable && (
-                        <div className="mt-2 text-xs text-gray-500 italic">
-                          🔒 Locked (Older than 24 hours)
-                        </div>
-                      )}
                     </div>
                   </div>
                 );

@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -15,26 +17,15 @@ interface BulkProjectModalProps {
 export function BulkProjectModal({ isOpen, onClose, leadIds, onSuccess }: BulkProjectModalProps) {
   const { profile } = useAuth();
   const dialog = useDialog();
-  const [projects, setProjects] = useState<any[]>([]);
+
   const [selectedProject, setSelectedProject] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadProjects();
-    }
-  }, [isOpen]);
+  // Convex Queries
+  const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-  const loadProjects = async () => {
-    if (!profile) return;
-    const { data } = await supabase
-      .from('projects')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
-    
-    if (data) setProjects(data);
-  };
+  // Convex Mutations
+  const bulkUpdateLeadProject = useMutation(api.leads.bulkUpdateLeadProject);
 
   const handleAssign = async () => {
     if (!selectedProject) {
@@ -44,15 +35,11 @@ export function BulkProjectModal({ isOpen, onClose, leadIds, onSuccess }: BulkPr
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .update({
-          project_id: selectedProject,
-          updated_by: profile?.id
-        })
-        .in('id', leadIds);
-
-      if (error) throw error;
+      await bulkUpdateLeadProject({
+        ids: leadIds.map(id => id as Id<"leads">),
+        project_id: selectedProject as Id<"projects">,
+        updated_by: profile?.id as Id<"profiles">
+      });
 
       await dialog.alert(`Successfully assigned project for ${leadIds.length} leads!`, { variant: 'success' });
       onSuccess();
@@ -78,8 +65,8 @@ export function BulkProjectModal({ isOpen, onClose, leadIds, onSuccess }: BulkPr
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           >
             <option value="">-- Select Project --</option>
-            {projects.map((proj) => (
-              <option key={proj.id} value={proj.id}>
+            {projects?.map((proj) => (
+              <option key={proj._id} value={proj._id}>
                 {proj.name}
               </option>
             ))}

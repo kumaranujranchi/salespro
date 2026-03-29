@@ -5,7 +5,8 @@ import { Button } from '../../ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ActivityLogItem {
-    id: string;
+    id?: string;
+    _id: string;
     action: string;
     created_at: string;
     user?: { full_name: string };

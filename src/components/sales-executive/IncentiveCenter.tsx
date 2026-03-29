@@ -1,77 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id, Doc } from "../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Incentive, Tenant } from '../../types/database';
 import { CheckCircle, Clock, Lock, ChevronDown, Info } from 'lucide-react';
 import { IncentivePlanSummary } from '../IncentivePlanSummary';
 
 export function IncentiveCenter() {
     const { profile } = useAuth();
-    const [incentives, setIncentives] = useState<Incentive[]>([]);
-    const [tenant, setTenant] = useState<Tenant | null>(null);
-    const [sales, setSales] = useState<any[]>([]);
-    const [payments, setPayments] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const tenantId = profile?.tenant_id as Id<"tenants">;
+    const userId = profile?._id as Id<"profiles">;
+    
     const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 
-    const loadData = async () => {
-        if (!profile?.id) return;
-        setLoading(true);
-        try {
-            // Fetch incentives
-            const { data: incData, error: incError } = await supabase
-                .from('incentives')
-                .select('*')
-                .eq('sales_executive_id', profile.id)
-                .order('created_at', { ascending: false });
+    // Convex Queries
+    const incentivesData = useQuery(api.incentives.listIncentives, 
+        tenantId ? { tenant_id: tenantId, executive_id: userId } : "skip"
+    );
 
-            if (incError) throw incError;
-            setIncentives(incData || []);
+    const calcData = useQuery(api.incentives.getIncentiveCalculationData,
+        tenantId ? { tenant_id: tenantId } : "skip"
+    );
 
-            // Fetch tenant settings for rules
-            const { data: tenantData, error: tenantError } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('id', profile.tenant_id)
-                .single();
+    const tenant = useQuery(api.tenants.get, 
+        tenantId ? { id: tenantId } : "skip"
+    );
 
-            if (tenantError) throw tenantError;
-            setTenant(tenantData);
-
-            // Fetch sales and payments for breakdown
-            const { data: salesData } = await supabase.from('sales').select('*').eq('sales_executive_id', profile.id);
-            setSales(salesData || []);
-
-            const saleIds = salesData?.map(s => s.id) || [];
-            if (saleIds.length > 0) {
-                const { data: paymentsData } = await supabase.from('payments').select('*').in('sale_id', saleIds);
-                setPayments(paymentsData || []);
-            }
-        } catch (error) {
-            console.error('Error loading incentive data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadData();
-    }, [profile]);
+    const loading = !incentivesData || !calcData || !tenant;
+    
+    const incentives = (incentivesData || []) as any[];
+    const sales = (calcData?.sales || []) as any[];
+    const payments = (calcData?.payments || []) as any[];
 
     const calculateIncentiveDetails = (month: string, year: number) => {
-        const userSales = sales.filter(s => {
+        const userSales = (sales as Doc<"sales">[]).filter((s: Doc<"sales">) => {
             if (!s.sale_date) return false;
             const d = new Date(s.sale_date);
             if (isNaN(d.getTime())) return false;
             return d.toLocaleString('default', { month: 'long' }) === month && d.getFullYear() === year && s.is_agreement_done;
         });
 
-        const totalSqft = userSales.reduce((sum, s) => sum + (s.area_sqft || 0), 0);
+        const totalSqft = userSales.reduce((sum: number, s: Doc<"sales">) => sum + (s.area_sqft || 0), 0);
         
         let baseRate = 0;
-        const tiers = tenant?.settings?.incentive_plan?.rules?.tiers || [];
+        const tiers = (tenant as any)?.settings?.incentive_plan?.rules?.tiers || [];
         const applicableTier = tiers.find((t: any) => totalSqft >= t.min && (t.max === null || totalSqft <= t.max));
         
         if (applicableTier) baseRate = applicableTier.rate;
@@ -80,8 +54,8 @@ export function IncentiveCenter() {
         else if (totalSqft >= 3000) baseRate = 2;
         else if (totalSqft >= 0) baseRate = 1;
 
-        return userSales.map(s => {
-            const salePayments = payments.filter(p => p.sale_id === s.id).reduce((sum, p) => sum + p.amount, 0);
+        return userSales.map((s: Doc<"sales">) => {
+            const salePayments = (payments as Doc<"payments">[]).filter((p: Doc<"payments">) => p.sale_id === s._id).reduce((sum: number, p: Doc<"payments">) => sum + p.amount, 0);
             const paymentPct = (salePayments / s.total_revenue) * 100;
             let releasePct = 0;
             if (s.is_registry_done) releasePct = 100;
@@ -91,8 +65,8 @@ export function IncentiveCenter() {
 
             const saleProjected = (s.total_revenue * baseRate) / 100;
             return {
-                id: s.id,
-                booking_no: s.id.slice(0, 8).toUpperCase(),
+                id: s._id,
+                booking_no: s._id.slice(0, 8).toUpperCase(),
                 sqft: s.area_sqft,
                 revenue: s.total_revenue,
                 payment_pct: paymentPct.toFixed(1),
@@ -104,11 +78,11 @@ export function IncentiveCenter() {
     };
 
     const calculateTotalEarned = () => {
-        return incentives.reduce((sum, inc) => sum + Number(inc.total_incentive_amount), 0);
+        return (incentives as Doc<"incentives">[]).reduce((sum: number, inc: Doc<"incentives">) => sum + Number(inc.total_incentive_amount), 0);
     };
 
     const calculateTotalPaid = () => {
-        return incentives.reduce((sum, inc) => {
+        return (incentives as any[]).reduce((sum, inc) => {
             let paid = 0;
             if (inc.installment_1_paid) paid += Number(inc.installment_1_amount);
             if (inc.installment_2_paid) paid += Number(inc.installment_2_amount);
@@ -133,7 +107,7 @@ export function IncentiveCenter() {
 
     return (
         <div className="space-y-6">
-            <IncentivePlanSummary tenant={tenant} />
+            <IncentivePlanSummary tenant={tenant as any} />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-r from-[#00E576] to-[#00C853] p-6 rounded-xl text-[#0A1C37] shadow-lg">
@@ -165,19 +139,19 @@ export function IncentiveCenter() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {incentives.map((inc) => (
-                                    <React.Fragment key={inc.id}>
+                                {incentives.map((inc: any) => (
+                                    <React.Fragment key={inc._id}>
                                         <tr 
-                                            className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${expandedRecord === inc.id ? 'bg-slate-50 dark:bg-white/5' : ''}`}
-                                            onClick={() => setExpandedRecord(expandedRecord === inc.id ? null : inc.id)}
+                                            className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${expandedRecord === inc._id ? 'bg-slate-50 dark:bg-white/5' : ''}`}
+                                            onClick={() => setExpandedRecord(expandedRecord === inc._id ? null : inc._id)}
                                         >
                                             <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-200">
                                                 <div className="flex items-center gap-2">
-                                                    <ChevronDown size={14} className={`text-gray-400 transition-transform ${expandedRecord === inc.id ? 'rotate-180' : ''}`} />
+                                                    <ChevronDown size={14} className={`text-gray-400 transition-transform ${expandedRecord === inc._id ? 'rotate-180' : ''}`} />
                                                     {inc.calculation_month} {inc.calculation_year}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{inc.sale_id.slice(0, 8)}...</td>
+                                            <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{inc.sales_executive_id.slice(0, 8)}...</td>
                                             <td className="px-4 py-3 text-right font-bold text-[#0A1C37] dark:text-white">{formatCurrency(inc.total_incentive_amount)}</td>
                                             <td className="px-4 py-3 text-center">
                                                 {inc.is_locked ? (
@@ -195,7 +169,7 @@ export function IncentiveCenter() {
                                                 </div>
                                             </td>
                                         </tr>
-                                        {expandedRecord === inc.id && (
+                                        {expandedRecord === inc._id && (
                                             <tr className="bg-slate-50/50 dark:bg-black/20">
                                                 <td colSpan={5} className="px-8 py-4 border-l-4 border-[#00E576]">
                                                     <div className="space-y-4">

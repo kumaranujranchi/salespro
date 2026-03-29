@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -8,13 +10,15 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null); // Added success state
-  const [resendTimer, setResendTimer] = useState(0); // Added resendTimer state
-  const [isResending, setIsResending] = useState(false); // Added isResending state
+  const [success, setSuccess] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResending, setIsResending] = useState(false);
 
-  // Extract plan details from URL if present
+  const registerTenantMutation = useMutation(api.tenants.register);
+
   const planName = searchParams.get('plan');
   const planAmount = searchParams.get('amount');
 
@@ -26,7 +30,7 @@ export function RegisterCompanyPage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    referralCode: searchParams.get('ref') || '' // Auto-fill from URL
+    referralCode: searchParams.get('ref') || ''
   });
 
   const [verificationStep, setVerificationStep] = useState(false);
@@ -38,12 +42,10 @@ export function RegisterCompanyPage() {
     setFormData(prev => ({
       ...prev,
       [name]: value,
-      // Auto-generate slug from company name
       companySlug: name === 'companyName' ? value.toLowerCase().replace(/[^a-z0-9]/g, '-') : prev.companySlug
     }));
   };
 
-  // Effect for resend timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendTimer > 0) {
@@ -56,17 +58,14 @@ export function RegisterCompanyPage() {
 
   const handleResendCode = async () => {
     if (resendTimer > 0 || isResending) return;
-    
     setIsResending(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // 1. Generate a random 6-digit OTP
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
-      // 2. Send OTP via Netlify Function (using Nodemailer)
       const response = await fetch(`${window.location.origin}/.netlify/functions/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,48 +77,32 @@ export function RegisterCompanyPage() {
         })
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        try {
-            const errorData = JSON.parse(text);
-            throw new Error(errorData.error || 'Failed to send verification email');
-        } catch {
-            throw new Error(`Server Error (${response.status}): ${text || response.statusText}`);
-        }
-      }
+      if (!response.ok) throw new Error('Failed to send verification email');
+      
       setSuccess('A new verification code has been sent to your email.');
-      setResendTimer(30); // Reset timer to 30s
+      setResendTimer(30);
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to resend verification code. Please try again.';
-      console.error('Resend OTP Error:', err);
-      setError(errorMsg);
+      setError(err instanceof Error ? err.message : 'Failed to resend verification code');
     } finally {
       setIsResending(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => { // Renamed sendOtp to handleSignup
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    if (!formData.phone || formData.phone.trim().length < 10) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-
     setLoading(true);
     setError(null);
-    setSuccess(null); // Clear success message on new attempt
+    setSuccess(null);
 
     try {
-      // 1. Generate a random 6-digit OTP
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
-      // 2. Send OTP via Netlify Function (using Nodemailer)
       const response = await fetch(`${window.location.origin}/.netlify/functions/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,24 +114,13 @@ export function RegisterCompanyPage() {
         })
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        try {
-            const errorData = JSON.parse(text);
-            throw new Error(errorData.error || 'Failed to send verification email');
-        } catch {
-            throw new Error(`Server Error (${response.status}): ${text || response.statusText}`);
-        }
-      }
+      if (!response.ok) throw new Error('Failed to send verification email');
 
-      // 3. Move to Verification Step
       setVerificationStep(true);
-      setResendTimer(30); // Start timer after sending initial OTP
+      setResendTimer(30);
       setSuccess('Verification code sent! Please check your email.');
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to send verification code. Please try again.';
-      console.error('OTP Error:', err);
-      setError(errorMsg);
+      setError(err instanceof Error ? err.message : 'Failed to send verification code');
     } finally {
       setLoading(false);
     }
@@ -158,63 +130,36 @@ export function RegisterCompanyPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
-    // 1. Verify OTP
     if (otp !== generatedOtp) {
-      setError("Invalid verification code. Please check your email and try again.");
+      setError("Invalid verification code");
       setLoading(false);
       return;
     }
 
     try {
-      // 2. Sign Up (Create Auth User)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            role: 'super_admin'
-          }
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Registration failed");
-
-      // 3. Create Tenant & Link User
-      const { error: rpcError } = await supabase.rpc('register_tenant', {
+      // Create Tenant and Profile in Convex
+      await registerTenantMutation({
         company_name: formData.companyName,
         company_slug: formData.companySlug,
         user_full_name: formData.fullName,
         contact_email: formData.email,
         contact_phone: formData.phone,
-        referral_code: formData.referralCode // Added referral code
+        referral_code: formData.referralCode,
+        userId: formData.email, // Simulation: use email as Auth ID
       });
 
-      if (rpcError) {
-        throw new Error(rpcError.message || 'Failed to create company workspace');
-      }
+      // Sign In locally
+      await signIn(formData.email, formData.password);
 
-      // 4. Auto Sign In
-      await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
-
-      // 5. Redirect to pricing checkout if plan was selected, otherwise dashboard
       if (planName && planAmount) {
         const referralParam = formData.referralCode ? `&referralCode=${encodeURIComponent(formData.referralCode)}` : '';
         navigate(`/pricing?checkout=true&plan=${encodeURIComponent(planName)}&amount=${planAmount}${referralParam}`);
       } else {
         navigate('/dashboard');
       }
-
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to complete registration';
-      console.error('Registration Error:', err);
-      setError(errorMsg);
+      setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
     }

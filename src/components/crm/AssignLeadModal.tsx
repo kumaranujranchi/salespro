@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -15,29 +17,15 @@ interface AssignLeadModalProps {
 export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignLeadModalProps) {
   const { profile } = useAuth();
   const dialog = useDialog();
-  const [executives, setExecutives] = useState<any[]>([]);
+
   const [selectedExecutive, setSelectedExecutive] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadExecutives();
-    }
-  }, [isOpen]);
+  // Convex Queries
+  const executives = useQuery(api.profiles.listActiveStaff, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-  const loadExecutives = async () => {
-    if (!profile) return;
-
-    // Fetch users with role sales_executive or team_leader
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('tenant_id', profile.tenant_id)
-      .in('role', ['sales_executive', 'team_leader', 'admin'])
-      .order('full_name');
-
-    if (data) setExecutives(data);
-  };
+  // Convex Mutations
+  const bulkAssignLeads = useMutation(api.leads.bulkAssignLeads);
 
   const handleAssign = async () => {
     if (!selectedExecutive) {
@@ -47,15 +35,11 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .update({
-          sales_executive_id: selectedExecutive,
-          updated_by: profile?.id
-        })
-        .in('id', leadIds);
-
-      if (error) throw error;
+      await bulkAssignLeads({
+        ids: leadIds.map(id => id as Id<"leads">),
+        sales_executive_id: selectedExecutive as Id<"profiles">,
+        updated_by: profile?.id as Id<"profiles">
+      });
 
       await dialog.alert(`Successfully assigned ${leadIds.length} leads!`, { variant: 'success' });
       onSuccess();
@@ -81,8 +65,8 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           >
             <option value="">-- Select Executive --</option>
-            {executives.map((exec) => (
-              <option key={exec.id} value={exec.id}>
+            {executives?.map((exec) => (
+              <option key={exec._id} value={exec._id}>
                 {exec.full_name} ({exec.email})
               </option>
             ))}

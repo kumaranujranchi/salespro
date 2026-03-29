@@ -1,55 +1,22 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import React from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { Users, Wallet, Clock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 export function ReferralAnalytics() {
-  const [stats, setStats] = useState({
-    totalReferrals: 0,
-    totalCommissions: 0,
-    pendingCommissions: 0
-  });
-  const [ledger, setLedger] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { profile } = useAuth();
+  const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
+  // Convex Query
+  const analytics = useQuery(api.referrals.getReferralAnalytics, tenantId ? { tenant_id: tenantId } : "skip");
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
-    
-    // Fetch stats (Mocked for now as we need data)
-    // In real implementation, these would be count queries
-    const { count: referralCount } = await supabase.from('user_referrals').select('*', { count: 'exact', head: true });
-    
-    const { data: commissionData } = await supabase.from('commissions').select('amount, status');
-    
-    const totalCom = commissionData?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-    const pendingCom = commissionData?.filter(c => c.status === 'pending').reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+  if (analytics === undefined) return <LoadingSpinner fullScreen />;
 
-    setStats({
-      totalReferrals: referralCount || 0,
-      totalCommissions: totalCom,
-      pendingCommissions: pendingCom
-    });
-
-    // Fetch Ledger
-    const { data: ledgerData } = await supabase
-      .from('commissions')
-      .select(`
-        *,
-        referral:user_referrals(
-          campaign:referral_campaigns(code),
-          referrer:profiles(full_name)
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    setLedger(ledgerData || []);
-    setLoading(false);
-  };
+  const { totalReferrals, totalCommissions, pendingCommissions, ledger } = analytics;
 
   return (
     <div className="space-y-6">
@@ -61,7 +28,7 @@ export function ReferralAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Referrals</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalReferrals}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalReferrals}</p>
             </div>
           </div>
         </div>
@@ -73,7 +40,7 @@ export function ReferralAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Commission</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalCommissions)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalCommissions)}</p>
             </div>
           </div>
         </div>
@@ -85,7 +52,7 @@ export function ReferralAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Payout</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.pendingCommissions)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(pendingCommissions)}</p>
             </div>
           </div>
         </div>
@@ -97,14 +64,6 @@ export function ReferralAnalytics() {
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Transaction History</h3>
         </div>
         <div className="overflow-x-auto">
-        <div className="overflow-x-auto">
-          {loading ? (
-             <div className="p-8 text-center text-gray-500">Loading...</div>
-          ) : ledger.length === 0 ? (
-             <div className="p-8 text-center text-gray-500 text-sm">
-               No transactions recorded yet.
-             </div>
-          ) : (
           <div className="min-w-full inline-block align-middle">
             <div className="border rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -118,19 +77,26 @@ export function ReferralAnalytics() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {ledger.map((item) => (
-                      <tr key={item.id}>
+                  {ledger.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500 text-sm">
+                        No transactions recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    ledger.map((item: any) => (
+                      <tr key={item._id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(item.created_at).toLocaleDateString()}
+                          {new Date(item._creationTime).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                          {(item.referral as any)?.referrer?.full_name || 'Unknown'}
+                          {item.referrer_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {(item.referral as any)?.campaign?.code || '-'}
+                          {item.campaign_code}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600 dark:text-green-400">
-                          {formatCurrency(Number(item.amount))}
+                          {formatCurrency(item.amount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -140,13 +106,12 @@ export function ReferralAnalytics() {
                           </span>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-          )}
-        </div>
         </div>
       </div>
     </div>

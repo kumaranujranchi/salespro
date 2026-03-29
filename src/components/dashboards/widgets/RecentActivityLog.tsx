@@ -2,7 +2,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { Activity } from 'lucide-react';
 
 interface ActivityLogItem {
-    id: string;
+    id?: string;
+    _id: string;
     action: string;
     entity_type: string;
     created_at: string;
@@ -33,7 +34,7 @@ export function RecentActivityLog({ activities }: RecentActivityLogProps) {
                     ) : (
                         <div className="relative border-l border-slate-200 dark:border-white/10 ml-2 space-y-6 py-2">
                             {activities.map((log) => (
-                                <div key={log.id} className="relative pl-6 group">
+                                <div key={log._id || log.id} className="relative pl-6 group">
                                     <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-gray-600 ring-2 ring-white dark:ring-surface-dark group-hover:bg-blue-500 transition-colors"></div>
                                     <div className="flex flex-col gap-1">
                                         <p className="text-sm font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">

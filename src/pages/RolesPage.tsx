@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { Id } from '../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
+import { TenantRole, RolePermissions } from '../types/database';
 import {
   Shield,
   Plus,
@@ -28,22 +31,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-
-interface RolePermissions {
-  menu: Record<string, 'none' | 'read' | 'edit'>;
-  dashboard: {
-    sales_view: 'none' | 'self' | 'team' | 'overall';
-    [key: string]: string | boolean | undefined;
-  };
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  is_system: boolean;
-  permissions: RolePermissions;
-}
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -79,10 +66,19 @@ const SALES_PERSPECTIVES: { id: 'none' | 'self' | 'team' | 'overall'; label: str
 
 export function RolesPage() {
   const { tenant, profile } = useAuth();
-  const [roles, setRoles] = useState<Role[]>([]);
+  
+  const rolesData = useQuery(api.roles.list, 
+    tenant?._id ? { tenant_id: tenant._id } : "skip"
+  );
+  const roles = (rolesData || []) as TenantRole[];
+  
+  const createRole = useMutation(api.roles.create);
+  const updateRole = useMutation(api.roles.update);
+  const deleteRole = useMutation(api.roles.remove);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRole, setSelectedRole] = useState<TenantRole | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Form State
@@ -98,27 +94,7 @@ export function RolesPage() {
     } as RolePermissions
   });
 
-  const fetchRoles = useCallback(async () => {
-    try {
-      if (!tenant?.id) return;
-      const { data, error } = await supabase
-        .from('tenant_roles')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('is_system', { ascending: false });
-
-      if (error) throw error;
-      setRoles(data || []);
-    } catch (err) {
-      console.error('Error fetching roles:', err);
-    }
-  }, [tenant?.id]);
-
-  useEffect(() => {
-    fetchRoles();
-  }, [fetchRoles]);
-
-  const handleEditRole = (role: Role) => {
+  const handleEditRole = (role: TenantRole) => {
     setSelectedRole(role);
     setFormData({
       name: role.name,
@@ -146,32 +122,25 @@ export function RolesPage() {
 
   async function handleSaveRole() {
     try {
-      if (!tenant?.id || !formData.name) return;
+      if (!tenant?._id || !formData.name) return;
 
-      const roleData = {
-        tenant_id: tenant.id,
-        name: formData.name,
-        description: formData.description,
-        permissions: formData.permissions,
-        updated_at: new Date()
-      };
-
-      let error;
       if (selectedRole) {
-        ({ error } = await supabase
-          .from('tenant_roles')
-          .update(roleData)
-          .eq('id', selectedRole.id));
+        await updateRole({
+          id: selectedRole._id as Id<"tenant_roles">,
+          name: formData.name,
+          description: formData.description,
+          permissions: formData.permissions,
+        });
       } else {
-        ({ error } = await supabase
-          .from('tenant_roles')
-          .insert([roleData]));
+        await createRole({
+          tenant_id: tenant._id,
+          name: formData.name,
+          description: formData.description,
+          permissions: formData.permissions,
+        });
       }
 
-      if (error) throw error;
-
       setIsEditorOpen(false);
-      fetchRoles();
     } catch (err) {
       console.error('Error saving role:', err);
       alert('Failed to save role. Check if name is unique.');
@@ -181,14 +150,8 @@ export function RolesPage() {
   async function handleDeleteRole() {
     if (!selectedRole || selectedRole.is_system) return;
     try {
-      const { error } = await supabase
-        .from('tenant_roles')
-        .delete()
-        .eq('id', selectedRole.id);
-
-      if (error) throw error;
+      await deleteRole({ id: selectedRole._id as Id<"tenant_roles"> });
       setDeleteModalOpen(false);
-      fetchRoles();
     } catch (err) {
       console.error('Error deleting role:', err);
     }
@@ -234,7 +197,7 @@ export function RolesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {roles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map((role) => (
-          <Card key={role.id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-emerald-500">
+          <Card key={role._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-emerald-500">
             <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
               <div className="flex items-start justify-between">
                 <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">

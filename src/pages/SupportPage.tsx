@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../convex/_generated/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Plus, Loader2, MessageSquare, Clock, CheckCircle2, XCircle, X } from 'lucide-react';
 
 interface Ticket {
-  id: string;
+  _id: string;
+  _creationTime: number;
   ticket_number: number;
   subject: string;
   description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  created_at: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed' | string;
+  priority: 'low' | 'medium' | 'high' | 'critical' | string;
   resolution_notes?: string;
 }
 
@@ -22,8 +24,14 @@ interface Notification {
 }
 
 export function SupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tenant, user, profile } = useAuth();
+  
+  const ticketsData = useQuery(api.support.listByTenant, 
+    tenant?._id ? { tenant_id: tenant._id } : "skip"
+  );
+  const tickets = (ticketsData || []) as Ticket[];
+  const createTicket = useMutation(api.support.create);
+
   const [showForm, setShowForm] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
 
@@ -33,94 +41,52 @@ export function SupportPage() {
   const [priority, setPriority] = useState('medium');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-
-  const fetchTickets = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTickets(data || []);
-    } catch (error) {
-      console.error('Error fetching tickets:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tenant || !user || !profile) return;
     setSubmitting(true);
 
     try {
-      // 1. Get Current User Info (for tenant_id)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('tenant_id, full_name')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile) throw new Error('Profile not found');
-
-      // 2. Insert Ticket
-      const { data: ticket, error } = await supabase
-        .from('support_tickets')
-        .insert([{
-          subject,
-          description,
-          priority,
-          created_by: user.id,
-          tenant_id: profile.tenant_id
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // 3. Send Confirmation Email via Netlify Function
-      const emailResponse = await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'TICKET_CREATED',
-          email: user.email,
-          name: profile.full_name,
-          data: {
-            ticketNumber: ticket.ticket_number,
-            subject: ticket.subject
-          }
-        })
+      // 1. Insert Ticket using Convex Mutation
+      const ticketId = await createTicket({
+        subject,
+        description,
+        priority,
+        tenant_id: tenant._id,
+        created_by: profile._id
       });
 
-      if (!emailResponse.ok) {
-        throw new Error('Failed to send confirmation email. Ticket created but email failed.');
+      // 2. Send Confirmation Email via Netlify Function
+      try {
+        await fetch('/.netlify/functions/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'TICKET_CREATED',
+            email: user.email,
+            name: profile.full_name,
+            data: {
+              subject: subject
+            }
+          })
+        });
+      } catch (e) {
+        console.warn('Failed to send confirmation email, but ticket was created.', e);
       }
 
-      // 4. Reset & Refresh
+      // 3. Reset & Refresh (Convex handles refresh automatically)
       setSubject('');
       setDescription('');
       setShowForm(false);
-      fetchTickets();
 
-      // Show success notification
       setNotification({
         type: 'success',
         title: 'Ticket Raised Successfully!',
-        message: 'Your support request has been submitted. Check your email for confirmation.'
+        message: 'Your support request has been submitted.'
       });
 
     } catch (error: any) {
       console.error('Error creating ticket:', error);
-
-      // Show error notification
       setNotification({
         type: 'error',
         title: 'Failed to Raise Ticket',
@@ -209,7 +175,7 @@ export function SupportPage() {
         </div>
       )}
 
-      {loading ? (
+      {ticketsData === undefined ? (
         <div className="text-center py-10">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-600" />
         </div>
@@ -223,7 +189,7 @@ export function SupportPage() {
         <div className="bg-white dark:bg-surface-dark shadow overflow-hidden sm:rounded-md border dark:border-white/10">
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {tickets.map((ticket) => (
-              <li key={ticket.id} className="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <li key={ticket._id} className="p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -236,7 +202,7 @@ export function SupportPage() {
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{ticket.description}</p>
                     <p className="mt-2 text-xs text-gray-400 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Raised on {new Date(ticket.created_at).toLocaleDateString()}
+                      Raised on {new Date(ticket._creationTime).toLocaleDateString()}
                     </p>
                   </div>
                   {ticket.resolution_notes && (

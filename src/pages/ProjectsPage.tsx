@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
 import { Project } from '../types/database';
@@ -10,19 +12,16 @@ import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { Building, Plus, ExternalLink, Trash2, Pencil, X } from 'lucide-react';
-
-
 import { useAuth } from '../contexts/AuthContext';
 
 export function ProjectsPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
   const toast = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<Id<"projects"> | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const isReadOnly = profile?.role === 'director';
@@ -43,15 +42,13 @@ export function ProjectsPage() {
     status: 'Running'
   });
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  // Convex Queries
+  const projects = useQuery(api.projects.listAllProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-  const loadProjects = async () => {
-    const { data } = await supabase.from('projects').select('*').order('name');
-    if (data) setProjects(data);
-    setLoading(false);
-  };
+  // Convex Mutations
+  const createProjectMutation = useMutation(api.projects.createProject);
+  const updateProjectMutation = useMutation(api.projects.updateProject);
+  const deleteProjectMutation = useMutation(api.projects.deleteProject);
 
   const resetForm = () => {
     setFormData({
@@ -65,9 +62,9 @@ export function ProjectsPage() {
     setEditingProjectId(null);
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = (project: any) => {
     if (isReadOnly) return;
-    setEditingProjectId(project.id);
+    setEditingProjectId(project._id);
     setFormData({
       name: project.name,
       address: project.address || '',
@@ -85,75 +82,41 @@ export function ProjectsPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    setUploadingImage(true);
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from('project-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('project-images')
-        .getPublicUrl(filePath);
-
-      setFormData(prev => ({ ...prev, imageUrl: data.publicUrl }));
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Error uploading image. Please try again.');
-    } finally {
-      setUploadingImage(false);
-    }
+    // For now, keeping a placeholder for image upload as Convex storage integration
+    // requires more setup. We'll implement this properly in a future step.
+    toast.info("Image upload to Convex storage will be implemented soon.");
   };
 
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnly) return;
+    if (isReadOnly || !profile?.tenant_id) return;
     setIsSubmitting(true);
     try {
-      if (editingProjectId) {
-        // Update existing project
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            name: formData.name,
-            address: formData.address,
-            google_maps_url: formData.googleMapsUrl || null,
-            project_type: formData.projectType,
-            image_url: formData.imageUrl || null,
-            status: formData.status
-          })
-          .eq('id', editingProjectId);
+      const projectData = {
+        name: formData.name,
+        address: formData.address,
+        google_maps_url: formData.googleMapsUrl || undefined,
+        project_type: formData.projectType,
+        image_url: formData.imageUrl || undefined,
+        status: formData.status,
+        is_active: formData.status === 'Running'
+      };
 
-        if (error) throw error;
+      if (editingProjectId) {
+        await updateProjectMutation({
+          id: editingProjectId,
+          ...projectData
+        });
         toast.success('Project updated successfully!');
       } else {
-        // Create new project
-        const { error } = await supabase.from('projects').insert({
-          name: formData.name,
-          address: formData.address,
-          google_maps_url: formData.googleMapsUrl || null,
-          project_type: formData.projectType,
-          image_url: formData.imageUrl || null,
-          status: formData.status,
-          is_active: formData.status === 'Running', // Sync is_active with status
-          site_photos: [], // Initialize as empty array
-          metadata: {}
+        await createProjectMutation({
+          tenant_id: profile.tenant_id as Id<"tenants">,
+          ...projectData
         });
-
-        if (error) throw error;
         toast.success('Project added successfully!');
       }
 
       handleCloseModal();
-      loadProjects();
     } catch (error) {
       console.error('Error saving project:', error);
       toast.error('Failed to save project');
@@ -162,7 +125,7 @@ export function ProjectsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: Id<"projects">) => {
     if (isReadOnly) return;
     const confirmed = await dialog.confirm('Are you sure you want to delete this project?', {
       variant: 'danger',
@@ -173,13 +136,11 @@ export function ProjectsPage() {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from('projects').delete().eq('id', id);
-      if (error) throw error;
-      loadProjects();
+      await deleteProjectMutation({ id });
       toast.success('Project deleted.');
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Failed to delete project. It might be referenced by other records.');
+      toast.error('Failed to delete project.');
     }
   };
 
@@ -206,7 +167,7 @@ export function ProjectsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {!projects ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
             </div>
@@ -222,8 +183,8 @@ export function ProjectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projects.map((project) => (
-                  <TableRow key={project.id}>
+                {projects.map((project: any) => (
+                  <TableRow key={project._id}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{project.name}</div>
@@ -263,7 +224,7 @@ export function ProjectsPage() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                            onClick={() => handleDelete(project.id)}
+                            onClick={() => handleDelete(project._id)}
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -382,7 +343,6 @@ export function ProjectsPage() {
             </div>
           </div>
           <ModalFooter>
-            {/* ... */}
             <Button
               type="button"
               variant="outline"
@@ -396,17 +356,7 @@ export function ProjectsPage() {
               variant="primary"
               isLoading={isSubmitting}
             >
-              {editingProjectId ? (
-                <>
-                  <span className="hidden md:inline">Update Project</span>
-                  <span className="md:hidden">Update</span>
-                </>
-              ) : (
-                <>
-                  <span className="hidden md:inline">Create Project</span>
-                  <span className="md:hidden">Create</span>
-                </>
-              )}
+              {editingProjectId ? "Update Project" : "Create Project"}
             </Button>
           </ModalFooter>
         </form>
