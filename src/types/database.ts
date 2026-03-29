@@ -1,3 +1,5 @@
+import { Id } from "../../convex/_generated/dataModel";
+
 export type UserRole = 'super_admin' | 'admin' | 'director' | 'team_leader' | 'sales_executive' | 'crm_staff' | 'accountant' | 'driver' | 'receptionist' | 'platform_admin' | 'affiliate';
 
 export interface TenantSettings {
@@ -144,17 +146,17 @@ export interface Profile {
   full_name: string;
   email: string;
   phone: string | null;
-  role: UserRole;
-  department_id: string | null;
-  reporting_manager_id: string | null;
-  image_url: string | null;
-  dob: string | null;
-  marriage_anniversary: string | null;
-  joining_date: string | null;
-  tenant_id: string; // Added for SaaS
+  role: UserRole | string;
+  department_id?: string | Id<"departments"> | null;
+  reporting_manager_id?: string | Id<"profiles"> | null;
+  image_url?: string | null;
+  dob?: string | null;
+  marriage_anniversary?: string | null;
+  joining_date?: string | null;
+  tenant_id?: string | Id<"tenants">; // Added for SaaS
   is_active: boolean;
   force_password_change: boolean;
-  role_id: string | null;
+  role_id?: string | null;
   role_details?: {
     id: string;
     name: string;
@@ -182,17 +184,19 @@ export interface Department {
 
 export interface Project {
   id: string;
+  _id?: Id<"projects">;
+  _creationTime?: number;
   name: string;
-  address: string | null;
-  location_lat: number | null;
-  location_lng: number | null;
-  google_maps_url: string | null;
+  address?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
+  google_maps_url?: string | null;
   site_photos: string[];
   metadata: Record<string, any>;
   is_active: boolean;
-  project_type?: 'Flat/Apartment' | 'Residential Land (Plotting)' | 'Serviced Apartments' | 'Residential Land' | '1 RK/ Studio Apartment' | 'Independent House/Villa' | 'Farm House' | 'Duplex' | 'Other';
+  project_type?: 'Flat/Apartment' | 'Residential Land (Plotting)' | 'Serviced Apartments' | 'Residential Land' | '1 RK/ Studio Apartment' | 'Independent House/Villa' | 'Farm House' | 'Duplex' | 'Other' | string;
   image_url?: string | null;
-  status?: 'Running' | 'Closed' | 'Hold';
+  status?: 'Running' | 'Closed' | 'Hold' | string;
   created_at: string;
   updated_at: string;
 }
@@ -383,9 +387,9 @@ export interface ActivityLog {
 
 export type LeadSource = 'Ads' | 'Walk-in' | 'Reference' | 'Channel Partner';
 export type LeadStatus = 'New' | 'Contacted' | 'In Progress' | 'Qualified' | 'Site Visit Scheduled' | 'Site Visit Done' | 'Lost' | 'Disqualified' | 'Converted';
-export type BudgetRange = '<50L' | '50L-1Cr' | '1Cr-2Cr' | '>2Cr';
-export type PurposeType = 'Investment' | 'End Use';
-export type LeadScore = 'Hot' | 'Warm' | 'Cold';
+export type BudgetRange = '<50L' | '50L-1Cr' | '1Cr-2Cr' | '>2Cr' | string;
+export type PurposeType = 'Investment' | 'End Use' | string;
+export type LeadScore = 'Hot' | 'Warm' | 'Cold' | string;
 export type FollowupType = 'Call' | 'WhatsApp' | 'Visit' | 'Email';
 export type CustomerResponse = 'Positive' | 'Neutral' | 'Negative';
 export type CallStatus = 'Connected' | 'Ringing' | 'Disconnected' | 'Busy' | 'Not Responding' | 'Asked to call later';
@@ -396,32 +400,40 @@ export interface Lead {
   lead_id: string; // Auto-generated: L-YYYYMMDD-XXXX
 
   // Lead Source & Assignment
-  lead_source: LeadSource;
-  project_id: string | null;
-  sales_executive_id: string | null;
+  lead_source: LeadSource | string;
+  project_id?: string | Id<"projects"> | null;
+  sales_executive_id?: string | Id<"profiles"> | null;
 
   // Customer Details
   customer_name: string;
   mobile: string;
-  email: string | null;
-  city: string | null;
+  email?: string | null;
+  city?: string | null;
 
   // Requirement Details
-  budget_range: BudgetRange | null;
-  purpose: PurposeType | null;
-  preferred_locations: string[] | null; // Array of location names
+  budget_range?: BudgetRange | null;
+  purpose?: PurposeType | null;
+  preferred_locations?: string[] | null; // Array of location names
 
   // Lead Management
-  lead_status: LeadStatus;
-  lead_score: LeadScore;
-  internal_notes: string | null;
+  lead_status: LeadStatus | string;
+  lead_score?: LeadScore | string;
+  internal_notes?: string | null;
 
   // Timestamps
   lead_date: string;
+  _creationTime: number; 
   created_at: string;
   updated_at: string;
-  created_by: string | null;
-  updated_by: string | null;
+  created_by?: string | Id<"profiles"> | null;
+  updated_by?: string | Id<"profiles"> | null;
+
+  // Denormalized Follow-up Info
+  latest_followup_date?: string;
+  latest_followup_status?: string;
+  next_followup_date?: string;
+  followup_count?: number;
+  overdue_followup?: boolean;
 
   // Metadata
   metadata: Record<string, any>;
@@ -482,10 +494,7 @@ export interface LeadTransfer {
 
 // Extended interfaces with relation data
 export interface LeadWithRelations extends Lead {
-  project?: Project;
-  sales_executive?: Profile;
+  project?: Project | null;
+  sales_executive?: Profile | null;
   followups?: LeadFollowup[];
-  latest_followup?: LeadFollowup;
-  followup_count?: number;
-  overdue_followup?: boolean;
 }

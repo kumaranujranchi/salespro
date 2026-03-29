@@ -87,13 +87,23 @@ export default defineSchema({
     lead_date: v.string(),
     created_by: v.optional(v.id("profiles")),
     updated_by: v.optional(v.id("profiles")),
+    updated_at: v.optional(v.string()),
+    // Denormalized fields for scalability
+    latest_followup_date: v.optional(v.string()),
+    latest_followup_status: v.optional(v.string()),
+    next_followup_date: v.optional(v.string()),
+    followup_count: v.optional(v.number()),
     metadata: v.any(),
   })
     .index("by_tenant", ["tenant_id"])
     .index("by_lead_id", ["lead_id"])
     .index("by_mobile", ["mobile"])
     .index("by_status", ["lead_status"])
-    .index("by_executive", ["sales_executive_id"]),
+    .index("by_executive", ["sales_executive_id"])
+    .index("by_tenant_mobile", ["tenant_id", "mobile"])
+    .index("by_tenant_status", ["tenant_id", "lead_status"])
+    .index("by_tenant_executive", ["tenant_id", "sales_executive_id"])
+    .index("by_tenant_date", ["tenant_id", "lead_date"]),
 
   lead_followups: defineTable({
     tenant_id: v.id("tenants"),
@@ -151,7 +161,8 @@ export default defineSchema({
     transaction_reference: v.optional(v.string()),
     remarks: v.optional(v.string()),
     recorded_by: v.optional(v.id("profiles")),
-  }).index("by_tenant", ["tenant_id"]),
+  }).index("by_tenant", ["tenant_id"])
+    .index("by_tenant_date", ["tenant_id", "payment_date"]),
 
   notifications: defineTable({
     user_id: v.id("profiles"),
@@ -184,7 +195,11 @@ export default defineSchema({
     trip_start_time: v.optional(v.string()),
     trip_end_time: v.optional(v.string()),
     metadata: v.any(),
-  }).index("by_tenant", ["tenant_id"]),
+  }).index("by_tenant", ["tenant_id"])
+    .index("by_status", ["status"])
+    .index("by_driver", ["driver_id"])
+    .index("by_requester", ["requested_by"])
+    .index("by_tenant_status", ["tenant_id", "status"]),
 
   sales: defineTable({
     tenant_id: v.id("tenants"),
@@ -209,7 +224,8 @@ export default defineSchema({
   }).index("by_tenant", ["tenant_id"])
     .index("by_executive", ["sales_executive_id"])
     .index("by_project", ["project_id"])
-    .index("by_customer", ["customer_id"]),
+    .index("by_customer", ["customer_id"])
+    .index("by_tenant_date", ["tenant_id", "sale_date"]),
 
   announcements: defineTable({
     tenant_id: v.id("tenants"),

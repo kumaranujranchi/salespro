@@ -1,19 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
-import { useQuery, useMutation } from "convex/react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-import { Project } from '../types/database'; // Adjust if needed
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { SiteVisitRequestForm } from '../components/site-visits/SiteVisitRequestForm';
 import { SiteVisitApprovalModal } from '../components/site-visits/SiteVisitApprovalModal';
 import { DriverTripModal } from '../components/site-visits/DriverTripModal';
-import { Calendar, Plus, MapPin, Clock, Trash2, Pencil, AlertCircle, Car, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Plus, MapPin, Clock, Trash2, Car, User, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { Select } from '../components/ui/Select';
-import { Tooltip } from '../components/ui/Tooltip';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function SiteVisitsPage() {
@@ -38,12 +36,16 @@ export function SiteVisitsPage() {
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
   // Convex Queries
-  const visits = useQuery(api.site_visits.listSiteVisits, profile?.id ? {
-    tenant_id: profile.tenant_id as Id<"tenants">,
-    role: profile.role,
-    userId: profile.id as Id<"profiles">,
-    filterStatus
-  } : "skip");
+  const { results: visits, status, loadMore } = usePaginatedQuery(
+    api.site_visits.listSiteVisits, 
+    profile?.id ? {
+      tenant_id: profile.tenant_id as Id<"tenants">,
+      role: profile.role,
+      userId: profile.id as Id<"profiles">,
+      filterStatus
+    } : "skip",
+    { initialNumItems: 15 }
+  );
 
   // Convex Mutations
   const deleteVisitMutation = useMutation(api.site_visits.deleteSiteVisit);
@@ -132,7 +134,7 @@ export function SiteVisitsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!visits ? (
+          {status === 'LoadingFirstPage' ? (
             <LoadingSpinner size="lg" className="min-h-[400px]" />
           ) : visits.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
@@ -196,14 +198,33 @@ export function SiteVisitsPage() {
                   </div>
                 );
               })}
+
+              {status === 'CanLoadMore' && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => loadMore(10)}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw size={16} />
+                    Load More Site Visits
+                  </Button>
+                </div>
+              )}
+
+              {status === 'LoadingMore' && (
+                <div className="flex justify-center pt-4">
+                  <LoadingSpinner size="sm" />
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <SiteVisitRequestForm isOpen={isRequestModalOpen} onClose={() => setIsRequestModalOpen(false)} editingVisit={selectedVisit} />
-      <SiteVisitApprovalModal isOpen={isApprovalModalOpen} onClose={() => setIsApprovalModalOpen(false)} visit={selectedVisit} />
-      <DriverTripModal isOpen={isDriverModalOpen} onClose={() => setIsDriverModalOpen(false)} visit={selectedVisit} />
+      <SiteVisitRequestForm isOpen={isRequestModalOpen} onClose={() => setIsRequestModalOpen(false)} editingVisit={selectedVisit} onSuccess={() => {}} />
+      <SiteVisitApprovalModal isOpen={isApprovalModalOpen} onClose={() => setIsApprovalModalOpen(false)} visit={selectedVisit} onSuccess={() => {}} />
+      <DriverTripModal isOpen={isDriverModalOpen} onClose={() => setIsDriverModalOpen(false)} visit={selectedVisit} onSuccess={() => {}} />
     </div>
   );
 }

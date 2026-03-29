@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,10 +21,10 @@ import { ActionMenu } from '../components/ui/ActionMenu';
 import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, TrendingDown, Minus, Search, Download, Upload,
-  UserPlus, RefreshCw, Trash2, Building, ChevronDown, ChevronLeft, ChevronRight, Eye, Edit, Copy
+  UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export function LeadsPage() {
   const { profile } = useAuth();
@@ -48,40 +48,47 @@ export function LeadsPage() {
 
   const [isCRMActive, setIsCRMActive] = useState(true);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
-
   // Filter & Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
-  const [teamLeaderFilter, setTeamLeaderFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
     profile?.role === 'sales_executive'
   );
 
-  // Fetch Leads using Convex
-  const leadsData = useQuery(api.leads.listLeadsByTenant, 
+  // Dashboard Stats using optimized query
+  const statsData = useQuery(api.leads.getDashboardStats, 
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
-      showOnlyMyLeads,
-      profileId: profile.id as Id<"profiles">
+      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : undefined
     } : "skip"
   );
 
-  const leads = (leadsData || []) as LeadWithRelations[];
-  const loading = leadsData === undefined;
+  // Fetch Leads using Paginated Query
+  const { results: leads, status, loadMore } = usePaginatedQuery(
+    api.leads.listLeadsByTenant,
+    profile?.tenant_id ? { 
+      tenant_id: profile.tenant_id as Id<"tenants">,
+      showOnlyMyLeads,
+      profileId: profile.id as Id<"profiles">,
+      statusFilter,
+      executiveFilter,
+      searchQuery: searchTerm
+    } : "skip",
+    { initialNumItems: 50 }
+  );
+
+  const loading = status === "LoadingFirstPage";
 
   // Permissions
   const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
   const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(profile?.role || '');
 
-  // Reset pagination when filters change
+  // No manual pagination needed anymore
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, scoreFilter, executiveFilter, teamLeaderFilter, showOnlyMyLeads]);
+    // Scroll to top or reset internal state if needed
+  }, [searchTerm, statusFilter, scoreFilter, executiveFilter, showOnlyMyLeads]);
 
   const handleCreateLead = () => {
     setSelectedLead(null);
@@ -193,7 +200,7 @@ export function LeadsPage() {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedLeadIds(paginatedLeads.map(l => l.id));
+      setSelectedLeadIds(leads.map(l => l.id));
     } else {
       setSelectedLeadIds([]);
     }
@@ -207,22 +214,6 @@ export function LeadsPage() {
     );
   };
 
-  const getScoreBadge = (score: string) => {
-    const variants = {
-      Hot: { variant: 'danger' as const, icon: TrendingUp, color: 'text-red-600' },
-      Warm: { variant: 'warning' as const, icon: Minus, color: 'text-yellow-600' },
-      Cold: { variant: 'secondary' as const, icon: TrendingDown, color: 'text-gray-600' }
-    };
-    const config = variants[score as keyof typeof variants] || variants.Warm;
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon size={14} className={config.color} />
-        {score}
-      </Badge>
-    );
-  };
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -236,37 +227,19 @@ export function LeadsPage() {
     return <Badge variant={variants[status as keyof typeof variants] as any}>{status}</Badge>;
   };
 
-  const filteredLeads = leads.filter(lead => {
-    // 1. Executive Filter
-    if (executiveFilter !== 'all' && lead.sales_executive?.id !== executiveFilter) return false;
-
-    // 2. Team Leader Filter (Check if lead's executive reports to selected TL)
-    if (teamLeaderFilter !== 'all' && lead.sales_executive?.reporting_manager_id !== teamLeaderFilter) return false;
-
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      lead.customer_name.toLowerCase().includes(search) ||
-      lead.mobile.includes(search) ||
-      lead.email?.toLowerCase().includes(search) ||
-      lead.lead_id.toLowerCase().includes(search)
-    );
-  });
-
-  // Calculate Pagination
-  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
-  const paginatedLeads = filteredLeads.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Statistics
-  const stats = {
-    total: leads.length,
-    new: leads.filter(l => l.lead_status === 'New').length,
-    qualified: leads.filter(l => l.lead_status === 'Qualified').length,
-    hot: leads.filter(l => l.lead_score === 'Hot').length,
-    overdue: leads.filter(l => l.overdue_followup).length
+  // Statistics from Server
+  const stats = statsData || {
+    totalLeads: 0,
+    newLeads: 0,
+    qualified: 0,
+    siteVisitDone: 0,
+    converted: 0,
+    lost: 0,
+    inProgress: 0,
+    adsLeads: 0,
+    walkInLeads: 0,
+    referenceLeads: 0,
+    channelPartnerLeads: 0
   };
 
   if (!isCRMActive) {
@@ -349,13 +322,13 @@ export function LeadsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Leads</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalLeads}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">New Leads</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.new}</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.newLeads}</div>
           </CardContent>
         </Card>
         <Card>
@@ -366,14 +339,14 @@ export function LeadsPage() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Hot Leads</div>
-            <div className="text-2xl font-bold text-red-600">{stats.hot}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">In Progress</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Overdue</div>
-            <div className="text-2xl font-bold text-orange-600">{stats.overdue}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Converted</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.converted}</div>
           </CardContent>
         </Card>
       </div>
@@ -420,6 +393,18 @@ export function LeadsPage() {
               <option value="Warm">Warm</option>
               <option value="Cold">Cold</option>
             </select>
+
+            {/* Executive Filter */}
+            {canViewAllLeads && (
+              <select
+                value={executiveFilter}
+                onChange={(e) => setExecutiveFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              >
+                <option value="all">All Executives</option>
+                {/* We would ideally fetch executives here, but for now we'll just have the state */}
+              </select>
+            )}
 
             {/* My Leads Toggle */}
             {canViewAllLeads && (
@@ -477,7 +462,7 @@ export function LeadsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users size={20} />
-              <CardTitle>All Leads ({filteredLeads.length})</CardTitle>
+              <CardTitle>All Leads</CardTitle>
             </div>
           </div>
         </CardHeader>
@@ -486,7 +471,7 @@ export function LeadsPage() {
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
             </div>
-          ) : filteredLeads.length === 0 ? (
+          ) : leads.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No leads found. Create your first lead to get started.
             </div>
@@ -501,7 +486,7 @@ export function LeadsPage() {
                         <input
                           type="checkbox"
                           className="rounded border-gray-300 dark:border-gray-600"
-                          checked={paginatedLeads.length > 0 && paginatedLeads.every(l => selectedLeadIds.includes(l.id))}
+                          checked={leads.length > 0 && leads.every(l => selectedLeadIds.includes(l.id))}
                           onChange={handleSelectAll}
                         />
                       </TableHead>
@@ -515,7 +500,7 @@ export function LeadsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedLeads.map((lead) => (
+                    {leads.map((lead) => (
                       <Fragment key={lead.id}>
                         <TableRow
                           className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.overdue_followup ? 'bg-red-50 dark:bg-red-900/10' : ''} ${expandedLeadId === lead.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
@@ -596,9 +581,14 @@ export function LeadsPage() {
                                 </Badge>
                               )}
                             </div>
-                            {lead.latest_followup?.next_followup_date && (
+                            {lead.latest_followup_date && (
                               <div className="text-[10px] text-gray-500 mt-1">
-                                Next: {new Date(lead.latest_followup.next_followup_date).toLocaleDateString()}
+                                Latest: {new Date(lead.latest_followup_date).toLocaleDateString()}
+                              </div>
+                            )}
+                            {lead.next_followup_date && (
+                              <div className="text-[10px] text-gray-500 mt-1">
+                                Next: {new Date(lead.next_followup_date).toLocaleDateString()}
                               </div>
                             )}
                           </TableCell>
@@ -686,33 +676,21 @@ export function LeadsPage() {
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-gray-500">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLeads.length)} of {filteredLeads.length} leads
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft size={16} />
-                    </Button>
-                    <div className="text-sm font-medium">
-                      Page {currentPage} of {totalPages}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight size={16} />
-                    </Button>
-                  </div>
+              {/* Load More */}
+              {status === "CanLoadMore" && (
+                <div className="flex justify-center mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => loadMore(50)}
+                    className="w-full md:w-auto"
+                  >
+                    Load More Leads
+                  </Button>
+                </div>
+              )}
+              {status === "LoadingMore" && (
+                <div className="flex justify-center mt-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#1673FF] border-t-transparent"></div>
                 </div>
               )}
             </>

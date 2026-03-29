@@ -8,21 +8,29 @@ export const listSales = query({
     executive_id: v.optional(v.id("profiles")),
     project_id: v.optional(v.id("projects")),
     status: v.optional(v.string()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db
-      .query("sales")
-      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
+    let q;
     
     if (args.executive_id) {
-      q = ctx.db.query("sales").withIndex("by_executive", q => q.eq("sales_executive_id", args.executive_id!));
+      q = ctx.db.query("sales")
+        .withIndex("by_executive", (q) => q.eq("sales_executive_id", args.executive_id!));
+    } else if (args.project_id) {
+      q = ctx.db.query("sales")
+        .withIndex("by_project", (q) => q.eq("project_id", args.project_id!));
+    } else {
+      q = ctx.db.query("sales")
+        .withIndex("by_tenant_date", (q) => q.eq("tenant_id", args.tenant_id))
+        .order("desc");
     }
-
-    const sales = await q.collect();
     
-    // Manual filtering for remaining args as needed, or use .filter()
+    // Apply limit or take default
+    const limit = args.limit ?? 50;
+    const sales = await q.take(limit);
+    
+    // Filter in memory only if strictly necessary and volume is small (after take)
     let results = sales;
-    if (args.project_id) results = results.filter(s => s.project_id === args.project_id);
     if (args.status) results = results.filter(s => s.status === args.status);
 
     // Resolve Joins
@@ -109,18 +117,29 @@ export const getSalesAnalytics = query({
     year: v.number(),
   },
   handler: async (ctx, args) => {
+    const startOfYear = `${args.year}-01-01`;
+    const endOfYear = `${args.year}-12-31`;
+
     let q = ctx.db
       .query("sales")
-      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
+      .withIndex("by_tenant_date", (q) => 
+        q.eq("tenant_id", args.tenant_id)
+         .gte("sale_date", startOfYear)
+         .lte("sale_date", endOfYear)
+      );
     
     if (args.executive_id) {
-       q = ctx.db.query("sales").withIndex("by_executive", q => q.eq("sales_executive_id", args.executive_id!));
+       q = q.filter(q => q.eq(q.field("sales_executive_id"), args.executive_id!));
     }
 
     const sales = await q.collect();
     const payments = await ctx.db
         .query("payments")
-        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+        .withIndex("by_tenant_date", q => 
+          q.eq("tenant_id", args.tenant_id)
+           .gte("payment_date", startOfYear)
+           .lte("payment_date", endOfYear)
+        )
         .collect();
 
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -194,13 +213,13 @@ export const getSalesOverview = query({
 
     const allSales = await ctx.db
         .query("sales")
-        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+        .withIndex("by_tenant_date", q => q.eq("tenant_id", args.tenant_id).gte("sale_date", yearStart))
         .collect();
     
     const filteredSales = allSales.filter(s => executiveIds.includes(s.sales_executive_id));
     
     const monthlySales = filteredSales.filter(s => s.sale_date >= monthStart);
-    const ytdSales = filteredSales.filter(s => s.sale_date >= yearStart);
+    const ytdSales = filteredSales;
 
     const monthlyRevenue = monthlySales.reduce((sum, s) => sum + s.total_revenue, 0);
     const ytdRevenue = ytdSales.reduce((sum, s) => sum + s.total_revenue, 0);
@@ -333,8 +352,7 @@ export const getLeaderboard = query({
 
     const allSales = await ctx.db
       .query("sales")
-      .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
-      .filter(q => q.gte(q.field("sale_date"), startStr))
+      .withIndex("by_tenant_date", q => q.eq("tenant_id", args.tenant_id).gte("sale_date", startStr))
       .collect();
 
     const leaderboardMap = new Map<string, {

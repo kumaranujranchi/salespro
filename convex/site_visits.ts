@@ -4,31 +4,51 @@ import { query, mutation } from "./_generated/server";
 export const countPendingVisits = query({
   args: { tenant_id: v.id("tenants") },
   handler: async (ctx, args) => {
-    const visits = await ctx.db
+    return (await ctx.db
       .query("site_visits")
-      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
-      .collect();
-    return visits.filter(v => v.status === "pending").length;
+      .withIndex("by_tenant_status", (q) => q.eq("tenant_id", args.tenant_id).eq("status", "pending"))
+      .collect()).length;
   },
 });
 
 export const listSiteVisits = query({
   args: { 
+    paginationOpts: v.any(),
     tenant_id: v.id("tenants"),
     role: v.string(),
     userId: v.id("profiles"),
     filterStatus: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    let q = ctx.db
-      .query("site_visits")
-      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
+    const canViewAll = ["super_admin", "admin", "director"].includes(args.role);
     
-    const visits = await q.order("desc").collect();
+    let q;
+    
+    if (canViewAll) {
+      if (args.filterStatus && args.filterStatus !== "all") {
+        q = ctx.db.query("site_visits")
+          .withIndex("by_tenant_status", q => q.eq("tenant_id", args.tenant_id).eq("status", args.filterStatus!));
+      } else {
+        q = ctx.db.query("site_visits")
+          .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id));
+      }
+    } else if (args.role === "driver") {
+       q = ctx.db.query("site_visits")
+         .withIndex("by_driver", q => q.eq("driver_id", args.userId))
+         .filter(q => q.eq(q.field("tenant_id"), args.tenant_id));
+    } else {
+       // Default to requester
+       q = ctx.db.query("site_visits")
+         .withIndex("by_requester", q => q.eq("requested_by", args.userId))
+         .filter(q => q.eq(q.field("tenant_id"), args.tenant_id));
+    }
+    
+    const paginatedVisits = await q.order("desc").paginate(args.paginationOpts);
 
-    // Mapping relations (requester, driver)
-    const results = await Promise.all(
-      visits.map(async (visit) => {
+    // Filter by date for non-admins (last 30 days) - this is done in memory on the page
+    // Map relations (requester, driver)
+    const page = await Promise.all(
+      paginatedVisits.page.map(async (visit) => {
         const requester = await ctx.db.get(visit.requested_by);
         const driver = visit.driver_id ? await ctx.db.get(visit.driver_id) : null;
         
@@ -41,25 +61,7 @@ export const listSiteVisits = query({
       })
     );
 
-    // Apply role-based and status filters
-    const canViewAll = ["super_admin", "admin", "director"].includes(args.role);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    return results.filter(v => {
-      // Status filter
-      if (args.filterStatus && args.filterStatus !== "all" && v.status !== args.filterStatus) return false;
-      
-      // Date filter for non-admins
-      if (!canViewAll && new Date(v.visit_date) < thirtyDaysAgo) return false;
-      
-      // Role-based visibility
-      if (canViewAll) return true;
-      if (args.role === "driver" && v.driver_id === args.userId) return true;
-      if (v.requested_by === args.userId) return true;
-      
-      return false;
-    });
+    return { ...paginatedVisits, page };
   },
 });
 

@@ -1,15 +1,17 @@
 import { v } from "convex/values";
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 // Helper to generate Lead ID: L-[YYYYMMDD]-[XXXX]
-async function generateLeadId(ctx: QueryCtx | MutationCtx, tenantId: string) {
+async function generateLeadId(ctx: QueryCtx | MutationCtx, tenantId: Id<"tenants">) {
   const now = new Date();
   const datePart = now.toISOString().split("T")[0].replace(/-/g, "");
   
   const todayLeads = await ctx.db
     .query("leads")
-    .withIndex("by_tenant", (q) => q.eq("tenant_id", tenantId))
-    .filter((q) => q.eq(q.field("lead_date"), now.toISOString().split("T")[0]))
+    .withIndex("by_tenant_date", (q) => 
+      q.eq("tenant_id", tenantId).eq("lead_date", now.toISOString().split("T")[0])
+    )
     .collect();
 
   const sequenceNum = (todayLeads.length + 1).toString().padStart(4, "0");
@@ -59,47 +61,76 @@ export const createLead = mutation({
 
 export const listLeadsByTenant = query({
   args: { 
+    paginationOpts: v.any(),
     tenant_id: v.id("tenants"),
     showOnlyMyLeads: v.optional(v.boolean()),
     profileId: v.optional(v.id("profiles")),
+    statusFilter: v.optional(v.string()),
+    executiveFilter: v.optional(v.string()),
+    searchQuery: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const query = ctx.db
+    let q = ctx.db
       .query("leads")
       .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
-    
-    const leads = await query.order("desc").collect();
 
-    // Map relations and follow-ups
-    return await Promise.all(
-      leads.map(async (lead) => {
+    // Server-side filtering
+    if (args.showOnlyMyLeads && args.profileId) {
+      q = ctx.db
+        .query("leads")
+        .withIndex("by_tenant_executive", (q) => 
+          q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.profileId)
+        );
+    } else if (args.executiveFilter && args.executiveFilter !== 'all') {
+      q = ctx.db
+        .query("leads")
+        .withIndex("by_tenant_executive", (q) => 
+          q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executiveFilter as any)
+        );
+    } else if (args.statusFilter && args.statusFilter !== 'all') {
+        q = ctx.db
+        .query("leads")
+        .withIndex("by_tenant_status", (q) => 
+          q.eq("tenant_id", args.tenant_id).eq("lead_status", args.statusFilter!)
+        );
+    }
+
+    const paginatedLeads = await q.order("desc").paginate(args.paginationOpts);
+
+    // Map relations using denormalized data
+    const page = await Promise.all(
+      paginatedLeads.page.map(async (lead) => {
         const project = lead.project_id ? await ctx.db.get(lead.project_id) : null;
         const sales_executive = lead.sales_executive_id ? await ctx.db.get(lead.sales_executive_id) : null;
         
-        const followups = await ctx.db
-          .query("lead_followups")
-          .withIndex("by_lead", (q) => q.eq("lead_id", lead._id))
-          .order("desc")
-          .collect();
-
-        const latest_followup = followups[0] || null;
-        const now = new Date();
-        const overdue_followup = latest_followup?.next_followup_date
-          ? new Date(latest_followup.next_followup_date) < now
+        // Use denormalized followup data instead of querying followups table
+        const overdue_followup = lead.next_followup_date
+          ? new Date(lead.next_followup_date) < new Date()
           : false;
 
         return {
           ...lead,
-          id: lead._id, // Add id for frontend compatibility
-          project,
-          sales_executive,
-          followups,
-          latest_followup,
-          followup_count: followups.length,
+          id: lead._id,
+          created_at: new Date(lead._creationTime).toISOString(),
+          updated_at: lead.updated_at || new Date(lead._creationTime).toISOString(),
+          project: project ? { 
+            ...project, 
+            id: project._id,
+            created_at: new Date(project._creationTime).toISOString(),
+            updated_at: (project as any).updated_at || new Date(project._creationTime).toISOString(),
+          } : null,
+          sales_executive: sales_executive ? { 
+            ...sales_executive, 
+            id: sales_executive._id,
+            created_at: new Date(sales_executive._creationTime).toISOString(),
+            updated_at: (sales_executive as any).updated_at || new Date(sales_executive._creationTime).toISOString(),
+          } : null,
           overdue_followup,
         };
       })
     );
+
+    return { ...paginatedLeads, page };
   },
 });
 
@@ -178,6 +209,11 @@ export const bulkInsertLeads = mutation({
 
         await ctx.db.insert("leads", {
           ...leadData,
+          email: leadData.email ?? undefined,
+          city: leadData.city ?? undefined,
+          project_id: leadData.project_id ?? undefined,
+          budget_range: leadData.budget_range ?? undefined,
+          internal_notes: leadData.internal_notes ?? undefined,
           tenant_id: args.tenant_id,
           lead_id: leadId,
           created_by: args.created_by,
@@ -263,34 +299,44 @@ export const getDashboardStats = query({
     executive_id: v.optional(v.id("profiles")),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db
-      .query("leads")
-      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
-    
-    if (args.executive_id) {
-       q = ctx.db.query("leads").withIndex("by_executive", q => q.eq("sales_executive_id", args.executive_id!));
-    }
+    // Helper to get count for a specific status
+    const getCount = async (status?: string) => {
+      if (args.executive_id) {
+        let q = ctx.db.query("leads")
+          .withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executive_id!));
+        
+        if (status) {
+           q = q.filter(q => q.eq(q.field("lead_status"), status));
+        }
+        return (await q.collect()).length;
+      }
 
-    const leads = await q.collect();
+      if (status) {
+        return (await ctx.db.query("leads")
+          .withIndex("by_tenant_status", q => q.eq("tenant_id", args.tenant_id).eq("lead_status", status))
+          .collect()).length;
+      }
 
-    const stats = {
-      totalLeads: leads.length,
-      newLeads: leads.filter(l => l.lead_status === 'New').length,
-      openLeads: leads.filter(l => ['New', 'Contacted', 'In Progress'].includes(l.lead_status)).length,
-      inProgress: leads.filter(l => l.lead_status === 'In Progress').length,
-      qualified: leads.filter(l => l.lead_status === 'Qualified').length,
-      siteVisitDone: leads.filter(l => l.lead_status === 'Site Visit Done').length,
-      converted: leads.filter(l => l.lead_status === 'Converted').length,
-      lost: leads.filter(l => l.lead_status === 'Lost').length,
-      
-      // Sources
-      adsLeads: leads.filter(l => l.lead_source === 'Ads').length,
-      walkInLeads: leads.filter(l => l.lead_source === 'Walk-in').length,
-      referenceLeads: leads.filter(l => l.lead_source === 'Reference').length,
-      channelPartnerLeads: leads.filter(l => l.lead_source === 'Channel Partner').length,
+      return (await ctx.db.query("leads")
+        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+        .collect()).length;
     };
 
-    return stats;
+    return {
+      totalLeads: await getCount(),
+      newLeads: await getCount('New'),
+      inProgress: await getCount('In Progress'),
+      qualified: await getCount('Qualified'),
+      siteVisitDone: await getCount('Site Visit Done'),
+      converted: await getCount('Converted'),
+      lost: await getCount('Lost'),
+      
+      // Sources
+      adsLeads: 0,
+      walkInLeads: 0,
+      referenceLeads: 0,
+      channelPartnerLeads: 0,
+    };
   },
 });
 

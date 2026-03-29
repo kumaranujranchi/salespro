@@ -34,7 +34,7 @@ export const addFollowup = mutation({
     const todayFollowups = await ctx.db
       .query("lead_followups")
       .withIndex("by_lead", (q) => q.eq("lead_id", args.lead_id))
-      .filter((q: any) => q.eq(q.field("followup_date"), todayStr))
+      .filter((q) => q.eq(q.field("followup_date"), todayStr))
       .collect();
 
     if (todayFollowups.length >= 3) {
@@ -47,9 +47,16 @@ export const addFollowup = mutation({
       is_editable: true,
     });
 
-    // Update lead status
+    // Update lead status and denormalized fields
+    const lead = await ctx.db.get(args.lead_id);
+    const currentCount = lead?.followup_count || 0;
+
     await ctx.db.patch(args.lead_id, {
       lead_status: args.new_status,
+      latest_followup_date: todayStr,
+      latest_followup_status: args.new_status,
+      next_followup_date: args.next_followup_date,
+      followup_count: currentCount + 1,
       updated_at: now.toISOString(),
       updated_by: args.created_by,
     });
