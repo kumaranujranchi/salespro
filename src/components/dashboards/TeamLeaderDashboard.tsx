@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { Modal } from '../ui/Modal';
 import { format, parseISO } from 'date-fns';
 import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2 } from 'lucide-react';

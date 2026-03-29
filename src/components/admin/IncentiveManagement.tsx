@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Modal } from '../ui/Modal';

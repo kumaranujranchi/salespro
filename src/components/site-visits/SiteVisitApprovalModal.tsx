@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';

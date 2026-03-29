@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { formatCurrency } from '../utils/format';
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';

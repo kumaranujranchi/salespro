@@ -5,7 +5,7 @@ import { ArrowRight, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
 import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from '../../../convex/_generated/api';
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();

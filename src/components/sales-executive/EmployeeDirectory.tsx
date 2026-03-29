@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Doc, Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Doc, Id } from '../../../convex/_generated/dataModel';
 import { Card, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';

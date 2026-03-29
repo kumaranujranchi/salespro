@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config config/vite.config.ts",
-    "build": "tsc -b && vite build --config config/vite.config.ts",
+    "build": "vite build --config config/vite.config.ts",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --config config/vite.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
@@ -28,6 +28,7 @@
     "react-joyride": "^2.9.3",
     "react-router-dom": "^7.10.1",
     "recharts": "^3.5.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5"

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../convex/_generated/api';
-import { Id } from '../convex/_generated/dataModel';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { useDialog } from '../contexts/DialogContext';
 import { Department } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';

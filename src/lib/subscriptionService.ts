@@ -1,6 +1,6 @@
 import { convex } from './convex';
-import { api } from '../convex/_generated/api';
-import { Id } from '../convex/_generated/dataModel';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { Subscription, BillingHistory } from '../types/database';
 
 export const RAZORPAY_PLANS = {

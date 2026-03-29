@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useDialog } from '../../contexts/DialogContext';
 import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';

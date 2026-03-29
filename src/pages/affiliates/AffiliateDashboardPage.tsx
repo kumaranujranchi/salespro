@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loader2, Copy, CheckCircle, ExternalLink, IndianRupee, Users, TrendingUp, LogOut } from 'lucide-react';
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id, Doc } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Id, Doc } from '../../../convex/_generated/dataModel';
 import { Card, CardContent } from '../ui/Card';
 import { Search, Bookmark } from 'lucide-react';
 import { Input } from '../ui/Input';

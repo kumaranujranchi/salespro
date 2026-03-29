@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Doc, Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Doc, Id } from '../../../convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';

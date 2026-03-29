@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { formatCurrency } from '../../utils/format';
 import { Users, Wallet, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';

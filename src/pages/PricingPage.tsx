@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useConvex } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from '../../convex/_generated/api';
 
 export function PricingPage() {
   const { user, tenant } = useAuth();

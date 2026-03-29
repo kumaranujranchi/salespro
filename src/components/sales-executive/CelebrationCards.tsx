@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Doc, Id } from "../../../convex/_generated/dataModel";
+import { api } from '../../../convex/_generated/api';
+import { Doc, Id } from '../../../convex/_generated/dataModel';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Gift, Heart, Briefcase } from 'lucide-react'; 
 import { format, parseISO, getYear, setYear, differenceInDays, isValid, addYears, startOfDay } from 'date-fns';

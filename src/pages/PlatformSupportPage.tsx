@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../convex/_generated/api';
-import { Id } from '../convex/_generated/dataModel';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import { CheckCircle2, XCircle, X, LifeBuoy, Building2, ChevronDown, AlertCircle, Loader2 } from 'lucide-react';
 
 interface Ticket {
