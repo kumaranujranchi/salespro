@@ -61,7 +61,7 @@ export const createAdmin = mutation({
       full_name: "Super Admin",
       employee_id: "ADM-001",
       phone: "+91-0000000000",
-      role: "admin",
+      role: "platform_admin",
       tenant_id: tenantId,
       is_active: true,
       force_password_change: false,

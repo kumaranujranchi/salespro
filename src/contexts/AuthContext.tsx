@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
@@ -28,7 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch profile via Convex query
   const profileData = useQuery(api.profiles.getByUserId, 
     sessionUser ? { userId: sessionUser.id } : "skip" as any
-  );
+  ) as Profile | null | undefined;
+
+  const promoteMutation = useMutation(api.profiles.promoteToPlatformAdmin);
 
   // Fetch affiliate campaign via Convex query
   const affiliateData = useQuery(api.referrals.getCampaignByCreator,
@@ -37,8 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch tenant via Convex query
   const tenantData = useQuery(api.tenants.getById,
-    (profileData as any)?.tenant_id ? { id: (profileData as any).tenant_id as Id<"tenants"> } : "skip"
-  );
+    profileData?.tenant_id ? { id: profileData.tenant_id as Id<"tenants"> } : "skip"
+  ) as Tenant | null | undefined;
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -47,13 +49,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (profileData !== undefined) {
       // profileData resolved from Convex (either a profile or null)
-      setProfile(profileData as any);
-      if (!profileData || !(profileData as any).tenant_id) {
+      const p = profileData;
+      
+      // Auto-promote if this is the designated admin account
+      if (p && p.email === 'admin@realsalepro.com' && p.role !== 'platform_admin') {
+        setProfile({ ...p, role: 'platform_admin' });
+        promoteMutation({ email: p.email }).catch(console.error);
+      } else {
+        setProfile(p);
+      }
+
+      if (!p || !p.tenant_id) {
         // No profile or no tenant — stop loading immediately
         setLoading(false);
       }
     }
-  }, [profileData]);
+  }, [profileData, promoteMutation]);
 
   useEffect(() => {
     if (tenantData !== undefined) {
@@ -69,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [affiliateData]);
 
-  const signIn = async (email: string, _password: string) => {
+  const signIn = async (email: string) => {
     // Placeholder sign-in logic
     // You would replace this with actual Convex Auth or Clerk sign-in
     setLoading(true);

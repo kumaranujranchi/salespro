@@ -11,13 +11,23 @@ export const getByUserId = query({
   },
 });
 
+export const getByEmail = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+  },
+});
+
 export const getProfileWithDetails = query({
   args: { profileId: v.id("profiles") },
   handler: async (ctx, args) => {
     const profile = await ctx.db.get(args.profileId);
     if (!profile) return null;
 
-    const tenant = await ctx.db.get(profile.tenant_id);
+    const tenant = profile.tenant_id ? await ctx.db.get(profile.tenant_id) : null;
     const roleDetails = profile.role_id ? await ctx.db.get(profile.role_id) : null;
     const departmentDetails = profile.department_id ? await ctx.db.get(profile.department_id) : null;
 
@@ -63,7 +73,31 @@ export const createUserProfile = mutation({
       .unique();
     if (existingEmp) throw new Error(`Employee ID ${args.employee_id} already exists`);
 
-    return await ctx.db.insert("profiles", args);
+    const { 
+      phone, 
+      role_id, 
+      department_id, 
+      reporting_manager_id, 
+      image_url, 
+      dob, 
+      marriage_anniversary, 
+      joining_date, 
+      ...rest 
+    } = args;
+
+    const data = {
+      ...rest,
+      phone: phone ?? null,
+      role_id: role_id ?? undefined,
+      department_id: department_id ?? undefined,
+      reporting_manager_id: reporting_manager_id ?? undefined,
+      image_url: image_url ?? undefined,
+      dob: dob ?? undefined,
+      marriage_anniversary: marriage_anniversary ?? undefined,
+      joining_date: joining_date ?? undefined,
+    };
+
+    return await ctx.db.insert("profiles", data);
   },
 });
 
@@ -82,7 +116,31 @@ export const updateProfile = mutation({
     joining_date: v.union(v.string(), v.null()),
   },
   handler: async (ctx, args) => {
-    const { id, ...data } = args;
+    const { 
+      id, 
+      phone, 
+      role_id, 
+      department_id, 
+      reporting_manager_id, 
+      image_url, 
+      dob, 
+      marriage_anniversary, 
+      joining_date, 
+      ...rest 
+    } = args;
+
+    const data = {
+      ...rest,
+      phone: phone ?? null,
+      role_id: role_id ?? undefined,
+      department_id: department_id ?? undefined,
+      reporting_manager_id: reporting_manager_id ?? undefined,
+      image_url: image_url ?? undefined,
+      dob: dob ?? undefined,
+      marriage_anniversary: marriage_anniversary ?? undefined,
+      joining_date: joining_date ?? undefined,
+    };
+
     await ctx.db.patch(id, data);
   },
 });
@@ -98,6 +156,24 @@ export const deleteProfile = mutation({
   args: { id: v.id("profiles") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);
+  },
+});
+
+export const promoteToPlatformAdmin = mutation({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+    if (!profile) throw new Error("Profile not found");
+    
+    await ctx.db.patch(profile._id, { 
+      role: "platform_admin",
+      // Optionally clear tenant_id if platform admins shouldn't have one, 
+      // but keeping it is fine as long as redirect works.
+    });
+    return { status: "success", profileId: profile._id };
   },
 });
 

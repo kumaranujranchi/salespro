@@ -14,6 +14,7 @@ import type * as departments from "../departments.js";
 import type * as files from "../files.js";
 import type * as followups from "../followups.js";
 import type * as incentives from "../incentives.js";
+import type * as init from "../init.js";
 import type * as leads from "../leads.js";
 import type * as notifications from "../notifications.js";
 import type * as payments from "../payments.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   followups: typeof followups;
   incentives: typeof incentives;
+  init: typeof init;
   leads: typeof leads;
   notifications: typeof notifications;
   payments: typeof payments;
