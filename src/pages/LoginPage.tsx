@@ -11,7 +11,6 @@ import {
   Lock,
   Mail
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -62,21 +61,29 @@ export function LoginPage() {
   };
 
   // Handle redirection reactively when profile/affiliate data becomes available
-  const { profile, affiliate } = useAuth();
+  const { user, profile, affiliate, loading: authLoading, signOut } = useAuth();
   useEffect(() => {
-    if (success && profile) {
-      const timer = setTimeout(() => {
-        if (profile.role === 'affiliate' || affiliate) {
-          navigate('/affiliate/dashboard');
-        } else if (profile.role === 'platform_admin') {
-          navigate('/platform/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      }, 500);
-      return () => clearTimeout(timer);
+    if (success && !authLoading) {
+      if (profile) {
+        const timer = setTimeout(() => {
+          if (profile.role === 'affiliate' || affiliate) {
+            navigate('/affiliate/dashboard');
+          } else if (profile.role === 'platform_admin') {
+            navigate('/platform/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        }, 500);
+        return () => clearTimeout(timer);
+      } else if (user && profile === null) {
+        // User attempted login but profile doesn't exist in database
+        setError('No account found with this email. Please check your spelling.');
+        setSuccess('');
+        setLoading(false);
+        signOut(); // Clear the bad session
+      }
     }
-  }, [success, profile, affiliate, navigate]);
+  }, [success, profile, user, affiliate, navigate, authLoading, signOut]);
 
   return (
     <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">
