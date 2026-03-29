@@ -54,7 +54,7 @@ export function AdminDashboard() {
   // Convex Queries
   const projects = useQuery(api.projects.listAllProjects, tenantId ? { tenant_id: tenantId } : "skip");
   const users = useQuery(api.profiles.listUsersByTenant, tenantId ? { tenant_id: tenantId } : "skip");
-  const depts = useQuery(api.departments.listDepartments, tenantId ? { tenant_id: tenantId } : "skip");
+  const depts = useQuery(api.departments.list, tenantId ? { tenant_id: tenantId } : "skip");
   const salesOverview = useQuery(api.sales.getSalesOverview, 
     (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: salesView } : "skip"
   );

@@ -39,7 +39,7 @@ export function CRMDashboard() {
     // Convex Queries
     const projects = useQuery(api.projects.listAllProjects, tenantId ? { tenant_id: tenantId } : "skip");
     const profiles = useQuery(api.profiles.listUsersByTenant, tenantId ? { tenant_id: tenantId } : "skip");
-    const departments = useQuery(api.departments.listDepartments, tenantId ? { tenant_id: tenantId } : "skip");
+    const departments = useQuery(api.departments.list, tenantId ? { tenant_id: tenantId } : "skip");
     const pendingVisitsCount = useQuery(api.site_visits.countPendingVisits, tenantId ? { tenant_id: tenantId } : "skip");
     const crmStats = useQuery(api.leads.getDashboardStats, tenantId ? { tenant_id: tenantId } : "skip");
     const salesAnalytics = useQuery(api.sales.getSalesAnalytics, tenantId ? { tenant_id: tenantId, year: new Date().getFullYear() } : "skip");

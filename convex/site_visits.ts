@@ -1,6 +1,17 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 
+export const countPendingVisits = query({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    const visits = await ctx.db
+      .query("site_visits")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .collect();
+    return visits.filter(v => v.status === "pending").length;
+  },
+});
+
 export const listSiteVisits = query({
   args: { 
     tenant_id: v.id("tenants"),
