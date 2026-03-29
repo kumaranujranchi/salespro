@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 export const listSales = query({
   args: { 
@@ -90,10 +91,8 @@ export const updateSale = mutation({
 export const deleteSale = mutation({
   args: { id: v.id("sales") },
   handler: async (ctx, args) => {
-    // Also delete associated payments
-    const payments = await ctx.db.query("payments")
-        .withIndex("by_sale", q => q.eq("sale_id", args.id))
-        .collect();
+    const payments = (await ctx.db.query("payments").collect())
+        .filter(p => p.sale_id === args.id);
     
     for (const p of payments) {
         await ctx.db.delete(p._id);
@@ -253,16 +252,18 @@ export const getSalesOverview = query({
     let siteVisits = { total: 0, avgPerExec: 0, conversionRate: 0 };
 
     if (args.view === 'team' || args.view === 'overall') {
-       const targets = await ctx.db
+       const targets = (await ctx.db
          .query("sales_targets")
-         .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
-         .filter(q => q.eq(q.field("month"), currentMonth))
-         .filter(q => q.eq(q.field("year"), currentYear))
-         .collect();
+         .collect())
+         .filter(t => t.tenant_id === args.tenant_id);
        
-       const relevantTargets = targets.filter(t => executiveIds.includes(t.user_id as Id<"profiles">));
+       // Filter in memory for the correct period
+       const relevantTargetsData = targets.filter(t => 
+         t.start_date.startsWith(`${currentYear}-${String(currentMonth).padStart(2, '0')}`) &&
+         executiveIds.includes(t.user_id as Id<"profiles">)
+       );
        
-       teamTargets = await Promise.all(relevantTargets.map(async t => {
+       teamTargets = await Promise.all(relevantTargetsData.map(async t => {
          const user = await ctx.db.get(t.user_id as Id<"profiles">);
          const achieved = filteredSales
            .filter(s => s.sales_executive_id === t.user_id && s.sale_date >= monthStart)
@@ -282,7 +283,7 @@ export const getSalesOverview = query({
          .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
          .collect();
        
-       const relevantVisits = visits.filter(v => executiveIds.includes(v.assigned_to_id as Id<"profiles">));
+       const relevantVisits = visits.filter(v => executiveIds.includes(v.requested_by as Id<"profiles">));
        siteVisits = {
          total: relevantVisits.length,
          avgPerExec: executiveIds.length > 0 ? relevantVisits.length / executiveIds.length : 0,
