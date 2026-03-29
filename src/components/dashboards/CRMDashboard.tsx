@@ -85,6 +85,18 @@ export function CRMDashboard() {
         return Array.from(leaderboardMap.values()).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
     }, [recentSales]);
 
+    if (!tenantId) {
+        return (
+            <div className="flex h-[80vh] flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-4">
+                    <Building className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-bold">Workspace Missing</h2>
+                <p className="text-gray-500 max-w-md">Your user account is not assigned to any workspace or tenant. Please contact your system administrator to fix your profile settings.</p>
+            </div>
+        );
+    }
+
     if (loading) return <LoadingSpinner size="lg" fullScreen />;
 
     return (
