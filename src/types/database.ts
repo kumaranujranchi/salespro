@@ -136,8 +136,9 @@ export interface ReferralCampaign {
 }
 
 export interface Profile {
-  id: string;
-  _id: string;
+  id: string; // Map to _id for frontend compatibility
+  _id: string; // Convex Internal ID
+  userId: string; // Link to Auth ID (Clerk/Convex Auth)
   _creationTime: number;
   employee_id: string;
   full_name: string;

@@ -53,10 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Auto-promote if this is the designated admin account
       if (p && p.email === 'admin@realsalepro.com' && p.role !== 'platform_admin') {
-        setProfile({ ...p, role: 'platform_admin' });
+        const adminProfile = { ...p, id: p._id as string } as Profile;
+        setProfile(adminProfile);
         promoteMutation({ email: p.email }).catch(console.error);
       } else {
-        setProfile(p);
+        setProfile(p ? { ...p, id: p._id as string } as Profile : null);
       }
 
       if (!p || !p.tenant_id) {

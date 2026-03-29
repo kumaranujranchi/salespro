@@ -726,11 +726,13 @@ export function LeadsPage() {
         onClose={handleFormClose}
         lead={selectedLead}
       />
-      <LeadDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={handleDetailClose}
-        lead={selectedLead}
-      />
+      {selectedLead && (
+        <LeadDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={handleDetailClose}
+          lead={selectedLead}
+        />
+      )}
       <BulkUploadModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}

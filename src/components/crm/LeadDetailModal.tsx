@@ -19,7 +19,7 @@ import {
 interface LeadDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lead: LeadWithRelations;
+  lead: LeadWithRelations | null;
 }
 
 export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps) {
@@ -30,7 +30,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
   const [showFollowupForm, setShowFollowupForm] = useState(false);
 
   // Convex Queries
-  const followupsData = useQuery(api.followups.listByLead, { leadId: lead.id as Id<"leads"> });
+  const followupsData = useQuery(api.followups.listByLead, lead ? { leadId: lead.id as Id<"leads"> } : "skip");
   const followups = (followupsData || []) as LeadFollowup[];
 
   // Convex Mutations
@@ -44,17 +44,21 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
     discussion_summary: '',
     customer_response: '' as CustomerResponse | '',
     call_status: 'Connected' as CallStatus,
-    new_status: lead.lead_status,
+    new_status: lead?.lead_status || 'New' as LeadStatus,
     next_followup_date: '',
     lost_reason: ''
   });
 
   // Status State (for immediate UI updates)
-  const [currentStatus, setCurrentStatus] = useState(lead.lead_status);
+  const [currentStatus, setCurrentStatus] = useState(lead?.lead_status || 'New');
 
   useEffect(() => {
-    setCurrentStatus(lead.lead_status);
-  }, [lead.lead_status]);
+    if (lead) {
+      setCurrentStatus(lead.lead_status);
+    }
+  }, [lead?.lead_status, lead]);
+
+  if (!lead) return null;
 
   const handleAddFollowup = async () => {
     if (!profile) return;
