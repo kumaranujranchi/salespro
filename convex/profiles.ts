@@ -213,3 +213,38 @@ export const listActiveStaff = query({
       .collect();
   },
 });
+
+export const listDrivers = query({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("profiles")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("is_active"), true),
+          q.eq(q.field("role"), "driver")
+        )
+      )
+      .collect();
+  },
+});
+
+export const listExecutives = query({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("profiles")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .filter((q) => 
+        q.and(
+          q.eq(q.field("is_active"), true),
+          q.or(
+            q.eq(q.field("role"), "sales_executive"),
+            q.eq(q.field("role"), "team_leader")
+          )
+        )
+      )
+      .collect();
+  },
+});
