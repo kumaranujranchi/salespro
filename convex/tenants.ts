@@ -47,6 +47,11 @@ export const update = mutation({
     plan_tier: v.optional(v.string()),
     subscription_status: v.optional(v.string()),
     is_active: v.optional(v.boolean()),
+    billing_cycle: v.optional(v.string()),
+    subscription_id: v.optional(v.string()),
+    razorpay_customer_id: v.optional(v.string()),
+    next_billing_date: v.optional(v.string()),
+    trial_ends_at: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...data } = args;

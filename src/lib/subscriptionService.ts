@@ -25,6 +25,9 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         tenantId: params.tenantId,
+        tenantName: params.customerName,
+        customerEmail: params.customerEmail,
+        customerContact: params.customerContact,
         planType: params.billingCycle,
       }),
     });
@@ -32,18 +35,29 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create subscription');
 
-    // Fetch the created subscription from Convex
+    // Save the created subscription to Convex
+    await convex.mutation(api.subscriptions.upsert, {
+      tenant_id: params.tenantId as Id<"tenants">,
+      razorpay_subscription_id: data.subscriptionId,
+      plan_id: data.planId,
+      status: 'created',
+      current_start: new Date().toISOString(),
+      current_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    // Update tenant with subscription details and customer ID in Convex
+    await convex.mutation(api.tenants.update, {
+      id: params.tenantId as Id<"tenants">,
+      subscription_status: 'created',
+      razorpay_customer_id: data.customerId,
+    });
+
+    // Fetch the updated subscription for the return value
     const subscription = await convex.query(api.subscriptions.getByRazorpayId, {
       razorpay_subscription_id: data.subscriptionId
     });
         
     if (!subscription) throw new Error('Failed to retrieve created subscription');
-
-    // Update tenant with subscription details in Convex
-    await convex.mutation(api.tenants.update, {
-      id: params.tenantId as Id<"tenants">,
-      subscription_status: 'created',
-    });
 
     return {
       subscription: subscription as unknown as Subscription,
