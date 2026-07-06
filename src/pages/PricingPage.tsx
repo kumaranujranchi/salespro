@@ -7,7 +7,7 @@ import { useConvex } from "convex/react";
 import { api } from '../../convex/_generated/api';
 
 export function PricingPage() {
-  const { user, tenant } = useAuth();
+  const { user, tenant, profile } = useAuth();
   const convex = useConvex();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -90,7 +90,7 @@ export function PricingPage() {
         planId: '', // Handled by backend auto-provisioning
         customerName: tenant.name,
         customerEmail: user.email || '',
-        customerContact: tenant.settings?.company_profile?.phone || '', 
+        customerContact: profile?.phone || tenant.settings?.company_profile?.phone || '', 
         billingCycle: billingCycle
       });
 
@@ -115,7 +115,7 @@ export function PricingPage() {
         prefill: {
           name: tenant.name,
           email: user.email,
-          contact: tenant.settings?.company_profile?.phone || ''
+          contact: profile?.phone || tenant.settings?.company_profile?.phone || ''
         },
         theme: {
           color: tenant.settings?.appearance?.primary_color || '#3b82f6'
