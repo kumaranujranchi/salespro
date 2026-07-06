@@ -141,7 +141,7 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
   const downloadTemplate = () => {
     try {
       const templateData = [{
-        'Customer Name': 'John Doe', 'Mobile': '9876543210', 'Email': 'john@example.com', 'City': 'Mumbai',
+        'Customer Name': 'Rahul Sharma', 'Mobile': '9876543210', 'Email': 'rahul@example.com', 'City': 'Mumbai',
         'Project': 'Sunrise Apartments', 'Sales Executive Email': 'sales@example.com', 'Budget': '50L-1Cr',
         'Purpose': 'Investment', 'Status': 'New', 'Source': 'Walk-in', 'Score': 'Warm', 'Date': '2023-12-01', 'Remarks': 'Interested'
       }];

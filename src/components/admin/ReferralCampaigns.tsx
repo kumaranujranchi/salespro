@@ -213,7 +213,7 @@ export function ReferralCampaigns() {
         <div className="space-y-4">
           <Input
             label="Referrer Name / Campaign Name"
-            placeholder="e.g. John Doe (YouTuber) or Summer Sale"
+            placeholder="e.g. Rahul Sharma (YouTuber) or Summer Sale"
             value={formData.name}
             onChange={(e) => {
               const newName = e.target.value;
@@ -231,7 +231,7 @@ export function ReferralCampaigns() {
           />
           <Input
             label="Referrer Email (Optional)"
-            placeholder="e.g. john@example.com"
+            placeholder="e.g. rahul@example.com"
             type="email"
             value={formData.referrerEmail}
             onChange={(e) => setFormData(prev => ({ ...prev, referrerEmail: e.target.value }))}

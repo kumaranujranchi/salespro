@@ -162,7 +162,7 @@ export function AffiliateRegistrationPage() {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   required
-                  placeholder="John Doe"
+                  placeholder="Rahul Sharma"
                   readOnly={!!user} // Read-only if logged in
                   onBlur={() => !formData.referralCode && generateCode()}
                 />
@@ -176,7 +176,7 @@ export function AffiliateRegistrationPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder="john@example.com"
+                  placeholder="rahul@example.com"
                   readOnly={!!user}
                 />
              </div>

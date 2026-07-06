@@ -200,7 +200,7 @@ export function RegisterCompanyPage() {
                   value={formData.fullName}
                   onChange={handleInputChange}
                   required
-                  placeholder="John Doe"
+                  placeholder="Rahul Sharma"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export function RegisterCompanyPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder="john@example.com"
+                  placeholder="rahul@example.com"
                 />
               </div>
 

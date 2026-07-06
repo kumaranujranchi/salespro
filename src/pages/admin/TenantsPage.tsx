@@ -316,7 +316,7 @@ export function TenantsPage() {
                       value={newTenantData.adminName}
                       onChange={handleNewTenantInputChange}
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
-                      placeholder="John Doe"
+                      placeholder="Rahul Sharma"
                       required
                     />
                   </div>
