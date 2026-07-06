@@ -62,10 +62,31 @@ export const update = mutation({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db
+    const tenants = await ctx.db
       .query("tenants")
       .order("desc")
       .collect();
+
+    return await Promise.all(
+      tenants.map(async (tenant) => {
+        const adminProfile = await ctx.db
+          .query("profiles")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .filter((q) =>
+            q.or(
+              q.eq(q.field("role"), "admin"),
+              q.eq(q.field("role"), "platform_admin")
+            )
+          )
+          .first();
+
+        return {
+          ...tenant,
+          contact_email: adminProfile?.email || null,
+          contact_phone: adminProfile?.phone || null,
+        };
+      })
+    );
   },
 });
 
