@@ -388,6 +388,18 @@ export const getDashboardStats = query({
         .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
         .collect()).length;
     };
+    const getSourceCount = async (source: string) => {
+      if (args.executive_id) {
+        return (await ctx.db.query("leads")
+          .withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executive_id!))
+          .filter(q => q.eq(q.field("lead_source"), source))
+          .collect()).length;
+      }
+      return (await ctx.db.query("leads")
+        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+        .filter(q => q.eq(q.field("lead_source"), source))
+        .collect()).length;
+    };
 
     return {
       totalLeads: await getCount(),
@@ -398,11 +410,13 @@ export const getDashboardStats = query({
       converted: await getCount('Converted'),
       lost: await getCount('Lost'),
       
-      // Sources
-      adsLeads: 0,
-      walkInLeads: 0,
-      referenceLeads: 0,
-      channelPartnerLeads: 0,
+      referralLeads: await getSourceCount('Referral'),
+      acresLeads: await getSourceCount('99acres'),
+      magicBrickLeads: await getSourceCount('MagicBrick'),
+      housingLeads: await getSourceCount('Housing'),
+      metaLeads: await getSourceCount('Meta'),
+      googleLeads: await getSourceCount('Google'),
+      walkInLeads: await getSourceCount('Walk-in'),
     };
   },
 });

@@ -35,7 +35,7 @@ const CRM_FIELDS: FieldMapping[] = [
   { key: 'executive_email', label: 'Sales Executive Email', required: false, description: 'For assignment. If empty/not found, assigned to you.' },
   { key: 'budget', label: 'Budget', required: false, type: 'select', options: ['<50L', '50L-1Cr', '1Cr-2Cr', '>2Cr'] },
   { key: 'purpose', label: 'Purpose', required: false, type: 'select', options: ['Investment', 'End Use'] },
-  { key: 'source', label: 'Lead Source', required: false, type: 'select', options: ['Ads', 'Walk-in', 'Reference', 'Channel Partner'] },
+  { key: 'source', label: 'Lead Source', required: false, type: 'select', options: ['Referral', '99acres', 'MagicBrick', 'Housing', 'Meta', 'Google', 'Walk-in'] },
   { key: 'status', label: 'Lead Status', required: false, type: 'select', options: [
     'New', 'Contacted', 'In Progress', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Lost', 'Disqualified', 'Converted'
   ] },
@@ -202,7 +202,7 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
           project_id: projectId as Id<"projects"> | null,
           budget_range: validateEnum('budget', ['<50L', '50L-1Cr', '1Cr-2Cr', '>2Cr'], '<50L'),
           purpose: validateEnum('purpose', ['Investment', 'End Use'], 'Investment'),
-          lead_source: validateEnum('source', ['Ads', 'Walk-in', 'Reference', 'Channel Partner'], 'Walk-in'),
+          lead_source: validateEnum('source', ['Referral', '99acres', 'MagicBrick', 'Housing', 'Meta', 'Google', 'Walk-in'], 'Walk-in'),
           lead_status: validateEnum('status', ['New', 'Contacted', 'In Progress', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Lost', 'Disqualified', 'Converted'], 'New'),
           lead_score: validateEnum('score', ['Hot', 'Warm', 'Cold'], 'Warm'),
           lead_date: getValue('date') ? new Date(getValue('date')).toISOString() : new Date().toISOString(),

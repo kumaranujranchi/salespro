@@ -45,10 +45,13 @@ export function CRMDashboardPage() {
             <CardHeader><CardTitle>Leads by Source</CardTitle></CardHeader>
             <CardContent>
                <div className="space-y-4">
-                  <SourceBar label="Ads" count={stats.adsLeads} total={stats.totalLeads} color="bg-purple-500" />
-                  <SourceBar label="Reference" count={stats.referenceLeads} total={stats.totalLeads} color="bg-green-500" />
-                  <SourceBar label="Channel Partner" count={stats.channelPartnerLeads} total={stats.totalLeads} color="bg-orange-500" />
-                  <SourceBar label="Walk-in" count={stats.walkInLeads} total={stats.totalLeads} color="bg-blue-500" />
+                  <SourceBar label="Referral" count={stats.referralLeads || 0} total={stats.totalLeads} color="bg-indigo-500" />
+                  <SourceBar label="99acres" count={stats.acresLeads || 0} total={stats.totalLeads} color="bg-yellow-500" />
+                  <SourceBar label="MagicBrick" count={stats.magicBrickLeads || 0} total={stats.totalLeads} color="bg-red-500" />
+                  <SourceBar label="Housing" count={stats.housingLeads || 0} total={stats.totalLeads} color="bg-blue-500" />
+                  <SourceBar label="Meta" count={stats.metaLeads || 0} total={stats.totalLeads} color="bg-pink-500" />
+                  <SourceBar label="Google" count={stats.googleLeads || 0} total={stats.totalLeads} color="bg-emerald-500" />
+                  <SourceBar label="Walk-in" count={stats.walkInLeads || 0} total={stats.totalLeads} color="bg-gray-500" />
                </div>
             </CardContent>
          </Card>

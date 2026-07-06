@@ -198,10 +198,13 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               required
             >
-              <option value="Ads">Ads</option>
+              <option value="Referral">Referral</option>
+              <option value="99acres">99acres</option>
+              <option value="MagicBrick">MagicBrick</option>
+              <option value="Housing">Housing</option>
+              <option value="Meta">Meta</option>
+              <option value="Google">Google</option>
               <option value="Walk-in">Walk-in</option>
-              <option value="Reference">Reference</option>
-              <option value="Channel Partner">Channel Partner</option>
             </select>
           </div>
 

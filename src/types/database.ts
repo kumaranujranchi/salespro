@@ -385,7 +385,7 @@ export interface ActivityLog {
 // CRM MODULE TYPES
 // =====================================================
 
-export type LeadSource = 'Ads' | 'Walk-in' | 'Reference' | 'Channel Partner';
+export type LeadSource = 'Referral' | '99acres' | 'MagicBrick' | 'Housing' | 'Meta' | 'Google' | 'Walk-in';
 export type LeadStatus = 'New' | 'Contacted' | 'In Progress' | 'Qualified' | 'Site Visit Scheduled' | 'Site Visit Done' | 'Lost' | 'Disqualified' | 'Converted';
 export type BudgetRange = '<50L' | '50L-1Cr' | '1Cr-2Cr' | '>2Cr' | string;
 export type PurposeType = 'Investment' | 'End Use' | string;
