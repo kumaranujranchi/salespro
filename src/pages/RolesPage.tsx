@@ -4,6 +4,7 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
 import { TenantRole, RolePermissions } from '../types/database';
+import { ActionMenu } from '../components/ui/ActionMenu';
 import {
   Shield,
   Plus,
@@ -203,16 +204,17 @@ export function RolesPage() {
                 <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
                   <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="sm" onClick={() => handleEditRole(role)} className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-600">
-                    <Edit2 size={16} />
-                  </Button>
-                  {!role.is_system && (
-                    <Button variant="ghost" size="sm" onClick={() => { setSelectedRole(role); setDeleteModalOpen(true); }} className="h-8 w-8 p-0 text-slate-400 hover:text-red-600">
-                      <Trash2 size={16} />
-                    </Button>
-                  )}
-                </div>
+                <div>
+                   <ActionMenu actions={[
+                     { label: 'Edit', icon: Edit2, onClick: () => handleEditRole(role) },
+                     ...(!role.is_system ? [{ 
+                       label: 'Delete', 
+                       icon: Trash2, 
+                       variant: 'danger' as const, 
+                       onClick: () => { setSelectedRole(role); setDeleteModalOpen(true); } 
+                     }] : [])
+                   ]} />
+                 </div>
               </div>
               <div className="mt-4">
                 <div className="flex items-center gap-2">
