@@ -38,6 +38,23 @@ export const createLead = mutation({
     metadata: v.any(),
   },
   handler: async (ctx, args) => {
+    // Check and update tenant leads count to enforce 100,000 limit
+    const tenant = await ctx.db.get(args.tenant_id);
+    if (!tenant) throw new Error("Tenant not found");
+
+    let currentCount = tenant.leads_count;
+    if (currentCount === undefined) {
+      const existingLeads = await ctx.db
+        .query("leads")
+        .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+        .collect();
+      currentCount = existingLeads.length;
+    }
+
+    if (currentCount >= 100000) {
+      throw new Error("Lead limit reached. You cannot add more than 1,00,000 leads.");
+    }
+
     // Check for duplicate mobile within tenant
     const existing = await ctx.db
       .query("leads")
@@ -50,12 +67,18 @@ export const createLead = mutation({
     const lead_id = await generateLeadId(ctx, args.tenant_id);
     const now = new Date().toISOString();
 
-    return await ctx.db.insert("leads", {
+    const newLeadId = await ctx.db.insert("leads", {
       ...args,
       lead_id,
       lead_date: now.split("T")[0],
       updated_by: args.created_by,
     });
+
+    await ctx.db.patch(args.tenant_id, {
+      leads_count: currentCount + 1,
+    });
+
+    return newLeadId;
   },
 });
 
@@ -137,7 +160,16 @@ export const listLeadsByTenant = query({
 export const deleteLead = mutation({
   args: { id: v.id("leads") },
   handler: async (ctx, args) => {
-    return await ctx.db.delete(args.id);
+    const lead = await ctx.db.get(args.id);
+    if (lead) {
+      const tenant = await ctx.db.get(lead.tenant_id);
+      if (tenant && tenant.leads_count !== undefined) {
+        await ctx.db.patch(lead.tenant_id, {
+          leads_count: Math.max(0, tenant.leads_count - 1),
+        });
+      }
+      await ctx.db.delete(args.id);
+    }
   },
 });
 
@@ -168,11 +200,29 @@ export const bulkInsertLeads = mutation({
       errors: [] as { row: number; error: string; mobile: string }[],
     };
 
+    const tenant = await ctx.db.get(args.tenant_id);
+    if (!tenant) throw new Error("Tenant not found");
+
+    let currentCount = tenant.leads_count;
+    if (currentCount === undefined) {
+      const existingLeads = await ctx.db
+        .query("leads")
+        .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+        .collect();
+      currentCount = existingLeads.length;
+    }
+
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
     for (let i = 0; i < args.leads.length; i++) {
       const leadData = args.leads[i];
       const rowNum = i + 2;
 
       try {
+        if (currentCount >= 100000) {
+          throw new Error("Lead limit reached (maximum 1,00,000 leads).");
+        }
+
         const existing = await ctx.db
           .query("leads")
           .withIndex("by_tenant_mobile", (q) => 
@@ -200,12 +250,7 @@ export const bulkInsertLeads = mutation({
           }
         }
 
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-        const count = await ctx.db
-          .query("leads")
-          .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
-          .collect();
-        const leadId = `L-${dateStr}-${(count.length + 1).toString().padStart(5, "0")}`;
+        const leadId = `L-${dateStr}-${(currentCount + 1).toString().padStart(5, "0")}`;
 
         await ctx.db.insert("leads", {
           ...leadData,
@@ -221,6 +266,7 @@ export const bulkInsertLeads = mutation({
           metadata: { import_source: "excel" },
         });
 
+        currentCount++;
         results.success++;
       } catch (err: any) {
         results.failed++;
@@ -231,6 +277,10 @@ export const bulkInsertLeads = mutation({
         });
       }
     }
+
+    await ctx.db.patch(args.tenant_id, {
+      leads_count: currentCount,
+    });
 
     return results;
   },
@@ -287,8 +337,25 @@ export const bulkUpdateLeadProject = mutation({
 export const bulkDeleteLeads = mutation({
   args: { ids: v.array(v.id("leads")) },
   handler: async (ctx, args) => {
+    let tenantId: Id<"tenants"> | null = null;
+    let countDeleted = 0;
+
     for (const id of args.ids) {
-      await ctx.db.delete(id);
+      const lead = await ctx.db.get(id);
+      if (lead) {
+        if (!tenantId) tenantId = lead.tenant_id;
+        countDeleted++;
+        await ctx.db.delete(id);
+      }
+    }
+
+    if (tenantId && countDeleted > 0) {
+      const tenant = await ctx.db.get(tenantId);
+      if (tenant && tenant.leads_count !== undefined) {
+        await ctx.db.patch(tenantId, {
+          leads_count: Math.max(0, tenant.leads_count - countDeleted),
+        });
+      }
     }
   },
 });

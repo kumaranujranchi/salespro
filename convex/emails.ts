@@ -292,6 +292,48 @@ export const sendEmail = action({
       `;
       htmlContent = emailWrapper(content);
     }
+    else if (type === 'CUSTOM_PLAN_REQUEST') {
+      subject = `Custom Plan Request - ${data.tenantName}`;
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Custom Plan Request
+        </h2>
+        <p style="margin: 0 0 30px 0; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+          A client has requested a custom pricing plan for their organization.
+        </p>
+        
+        <!-- Client Details Box -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td style="background-color: #f8f8f8; border: 1px solid #e5e5e5; border-radius: 8px; padding: 25px;">
+              <table width="100%" cellpadding="8" cellspacing="0">
+                <tr>
+                  <td style="color: #666666; font-size: 14px; width: 40%;"><strong>Client Name:</strong></td>
+                  <td style="color: #1a1a1a; font-size: 14px;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px;"><strong>Client Email:</strong></td>
+                  <td style="color: #1a1a1a; font-size: 14px;">${data.userEmail}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px;"><strong>Company/Tenant Name:</strong></td>
+                  <td style="color: #1a1a1a; font-size: 14px;">${data.tenantName}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px;"><strong>Tenant ID:</strong></td>
+                  <td style="color: #1a1a1a; font-size: 14px; font-family: monospace;">${data.tenantId}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px;"><strong>Phone Number:</strong></td>
+                  <td style="color: #1a1a1a; font-size: 14px;">${data.phone || 'N/A'}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `;
+      htmlContent = emailWrapper(content);
+    }
     else {
       throw new Error(`Invalid email type: ${type}`);
     }

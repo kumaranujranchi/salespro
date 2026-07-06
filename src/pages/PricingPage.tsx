@@ -3,12 +3,13 @@ import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useConvex } from "convex/react";
+import { useConvex, useAction } from "convex/react";
 import { api } from '../../convex/_generated/api';
 
 export function PricingPage() {
   const { user, tenant, profile } = useAuth();
   const convex = useConvex();
+  const sendEmailAction = useAction(api.emails.sendEmail);
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -62,6 +63,34 @@ export function PricingPage() {
       console.error('Error validating referral:', err);
     } finally {
       setValidatingReferral(false);
+    }
+  };
+
+  const handleContactSales = async () => {
+    if (!user || !tenant) {
+      window.location.href = "mailto:support@realsalepro.com?subject=RealSalePro - Custom Plan Inquiry";
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await sendEmailAction({
+        type: 'CUSTOM_PLAN_REQUEST',
+        email: 'support@realsalepro.com',
+        name: profile?.full_name || user.email || 'Client',
+        data: {
+          tenantName: tenant.name,
+          tenantId: tenant.id,
+          phone: profile?.phone || '',
+          userEmail: user.email || ''
+        }
+      });
+      toast.success('Your request has been sent to our sales team. We will get back to you shortly!');
+    } catch (err: any) {
+      console.error('Failed to send sales request:', err);
+      toast.error('Failed to send request. Please contact support@realsalepro.com directly.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,7 +222,7 @@ export function PricingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-7xl mx-auto">
             {/* Monthly Plan */}
             <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-5 md:p-8 flex flex-col border border-gray-100">
               <h3 className="text-lg md:text-xl font-semibold text-gray-900">Monthly</h3>
@@ -203,7 +232,7 @@ export function PricingPage() {
               </div>
               <p className="mt-4 md:mt-6 text-sm md:text-base text-gray-500">Full access, billed monthly</p>
               <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
-                {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
+                {['All Pro Features Included', 'Up to 1,00,000 Leads', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
                     <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
@@ -232,7 +261,7 @@ export function PricingPage() {
               <p className="mt-2 text-xs md:text-sm text-green-400 font-medium">Billed ₹7,200 semi-annually</p>
               <p className="mt-2 text-xs md:text-base text-gray-400">Save 20% with 6-month commitment</p>
               <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
-                {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
+                {['All Pro Features Included', 'Up to 1,00,000 Leads', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5" />
                     <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-300">{feature}</span>
@@ -258,7 +287,7 @@ export function PricingPage() {
               <p className="mt-2 text-xs md:text-sm text-green-600 font-medium">Billed ₹12,000 annually</p>
               <p className="mt-2 text-xs md:text-base text-gray-500">Best Value: Save 33% yearly</p>
               <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
-                {['All Pro Features Included', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
+                {['All Pro Features Included', 'Up to 1,00,000 Leads', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support', '30-Day Free Trial'].map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
                     <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
@@ -271,6 +300,30 @@ export function PricingPage() {
                 className="mt-6 md:mt-8 block w-full bg-indigo-50 border border-transparent rounded-lg py-2 md:py-3 px-4 md:px-6 text-center text-sm md:text-base font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : user ? 'Pay Now ₹12,000' : 'Start Yearly Trial'}
+              </button>
+            </div>
+
+            {/* Custom Plan */}
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 p-5 md:p-8 flex flex-col border border-gray-100">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900">Custom</h3>
+              <div className="mt-2 md:mt-4 flex items-baseline text-gray-900">
+                <span className="text-3xl md:text-5xl font-extrabold tracking-tight">Custom</span>
+              </div>
+              <p className="mt-4 md:mt-6 text-sm md:text-base text-gray-500">Bespoke limits & terms</p>
+              <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
+                {['Custom Lead Limits', 'Custom Integrations', 'Dedicated Support Manager', 'Custom SLA Guarantee', 'Flexible Billing Options'].map((feature) => (
+                  <li key={feature} className="flex items-start">
+                    <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
+                    <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={handleContactSales}
+                disabled={loading}
+                className="mt-6 md:mt-8 block w-full bg-indigo-600 border border-transparent rounded-lg py-2 md:py-3 px-4 md:px-6 text-center text-sm md:text-base font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Contact Sales'}
               </button>
             </div>
           </div>

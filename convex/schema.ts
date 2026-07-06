@@ -14,6 +14,7 @@ export default defineSchema({
     next_billing_date: v.optional(v.string()),
     trial_ends_at: v.optional(v.string()),
     is_active: v.boolean(),
+    leads_count: v.optional(v.number()),
   }).index("by_slug", ["slug"]),
 
   profiles: defineTable({
