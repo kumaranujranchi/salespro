@@ -5,7 +5,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Profile, TenantRole, Department } from '../types/database';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -13,7 +13,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ActionMenu } from '../components/ui/ActionMenu';
-import { Users, UserPlus, Pencil, Network, UserX, UserCheck } from 'lucide-react';
+import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function UsersPage() {
@@ -24,7 +24,7 @@ export function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingUserId, setEditingUserId] = useState<Id<"profiles"> | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
-  const [viewType, setViewType] = useState<'tree' | 'table'>('table');
+  const [viewType, setViewType] = useState<'card' | 'table' | 'tree'>('table');
   const isReadOnly = false; // Simplified for now
 
   const [formData, setFormData] = useState({
@@ -180,9 +180,10 @@ export function UsersPage() {
           <p className="text-gray-600 dark:text-gray-400">Manage team members and access control</p>
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2">
+          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2 shadow-sm">
+            <button onClick={() => setViewType('card')} className={`p-1.5 rounded-md transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+            <button onClick={() => setViewType('table')} className={`p-1.5 rounded-md transition-all ${viewType === 'table' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
             <button onClick={() => setViewType('tree')} className={`p-1.5 rounded-md transition-all ${viewType === 'tree' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><Network size={18} /></button>
-            <button onClick={() => setViewType('table')} className={`p-1.5 rounded-md transition-all ${viewType === 'table' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><Users size={18} /></button>
           </div>
           <Select
             value={statusFilter}
@@ -194,21 +195,81 @@ export function UsersPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2"><Users size={20} /><CardTitle>Users List</CardTitle></div>
-        </CardHeader>
-        <CardContent>
-          {!users ? (
-            <LoadingSpinner size="lg" className="min-h-[400px]" />
-          ) : users.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No users found.</div>
-          ) : viewType === 'tree' ? (
+      {!users ? (
+        <LoadingSpinner size="lg" className="min-h-[400px]" />
+      ) : users.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">No users found.</div>
+      ) : viewType === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {(users as Profile[]).map((user: Profile) => (
+            <Card key={user._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col border-b-4 border-b-transparent hover:border-b-blue-500">
+              <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
+                <div className="flex items-start justify-between">
+                  {user.image_url ? (
+                    <img src={user.image_url} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400 text-lg shadow-sm border-2 border-white">
+                      {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <ActionMenu actions={[
+                      { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
+                      { 
+                        label: user.is_active ? 'Deactivate' : 'Activate', 
+                        icon: user.is_active ? UserX : UserCheck, 
+                        onClick: () => handleToggleStatus(user) 
+                      }
+                    ]} />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <CardTitle className="text-xl font-bold truncate">{user.full_name}</CardTitle>
+                  <CardDescription className="text-xs font-mono font-medium text-slate-400 mt-0.5">Emp ID: {user.employee_id}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6 pb-6 flex-grow space-y-4">
+                <div className="flex flex-col gap-1 text-sm">
+                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Role / Dept</span>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <Badge variant="outline">{(roles as TenantRole[] | undefined)?.find((r: TenantRole) => r._id === user.role_id)?.name || user.role}</Badge>
+                    <Badge variant="secondary">{(departments as Department[] | undefined)?.find((d: Department) => d._id === user.department_id)?.name || 'No Dept'}</Badge>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1 text-sm text-gray-600 dark:text-gray-400 border-t border-slate-100 dark:border-slate-800 pt-3">
+                  <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Contact Details</span>
+                  <div className="truncate text-xs">Email: <span className="font-semibold text-slate-700 dark:text-slate-300">{user.email}</span></div>
+                  <div className="truncate text-xs">Phone: <span className="font-semibold text-slate-700 dark:text-slate-300">{user.phone || '-'}</span></div>
+                </div>
+              </CardContent>
+              <CardContent className="pt-2 pb-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</span>
+                <Badge variant={user.is_active ? 'success' : 'default'}>{user.is_active ? 'Active' : 'Inactive'}</Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : viewType === 'tree' ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Network size={20} />
+              <CardTitle>Organization Chart</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
             <div className="org-tree-container">
                {/* Simplified Tree view for now */}
-               <div className="text-center p-4">Tree view active with {users.length} users.</div>
+               <div className="text-center p-4 text-gray-500">Tree view active with {users.length} users.</div>
             </div>
-          ) : (
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2"><Users size={20} /><CardTitle>Users List</CardTitle></div>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -244,9 +305,9 @@ export function UsersPage() {
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingUserId ? "Edit User" : "Add New User"} size="lg">
         <form onSubmit={handleSaveUser} className="space-y-6">

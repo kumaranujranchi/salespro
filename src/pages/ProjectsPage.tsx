@@ -5,14 +5,15 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
 import { Project } from '../types/database';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Building, Plus, ExternalLink, Trash2, Pencil, X } from 'lucide-react';
+import { Building, Plus, ExternalLink, Trash2, Pencil, X, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { ActionMenu } from '../components/ui/ActionMenu';
 
 export function ProjectsPage() {
   const { profile } = useAuth();
@@ -23,6 +24,7 @@ export function ProjectsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<Id<"projects"> | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewType, setViewType] = useState<'card' | 'list'>('list');
 
   const isReadOnly = profile?.role === 'director';
 
@@ -151,27 +153,92 @@ export function ProjectsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Projects</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">Manage property projects and listings</p>
         </div>
-        {!isReadOnly && (
-          <Button variant="primary" onClick={() => { resetForm(); setIsModalOpen(true); }} className="hidden md:flex">
-            <Plus size={18} className="mr-2" />
-            Add Project
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2 shadow-sm">
+            <button onClick={() => setViewType('card')} className={`p-1.5 rounded-md transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+            <button onClick={() => setViewType('list')} className={`p-1.5 rounded-md transition-all ${viewType === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
+          </div>
+          {!isReadOnly && (
+            <Button variant="primary" onClick={() => { resetForm(); setIsModalOpen(true); }} className="hidden md:flex">
+              <Plus size={18} className="mr-2" />
+              Add Project
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Building size={20} />
-            <CardTitle>All Projects</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!projects ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
+      {!projects ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
+        </div>
+      ) : viewType === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project: any) => (
+            <Card key={project._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col">
+              {project.image_url ? (
+                <div className="h-48 w-full overflow-hidden relative">
+                  <img src={project.image_url} alt={project.name} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                  <div className="absolute top-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1 rounded-full shadow-md">
+                    {!isReadOnly && (
+                      <ActionMenu actions={[
+                        { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                        { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                      ]} />
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-48 w-full bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center relative">
+                  <Building size={48} className="text-blue-500/40" />
+                  <div className="absolute top-4 right-4 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md p-1 rounded-full shadow-md">
+                    {!isReadOnly && (
+                      <ActionMenu actions={[
+                        { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                        { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                      ]} />
+                    )}
+                  </div>
+                </div>
+              )}
+              <CardHeader className="border-b-0 pb-2 flex-grow">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge variant="outline">{project.project_type || 'Other'}</Badge>
+                  <Badge variant={
+                    project.status === 'Running' ? 'success' :
+                      project.status === 'Closed' ? 'secondary' : 'warning'
+                  }>
+                    {project.status || 'Running'}
+                  </Badge>
+                </div>
+                <CardTitle className="text-xl font-bold mt-3 leading-tight truncate">{project.name}</CardTitle>
+                <CardDescription className="line-clamp-2 text-xs">{project.address || 'No Address'}</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-2 pb-6 flex items-center justify-between border-t border-gray-100/80 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                {project.google_maps_url ? (
+                  <a
+                    href={project.google_maps_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#1673FF] hover:underline flex items-center gap-1 text-sm font-semibold"
+                  >
+                    View Map <ExternalLink size={14} />
+                  </a>
+                ) : (
+                  <span className="text-gray-400 text-xs font-medium">No Map Link</span>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building size={20} />
+              <CardTitle>All Projects</CardTitle>
             </div>
-          ) : (
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -216,28 +283,19 @@ export function ProjectsPage() {
                     </TableCell>
                     {!isReadOnly && (
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleEditProject(project)} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10">
-                            <Pencil size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                            onClick={() => handleDelete(project._id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
+                        <ActionMenu actions={[
+                          { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                          { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                        ]} />
                       </TableCell>
                     )}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Floating Action Button for Mobile */}
       {!isReadOnly && (

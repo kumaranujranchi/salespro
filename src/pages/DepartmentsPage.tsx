@@ -4,18 +4,21 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useDialog } from '../contexts/DialogContext';
 import { Department } from '../types/database';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Modal, ModalFooter } from '../components/ui/Modal';
-import { Briefcase, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { Briefcase, Plus, Trash2, Pencil, Loader2, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { ActionMenu } from '../components/ui/ActionMenu';
 
 export function DepartmentsPage() {
   const { profile, tenant } = useAuth();
   const dialog = useDialog();
+  
+  const [viewType, setViewType] = useState<'card' | 'list'>('list');
   
   const departmentsData = useQuery(api.departments.list, 
     tenant?._id ? { tenant_id: tenant._id } : "skip" as any
@@ -113,27 +116,65 @@ export function DepartmentsPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Departments</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">Manage organizational departments</p>
         </div>
-        {!isReadOnly && (
-          <Button variant="primary" onClick={() => { resetForm(); setIsModalOpen(true); }} className="hidden md:flex">
-            <Plus size={18} className="mr-2" />
-            Add Department
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2 shadow-sm">
+            <button onClick={() => setViewType('card')} className={`p-1.5 rounded-md transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+            <button onClick={() => setViewType('list')} className={`p-1.5 rounded-md transition-all ${viewType === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
+          </div>
+          {!isReadOnly && (
+            <Button variant="primary" onClick={() => { resetForm(); setIsModalOpen(true); }} className="hidden md:flex">
+              <Plus size={18} className="mr-2" />
+              Add Department
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Briefcase size={20} />
-            <CardTitle>All Departments</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {departmentsData === undefined ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
+      {departmentsData === undefined ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
+        </div>
+      ) : viewType === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {departments.map((dept) => (
+            <Card key={dept._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-indigo-500">
+              <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-2xl">
+                    <Briefcase size={24} className="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  {!isReadOnly && (
+                    <div>
+                      <ActionMenu actions={[
+                        { label: 'Edit', icon: Pencil, onClick: () => handleEditDepartment(dept) },
+                        { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(dept._id) }
+                      ]} />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <CardTitle className="text-xl font-bold truncate">{dept.name}</CardTitle>
+                  <CardDescription className="line-clamp-2 mt-1">{dept.description || 'No description provided.'}</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</span>
+                <Badge variant={dept.is_active ? 'success' : 'default'}>
+                  {dept.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Briefcase size={20} />
+              <CardTitle>All Departments</CardTitle>
             </div>
-          ) : (
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -155,28 +196,19 @@ export function DepartmentsPage() {
                     </TableCell>
                     {!isReadOnly && (
                         <TableCell>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditDepartment(dept)} className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-500/10">
-                            <Pencil size={16} />
-                            </Button>
-                            <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-500/10"
-                            onClick={() => handleDelete(dept._id)}
-                            >
-                            <Trash2 size={16} />
-                            </Button>
-                        </div>
+                          <ActionMenu actions={[
+                            { label: 'Edit', icon: Pencil, onClick: () => handleEditDepartment(dept) },
+                            { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(dept._id) }
+                          ]} />
                         </TableCell>
                     )}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Floating Action Button for Mobile */}
       {!isReadOnly && (

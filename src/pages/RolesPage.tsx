@@ -5,6 +5,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
 import { TenantRole, RolePermissions } from '../types/database';
 import { ActionMenu } from '../components/ui/ActionMenu';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import {
   Shield,
   Plus,
@@ -79,6 +80,7 @@ export function RolesPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [viewType, setViewType] = useState<'card' | 'list'>('card');
   const [selectedRole, setSelectedRole] = useState<TenantRole | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -177,13 +179,19 @@ export function RolesPage() {
           </h1>
           <p className="text-slate-500 mt-1">Configure custom roles and granular permissions for your team.</p>
         </div>
-        <Button
-          onClick={handleCreateNew}
-          variant="gradient"
-          className="rounded-xl px-6 py-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
-        >
-          <Plus className="mr-2" size={18} /> Create New Role
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+            <button onClick={() => setViewType('card')} className={`p-1.5 rounded-md transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
+            <button onClick={() => setViewType('list')} className={`p-1.5 rounded-md transition-all ${viewType === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
+          </div>
+          <Button
+            onClick={handleCreateNew}
+            variant="gradient"
+            className="rounded-xl px-6 py-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+          >
+            <Plus className="mr-2" size={18} /> Create New Role
+          </Button>
+        </div>
       </div>
 
       <div className="relative group">
@@ -196,57 +204,114 @@ export function RolesPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {roles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map((role) => (
-          <Card key={role._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-emerald-500">
-            <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
-              <div className="flex items-start justify-between">
-                <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
-                  <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
+      {viewType === 'card' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {roles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map((role) => (
+            <Card key={role._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group border-b-4 border-b-transparent hover:border-b-emerald-500">
+              <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-2xl">
+                    <Shield size={24} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                     <ActionMenu actions={[
+                       { label: 'Edit', icon: Edit2, onClick: () => handleEditRole(role) },
+                       ...(!role.is_system ? [{ 
+                         label: 'Delete', 
+                         icon: Trash2, 
+                         variant: 'danger' as const, 
+                         onClick: () => { setSelectedRole(role); setDeleteModalOpen(true); } 
+                       }] : [])
+                     ]} />
+                   </div>
                 </div>
-                <div>
-                   <ActionMenu actions={[
-                     { label: 'Edit', icon: Edit2, onClick: () => handleEditRole(role) },
-                     ...(!role.is_system ? [{ 
-                       label: 'Delete', 
-                       icon: Trash2, 
-                       variant: 'danger' as const, 
-                       onClick: () => { setSelectedRole(role); setDeleteModalOpen(true); } 
-                     }] : [])
-                   ]} />
-                 </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-xl font-bold truncate">{role.name}</CardTitle>
-                  {role.is_system && (
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">System</span>
-                  )}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-xl font-bold truncate">{role.name}</CardTitle>
+                    {role.is_system && (
+                      <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">System</span>
+                    )}
+                  </div>
+                  <CardDescription className="line-clamp-2 mt-1">{role.description || 'No description provided.'}</CardDescription>
                 </div>
-                <CardDescription className="line-clamp-2 mt-1">{role.description || 'No description provided.'}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Permissions</p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 4).map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                      {val === 'edit' ? <Check size={12} /> : <Eye size={12} />}
-                      {MENU_ITEMS.find(m => m.id === key)?.label}
-                    </div>
-                  ))}
-                  {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 4 && (
-                    <div className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
-                      +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 4} more
-                    </div>
-                  )}
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Permissions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 4).map(([key, val]) => (
+                      <div key={key} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                        {val === 'edit' ? <Check size={12} /> : <Eye size={12} />}
+                        {MENU_ITEMS.find(m => m.id === key)?.label}
+                      </div>
+                    ))}
+                    {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 4 && (
+                      <div className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
+                        +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 4} more
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Role Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {roles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())).map((role) => (
+                  <TableRow key={role._id}>
+                    <TableCell className="font-semibold pl-6">
+                      <div className="flex items-center gap-2">
+                        {role.name}
+                        {role.is_system && (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">System</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{role.description || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 3).map(([key, val]) => (
+                          <span key={key} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                            {val === 'edit' ? 'Edit' : 'View'} : {MENU_ITEMS.find(m => m.id === key)?.label}
+                          </span>
+                        ))}
+                        {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 3 && (
+                          <span className="px-2 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
+                            +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <ActionMenu actions={[
+                        { label: 'Edit', icon: Edit2, onClick: () => handleEditRole(role) },
+                        ...(!role.is_system ? [{ 
+                          label: 'Delete', 
+                          icon: Trash2, 
+                          variant: 'danger' as const, 
+                          onClick: () => { setSelectedRole(role); setDeleteModalOpen(true); } 
+                        }] : [])
+                      ]} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Role Editor Overlay */}
       {isEditorOpen && (
