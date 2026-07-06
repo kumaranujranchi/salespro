@@ -136,6 +136,7 @@ export function RegisterCompanyPage() {
         contact_phone: formData.phone,
         referral_code: formData.referralCode,
         userId: formData.email, // Simulation: use email as Auth ID
+        password: formData.password,
       });
 
       // Sign In locally

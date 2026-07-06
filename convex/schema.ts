@@ -34,6 +34,7 @@ export default defineSchema({
     is_active: v.boolean(),
     force_password_change: v.boolean(),
     role_id: v.optional(v.id("tenant_roles")),
+    password: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_tenant", ["tenant_id"])

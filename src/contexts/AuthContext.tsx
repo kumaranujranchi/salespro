@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvex } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
@@ -22,8 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Local state for "session" simulation since we're migrating
   // In a real app, this would come from useConvexAuth() or Clerk
   const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
-  // Start loading as false — only go to true while resolving a session
   const [loading, setLoading] = useState(false);
+  const convex = useConvex();
 
   // Fetch profile via Convex query
   const profileData = useQuery(api.profiles.getByUserId, 
@@ -82,12 +82,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [affiliateData]);
 
-  const signIn = async (email: string) => {
-    // Placeholder sign-in logic
-    // You would replace this with actual Convex Auth or Clerk sign-in
+  const signIn = async (email: string, password?: string) => {
     setLoading(true);
-    setSessionUser({ id: email, email });
-    return { error: null };
+    try {
+      const profile = await convex.query(api.profiles.getByEmail, { email });
+      if (!profile) {
+        return { error: new Error('Invalid email or password. Please try again.') };
+      }
+      if (profile.password && profile.password !== password) {
+        return { error: new Error('Invalid email or password. Please try again.') };
+      }
+      setSessionUser({ id: profile.userId, email: profile.email });
+      return { error: null };
+    } catch (err: any) {
+      return { error: err };
+    } finally {
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {

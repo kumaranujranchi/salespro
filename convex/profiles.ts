@@ -58,6 +58,7 @@ export const createUserProfile = mutation({
     tenant_id: v.id("tenants"),
     is_active: v.boolean(),
     force_password_change: v.boolean(),
+    password: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -95,6 +96,7 @@ export const createUserProfile = mutation({
       dob: dob ?? undefined,
       marriage_anniversary: marriage_anniversary ?? undefined,
       joining_date: joining_date ?? undefined,
+      password: args.password,
     };
 
     return await ctx.db.insert("profiles", data);

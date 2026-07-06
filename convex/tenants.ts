@@ -109,6 +109,7 @@ export const register = mutation({
     contact_phone: v.optional(v.string()),
     referral_code: v.optional(v.string()),
     userId: v.string(), // The Auth ID from Clerk/simulation
+    password: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // 1. Check if slug exists
@@ -143,6 +144,7 @@ export const register = mutation({
       tenant_id: tenantId,
       is_active: true,
       force_password_change: false,
+      password: args.password,
     });
 
     // 4. Handle referral if present

@@ -130,7 +130,7 @@ export function UsersPage() {
         // This is where we would create Auth User in a real app.
         // For simulation, we just create the Profile in Convex.
         await createUserProfileMutation({
-          userId: `sim_${Math.random().toString(36).substr(2, 9)}`, // Simulated Auth ID
+          userId: formData.email, // Use email as Simulated Auth ID
           tenant_id: profile.tenant_id as Id<"tenants">,
           full_name: formData.fullName,
           email: formData.email,
@@ -145,7 +145,8 @@ export function UsersPage() {
           marriage_anniversary: formData.marriageAnniversary || null,
           joining_date: formData.joiningDate || null,
           is_active: true,
-          force_password_change: true
+          force_password_change: false,
+          password: formData.password
         });
         toast.success("User created successfully!");
       }
@@ -259,6 +260,12 @@ export function UsersPage() {
                 required
                 options={(departments as Department[] | undefined)?.map((d: Department) => ({ value: d._id, label: d.name })) || []}
               />
+              {!editingUserId && (
+                <>
+                  <Input type="password" label="Password" name="password" value={formData.password} onChange={handleInputChange} required />
+                  <Input type="password" label="Confirm Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} required />
+                </>
+              )}
            </div>
            <ModalFooter>
               <Button type="button" variant="outline" onClick={handleCloseModal}>Cancel</Button>
