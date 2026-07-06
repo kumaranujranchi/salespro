@@ -77,7 +77,10 @@ export function RegisterCompanyPage() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to send verification email');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Failed to send verification email');
+      }
       
       setSuccess('A new verification code has been sent to your email.');
       setResendTimer(30);
@@ -114,7 +117,10 @@ export function RegisterCompanyPage() {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to send verification email');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Failed to send verification email');
+      }
 
       setVerificationStep(true);
       setResendTimer(30);
