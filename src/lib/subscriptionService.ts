@@ -32,8 +32,17 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
       }),
     });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to create subscription');
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Server status ${response.status}: ${text || 'Invalid JSON response'}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || `Server error (${response.status})`);
+    }
 
     // Save the created subscription to Convex
     await convex.mutation(api.subscriptions.upsert, {
