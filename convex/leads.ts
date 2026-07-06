@@ -82,6 +82,22 @@ export const createLead = mutation({
   },
 });
 
+// Helper to get subordinate profiles recursively
+async function getSubordinateProfileIds(ctx: any, tenantId: any, managerId: any): Promise<any[]> {
+  const subordinates = await ctx.db
+    .query("profiles")
+    .withIndex("by_tenant", (q: any) => q.eq("tenant_id", tenantId))
+    .filter((q: any) => q.eq(q.field("reporting_manager_id"), managerId))
+    .collect();
+    
+  let ids = subordinates.map((s: any) => s._id);
+  for (const sub of subordinates) {
+    const subSubIds = await getSubordinateProfileIds(ctx, tenantId, sub._id);
+    ids = [...ids, ...subSubIds];
+  }
+  return ids;
+}
+
 export const listLeadsByTenant = query({
   args: { 
     paginationOpts: v.any(),
@@ -97,6 +113,16 @@ export const listLeadsByTenant = query({
       .query("leads")
       .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
 
+    // Resolve allowed profiles if caller is not admin
+    let allowedIds: any[] | null = null;
+    if (args.profileId) {
+      const callerProfile = await ctx.db.get(args.profileId);
+      if (callerProfile && !['super_admin', 'admin', 'director', 'platform_admin'].includes(callerProfile.role)) {
+        const subIds = await getSubordinateProfileIds(ctx, args.tenant_id, args.profileId);
+        allowedIds = [args.profileId, ...subIds];
+      }
+    }
+
     // Server-side filtering
     if (args.showOnlyMyLeads && args.profileId) {
       q = ctx.db
@@ -105,17 +131,40 @@ export const listLeadsByTenant = query({
           q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.profileId)
         );
     } else if (args.executiveFilter && args.executiveFilter !== 'all') {
-      q = ctx.db
-        .query("leads")
-        .withIndex("by_tenant_executive", (q) => 
-          q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executiveFilter as any)
-        );
-    } else if (args.statusFilter && args.statusFilter !== 'all') {
+      // Check if caller has permission for this executive
+      let authorized = true;
+      if (allowedIds && !allowedIds.includes(args.executiveFilter as any)) {
+        authorized = false;
+      }
+      
+      if (authorized) {
         q = ctx.db
+          .query("leads")
+          .withIndex("by_tenant_executive", (q) => 
+            q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executiveFilter as any)
+          );
+      } else {
+        // Not authorized: force empty query
+        q = ctx.db
+          .query("leads")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+          .filter((q) => q.eq(q.field("mobile"), "FORCE_EMPTY_NOT_AUTHORIZED"));
+      }
+    } else if (args.statusFilter && args.statusFilter !== 'all') {
+      q = ctx.db
         .query("leads")
         .withIndex("by_tenant_status", (q) => 
           q.eq("tenant_id", args.tenant_id).eq("lead_status", args.statusFilter!)
         );
+    }
+
+    // Apply allowedIds constraint to status or default queries
+    if (allowedIds && !(args.showOnlyMyLeads && args.profileId) && !(args.executiveFilter && args.executiveFilter !== 'all')) {
+      q = q.filter((q) => 
+        q.or(
+          ...allowedIds!.map(id => q.eq(q.field("sales_executive_id"), id))
+        )
+      );
     }
 
     const paginatedLeads = await q.order("desc").paginate(args.paginationOpts);
@@ -364,41 +413,61 @@ export const getDashboardStats = query({
   args: { 
     tenant_id: v.id("tenants"),
     executive_id: v.optional(v.id("profiles")),
+    callerProfileId: v.optional(v.id("profiles")),
   },
   handler: async (ctx, args) => {
+    let allowedIds: any[] | null = null;
+    
+    // Determine visibility restriction
+    if (args.executive_id) {
+      allowedIds = [args.executive_id];
+    } else if (args.callerProfileId) {
+      const callerProfile = await ctx.db.get(args.callerProfileId);
+      if (callerProfile && !['super_admin', 'admin', 'director', 'platform_admin'].includes(callerProfile.role)) {
+        const subIds = await getSubordinateProfileIds(ctx, args.tenant_id, args.callerProfileId);
+        allowedIds = [args.callerProfileId, ...subIds];
+      }
+    }
+
     // Helper to get count for a specific status
     const getCount = async (status?: string) => {
-      if (args.executive_id) {
-        let q = ctx.db.query("leads")
-          .withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executive_id!));
-        
-        if (status) {
-           q = q.filter(q => q.eq(q.field("lead_status"), status));
+      let q = ctx.db.query("leads");
+      
+      if (allowedIds) {
+        if (allowedIds.length === 1) {
+          q = q.withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", allowedIds![0]));
+        } else {
+          q = q.withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+               .filter(q => q.or(...allowedIds!.map(id => q.eq(q.field("sales_executive_id"), id))));
         }
-        return (await q.collect()).length;
+      } else {
+        q = q.withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id));
       }
 
       if (status) {
-        return (await ctx.db.query("leads")
-          .withIndex("by_tenant_status", q => q.eq("tenant_id", args.tenant_id).eq("lead_status", status))
-          .collect()).length;
+        q = q.filter(q => q.eq(q.field("lead_status"), status));
       }
 
-      return (await ctx.db.query("leads")
-        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
-        .collect()).length;
+      return (await q.collect()).length;
     };
+
     const getSourceCount = async (source: string) => {
-      if (args.executive_id) {
-        return (await ctx.db.query("leads")
-          .withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", args.executive_id!))
-          .filter(q => q.eq(q.field("lead_source"), source))
-          .collect()).length;
+      let q = ctx.db.query("leads");
+      
+      if (allowedIds) {
+        if (allowedIds.length === 1) {
+          q = q.withIndex("by_tenant_executive", q => q.eq("tenant_id", args.tenant_id).eq("sales_executive_id", allowedIds![0]));
+        } else {
+          q = q.withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
+               .filter(q => q.or(...allowedIds!.map(id => q.eq(q.field("sales_executive_id"), id))));
+        }
+      } else {
+        q = q.withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id));
       }
-      return (await ctx.db.query("leads")
-        .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id))
-        .filter(q => q.eq(q.field("lead_source"), source))
-        .collect()).length;
+
+      q = q.filter(q => q.eq(q.field("lead_source"), source));
+
+      return (await q.collect()).length;
     };
 
     return {

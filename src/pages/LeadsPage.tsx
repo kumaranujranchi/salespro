@@ -61,7 +61,8 @@ export function LeadsPage() {
   const statsData = useQuery(api.leads.getDashboardStats, 
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
-      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : undefined
+      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : undefined,
+      callerProfileId: profile.id as Id<"profiles">
     } : "skip"
   );
 

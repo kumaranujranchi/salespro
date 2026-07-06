@@ -280,6 +280,18 @@ export function UsersPage() {
                 required
                 options={(departments as Department[] | undefined)?.map((d: Department) => ({ value: d._id, label: d.name })) || []}
               />
+              <Select
+                label="Reporting Manager"
+                name="reportingManagerId"
+                value={formData.reportingManagerId}
+                onChange={handleInputChange}
+                options={[
+                  { value: '', label: 'None' },
+                  ...((users as Profile[] | undefined) || [])
+                    .filter(u => u._id !== editingUserId && u.is_active)
+                    .map(u => ({ value: u._id, label: `${u.full_name} (${u.role})` }))
+                ]}
+              />
               {!editingUserId && (
                 <>
                   <Input type="password" label="Password" name="password" value={formData.password} onChange={handleInputChange} required />

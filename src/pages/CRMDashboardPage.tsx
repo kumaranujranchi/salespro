@@ -17,7 +17,8 @@ export function CRMDashboardPage() {
   
   const stats = useQuery(api.leads.getDashboardStats, profile?.tenant_id ? {
     tenant_id: profile.tenant_id as Id<"tenants">,
-    executive_id: profile.role === 'sales_executive' ? profile.id as Id<"profiles"> : undefined
+    executive_id: profile.role === 'sales_executive' ? profile.id as Id<"profiles"> : undefined,
+    callerProfileId: profile.id as Id<"profiles">
   } : "skip");
 
   if (!stats) return <LoadingSpinner size="lg" className="min-h-screen" />;
