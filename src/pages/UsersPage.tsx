@@ -13,7 +13,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ActionMenu } from '../components/ui/ActionMenu';
-import { Users, UserPlus, Pencil, Network } from 'lucide-react';
+import { Users, UserPlus, Pencil, Network, UserX, UserCheck } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function UsersPage() {
@@ -60,6 +60,7 @@ export function UsersPage() {
   // Convex Mutations
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
   const updateProfileMutation = useMutation(api.profiles.updateProfile);
+  const toggleProfileStatusMutation = useMutation(api.profiles.toggleProfileStatus);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -159,6 +160,18 @@ export function UsersPage() {
     }
   };
 
+  const handleToggleStatus = async (user: Profile) => {
+    try {
+      await toggleProfileStatusMutation({
+        id: user._id as Id<"profiles">,
+        is_active: !user.is_active
+      });
+      toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update user status");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -218,7 +231,14 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell><Badge variant={user.is_active ? 'success' : 'default'}>{user.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
                     <TableCell className="text-right">
-                       <ActionMenu actions={[{ label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) }]} />
+                       <ActionMenu actions={[
+                         { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
+                         { 
+                           label: user.is_active ? 'Deactivate' : 'Activate', 
+                           icon: user.is_active ? UserX : UserCheck, 
+                           onClick: () => handleToggleStatus(user) 
+                         }
+                       ]} />
                     </TableCell>
                   </TableRow>
                 ))}
