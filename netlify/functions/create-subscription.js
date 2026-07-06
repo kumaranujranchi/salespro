@@ -1,6 +1,6 @@
-const Razorpay = require('razorpay');
+import Razorpay from 'razorpay';
 
-exports.handler = async function (event, context) {
+export async function handler(event, context) {
   // Only allow POST
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
