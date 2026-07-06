@@ -4,13 +4,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from '../../../convex/_generated/api';
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();
   const { user, signIn } = useAuth();
   const registerAffiliate = useMutation(api.referrals.affiliateRegister);
+  const sendEmailAction = useAction(api.emails.sendEmail);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -97,13 +98,13 @@ export function AffiliateRegistrationPage() {
 
       // 3. Trigger Welcome Email (optional, keep it for now)
       try {
-        await fetch('/.netlify/functions/send-affiliate-welcome', {
-          method: 'POST',
-          body: JSON.stringify({
-            email: formData.email,
-            name: formData.fullName,
+        await sendEmailAction({
+          type: 'AFFILIATE_WELCOME',
+          email: formData.email,
+          name: formData.fullName,
+          data: {
             referralCode: formData.referralCode.toUpperCase()
-          })
+          }
         });
       } catch (emailError) {
         console.error('Failed to send welcome email', emailError);

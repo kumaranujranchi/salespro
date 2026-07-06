@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { CheckCircle2, XCircle, X, LifeBuoy, Building2, ChevronDown, AlertCircle, Loader2 } from 'lucide-react';
@@ -32,6 +32,7 @@ export function PlatformSupportPage() {
   const ticketsData = useQuery(api.support.listAll);
   const tickets = ticketsData || [];
   const resolveTicket = useMutation(api.support.resolve);
+  const sendEmailAction = useAction(api.emails.sendEmail);
 
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -49,23 +50,19 @@ export function PlatformSupportPage() {
         resolution_notes: resolutionNote
       });
 
-      // 2. Send Email Notification
-      // Use the existing Netlify function if still relevant, 
-      // or implement Convex action for emails later.
+      // 2. Send Email Notification via Convex Action
       try {
-        await fetch('/.netlify/functions/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        if (selectedTicket.profiles?.email) {
+          await sendEmailAction({
             type: 'TICKET_RESOLVED',
-            email: selectedTicket.profiles?.email,
-            name: selectedTicket.profiles?.full_name,
+            email: selectedTicket.profiles.email,
+            name: selectedTicket.profiles.full_name,
             data: {
               ticketNumber: selectedTicket.ticket_number,
               resolution: resolutionNote
             }
-          })
-        });
+          });
+        }
       } catch (e) {
         console.warn('Failed to send email notification, but ticket was resolved.', e);
       }

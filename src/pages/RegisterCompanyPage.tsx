@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -18,6 +18,7 @@ export function RegisterCompanyPage() {
   const [isResending, setIsResending] = useState(false);
 
   const registerTenantMutation = useMutation(api.tenants.register);
+  const sendEmailAction = useAction(api.emails.sendEmail);
 
   const planName = searchParams.get('plan');
   const planAmount = searchParams.get('amount');
@@ -66,21 +67,12 @@ export function RegisterCompanyPage() {
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
-      const response = await fetch(`${window.location.origin}/.netlify/functions/send-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'OTP',
-          email: formData.email,
-          name: formData.fullName,
-          data: { otp: newOtp }
-        })
+      await sendEmailAction({
+        type: 'OTP',
+        email: formData.email,
+        name: formData.fullName,
+        data: { otp: newOtp }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.details || errorData.error || 'Failed to send verification email');
-      }
       
       setSuccess('A new verification code has been sent to your email.');
       setResendTimer(30);
@@ -106,21 +98,12 @@ export function RegisterCompanyPage() {
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
-      const response = await fetch(`${window.location.origin}/.netlify/functions/send-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'OTP',
-          email: formData.email,
-          name: formData.fullName,
-          data: { otp: newOtp }
-        })
+      await sendEmailAction({
+        type: 'OTP',
+        email: formData.email,
+        name: formData.fullName,
+        data: { otp: newOtp }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.details || errorData.error || 'Failed to send verification email');
-      }
 
       setVerificationStep(true);
       setResendTimer(30);

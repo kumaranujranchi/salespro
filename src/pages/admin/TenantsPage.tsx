@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from '../../../convex/_generated/api';
 import { useToast } from '../../contexts/ToastContext';
 import { useDialog } from '../../contexts/DialogContext';
@@ -38,6 +38,7 @@ export function TenantsPage() {
   const updateTenantMutation = useMutation(api.tenants.update);
   const removeTenantMutation = useMutation(api.tenants.remove);
   const resetPasswordMutation = useMutation(api.tenants.resetUserPassword);
+  const sendEmailAction = useAction(api.emails.sendEmail);
 
   const toast = useToast();
   const dialog = useDialog();
@@ -154,15 +155,15 @@ export function TenantsPage() {
     if (!confirmed) return;
 
     try {
-      await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'SUBSCRIPTION_REMINDER',
-          email: tenant.contact_email,
-          name: tenant.name,
-          data: { /* ... */ }
-        })
+      await sendEmailAction({
+        type: 'SUBSCRIPTION_REMINDER',
+        email: tenant.contact_email,
+        name: tenant.name,
+        data: {
+          daysRemaining: calculateTrialDaysLeft(tenant),
+          planName: tenant.plan_tier || 'RealSalePro',
+          expiryDate: tenant.trial_ends_at ? new Date(tenant.trial_ends_at).toLocaleDateString() : 'N/A'
+        }
       });
       toast.success('Reminder sent.');
     } catch (error) {

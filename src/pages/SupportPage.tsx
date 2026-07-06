@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -31,6 +31,7 @@ export function SupportPage() {
   );
   const tickets = (ticketsData || []) as Ticket[];
   const createTicket = useMutation(api.support.create);
+  const sendEmailAction = useAction(api.emails.sendEmail);
 
   const [showForm, setShowForm] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
@@ -56,19 +57,15 @@ export function SupportPage() {
         created_by: profile._id
       });
 
-      // 2. Send Confirmation Email via Netlify Function
+      // 2. Send Confirmation Email via Convex Action
       try {
-        await fetch('/.netlify/functions/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'TICKET_CREATED',
-            email: user.email,
-            name: profile.full_name,
-            data: {
-              subject: subject
-            }
-          })
+        await sendEmailAction({
+          type: 'TICKET_CREATED',
+          email: user.email,
+          name: profile.full_name,
+          data: {
+            subject: subject
+          }
         });
       } catch (e) {
         console.warn('Failed to send confirmation email, but ticket was created.', e);
