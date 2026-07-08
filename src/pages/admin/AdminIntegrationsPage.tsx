@@ -47,7 +47,8 @@ export function AdminIntegrationsPage() {
   // 99acres State
   const [nineNineSettings, setNineNineSettings] = useState({
     enabled: false,
-    apiKey: '',
+    username: '',
+    clientId: '',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
@@ -90,7 +91,8 @@ export function AdminIntegrationsPage() {
     if (tenant?.settings?.integrations?.nineNineAcres) {
       setNineNineSettings({
         enabled: tenant.settings.integrations.nineNineAcres.enabled ?? false,
-        apiKey: tenant.settings.integrations.nineNineAcres.apiKey ?? '',
+        username: tenant.settings.integrations.nineNineAcres.username ?? '',
+        clientId: tenant.settings.integrations.nineNineAcres.clientId ?? '',
         assignmentRule: (tenant.settings.integrations.nineNineAcres.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
@@ -306,7 +308,8 @@ export function AdminIntegrationsPage() {
           ...tenant.settings?.integrations,
           nineNineAcres: {
             enabled: nineNineSettings.enabled,
-            apiKey: nineNineSettings.apiKey,
+            username: nineNineSettings.username,
+            clientId: nineNineSettings.clientId,
             assignmentRule: nineNineSettings.assignmentRule,
           }
         }
@@ -412,10 +415,14 @@ export function AdminIntegrationsPage() {
     ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/housing-webhook?tenantId=${tenant._id}`
     : 'https://<your-convex-deployment>.convex.site/housing-webhook?tenantId=tenant_id';
 
+  const nineNineWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=99acres&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=99acres&token=tenant_id';
+
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
-  const isNineNineActive = nineNineSettings.enabled && !!nineNineSettings.apiKey;
+  const isNineNineActive = nineNineSettings.enabled && (!!nineNineSettings.username || !!nineNineSettings.clientId);
   const isMagicbricksActive = magicbricksSettings.enabled && !!magicbricksSettings.apiKey;
   const isHousingActive = housingSettings.enabled;
 
@@ -876,15 +883,17 @@ export function AdminIntegrationsPage() {
       {/* 99acres Modal Overlay */}
       {activeModal === 'nineNineAcres' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
                   <img src="/images/99acres.png" alt="99acres" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres API Configuration</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres Webhook Configuration</h2>
               </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+              <button onClick={() => {
+                setActiveModal(null);
+              }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -892,8 +901,8 @@ export function AdminIntegrationsPage() {
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable 99acres Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily enable or disable automated polling for 99acres leads.</p>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable 99acres Webhook Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from 99acres webhooks.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -906,35 +915,86 @@ export function AdminIntegrationsPage() {
                 </label>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    99acres Developer API Key / User ID
-                  </label>
-                  <input
-                    type="text"
-                    value={nineNineSettings.apiKey}
-                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, apiKey: e.target.value })}
-                    placeholder="Enter your 99acres API key"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                  />
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Obtain this key from your 99acres account representative or developer portal to enable scheduled API sync.
-                  </p>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Form controls */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      99acres Registered Email ID / Username
+                    </label>
+                    <input
+                      type="text"
+                      value={nineNineSettings.username || ""}
+                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, username: e.target.value })}
+                      placeholder="Enter registered Email or Username"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      99acres Client ID / Profile ID
+                    </label>
+                    <input
+                      type="text"
+                      value={nineNineSettings.clientId || ""}
+                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, clientId: e.target.value })}
+                      placeholder="Enter your 99acres Client ID"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Lead Assignment Rule
+                    </label>
+                    <Select
+                      value={nineNineSettings.assignmentRule}
+                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      options={[
+                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                      ]}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Lead Assignment Rule
-                  </label>
-                  <Select
-                    value={nineNineSettings.assignmentRule}
-                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                    options={[
-                      { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                      { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                    ]}
-                  />
+                {/* Integration Guide and Email Template */}
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Activation Guide</h3>
+                  <p>
+                    99acres does not offer a self-service panel. You must send your unique Webhook details to your **99acres Account Manager** or **Support Team** to activate it.
+                  </p>
+                  
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Request Type:</span> POST
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Content-Type:</span> application/json
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Webhook URL:</span>
+                      <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{nineNineWebhookUrl}</code>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200 dark:border-white/5">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Support:</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const emailText = `Subject: Query Regarding Webhook Integration - Client ID: ${nineNineSettings.clientId || "[Your Client ID]"}\n\nHi 99acres Support / Account Manager,\n\nI want to integrate my 99acres leads with my CRM using a Real-time Webhook Push.\n\nPlease configure my account with the following parameters:\n\n- Client ID: ${nineNineSettings.clientId || "[Your Client ID]"}\n- Username/Email: ${nineNineSettings.username || "[Your Registered Email]"}\n- Webhook URL: ${nineNineWebhookUrl}\n- Request Method: HTTP POST\n- Content-Type: application/json\n\nKindly activate "Real-time Webhook Push" for this URL as soon as possible and let me know once done.\n\nThanks!`;
+                        navigator.clipboard.writeText(emailText);
+                        toast.success("Email template copied to clipboard!");
+                      }}
+                      className="w-full text-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Copy Support Email Template
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

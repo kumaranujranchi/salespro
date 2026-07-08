@@ -46,6 +46,8 @@ export interface TenantSettings {
     nineNineAcres?: {
       enabled: boolean;
       apiKey?: string;
+      username?: string;
+      clientId?: string;
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
