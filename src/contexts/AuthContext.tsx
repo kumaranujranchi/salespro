@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Local state for "session" simulation since we're migrating
   // In a real app, this would come from useConvexAuth() or Clerk
   const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const convex = useConvex();
 
   // Fetch profile via Convex query
@@ -46,6 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null);
 
+  // Derived loading state to prevent race conditions during query fetching
+  const isProfileLoading = sessionUser !== null && profileData === undefined;
+  const isTenantLoading = (profileData && profileData.tenant_id) ? (tenantData === undefined) : false;
+  const loading = isSigningIn || isProfileLoading || isTenantLoading;
+
   useEffect(() => {
     if (profileData !== undefined) {
       // profileData resolved from Convex (either a profile or null)
@@ -59,11 +64,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(p ? { ...p, id: p._id as string } as Profile : null);
       }
-
-      if (!p || !p.tenant_id) {
-        // No profile or no tenant — stop loading immediately
-        setLoading(false);
-      }
     }
   }, [profileData, promoteMutation]);
 
@@ -72,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // tenantData resolved (either a tenant or null)
       const t = tenantData;
       setTenant(t ? { ...t, id: t._id as string } as Tenant : null);
-      setLoading(false);
     }
   }, [tenantData]);
 
@@ -83,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [affiliateData]);
 
   const signIn = async (email: string, password?: string) => {
-    setLoading(true);
+    setIsSigningIn(true);
     try {
       const profile = await convex.query(api.profiles.getByEmail, { email });
       if (!profile) {
@@ -97,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       return { error: err };
     } finally {
-      setLoading(false);
+      setIsSigningIn(false);
     }
   };
 
