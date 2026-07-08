@@ -25,7 +25,12 @@ export function AdminIntegrationsPage() {
 
   // Modal display states
   const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | null>(null);
+  const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
+  const [showNineNineHelp, setShowNineNineHelp] = useState(false);
+  const [showMagicbricksHelp, setShowMagicbricksHelp] = useState(false);
+  const [showHousingHelp, setShowHousingHelp] = useState(false);
+  const [showWhatsappHelp, setShowWhatsappHelp] = useState(false);
 
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
@@ -133,6 +138,16 @@ export function AdminIntegrationsPage() {
       });
     }
   }, [tenant]);
+
+  // Reset help states when active modal changes
+  useEffect(() => {
+    setShowMetaHelp(false);
+    setShowGoogleHelp(false);
+    setShowNineNineHelp(false);
+    setShowMagicbricksHelp(false);
+    setShowHousingHelp(false);
+    setShowWhatsappHelp(false);
+  }, [activeModal]);
 
   // Handle Facebook Redirect OAuth Code
   useEffect(() => {
@@ -667,114 +682,160 @@ export function AdminIntegrationsPage() {
                 <Facebook className="text-blue-600 dark:text-blue-400" size={24} />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Meta Lead Ads Configuration</h2>
               </div>
-              <button 
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMetaHelp(!showMetaHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showMetaHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button 
+                  onClick={() => setActiveModal(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-              {isMetaConnected && (
-                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Meta Integration</h4>
-                    <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Facebook.</p>
+              {showMetaHelp ? (
+                <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="text-blue-500" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Meta Integration Help Guide</h3>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={metaSettings.enabled}
-                      onChange={(e) => setMetaSettings({ ...metaSettings, enabled: e.target.checked })}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-              )}
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Status</h3>
-                  
-                  {!isMetaConnected ? (
-                    <div className="p-6 border border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-center space-y-3">
-                      <Facebook className="text-gray-300 dark:text-gray-700 w-10 h-10" />
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">No account linked</p>
-                        <p className="text-[11px] text-gray-400 mt-1 max-w-[200px]">
-                          Connect your Facebook Page to automatically pull new leads.
-                        </p>
-                      </div>
-                      <Button
-                        onClick={handleFacebookConnect}
-                        className="bg-[#1877F2] text-white hover:bg-[#166FE5] border-none font-semibold flex items-center gap-1.5 shadow-sm text-xs py-2"
-                      >
-                        <Facebook size={14} fill="currentColor" /> Connect Account
-                      </Button>
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200">Step 1: Connect your Facebook Account</h4>
+                      <p className="mt-1">
+                        Click the **"Connect Account"** button inside settings to log in with Facebook. RealSalePro will fetch the Facebook Pages linked to your profile automatically.
+                      </p>
                     </div>
-                  ) : (
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200">Step 2: Select Page & Map Leads</h4>
+                      <p className="mt-1">
+                        Select the specific business page running lead form campaigns. The CRM will automatically subscribe to page updates and configure webhook listeners.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200">💡 Important Development Bypass:</h4>
+                      <p className="mt-1">
+                        While in local/sandbox development mode, Facebook Ads lead ingestion can be fully tested by the development administrator account without requiring a formal business verification or app review.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                    <Button variant="neutral" onClick={() => setShowMetaHelp(false)}>
+                      Back to Settings
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {isMetaConnected && (
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Meta Integration</h4>
+                        <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Facebook.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={metaSettings.enabled}
+                          onChange={(e) => setMetaSettings({ ...metaSettings, enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  )}
+
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-xl flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-xs">
-                            FB
-                          </div>
-                          <div className="truncate max-w-[150px]">
-                            <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                              {metaSettings.pageName || "Connected Page"}
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Status</h3>
+                      
+                      {!isMetaConnected ? (
+                        <div className="p-6 border border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-center space-y-3">
+                          <Facebook className="text-gray-300 dark:text-gray-700 w-10 h-10" />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">No account linked</p>
+                            <p className="text-[11px] text-gray-400 mt-1 max-w-[200px]">
+                              Connect your Facebook Page to automatically pull new leads.
                             </p>
-                            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                              ID: {metaSettings.pageId}
+                          </div>
+                          <Button
+                            onClick={handleFacebookConnect}
+                            className="bg-[#1877F2] text-white hover:bg-[#166FE5] border-none font-semibold flex items-center gap-1.5 shadow-sm text-xs py-2"
+                          >
+                            <Facebook size={14} fill="currentColor" /> Connect Account
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-xs">
+                                FB
+                              </div>
+                              <div className="truncate max-w-[150px]">
+                                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                                  {metaSettings.pageName || "Connected Page"}
+                                </p>
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                                  ID: {metaSettings.pageId}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={handleDisconnectMeta}
+                              isLoading={savingMeta}
+                              className="text-[10px] py-1 px-2.5 flex items-center gap-1"
+                            >
+                              <LogOut size={10} /> Disconnect
+                            </Button>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              Lead Assignment Rule
+                            </label>
+                            <Select
+                              value={metaSettings.assignmentRule}
+                              onChange={(e) => setMetaSettings({ ...metaSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                              options={[
+                                { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                                { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                              ]}
+                            />
+                            <p className="text-[10px] text-gray-500 mt-1">
+                              {metaSettings.assignmentRule === 'manual' 
+                                ? 'New leads from Meta will import as unassigned. Admin can assign them manually.' 
+                                : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={handleDisconnectMeta}
-                          isLoading={savingMeta}
-                          className="text-[10px] py-1 px-2.5 flex items-center gap-1"
-                        >
-                          <LogOut size={10} /> Disconnect
-                        </Button>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                          Lead Assignment Rule
-                        </label>
-                        <Select
-                          value={metaSettings.assignmentRule}
-                          onChange={(e) => setMetaSettings({ ...metaSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                          options={[
-                            { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                            { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                          ]}
-                        />
-                        <p className="text-[10px] text-gray-500 mt-1">
-                          {metaSettings.assignmentRule === 'manual' 
-                            ? 'New leads from Meta will import as unassigned. Admin can assign them manually.' 
-                            : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Automated Sync</h3>
-                  <p>
-                    RealSalePro simplifies the integration. Once you log in with your Facebook account, our system handles the backend configuration:
-                  </p>
-                  <ul className="space-y-1.5 list-disc pl-4 mt-2">
-                    <li>Exchanges authentication codes for permanent page security tokens.</li>
-                    <li>Configures webhooks automatically on Facebook Graph API.</li>
-                    <li>Saves incoming leads and matches them directly to sales executives.</li>
-                  </ul>
-                </div>
-              </div>
+                    <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Automated Sync</h3>
+                      <p>
+                        RealSalePro simplifies the integration. Once you log in with your Facebook account, our system handles the backend configuration:
+                      </p>
+                      <ul className="space-y-1.5 list-disc pl-4 mt-2">
+                        <li>Exchanges authentication codes for permanent page security tokens.</li>
+                        <li>Configures webhooks automatically on Facebook Graph API.</li>
+                        <li>Saves incoming leads and matches them directly to sales executives.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
@@ -984,81 +1045,30 @@ export function AdminIntegrationsPage() {
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres Webhook Configuration</h2>
               </div>
-              <button onClick={() => {
-                setActiveModal(null);
-              }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowNineNineHelp(!showNineNineHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showNineNineHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable 99acres Webhook Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from 99acres webhooks.</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={nineNineSettings.enabled}
-                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, enabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Form controls */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      99acres Registered Email ID / Username
-                    </label>
-                    <input
-                      type="text"
-                      value={nineNineSettings.username || ""}
-                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, username: e.target.value })}
-                      placeholder="Enter registered Email or Username"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
+              {showNineNineHelp ? (
+                <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="text-blue-500" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">99acres Integration Help Guide</h3>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      99acres Client ID / Profile ID
-                    </label>
-                    <input
-                      type="text"
-                      value={nineNineSettings.clientId || ""}
-                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, clientId: e.target.value })}
-                      placeholder="Enter your 99acres Client ID"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Lead Assignment Rule
-                    </label>
-                    <Select
-                      value={nineNineSettings.assignmentRule}
-                      onChange={(e) => setNineNineSettings({ ...nineNineSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                      options={[
-                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {/* Integration Guide and Email Template */}
-                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Activation Guide</h3>
                   <p>
-                    99acres does not offer a self-service panel. You must send your unique Webhook details to your **99acres Account Manager** or **Support Team** to activate it.
+                    99acres does not offer a self-service webhook configuration panel. You must send your unique Webhook URL and account details to your **99acres Account Manager** or **Support Team** to activate it.
                   </p>
                   
                   <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
@@ -1076,6 +1086,7 @@ export function AdminIntegrationsPage() {
 
                   <div className="pt-2 border-t border-gray-200 dark:border-white/5">
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Support:</h4>
+                    <p className="mb-2 text-[10px]">Fill in your Client ID and Username on the settings page first, then copy this text:</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1088,15 +1099,83 @@ export function AdminIntegrationsPage() {
                       Copy Support Email Template
                     </button>
                   </div>
+                  
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                    <Button variant="neutral" onClick={() => setShowNineNineHelp(false)}>
+                      Back to Settings
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable 99acres Webhook Integration</h4>
+                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from 99acres webhooks.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={nineNineSettings.enabled}
+                        onChange={(e) => setNineNineSettings({ ...nineNineSettings, enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        99acres Registered Email ID / Username
+                      </label>
+                      <input
+                        type="text"
+                        value={nineNineSettings.username || ""}
+                        onChange={(e) => setNineNineSettings({ ...nineNineSettings, username: e.target.value })}
+                        placeholder="Enter registered Email or Username"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        99acres Client ID / Profile ID
+                      </label>
+                      <input
+                        type="text"
+                        value={nineNineSettings.clientId || ""}
+                        onChange={(e) => setNineNineSettings({ ...nineNineSettings, clientId: e.target.value })}
+                        placeholder="Enter your 99acres Client ID"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Lead Assignment Rule
+                      </label>
+                      <Select
+                        value={nineNineSettings.assignmentRule}
+                        onChange={(e) => setNineNineSettings({ ...nineNineSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                        options={[
+                          { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                          { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
-              <Button onClick={handleSaveNineNineSettings} isLoading={savingNineNine} className="gap-2">
-                <Save size={16} /> Save Settings
-              </Button>
+              {!showNineNineHelp && (
+                <Button onClick={handleSaveNineNineSettings} isLoading={savingNineNine} className="gap-2">
+                  <Save size={16} /> Save Settings
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1113,80 +1192,28 @@ export function AdminIntegrationsPage() {
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks Webhook Configuration</h2>
               </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowMagicbricksHelp(!showMagicbricksHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showMagicbricksHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Magicbricks Webhook Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Magicbricks webhooks.</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={magicbricksSettings.enabled}
-                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, enabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Options */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Magicbricks Registered Username / Agent ID
-                    </label>
-                    <input
-                      type="text"
-                      value={magicbricksSettings.username || ""}
-                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, username: e.target.value })}
-                      placeholder="Enter registered Username or Agent ID"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
+              {showMagicbricksHelp ? (
+                <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="text-blue-500" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Magicbricks Integration Help Guide</h3>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      LMS API Key (Optional Developer Key)
-                    </label>
-                    <input
-                      type="text"
-                      value={magicbricksSettings.apiKey || ""}
-                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, apiKey: e.target.value })}
-                      placeholder="Enter LMS API Key if provided"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
-                    <p className="text-[9px] text-gray-500 mt-1">
-                      Only required if your account uses a pull-based API sync instead of push webhook.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Lead Assignment Rule
-                    </label>
-                    <Select
-                      value={magicbricksSettings.assignmentRule}
-                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                      options={[
-                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {/* Guide */}
-                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Activation Guide</h3>
                   <p>
                     Magicbricks requires their support team to map webhooks manually. Send your Webhook URL and account details to your **Magicbricks Account Representative**.
                   </p>
@@ -1203,6 +1230,7 @@ export function AdminIntegrationsPage() {
 
                   <div className="pt-2 border-t border-gray-200 dark:border-white/5">
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Representative:</h4>
+                    <p className="mb-2 text-[10px]">Fill in your Username / Agent ID on the settings page first, then copy this text:</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1215,15 +1243,86 @@ export function AdminIntegrationsPage() {
                       Copy Magicbricks Support Email
                     </button>
                   </div>
+                  
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                    <Button variant="neutral" onClick={() => setShowMagicbricksHelp(false)}>
+                      Back to Settings
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Magicbricks Webhook Integration</h4>
+                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Magicbricks webhooks.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={magicbricksSettings.enabled}
+                        onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Magicbricks Registered Username / Agent ID
+                      </label>
+                      <input
+                        type="text"
+                        value={magicbricksSettings.username || ""}
+                        onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, username: e.target.value })}
+                        placeholder="Enter registered Username or Agent ID"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        LMS API Key (Optional Developer Key)
+                      </label>
+                      <input
+                        type="text"
+                        value={magicbricksSettings.apiKey || ""}
+                        onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, apiKey: e.target.value })}
+                        placeholder="Enter LMS API Key if provided"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                      <p className="text-[9px] text-gray-500 mt-1">
+                        Only required if your account uses a pull-based API sync instead of push webhook.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Lead Assignment Rule
+                      </label>
+                      <Select
+                        value={magicbricksSettings.assignmentRule}
+                        onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                        options={[
+                          { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                          { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
-              <Button onClick={handleSaveMagicbricksSettings} isLoading={savingMagicbricks} className="gap-2">
-                <Save size={16} /> Save Settings
-              </Button>
+              {!showMagicbricksHelp && (
+                <Button onClick={handleSaveMagicbricksSettings} isLoading={savingMagicbricks} className="gap-2">
+                  <Save size={16} /> Save Settings
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1240,77 +1339,28 @@ export function AdminIntegrationsPage() {
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Housing.com Webhook Configuration</h2>
               </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowHousingHelp(!showHousingHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showHousingHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Housing.com Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Housing.com webhooks.</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={housingSettings.enabled}
-                    onChange={(e) => setHousingSettings({ ...housingSettings, enabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Options */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Housing.com Registered Mobile Number
-                    </label>
-                    <input
-                      type="text"
-                      value={housingSettings.mobileNumber || ""}
-                      onChange={(e) => setHousingSettings({ ...housingSettings, mobileNumber: e.target.value })}
-                      placeholder="Enter registered mobile number"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
+              {showHousingHelp ? (
+                <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="text-blue-500" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Housing.com Integration Help Guide</h3>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Housing.com Profile ID
-                    </label>
-                    <input
-                      type="text"
-                      value={housingSettings.profileId || ""}
-                      onChange={(e) => setHousingSettings({ ...housingSettings, profileId: e.target.value })}
-                      placeholder="Enter your Housing Profile ID"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Lead Assignment Rule
-                    </label>
-                    <Select
-                      value={housingSettings.assignmentRule}
-                      onChange={(e) => setHousingSettings({ ...housingSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                      options={[
-                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {/* Guide */}
-                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
                   <p>
                     Housing.com requires their support team or your partner account representative to map the lead push hook.
                   </p>
@@ -1330,6 +1380,7 @@ export function AdminIntegrationsPage() {
 
                   <div className="pt-2 border-t border-gray-200 dark:border-white/5">
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Representative:</h4>
+                    <p className="mb-2 text-[10px]">Fill in your Profile ID and Mobile Number on the settings page first, then copy this text:</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1342,15 +1393,83 @@ export function AdminIntegrationsPage() {
                       Copy Housing Support Email
                     </button>
                   </div>
+                  
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                    <Button variant="neutral" onClick={() => setShowHousingHelp(false)}>
+                      Back to Settings
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Housing.com Integration</h4>
+                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Housing.com webhooks.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={housingSettings.enabled}
+                        onChange={(e) => setHousingSettings({ ...housingSettings, enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Housing.com Registered Mobile Number
+                      </label>
+                      <input
+                        type="text"
+                        value={housingSettings.mobileNumber || ""}
+                        onChange={(e) => setHousingSettings({ ...housingSettings, mobileNumber: e.target.value })}
+                        placeholder="Enter registered mobile number"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Housing.com Profile ID
+                      </label>
+                      <input
+                        type="text"
+                        value={housingSettings.profileId || ""}
+                        onChange={(e) => setHousingSettings({ ...housingSettings, profileId: e.target.value })}
+                        placeholder="Enter your Housing Profile ID"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Lead Assignment Rule
+                      </label>
+                      <Select
+                        value={housingSettings.assignmentRule}
+                        onChange={(e) => setHousingSettings({ ...housingSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                        options={[
+                          { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                          { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
-              <Button onClick={handleSaveHousingSettings} isLoading={savingHousing} className="gap-2">
-                <Save size={16} /> Save Settings
-              </Button>
+              {!showHousingHelp && (
+                <Button onClick={handleSaveHousingSettings} isLoading={savingHousing} className="gap-2">
+                  <Save size={16} /> Save Settings
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1367,68 +1486,28 @@ export function AdminIntegrationsPage() {
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Webhook Configuration</h2>
               </div>
-              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowWhatsappHelp(!showWhatsappHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showWhatsappHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable WhatsApp Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from WhatsApp webhooks.</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={whatsappSettings.enabled}
-                    onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Options */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Select WhatsApp Business Provider (BSP)
-                    </label>
-                    <Select
-                      value={whatsappSettings.provider}
-                      onChange={(e) => setWhatsappSettings({ ...whatsappSettings, provider: e.target.value as any })}
-                      options={[
-                        { label: 'Wati.io', value: 'wati' },
-                        { label: 'Aisensy', value: 'aisensy' },
-                        { label: 'Interakt', value: 'interakt' },
-                        { label: 'DoubleTick', value: 'doubletick' },
-                        { label: 'Custom / Other Provider', value: 'custom' }
-                      ]}
-                    />
+              {showWhatsappHelp ? (
+                <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className="text-blue-500" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">WhatsApp Integration Help Guide</h3>
                   </div>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Lead Assignment Rule
-                    </label>
-                    <Select
-                      value={whatsappSettings.assignmentRule}
-                      onChange={(e) => setWhatsappSettings({ ...whatsappSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                      options={[
-                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {/* Guide */}
-                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
                   <p>
                     WhatsApp BSPs send lead events to your CRM Webhook endpoint in real time. Please paste the webhook URL in your BSP developer portal or email it to your provider account manager.
                   </p>
@@ -1448,6 +1527,7 @@ export function AdminIntegrationsPage() {
 
                   <div className="pt-2 border-t border-gray-200 dark:border-white/5">
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Provider Support:</h4>
+                    <p className="mb-2 text-[10px]">Select your BSP provider on the settings page first, then copy this text:</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -1460,15 +1540,74 @@ export function AdminIntegrationsPage() {
                       Copy Webhook Request Email
                     </button>
                   </div>
+                  
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                    <Button variant="neutral" onClick={() => setShowWhatsappHelp(false)}>
+                      Back to Settings
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable WhatsApp Integration</h4>
+                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from WhatsApp webhooks.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={whatsappSettings.enabled}
+                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Select WhatsApp Business Provider (BSP)
+                      </label>
+                      <Select
+                        value={whatsappSettings.provider}
+                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, provider: e.target.value as any })}
+                        options={[
+                          { label: 'Wati.io', value: 'wati' },
+                          { label: 'Aisensy', value: 'aisensy' },
+                          { label: 'Interakt', value: 'interakt' },
+                          { label: 'DoubleTick', value: 'doubletick' },
+                          { label: 'Custom / Other Provider', value: 'custom' }
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Lead Assignment Rule
+                      </label>
+                      <Select
+                        value={whatsappSettings.assignmentRule}
+                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                        options={[
+                          { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                          { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
-              <Button onClick={handleSaveWhatsappSettings} isLoading={savingWhatsapp} className="gap-2">
-                <Save size={16} /> Save Settings
-              </Button>
+              {!showWhatsappHelp && (
+                <Button onClick={handleSaveWhatsappSettings} isLoading={savingWhatsapp} className="gap-2">
+                  <Save size={16} /> Save Settings
+                </Button>
+              )}
             </div>
           </div>
         </div>
