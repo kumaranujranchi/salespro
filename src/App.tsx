@@ -42,6 +42,7 @@ import { AffiliateRegistrationPage } from './pages/affiliates/AffiliateRegistrat
 import { AffiliateDashboardPage } from './pages/affiliates/AffiliateDashboardPage';
 import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -331,6 +332,17 @@ function App() {
                     <ProtectedRoute allowedRoles={['super_admin']}>
                       <DashboardLayout>
                         <SettingsPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/settings/integrations"
+                  element={
+                    <ProtectedRoute allowedRoles={['super_admin']}>
+                      <DashboardLayout>
+                        <AdminIntegrationsPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

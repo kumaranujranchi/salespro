@@ -28,6 +28,7 @@ import {
   Zap,
   Building2,
   Settings,
+  Plug,
   LucideIcon
 } from 'lucide-react';
 
@@ -90,6 +91,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
+      { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin'] },
       { label: 'Settings', path: '/settings', icon: Settings, roles: ['super_admin'] },
     ]
   }
