@@ -283,85 +283,63 @@ export function AdminIntegrationsPage() {
         <p className="text-gray-600 dark:text-gray-400 mt-2">Connect external advertising platforms to import leads directly into your CRM.</p>
       </div>
 
-      {/* Grid of integrations cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-        {/* Meta Integration Card */}
-        <div 
-          onClick={() => setActiveModal('meta')}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
-        >
-          <div>
-            <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
-                <Facebook size={24} fill="currentColor" />
+      {/* Categories */}
+      <div className="space-y-8 pt-4">
+        {/* Social Media Category */}
+        <div>
+          <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Social Media</h2>
+          <div className="flex flex-wrap gap-6 mt-4">
+            <div 
+              onClick={() => setActiveModal('meta')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMetaActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isMetaActive ? 'bg-emerald-500' : isMetaConnected ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              <div className="w-16 h-16 bg-[#ECF2FF] rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/facebook_ads.png" 
+                  alt="Facebook & Instagram" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
-                isMetaActive 
-                  ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400' 
-                  : isMetaConnected 
-                    ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  isMetaActive 
-                    ? 'bg-emerald-500' 
-                    : isMetaConnected 
-                      ? 'bg-amber-500'
-                      : 'bg-slate-400'
-                }`} />
-                {isMetaActive ? 'Active' : isMetaConnected ? 'Disabled' : 'Not Connected'}
+              
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Facebook & Instagram
               </span>
             </div>
-            
-            <div className="mt-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Meta Lead Ads</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
-                Connect your Facebook Business Pages to import leads from Facebook and Instagram Ads instantly.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 font-semibold">
-            <span>Configure settings</span>
-            <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
 
-        {/* Google Ads Integration Card */}
-        <div 
-          onClick={() => setActiveModal('google')}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden"
-        >
-          <div>
-            <div className="flex items-start justify-between">
-              <div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-500 fill-current" viewBox="0 0 24 24">
-                  <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.113-5.111 4.113-3.41 0-6.19-2.779-6.19-6.19s2.78-6.19 6.19-6.19c1.483 0 2.825.524 3.878 1.547l3.123-3.124C19.046 2.372 15.824 1 12.24 1 5.756 1 .5 6.256.5 12.74s5.256 11.74 11.74 11.74c7.17 0 11.24-5.02 11.24-11.44 0-.771-.06-1.5-.2-2.19H12.24z"/>
-                </svg>
+        {/* Google Apps Category */}
+        <div>
+          <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Google Apps</h2>
+          <div className="flex flex-wrap gap-6 mt-4">
+            <div 
+              onClick={() => setActiveModal('google')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/google_ads.png" 
+                  alt="Google Ads" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
-                isGoogleActive 
-                  ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  isGoogleActive ? 'bg-emerald-500' : 'bg-slate-400'
-                }`} />
-                {isGoogleActive ? 'Active' : 'Not Connected'}
+              
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Google Ads
               </span>
             </div>
-            
-            <div className="mt-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Google Ads</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
-                Sync lead details from Google Search and Display Ads lead form extensions in real time.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 font-semibold">
-            <span>Configure settings</span>
-            <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>
