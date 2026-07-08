@@ -253,4 +253,83 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/housing-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const tenantIdString = url.searchParams.get("tenantId");
+      if (!tenantIdString) {
+        console.error("Missing tenantId query parameter in Housing.com Webhook call.");
+        return new Response("Missing tenantId", { status: 400 });
+      }
+
+      let tenantId;
+      try {
+        tenantId = ctx.db.normalizeId("tenants", tenantIdString);
+      } catch (e) {
+        tenantId = tenantIdString;
+      }
+
+      if (!tenantId) {
+        console.error(`Invalid tenantId: ${tenantIdString}`);
+        return new Response("Invalid tenantId", { status: 400 });
+      }
+
+      const tenant = await ctx.runQuery(api.tenants.getById, { id: tenantId as any });
+      if (!tenant) {
+        console.error(`No tenant found for ID: ${tenantIdString}`);
+        return new Response("Tenant not found", { status: 404 });
+      }
+
+      const housingSettings = tenant.settings?.integrations?.housing;
+      if (!housingSettings || !housingSettings.enabled) {
+        console.warn(`Housing.com integration is disabled for tenant: ${tenant.name}`);
+        return new Response("Integration disabled", { status: 403 });
+      }
+
+      const body = await request.json();
+      console.log(`Received Housing.com Webhook POST payload for tenant ${tenant.name}:`, JSON.stringify(body));
+
+      const customerName = body.name || body.customer_name || "Housing Lead";
+      const mobile = body.phone || body.mobile || body.phone_number || "";
+      const email = body.email || "";
+      const city = body.city || "";
+      const project = body.project || body.message || body.description || "";
+
+      if (!mobile) {
+        console.warn("Skipping Housing.com lead import: Mobile number not found in payload");
+        return new Response("Phone number missing", { status: 400 });
+      }
+
+      // Save lead via Convex processWebhookLead mutation
+      await ctx.runMutation(api.leads.processWebhookLead, {
+        tenant_id: tenant._id,
+        customer_name: customerName,
+        mobile,
+        email: email || undefined,
+        city: city || undefined,
+        budget_range: project || undefined,
+        assignment_rule: housingSettings.assignmentRule || "manual",
+        lead_source: "Housing",
+      });
+
+      console.log(`Successfully processed Housing.com lead for tenant ${tenant.name}. Mobile: ${mobile}`);
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+
+    } catch (error: any) {
+      console.error("Error processing Housing.com Webhook:", error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  }),
+});
+
 export default http;

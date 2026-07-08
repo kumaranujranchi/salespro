@@ -43,6 +43,23 @@ export interface TenantSettings {
       googleKey?: string;
       assignmentRule: 'manual' | 'round_robin';
     };
+    nineNineAcres?: {
+      enabled: boolean;
+      apiKey?: string;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
+    magicbricks?: {
+      enabled: boolean;
+      apiKey?: string;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
+    housing?: {
+      enabled: boolean;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
   };
 }
 

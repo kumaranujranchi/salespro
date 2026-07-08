@@ -13,6 +13,9 @@ export function AdminIntegrationsPage() {
   const toast = useToast();
   const [savingMeta, setSavingMeta] = useState(false);
   const [savingGoogle, setSavingGoogle] = useState(false);
+  const [savingNineNine, setSavingNineNine] = useState(false);
+  const [savingMagicbricks, setSavingMagicbricks] = useState(false);
+  const [savingHousing, setSavingHousing] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   
   // Facebook OAuth Actions
@@ -20,7 +23,7 @@ export function AdminIntegrationsPage() {
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
 
   // Modal display states
-  const [activeModal, setActiveModal] = useState<'meta' | 'google' | null>(null);
+  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | null>(null);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
 
   // Meta Integration State
@@ -40,6 +43,26 @@ export function AdminIntegrationsPage() {
   });
 
   const [showGoogleKey, setShowGoogleKey] = useState(false);
+
+  // 99acres State
+  const [nineNineSettings, setNineNineSettings] = useState({
+    enabled: false,
+    apiKey: '',
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
+
+  // Magicbricks State
+  const [magicbricksSettings, setMagicbricksSettings] = useState({
+    enabled: false,
+    apiKey: '',
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
+
+  // Housing State
+  const [housingSettings, setHousingSettings] = useState({
+    enabled: false,
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
 
   // Pages selection modal state
   const [pagesList, setPagesList] = useState<any[]>([]);
@@ -64,6 +87,26 @@ export function AdminIntegrationsPage() {
         assignmentRule: (tenant.settings.integrations.google.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
+    if (tenant?.settings?.integrations?.nineNineAcres) {
+      setNineNineSettings({
+        enabled: tenant.settings.integrations.nineNineAcres.enabled ?? false,
+        apiKey: tenant.settings.integrations.nineNineAcres.apiKey ?? '',
+        assignmentRule: (tenant.settings.integrations.nineNineAcres.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
+    if (tenant?.settings?.integrations?.magicbricks) {
+      setMagicbricksSettings({
+        enabled: tenant.settings.integrations.magicbricks.enabled ?? false,
+        apiKey: tenant.settings.integrations.magicbricks.apiKey ?? '',
+        assignmentRule: (tenant.settings.integrations.magicbricks.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
+    if (tenant?.settings?.integrations?.housing) {
+      setHousingSettings({
+        enabled: tenant.settings.integrations.housing.enabled ?? false,
+        assignmentRule: (tenant.settings.integrations.housing.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
   }, [tenant]);
 
   // Handle Facebook Redirect OAuth Code
@@ -73,7 +116,6 @@ export function AdminIntegrationsPage() {
     const state = urlParams.get('state');
 
     if (code && state === 'meta_auth') {
-      // Clear URL params immediately to prevent reload loop
       window.history.replaceState({}, document.title, window.location.pathname);
       
       setActiveModal('meta');
@@ -116,13 +158,11 @@ export function AdminIntegrationsPage() {
     setConnectingPageId(page.id);
 
     try {
-      // 1. Automatically subscribe Facebook page to our app's webhook
       await subscribePageToWebhookAction({
         pageId: page.id,
         pageAccessToken: page.access_token
       });
 
-      // 2. Save settings to database
       const updatedSettings = {
         ...tenant.settings,
         integrations: {
@@ -255,6 +295,104 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleSaveNineNineSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingNineNine(true);
+
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          nineNineAcres: {
+            enabled: nineNineSettings.enabled,
+            apiKey: nineNineSettings.apiKey,
+            assignmentRule: nineNineSettings.assignmentRule,
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success('99acres integration settings updated successfully!');
+      setActiveModal(null);
+    } catch (error: any) {
+      console.error('Error saving 99acres settings:', error);
+      toast.error(error.message || 'Failed to save 99acres settings.');
+    } finally {
+      setSavingNineNine(false);
+    }
+  };
+
+  const handleSaveMagicbricksSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingMagicbricks(true);
+
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          magicbricks: {
+            enabled: magicbricksSettings.enabled,
+            apiKey: magicbricksSettings.apiKey,
+            assignmentRule: magicbricksSettings.assignmentRule,
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success('Magicbricks integration settings updated successfully!');
+      setActiveModal(null);
+    } catch (error: any) {
+      console.error('Error saving Magicbricks settings:', error);
+      toast.error(error.message || 'Failed to save Magicbricks settings.');
+    } finally {
+      setSavingMagicbricks(false);
+    }
+  };
+
+  const handleSaveHousingSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingHousing(true);
+
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          housing: {
+            enabled: housingSettings.enabled,
+            assignmentRule: housingSettings.assignmentRule,
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success('Housing.com integration settings updated successfully!');
+      setActiveModal(null);
+    } catch (error: any) {
+      console.error('Error saving Housing.com settings:', error);
+      toast.error(error.message || 'Failed to save Housing.com settings.');
+    } finally {
+      setSavingHousing(false);
+    }
+  };
+
   if (profile?.role !== 'super_admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -270,9 +408,16 @@ export function AdminIntegrationsPage() {
     ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/google-webhook?tenantId=${tenant._id}`
     : 'https://<your-convex-deployment>.convex.site/google-webhook?tenantId=tenant_id';
 
+  const housingWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/housing-webhook?tenantId=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/housing-webhook?tenantId=tenant_id';
+
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
+  const isNineNineActive = nineNineSettings.enabled && !!nineNineSettings.apiKey;
+  const isMagicbricksActive = magicbricksSettings.enabled && !!magicbricksSettings.apiKey;
+  const isHousingActive = housingSettings.enabled;
 
   return (
     <div className="space-y-6">
@@ -283,7 +428,7 @@ export function AdminIntegrationsPage() {
         <p className="text-gray-600 dark:text-gray-400 mt-2">Connect external advertising platforms to import leads directly into your CRM.</p>
       </div>
 
-      {/* Categories */}
+      {/* Grid of integrations cards */}
       <div className="space-y-8 pt-4">
         {/* Social Media Category */}
         <div>
@@ -342,6 +487,66 @@ export function AdminIntegrationsPage() {
             </div>
           </div>
         </div>
+
+        {/* Property Portals Category */}
+        <div>
+          <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Property Portals</h2>
+          <div className="flex flex-wrap gap-6 mt-4">
+            {/* 99acres */}
+            <div 
+              onClick={() => setActiveModal('nineNineAcres')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isNineNineActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isNineNineActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+              <div className="w-16 h-16 bg-[#FFF2E8] rounded-2xl flex flex-col items-center justify-center border border-orange-100 dark:border-orange-500/10">
+                <span className="text-orange-600 font-extrabold text-xl leading-none">99</span>
+                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider mt-0.5">acres</span>
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                99acres
+              </span>
+            </div>
+
+            {/* Magicbricks */}
+            <div 
+              onClick={() => setActiveModal('magicbricks')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMagicbricksActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isMagicbricksActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+              <div className="w-16 h-16 bg-[#FFF1F0] rounded-2xl flex flex-col items-center justify-center border border-red-100 dark:border-red-500/10">
+                <span className="text-red-600 font-extrabold text-xl leading-none">magic</span>
+                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider">bricks</span>
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Magicbricks
+              </span>
+            </div>
+
+            {/* Housing.com */}
+            <div 
+              onClick={() => setActiveModal('housing')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isHousingActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isHousingActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+              <div className="w-16 h-16 bg-[#E6F8F6] rounded-2xl flex flex-col items-center justify-center border border-teal-100 dark:border-teal-500/10">
+                <span className="text-teal-600 font-extrabold text-xl leading-none">H</span>
+                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider mt-0.5">housing</span>
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Housing.com
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Meta Modal Overlay */}
@@ -362,7 +567,6 @@ export function AdminIntegrationsPage() {
             </div>
 
             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-              {/* Master Activation Toggle */}
               {isMetaConnected && (
                 <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
                   <div>
@@ -382,7 +586,6 @@ export function AdminIntegrationsPage() {
               )}
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Credentials */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Status</h3>
                   
@@ -451,7 +654,6 @@ export function AdminIntegrationsPage() {
                   )}
                 </div>
 
-                {/* Meta instructions */}
                 <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Automated Sync</h3>
                   <p>
@@ -560,7 +762,6 @@ export function AdminIntegrationsPage() {
             ) : (
               <>
                 <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-                  {/* Activation Switch */}
                   <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Ads Integration</h4>
@@ -578,7 +779,6 @@ export function AdminIntegrationsPage() {
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
-                    {/* Credentials Form */}
                     <div className="space-y-4">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
                       
@@ -627,7 +827,6 @@ export function AdminIntegrationsPage() {
                       </div>
                     </div>
 
-                    {/* Google Instructions */}
                     <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
                       <ol className="space-y-3 list-decimal pl-4">
@@ -661,6 +860,232 @@ export function AdminIntegrationsPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 99acres Modal Overlay */}
+      {activeModal === 'nineNineAcres' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#FFF2E8] rounded-lg flex items-center justify-center font-extrabold text-[#FF6A00] text-sm border border-orange-100">99</div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres API Configuration</h2>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable 99acres Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily enable or disable automated polling for 99acres leads.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={nineNineSettings.enabled}
+                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    99acres Developer API Key / User ID
+                  </label>
+                  <input
+                    type="text"
+                    value={nineNineSettings.apiKey}
+                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, apiKey: e.target.value })}
+                    placeholder="Enter your 99acres API key"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Obtain this key from your 99acres account representative or developer portal to enable scheduled API sync.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Lead Assignment Rule
+                  </label>
+                  <Select
+                    value={nineNineSettings.assignmentRule}
+                    onChange={(e) => setNineNineSettings({ ...nineNineSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                    options={[
+                      { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                      { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+              <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
+              <Button onClick={handleSaveNineNineSettings} isLoading={savingNineNine} className="gap-2">
+                <Save size={16} /> Save Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Magicbricks Modal Overlay */}
+      {activeModal === 'magicbricks' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#FFF1F0] rounded-lg flex items-center justify-center font-extrabold text-[#D9383A] text-[10px] border border-red-100">MB</div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks API Configuration</h2>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Magicbricks Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily enable or disable automated polling for Magicbricks leads.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={magicbricksSettings.enabled}
+                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Magicbricks Developer API Key
+                  </label>
+                  <input
+                    type="text"
+                    value={magicbricksSettings.apiKey}
+                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, apiKey: e.target.value })}
+                    placeholder="Enter your Magicbricks API key"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Specify the security key provided by Magicbricks to authenticate lead query pull requests.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Lead Assignment Rule
+                  </label>
+                  <Select
+                    value={magicbricksSettings.assignmentRule}
+                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                    options={[
+                      { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                      { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+              <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
+              <Button onClick={handleSaveMagicbricksSettings} isLoading={savingMagicbricks} className="gap-2">
+                <Save size={16} /> Save Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Housing.com Modal Overlay */}
+      {activeModal === 'housing' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-[#E6F8F6] rounded-lg flex items-center justify-center font-extrabold text-teal-600 text-sm border border-teal-100">H</div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Housing.com Webhook Configuration</h2>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Housing.com Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Housing.com webhooks.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={housingSettings.enabled}
+                    onChange={(e) => setHousingSettings({ ...housingSettings, enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Options */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Lead Assignment Rule
+                    </label>
+                    <Select
+                      value={housingSettings.assignmentRule}
+                      onChange={(e) => setHousingSettings({ ...housingSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      options={[
+                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Guide */}
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
+                  <ol className="space-y-3 list-decimal pl-4">
+                    <li>Contact your Housing.com partner support or log in to your developer dashboard.</li>
+                    <li>Provide the following callback URL for the **Lead Push Webhook** configuration:
+                      <div className="mt-2">
+                        <span className="font-semibold block text-slate-700 dark:text-slate-300 text-[11px]">Webhook URL:</span>
+                        <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 break-all select-all font-mono text-[10px] text-blue-500">{housingWebhookUrl}</code>
+                      </div>
+                    </li>
+                    <li>Send a test request via Housing.com. Leads will instantly appear in the Leads list under source **Housing**.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+              <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
+              <Button onClick={handleSaveHousingSettings} isLoading={savingHousing} className="gap-2">
+                <Save size={16} /> Save Settings
+              </Button>
+            </div>
           </div>
         </div>
       )}
