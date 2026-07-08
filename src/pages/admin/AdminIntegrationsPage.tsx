@@ -16,6 +16,7 @@ export function AdminIntegrationsPage() {
   const [savingNineNine, setSavingNineNine] = useState(false);
   const [savingMagicbricks, setSavingMagicbricks] = useState(false);
   const [savingHousing, setSavingHousing] = useState(false);
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   
   // Facebook OAuth Actions
@@ -23,7 +24,7 @@ export function AdminIntegrationsPage() {
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
 
   // Modal display states
-  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | null>(null);
+  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | null>(null);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
 
   // Meta Integration State
@@ -66,6 +67,13 @@ export function AdminIntegrationsPage() {
     enabled: false,
     mobileNumber: '',
     profileId: '',
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
+
+  // WhatsApp State
+  const [whatsappSettings, setWhatsappSettings] = useState({
+    enabled: false,
+    provider: 'wati' as 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
@@ -115,6 +123,13 @@ export function AdminIntegrationsPage() {
         mobileNumber: tenant.settings.integrations.housing.mobileNumber ?? '',
         profileId: tenant.settings.integrations.housing.profileId ?? '',
         assignmentRule: (tenant.settings.integrations.housing.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
+    if (tenant?.settings?.integrations?.whatsapp) {
+      setWhatsappSettings({
+        enabled: tenant.settings.integrations.whatsapp.enabled ?? false,
+        provider: (tenant.settings.integrations.whatsapp.provider as any) ?? 'wati',
+        assignmentRule: (tenant.settings.integrations.whatsapp.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
   }, [tenant]);
@@ -408,6 +423,39 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleSaveWhatsappSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingWhatsapp(true);
+
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          whatsapp: {
+            enabled: whatsappSettings.enabled,
+            provider: whatsappSettings.provider,
+            assignmentRule: whatsappSettings.assignmentRule,
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success('WhatsApp integration settings updated successfully!');
+      setActiveModal(null);
+    } catch (error: any) {
+      console.error('Error saving WhatsApp settings:', error);
+      toast.error(error.message || 'Failed to save WhatsApp settings.');
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  };
+
   if (profile?.role !== 'super_admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -435,12 +483,17 @@ export function AdminIntegrationsPage() {
     ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=magicbricks&token=${tenant._id}`
     : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=magicbricks&token=tenant_id';
 
+  const whatsappWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=whatsapp&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=whatsapp&token=tenant_id';
+
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
   const isNineNineActive = nineNineSettings.enabled && (!!nineNineSettings.username || !!nineNineSettings.clientId);
   const isMagicbricksActive = magicbricksSettings.enabled && (!!magicbricksSettings.username || !!magicbricksSettings.agentId || !!magicbricksSettings.apiKey);
   const isHousingActive = housingSettings.enabled && (!!housingSettings.mobileNumber || !!housingSettings.profileId);
+  const isWhatsappActive = whatsappSettings.enabled;
 
   return (
     <div className="space-y-6">
@@ -477,6 +530,30 @@ export function AdminIntegrationsPage() {
               
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Facebook & Instagram
+              </span>
+            </div>
+
+            {/* WhatsApp Integration Card */}
+            <div 
+              onClick={() => setActiveModal('whatsapp')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isWhatsappActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isWhatsappActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              <div className="w-16 h-16 bg-[#E8F8F0] rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/150px-WhatsApp.svg.png" 
+                  alt="WhatsApp Integration" 
+                  className="w-11 h-11 object-contain"
+                />
+              </div>
+              
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                WhatsApp Webhook
               </span>
             </div>
           </div>
@@ -1272,6 +1349,124 @@ export function AdminIntegrationsPage() {
             <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
               <Button onClick={handleSaveHousingSettings} isLoading={savingHousing} className="gap-2">
+                <Save size={16} /> Save Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Modal Overlay */}
+      {activeModal === 'whatsapp' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/150px-WhatsApp.svg.png" alt="WhatsApp" className="w-6 h-6 object-contain" />
+                </div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Webhook Configuration</h2>
+              </div>
+              <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable WhatsApp Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from WhatsApp webhooks.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={whatsappSettings.enabled}
+                    onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Options */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Select WhatsApp Business Provider (BSP)
+                    </label>
+                    <Select
+                      value={whatsappSettings.provider}
+                      onChange={(e) => setWhatsappSettings({ ...whatsappSettings, provider: e.target.value as any })}
+                      options={[
+                        { label: 'Wati.io', value: 'wati' },
+                        { label: 'Aisensy', value: 'aisensy' },
+                        { label: 'Interakt', value: 'interakt' },
+                        { label: 'DoubleTick', value: 'doubletick' },
+                        { label: 'Custom / Other Provider', value: 'custom' }
+                      ]}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Lead Assignment Rule
+                    </label>
+                    <Select
+                      value={whatsappSettings.assignmentRule}
+                      onChange={(e) => setWhatsappSettings({ ...whatsappSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      options={[
+                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Guide */}
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
+                  <p>
+                    WhatsApp BSPs send lead events to your CRM Webhook endpoint in real time. Please paste the webhook URL in your BSP developer portal or email it to your provider account manager.
+                  </p>
+                  
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Request Type:</span> POST
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Content-Type:</span> application/json
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Webhook URL:</span>
+                      <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{whatsappWebhookUrl}</code>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200 dark:border-white/5">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Provider Support:</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const emailText = `Subject: Webhook Endpoint Setup Request for WhatsApp Lead Push API\n\nHi Partner Support,\n\nI want to integrate my WhatsApp leads with my Real Estate CRM via Webhook lead push.\n\nPlease configure my webhook settings with the following details:\n\n- Webhook URL: ${whatsappWebhookUrl}\n- Request Type: HTTP POST\n- Content-Type: application/json\n- Events: Inbound Message / New Lead Inquiry\n\nKindly activate this mapping on my active number and let me know once verified.\n\nThanks!`;
+                        navigator.clipboard.writeText(emailText);
+                        toast.success("WhatsApp support email template copied!");
+                      }}
+                      className="w-full text-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Copy Webhook Request Email
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+              <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
+              <Button onClick={handleSaveWhatsappSettings} isLoading={savingWhatsapp} className="gap-2">
                 <Save size={16} /> Save Settings
               </Button>
             </div>

@@ -175,6 +175,31 @@ export const processInboundLead = action({
         ? parsedBody.payload?.requirement?.localities.join(", ")
         : parsedBody.payload?.requirement?.localities || "";
       budget = parsedBody.payload?.requirement?.max_budget?.toString() || "";
+    } else if (portalLower.includes("whatsapp")) {
+      const whatsappSettings = tenant.settings?.integrations?.whatsapp;
+      assignmentRule = whatsappSettings?.assignmentRule || "manual";
+
+      const provider = whatsappSettings?.provider || 'custom';
+      if (provider === 'wati') {
+        customerName = parsedBody.senderName || "WhatsApp Lead";
+        customerPhone = sanitizePhoneNumber(parsedBody.waId || "");
+        propertyTitle = parsedBody.text || "";
+      } else if (provider === 'aisensy') {
+        customerName = parsedBody.contact?.name || "WhatsApp Lead";
+        customerPhone = sanitizePhoneNumber(parsedBody.contact?.phone || "");
+        propertyTitle = parsedBody.message?.text || "";
+      } else if (provider === 'interakt') {
+        customerName = parsedBody.user?.traits?.name || "WhatsApp Lead";
+        customerPhone = sanitizePhoneNumber(parsedBody.user?.phone || "");
+      } else if (provider === 'doubletick') {
+        customerName = parsedBody.data?.name || "WhatsApp Lead";
+        customerPhone = sanitizePhoneNumber(parsedBody.data?.phone || "");
+        propertyTitle = parsedBody.data?.message?.text || "";
+      } else {
+        customerName = parsedBody.name || parsedBody.customer_name || "WhatsApp Lead";
+        customerPhone = sanitizePhoneNumber(parsedBody.phone || parsedBody.mobile || parsedBody.waId || "");
+        propertyTitle = parsedBody.message || parsedBody.text || "";
+      }
     } else {
       console.error(`Unsupported portal source: ${portal}`);
       return;
@@ -187,7 +212,13 @@ export const processInboundLead = action({
 
     await ctx.runMutation(api.leads.saveUnifiedInboundLead, {
       tenant_id: tenant._id,
-      lead_source: portalLower.includes("99acres") ? "99acres" : portalLower.includes("magicbricks") ? "Magicbricks" : "Housing",
+      lead_source: portalLower.includes("99acres")
+        ? "99acres"
+        : portalLower.includes("magicbricks")
+        ? "Magicbricks"
+        : portalLower.includes("housing")
+        ? "Housing"
+        : "WhatsApp",
       customer_name: customerName,
       customer_phone: customerPhone,
       customer_email: customerEmail,

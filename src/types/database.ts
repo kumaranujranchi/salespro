@@ -66,6 +66,12 @@ export interface TenantSettings {
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
+    whatsapp?: {
+      enabled: boolean;
+      provider?: 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom';
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
   };
 }
 
