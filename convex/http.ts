@@ -108,7 +108,7 @@ http.route({
               }
 
               // Process lead via Convex mutation
-              await ctx.runMutation(api.leads.processMetaLead, {
+              await ctx.runMutation(api.leads.processWebhookLead, {
                 tenant_id: tenant._id,
                 customer_name: customerName,
                 mobile,
@@ -116,6 +116,7 @@ http.route({
                 city: city || undefined,
                 budget_range: budgetRange || undefined,
                 assignment_rule: metaSettings.assignmentRule || "manual",
+                lead_source: "Meta",
               });
 
               console.log(`Successfully processed Meta lead for tenant ${tenant.name}. Mobile: ${mobile}`);
@@ -133,8 +134,119 @@ http.route({
     } catch (error: any) {
       console.error("Error processing Meta webhook:", error);
       // Return 200 even on error to prevent Facebook from retrying and disabling the webhook
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ success: true, error: error.message }), {
         status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  }),
+});
+
+http.route({
+  path: "/google-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const tenantIdString = url.searchParams.get("tenantId");
+      if (!tenantIdString) {
+        console.error("Missing tenantId query parameter in Google Ads Webhook call.");
+        return new Response("Missing tenantId", { status: 400 });
+      }
+
+      // Look up the tenant
+      let tenantId;
+      try {
+        tenantId = ctx.db.normalizeId("tenants", tenantIdString);
+      } catch (e) {
+        tenantId = tenantIdString;
+      }
+
+      if (!tenantId) {
+        console.error(`Invalid tenantId: ${tenantIdString}`);
+        return new Response("Invalid tenantId", { status: 400 });
+      }
+
+      const tenant = await ctx.runQuery(api.tenants.getById, { id: tenantId as any });
+      if (!tenant) {
+        console.error(`No tenant found for ID: ${tenantIdString}`);
+        return new Response("Tenant not found", { status: 404 });
+      }
+
+      const googleSettings = tenant.settings?.integrations?.google;
+      if (!googleSettings || !googleSettings.enabled) {
+        console.warn(`Google Ads integration is disabled or not configured for tenant: ${tenant.name}`);
+        return new Response("Integration disabled", { status: 403 });
+      }
+
+      const body = await request.json();
+      console.log(`Received Google Webhook POST payload for tenant ${tenant.name}:`, JSON.stringify(body));
+
+      // Validate google_key
+      const receivedKey = body.google_key;
+      const configuredKey = googleSettings.googleKey;
+
+      if (!configuredKey || receivedKey !== configuredKey) {
+        console.error(`Unauthorized Google Webhook call for tenant ${tenant.name}. Key mismatch. Received: ${receivedKey}`);
+        return new Response("Unauthorized", { status: 401 });
+      }
+
+      // Map fields from body.user_column_data
+      let customerName = "Google Lead";
+      let mobile = "";
+      let email = "";
+      let city = "";
+
+      const columnData = body.user_column_data || [];
+      for (const col of columnData) {
+        const id = col.column_id;
+        const val = col.string_value;
+        if (!val) continue;
+
+        if (id === "FULL_NAME" || id === "FIRST_NAME") {
+          customerName = val;
+        } else if (id === "LAST_NAME") {
+          if (customerName === "Google Lead" || customerName === "") {
+            customerName = val;
+          } else {
+            customerName = `${customerName} ${val}`;
+          }
+        } else if (id === "PHONE_NUMBER") {
+          mobile = val;
+        } else if (id === "EMAIL") {
+          email = val;
+        } else if (id === "CITY" || id === "POSTAL_CODE") {
+          city = val;
+        }
+      }
+
+      if (!mobile) {
+        console.warn("Skipping Google lead import: Phone number not found in column data");
+        return new Response("Phone number missing", { status: 400 });
+      }
+
+      // Save lead via Convex processWebhookLead mutation
+      await ctx.runMutation(api.leads.processWebhookLead, {
+        tenant_id: tenant._id,
+        customer_name: customerName,
+        mobile,
+        email: email || undefined,
+        city: city || undefined,
+        assignment_rule: googleSettings.assignmentRule || "manual",
+        lead_source: "Google",
+      });
+
+      console.log(`Successfully processed Google lead for tenant ${tenant.name}. Mobile: ${mobile}`);
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+
+    } catch (error: any) {
+      console.error("Error processing Google Webhook:", error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
         headers: { "Content-Type": "application/json" }
       });
     }

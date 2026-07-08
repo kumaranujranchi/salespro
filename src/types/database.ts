@@ -38,6 +38,11 @@ export interface TenantSettings {
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
+    google?: {
+      enabled: boolean;
+      googleKey?: string;
+      assignmentRule: 'manual' | 'round_robin';
+    };
   };
 }
 

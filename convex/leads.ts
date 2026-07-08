@@ -504,7 +504,7 @@ export const getLeadByMobile = query({
   },
 });
 
-export const processMetaLead = mutation({
+export const processWebhookLead = mutation({
   args: {
     tenant_id: v.id("tenants"),
     customer_name: v.string(),
@@ -513,6 +513,7 @@ export const processMetaLead = mutation({
     city: v.optional(v.string()),
     budget_range: v.optional(v.string()),
     assignment_rule: v.string(), // "manual" | "round_robin"
+    lead_source: v.string(), // "Meta" | "Google"
   },
   handler: async (ctx, args) => {
     const tenant = await ctx.db.get(args.tenant_id);
@@ -530,11 +531,12 @@ export const processMetaLead = mutation({
       .unique();
 
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const sourceLabel = args.lead_source;
 
     if (existing) {
       // Reopen or add note
       const isClosed = ["Lost", "Disqualified"].includes(existing.lead_status);
-      const noteContent = `\n[Meta Integration - ${timestamp}]: Fresh lead inquiry received via Meta Ads.`;
+      const noteContent = `\n[${sourceLabel} Integration - ${timestamp}]: Fresh lead inquiry received via ${sourceLabel} Ads.`;
       
       const updatedNotes = existing.internal_notes 
         ? `${existing.internal_notes}${noteContent}`
@@ -581,7 +583,10 @@ export const processMetaLead = mutation({
         // Sort deterministically by ID
         salesExecutives.sort((a, b) => a._id.localeCompare(b._id));
         
-        let lastAssignedId = tenant.settings?.integrations?.meta?.lastAssignedExecutiveId;
+        const lastAssignedId = args.lead_source === "Meta"
+          ? tenant.settings?.integrations?.meta?.lastAssignedExecutiveId
+          : tenant.settings?.integrations?.google?.lastAssignedExecutiveId;
+          
         let nextIndex = 0;
         
         if (lastAssignedId) {
@@ -595,16 +600,22 @@ export const processMetaLead = mutation({
         sales_executive_id = assignedExec._id;
 
         // Update lastAssignedExecutiveId in tenant settings
-        const currentMetaSettings = tenant.settings?.integrations?.meta || {};
+        const updatedIntegrations = { ...tenant.settings?.integrations };
+        if (args.lead_source === "Meta") {
+          updatedIntegrations.meta = {
+            ...(updatedIntegrations.meta || {}),
+            lastAssignedExecutiveId: assignedExec._id,
+          };
+        } else {
+          updatedIntegrations.google = {
+            ...(updatedIntegrations.google || {}),
+            lastAssignedExecutiveId: assignedExec._id,
+          };
+        }
+
         const updatedSettings = {
           ...tenant.settings,
-          integrations: {
-            ...tenant.settings?.integrations,
-            meta: {
-              ...currentMetaSettings,
-              lastAssignedExecutiveId: assignedExec._id,
-            }
-          }
+          integrations: updatedIntegrations
         };
 
         await ctx.db.patch(args.tenant_id, {
@@ -619,7 +630,7 @@ export const processMetaLead = mutation({
     const newLeadId = await ctx.db.insert("leads", {
       tenant_id: args.tenant_id,
       lead_id,
-      lead_source: "Meta",
+      lead_source: args.lead_source,
       customer_name: args.customer_name,
       mobile: cleanMobile,
       email: args.email,
@@ -629,8 +640,8 @@ export const processMetaLead = mutation({
       lead_score: "Warm",
       sales_executive_id,
       lead_date: now.split("T")[0],
-      internal_notes: `[Meta Integration - ${timestamp}]: Lead created via Meta Ads.`,
-      metadata: { import_source: "meta_lead_ads" },
+      internal_notes: `[${sourceLabel} Integration - ${timestamp}]: Lead created via ${sourceLabel} Ads.`,
+      metadata: { import_source: `${sourceLabel.toLowerCase()}_lead_ads` },
     });
 
     await ctx.db.patch(args.tenant_id, {
