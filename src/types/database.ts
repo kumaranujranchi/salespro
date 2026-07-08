@@ -34,6 +34,7 @@ export interface TenantSettings {
       enabled: boolean;
       accessToken?: string;
       pageId?: string;
+      pageName?: string;
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
