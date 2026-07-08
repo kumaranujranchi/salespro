@@ -21,6 +21,7 @@ export function AdminIntegrationsPage() {
 
   // Modal display states
   const [activeModal, setActiveModal] = useState<'meta' | 'google' | null>(null);
+  const [showGoogleHelp, setShowGoogleHelp] = useState(false);
 
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
@@ -512,114 +513,176 @@ export function AdminIntegrationsPage() {
                 </svg>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Google Ads Webhook Configuration</h2>
               </div>
-              <button 
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleHelp(!showGoogleHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showGoogleHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button 
+                  onClick={() => {
+                    setActiveModal(null);
+                    setShowGoogleHelp(false);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-              {/* Activation Switch */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Ads Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Google webhooks.</p>
+            {showGoogleHelp ? (
+              <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="text-blue-500" size={20} />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Google Ads Integration Help Guide</h3>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={googleSettings.enabled}
-                    onChange={(e) => setGoogleSettings({ ...googleSettings, enabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
+                
+                <div className="space-y-6 text-sm text-slate-600 dark:text-gray-400">
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-900 dark:text-white">Step 1: Configure & Save Settings in CRM</h4>
+                    <p className="text-xs leading-relaxed">
+                      First, specify a secret passphrase (Google Key) of your choice in the Google Ads settings inside this CRM. For example: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-rose-500">my_secret_google_key</code>. Then, turn ON the <strong className="text-slate-800 dark:text-slate-200">"Enable Google Ads Integration"</strong> toggle and click <strong className="text-slate-800 dark:text-slate-200">"Save Settings"</strong> at the bottom.
+                    </p>
+                  </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Credentials Form */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
-                  
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Google Ads Webhook Passphrase (Google Key)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showGoogleKey ? "text" : "password"}
-                        value={googleSettings.googleKey}
-                        onChange={(e) => setGoogleSettings({ ...googleSettings, googleKey: e.target.value })}
-                        placeholder="Define a secure passphrase (e.g. key_12345)"
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowGoogleKey(!showGoogleKey)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                      >
-                        {showGoogleKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-900 dark:text-white">Step 2: Add Webhook in Google Ads Lead Form</h4>
+                    <ol className="list-decimal pl-5 text-xs space-y-2 leading-relaxed">
+                      <li>Log in to your <a href="https://ads.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Google Ads account</a>.</li>
+                      <li>Go to your campaign, select <strong className="text-slate-800 dark:text-slate-200">Assets</strong> or <strong className="text-slate-800 dark:text-slate-200">Ad Extensions</strong>, and create or edit a <strong className="text-slate-800 dark:text-slate-200">Lead Form extension</strong>.</li>
+                      <li>Scroll down to the bottom section called <strong className="text-slate-800 dark:text-slate-200">"Export leads from Google Ads"</strong> and choose <strong className="text-slate-800 dark:text-slate-200">"Other webhook integration options"</strong>.</li>
+                      <li>Copy and paste your dynamic webhook details:
+                        <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-white/5 space-y-2">
+                          <div>
+                            <span className="font-semibold block text-slate-700 dark:text-slate-300 text-[11px]">Webhook URL:</span>
+                            <code className="block p-1 bg-white dark:bg-slate-905 rounded border border-slate-200 dark:border-slate-800 text-[10px] break-all select-all font-mono text-blue-500">{googleWebhookUrl}</code>
+                          </div>
+                          <div>
+                            <span className="font-semibold block text-slate-700 dark:text-slate-300 text-[11px]">Google Key (Passphrase):</span>
+                            <code className="block p-1 bg-white dark:bg-slate-905 rounded border border-slate-200 dark:border-slate-800 text-[10px] select-all font-mono text-blue-500">{googleSettings.googleKey || "[Set your Google Key first]"}</code>
+                          </div>
+                        </div>
+                      </li>
+                      <li>Click the <strong className="text-slate-800 dark:text-slate-200">"Send test data"</strong> button. Google Ads will push a mock test lead. You will see a success message in Google Ads, and a new test lead will instantly appear in your CRM Leads list with the source <strong className="text-slate-800 dark:text-slate-200">"Google"</strong>.</li>
+                      <li>Save the Lead Form extension inside your campaign.</li>
+                    </ol>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                  <Button variant="neutral" onClick={() => setShowGoogleHelp(false)}>
+                    Back to Settings
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                  {/* Activation Switch */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Ads Integration</h4>
+                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Google webhooks.</p>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      Define a secure passphrase here, then enter this exact same key inside Google Ads webhook settings.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Lead Assignment Rule
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={googleSettings.enabled}
+                        onChange={(e) => setGoogleSettings({ ...googleSettings, enabled: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                     </label>
-                    <Select
-                      value={googleSettings.assignmentRule}
-                      onChange={(e) => setGoogleSettings({ ...googleSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                      options={[
-                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                      ]}
-                    />
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      {googleSettings.assignmentRule === 'manual' 
-                        ? 'New leads from Google Ads will import as unassigned. Admin can assign them manually.' 
-                        : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
-                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Credentials Form */}
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+                      
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Google Ads Webhook Passphrase (Google Key)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showGoogleKey ? "text" : "password"}
+                            value={googleSettings.googleKey}
+                            onChange={(e) => setGoogleSettings({ ...googleSettings, googleKey: e.target.value })}
+                            placeholder="Define a secure passphrase (e.g. key_12345)"
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowGoogleKey(!showGoogleKey)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            {showGoogleKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          Define a secure passphrase here, then enter this exact same key inside Google Ads webhook settings.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Lead Assignment Rule
+                        </label>
+                        <Select
+                          value={googleSettings.assignmentRule}
+                          onChange={(e) => setGoogleSettings({ ...googleSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                          options={[
+                            { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                            { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                          ]}
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {googleSettings.assignmentRule === 'manual' 
+                            ? 'New leads from Google Ads will import as unassigned. Admin can assign them manually.' 
+                            : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Google Instructions */}
+                    <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
+                      <ol className="space-y-3 list-decimal pl-4">
+                        <li>Create or edit a <strong>Lead Form extension</strong> in your Google Ads campaign settings.</li>
+                        <li>Scroll to <strong>"Export leads from Google Ads"</strong> and select <strong>"Other webhook integration"</strong>.</li>
+                        <li>Enter these details:
+                          <div className="mt-2 space-y-2">
+                            <div>
+                              <span className="font-semibold block text-slate-700 dark:text-slate-300">Webhook URL:</span>
+                              <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 break-all select-all font-mono text-[10px]">{googleWebhookUrl}</code>
+                            </div>
+                            <div>
+                              <span className="font-semibold block text-slate-700 dark:text-slate-300">Google Key:</span>
+                              <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 select-all font-mono text-[10px]">{googleSettings.googleKey || "[Set passphrase on the left]"}</code>
+                            </div>
+                          </div>
+                        </li>
+                        <li>Click <strong>"Send test data"</strong> in Google Ads to test the connection immediately.</li>
+                      </ol>
+                    </div>
                   </div>
                 </div>
 
-                {/* Google Instructions */}
-                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
-                  <ol className="space-y-3 list-decimal pl-4">
-                    <li>Create or edit a <strong>Lead Form extension</strong> in your Google Ads campaign settings.</li>
-                    <li>Scroll to <strong>"Export leads from Google Ads"</strong> and select <strong>"Other webhook integration"</strong>.</li>
-                    <li>Enter these details:
-                      <div className="mt-2 space-y-2">
-                        <div>
-                          <span className="font-semibold block text-slate-700 dark:text-slate-300">Webhook URL:</span>
-                          <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 break-all select-all font-mono text-[10px]">{googleWebhookUrl}</code>
-                        </div>
-                        <div>
-                          <span className="font-semibold block text-slate-700 dark:text-slate-300">Google Key:</span>
-                          <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 select-all font-mono text-[10px]">{googleSettings.googleKey || "[Set passphrase on the left]"}</code>
-                        </div>
-                      </div>
-                    </li>
-                    <li>Click <strong>"Send test data"</strong> in Google Ads to test the connection immediately.</li>
-                  </ol>
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+                  <Button variant="neutral" onClick={() => setActiveModal(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveGoogleSettings} isLoading={savingGoogle} className="gap-2">
+                    <Save size={16} /> Save Settings
+                  </Button>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
-              <Button variant="neutral" onClick={() => setActiveModal(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveGoogleSettings} isLoading={savingGoogle} className="gap-2">
-                <Save size={16} /> Save Settings
-              </Button>
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}
