@@ -19,11 +19,31 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Local state for "session" simulation since we're migrating
-  // In a real app, this would come from useConvexAuth() or Clerk
-  const [sessionUser, setSessionUser] = useState<{ id: string; email?: string } | null>(null);
+  // Restore session from localStorage so refresh doesn't log user out
+  const [sessionUser, setSessionUserState] = useState<{ id: string; email?: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('crm_session_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isSigningIn, setIsSigningIn] = useState(false);
   const convex = useConvex();
+
+  // Persist sessionUser to localStorage on every change
+  const setSessionUser = (u: { id: string; email?: string } | null) => {
+    setSessionUserState(u);
+    try {
+      if (u) {
+        localStorage.setItem('crm_session_user', JSON.stringify(u));
+      } else {
+        localStorage.removeItem('crm_session_user');
+      }
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   // Fetch profile via Convex query
   const profileData = useQuery(api.profiles.getByUserId, 

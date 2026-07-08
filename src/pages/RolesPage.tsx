@@ -67,7 +67,7 @@ const SALES_PERSPECTIVES: { id: 'none' | 'self' | 'team' | 'overall'; label: str
 ];
 
 export function RolesPage() {
-  const { tenant, profile } = useAuth();
+  const { tenant, profile, loading } = useAuth();
   
   const rolesData = useQuery(api.roles.list, 
     tenant?._id ? { tenant_id: tenant._id } : "skip"
@@ -158,6 +158,15 @@ export function RolesPage() {
     } catch (err) {
       console.error('Error deleting role:', err);
     }
+  }
+
+  // Wait for auth to fully resolve before showing access denied
+  if (loading || profile === null) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   if (profile?.role !== 'super_admin') {
