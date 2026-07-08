@@ -652,3 +652,184 @@ export const processWebhookLead = mutation({
   },
 });
 
+/**
+ * Placeholder next-action assignment engine.
+ * Future routing algorithms (like Round-Robin distribution) or instant WhatsApp notifications can hook here.
+ */
+function triggerLeadAssignmentEngine(lead: any) {
+  console.log(`[LeadAssignmentEngine] Triggering next-action assignment for Lead: ${lead._id || lead.id}. Source: ${lead.lead_source}`);
+}
+
+export const saveUnifiedInboundLead = mutation({
+  args: {
+    tenant_id: v.id("tenants"),
+    lead_source: v.string(),
+    customer_name: v.string(),
+    customer_phone: v.string(),
+    customer_email: v.union(v.string(), v.null()),
+    property_title: v.optional(v.string()),
+    location: v.optional(v.string()),
+    budget: v.optional(v.string()),
+    raw_payload: v.string(),
+    assignment_rule: v.string(), // "manual" | "round_robin"
+  },
+  handler: async (ctx, args) => {
+    const tenant = await ctx.db.get(args.tenant_id);
+    if (!tenant) throw new Error("Tenant not found");
+
+    const cleanMobile = args.customer_phone;
+
+    // Check duplicate mobile within tenant
+    const existing = await ctx.db
+      .query("leads")
+      .withIndex("by_tenant_mobile", (q) =>
+        q.eq("tenant_id", args.tenant_id).eq("mobile", cleanMobile)
+      )
+      .unique();
+
+    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const sourceLabel = args.lead_source;
+    let leadIdToReturn;
+
+    if (existing) {
+      // Reopen lead if closed, otherwise add internal note
+      const isClosed = ["Lost", "Disqualified"].includes(existing.lead_status);
+      const noteContent = `\n[${sourceLabel} Unified Inbound - ${timestamp}]: Fresh lead inquiry received for ${args.property_title || "property"}.`;
+      
+      const updatedNotes = existing.internal_notes 
+        ? `${existing.internal_notes}${noteContent}`
+        : noteContent.trim();
+
+      const patchData: any = {
+        internal_notes: updatedNotes,
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...((existing.metadata as Record<string, any>) || {}),
+          last_raw_payload: args.raw_payload,
+        }
+      };
+
+      if (isClosed) {
+        patchData.lead_status = "New";
+      }
+
+      await ctx.db.patch(existing._id, patchData);
+      leadIdToReturn = existing._id;
+    } else {
+      // Create new lead
+      let currentCount = tenant.leads_count ?? 0;
+      if (currentCount >= 100000) {
+        throw new Error("Lead limit reached (maximum 1,00,000 leads).");
+      }
+
+      // Handle Round Robin lead assignment if requested
+      let sales_executive_id: Id<"profiles"> | undefined = undefined;
+      if (args.assignment_rule === "round_robin") {
+        const salesExecutives = await ctx.db
+          .query("profiles")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+          .filter((q) =>
+            q.and(
+              q.eq(q.field("role"), "sales_executive"),
+              q.eq(q.field("is_active"), true)
+            )
+          )
+          .collect();
+
+        if (salesExecutives.length > 0) {
+          salesExecutives.sort((a, b) => a._id.localeCompare(b._id));
+          
+          let lastAssignedId;
+          const sourceLower = args.lead_source.toLowerCase();
+          if (sourceLower.includes("99acres")) {
+            lastAssignedId = tenant.settings?.integrations?.nineNineAcres?.lastAssignedExecutiveId;
+          } else if (sourceLower.includes("magicbricks")) {
+            lastAssignedId = tenant.settings?.integrations?.magicbricks?.lastAssignedExecutiveId;
+          } else if (sourceLower.includes("housing")) {
+            lastAssignedId = tenant.settings?.integrations?.housing?.lastAssignedExecutiveId;
+          }
+
+          let nextIndex = 0;
+          if (lastAssignedId) {
+            const lastIndex = salesExecutives.findIndex(se => se._id === lastAssignedId);
+            if (lastIndex !== -1) {
+              nextIndex = (lastIndex + 1) % salesExecutives.length;
+            }
+          }
+
+          const assignedExec = salesExecutives[nextIndex];
+          sales_executive_id = assignedExec._id;
+
+          // Update lastAssignedExecutiveId in tenant settings
+          const updatedIntegrations = { ...tenant.settings?.integrations };
+          if (sourceLower.includes("99acres")) {
+            updatedIntegrations.nineNineAcres = {
+              ...(updatedIntegrations.nineNineAcres || { enabled: true, assignmentRule: 'round_robin' }),
+              lastAssignedExecutiveId: assignedExec._id,
+            };
+          } else if (sourceLower.includes("magicbricks")) {
+            updatedIntegrations.magicbricks = {
+              ...(updatedIntegrations.magicbricks || { enabled: true, assignmentRule: 'round_robin' }),
+              lastAssignedExecutiveId: assignedExec._id,
+            };
+          } else if (sourceLower.includes("housing")) {
+            updatedIntegrations.housing = {
+              ...(updatedIntegrations.housing || { enabled: true, assignmentRule: 'round_robin' }),
+              lastAssignedExecutiveId: assignedExec._id,
+            };
+          }
+
+          await ctx.db.patch(args.tenant_id, {
+            settings: {
+              ...tenant.settings,
+              integrations: updatedIntegrations
+            }
+          });
+        }
+      }
+
+      const lead_id = await generateLeadId(ctx, args.tenant_id);
+      const now = new Date().toISOString();
+
+      const internalNotes = `[${sourceLabel} Unified Inbound - ${timestamp}]: Lead created via Unified Inbound Endpoint.\n` +
+        `Property Interest: ${args.property_title || "N/A"}\n` +
+        `Location Preference: ${args.location || "N/A"}\n` +
+        `Budget: ${args.budget || "N/A"}`;
+
+      const newLeadId = await ctx.db.insert("leads", {
+        tenant_id: args.tenant_id,
+        lead_id,
+        lead_source: args.lead_source,
+        customer_name: args.customer_name || "Unknown Inbound Lead",
+        mobile: cleanMobile,
+        email: args.customer_email || undefined,
+        city: args.location || undefined,
+        budget_range: args.budget || undefined,
+        lead_status: "New",
+        lead_score: "Warm",
+        sales_executive_id,
+        lead_date: now.split("T")[0],
+        internal_notes: internalNotes,
+        metadata: { 
+          import_source: "unified_inbound",
+          raw_payload: args.raw_payload,
+          property_title: args.property_title,
+          location: args.location
+        },
+      });
+
+      await ctx.db.patch(args.tenant_id, {
+        leads_count: currentCount + 1,
+      });
+
+      leadIdToReturn = newLeadId;
+    }
+
+    // Trigger next-action assignment engine
+    const leadObj = await ctx.db.get(leadIdToReturn);
+    triggerLeadAssignmentEngine(leadObj);
+
+    return leadIdToReturn;
+  }
+});
+

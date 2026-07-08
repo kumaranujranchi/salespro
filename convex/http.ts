@@ -332,4 +332,36 @@ http.route({
   }),
 });
 
+http.route({
+  path: "/api/v1/inbound-leads",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const url = new URL(request.url);
+      const portal = url.searchParams.get("portal") || "";
+      const token = url.searchParams.get("token") || "";
+      const contentType = request.headers.get("content-type") || "";
+      const rawBody = await request.text();
+
+      // Dispatch processing job in the background asynchronously
+      await ctx.scheduler.runAfter(0, api.portals.processInboundLead, {
+        portal,
+        token,
+        rawBody,
+        contentType
+      });
+
+      // Respond immediately with 200 OK
+      return new Response("OK", {
+        status: 200,
+        headers: { "Content-Type": "text/plain" }
+      });
+    } catch (err: any) {
+      console.error("Error in Unified inbound-leads HTTP endpoint:", err);
+      // Return 200 to prevent retries on initial failure, or standard error
+      return new Response("OK", { status: 200 });
+    }
+  })
+});
+
 export default http;
