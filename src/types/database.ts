@@ -72,6 +72,16 @@ export interface TenantSettings {
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
+    googleForm?: {
+      enabled: boolean;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
+    googleSheet?: {
+      enabled: boolean;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
   };
 }
 

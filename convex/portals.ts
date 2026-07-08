@@ -200,6 +200,46 @@ export const processInboundLead = action({
         customerPhone = sanitizePhoneNumber(parsedBody.phone || parsedBody.mobile || parsedBody.waId || "");
         propertyTitle = parsedBody.message || parsedBody.text || "";
       }
+    } else if (portalLower.includes("google_form")) {
+      const formSettings = tenant.settings?.integrations?.googleForm;
+      assignmentRule = formSettings?.assignmentRule || "manual";
+
+      const bodyToSearch = parsedBody.row_data || parsedBody;
+      const findValue = (keys: string[]) => {
+        for (const key of Object.keys(bodyToSearch)) {
+          if (keys.includes(key.toLowerCase().trim())) {
+            return bodyToSearch[key];
+          }
+        }
+        return "";
+      };
+
+      customerName = findValue(["name", "customer name", "full name", "client name", "customer_name", "full_name"]) || "Google Form Lead";
+      customerPhone = sanitizePhoneNumber(findValue(["phone", "mobile", "mobile number", "phone number", "contact", "mobile_number", "phone_number", "contact_number"]));
+      customerEmail = findValue(["email", "email id", "email address", "email_id", "email_address"]) || null;
+      propertyTitle = findValue(["project", "property", "project name", "property name", "project_name", "requirement", "query", "message", "notes"]);
+      location = findValue(["city", "location", "address", "preferred location", "preferred_location", "locality"]);
+      budget = findValue(["budget", "budget range", "budget_range", "price", "max budget", "max_budget"]);
+    } else if (portalLower.includes("google_sheet")) {
+      const sheetSettings = tenant.settings?.integrations?.googleSheet;
+      assignmentRule = sheetSettings?.assignmentRule || "manual";
+
+      const bodyToSearch = parsedBody.row_data || parsedBody;
+      const findValue = (keys: string[]) => {
+        for (const key of Object.keys(bodyToSearch)) {
+          if (keys.includes(key.toLowerCase().trim())) {
+            return bodyToSearch[key];
+          }
+        }
+        return "";
+      };
+
+      customerName = findValue(["name", "customer name", "full name", "client name", "customer_name", "full_name"]) || "Google Sheet Lead";
+      customerPhone = sanitizePhoneNumber(findValue(["phone", "mobile", "mobile number", "phone number", "contact", "mobile_number", "phone_number", "contact_number"]));
+      customerEmail = findValue(["email", "email id", "email address", "email_id", "email_address"]) || null;
+      propertyTitle = findValue(["project", "property", "project name", "property name", "project_name", "requirement", "query", "message", "notes"]);
+      location = findValue(["city", "location", "address", "preferred location", "preferred_location", "locality"]);
+      budget = findValue(["budget", "budget range", "budget_range", "price", "max budget", "max_budget"]);
     } else {
       console.error(`Unsupported portal source: ${portal}`);
       return;
@@ -218,6 +258,10 @@ export const processInboundLead = action({
         ? "Magicbricks"
         : portalLower.includes("housing")
         ? "Housing"
+        : portalLower.includes("google_form")
+        ? "Google Form"
+        : portalLower.includes("google_sheet")
+        ? "Google Sheet"
         : "WhatsApp",
       customer_name: customerName,
       customer_phone: customerPhone,

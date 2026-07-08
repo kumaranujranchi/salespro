@@ -17,6 +17,8 @@ export function AdminIntegrationsPage() {
   const [savingMagicbricks, setSavingMagicbricks] = useState(false);
   const [savingHousing, setSavingHousing] = useState(false);
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [savingGoogleForm, setSavingGoogleForm] = useState(false);
+  const [savingGoogleSheet, setSavingGoogleSheet] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   
   // Facebook OAuth Actions
@@ -24,13 +26,15 @@ export function AdminIntegrationsPage() {
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
 
   // Modal display states
-  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | null>(null);
+  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | null>(null);
   const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
   const [showNineNineHelp, setShowNineNineHelp] = useState(false);
   const [showMagicbricksHelp, setShowMagicbricksHelp] = useState(false);
   const [showHousingHelp, setShowHousingHelp] = useState(false);
   const [showWhatsappHelp, setShowWhatsappHelp] = useState(false);
+  const [showGoogleFormHelp, setShowGoogleFormHelp] = useState(false);
+  const [showGoogleSheetHelp, setShowGoogleSheetHelp] = useState(false);
 
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
@@ -79,6 +83,18 @@ export function AdminIntegrationsPage() {
   const [whatsappSettings, setWhatsappSettings] = useState({
     enabled: false,
     provider: 'wati' as 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom',
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
+
+  // Google Form State
+  const [googleFormSettings, setGoogleFormSettings] = useState({
+    enabled: false,
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
+
+  // Google Sheet State
+  const [googleSheetSettings, setGoogleSheetSettings] = useState({
+    enabled: false,
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
@@ -137,6 +153,18 @@ export function AdminIntegrationsPage() {
         assignmentRule: (tenant.settings.integrations.whatsapp.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
+    if ((tenant?.settings?.integrations as any)?.googleForm) {
+      setGoogleFormSettings({
+        enabled: (tenant?.settings?.integrations as any).googleForm.enabled ?? false,
+        assignmentRule: ((tenant?.settings?.integrations as any).googleForm.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
+    if ((tenant?.settings?.integrations as any)?.googleSheet) {
+      setGoogleSheetSettings({
+        enabled: (tenant?.settings?.integrations as any).googleSheet.enabled ?? false,
+        assignmentRule: ((tenant?.settings?.integrations as any).googleSheet.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
   }, [tenant]);
 
   // Reset help states when active modal changes
@@ -147,6 +175,8 @@ export function AdminIntegrationsPage() {
     setShowMagicbricksHelp(false);
     setShowHousingHelp(false);
     setShowWhatsappHelp(false);
+    setShowGoogleFormHelp(false);
+    setShowGoogleSheetHelp(false);
   }, [activeModal]);
 
   // Handle Facebook Redirect OAuth Code
@@ -471,6 +501,56 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleSaveGoogleFormSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingGoogleForm(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          googleForm: {
+            enabled: googleFormSettings.enabled,
+            assignmentRule: googleFormSettings.assignmentRule,
+          }
+        }
+      };
+      await updateTenantMutation({ id: tenant._id as any, settings: updatedSettings });
+      await refreshTenant();
+      toast.success('Google Form integration settings saved!');
+      setActiveModal(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Google Form settings.');
+    } finally {
+      setSavingGoogleForm(false);
+    }
+  };
+
+  const handleSaveGoogleSheetSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingGoogleSheet(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          googleSheet: {
+            enabled: googleSheetSettings.enabled,
+            assignmentRule: googleSheetSettings.assignmentRule,
+          }
+        }
+      };
+      await updateTenantMutation({ id: tenant._id as any, settings: updatedSettings });
+      await refreshTenant();
+      toast.success('Google Sheet integration settings saved!');
+      setActiveModal(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Google Sheet settings.');
+    } finally {
+      setSavingGoogleSheet(false);
+    }
+  };
+
   if (profile?.role !== 'super_admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -502,6 +582,14 @@ export function AdminIntegrationsPage() {
     ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=whatsapp&token=${tenant._id}`
     : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=whatsapp&token=tenant_id';
 
+  const googleFormWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=google_form&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=google_form&token=tenant_id';
+
+  const googleSheetWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=google_sheet&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=google_sheet&token=tenant_id';
+
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
@@ -509,6 +597,8 @@ export function AdminIntegrationsPage() {
   const isMagicbricksActive = magicbricksSettings.enabled && (!!magicbricksSettings.username || !!magicbricksSettings.agentId || !!magicbricksSettings.apiKey);
   const isHousingActive = housingSettings.enabled && (!!housingSettings.mobileNumber || !!housingSettings.profileId);
   const isWhatsappActive = whatsappSettings.enabled;
+  const isGoogleFormActive = googleFormSettings.enabled;
+  const isGoogleSheetActive = googleSheetSettings.enabled;
 
   return (
     <div className="space-y-6">
@@ -561,7 +651,7 @@ export function AdminIntegrationsPage() {
 
               <div className="w-16 h-16 bg-[#E8F8F0] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/150px-WhatsApp.svg.png" 
+                  src="/images/whatsApp.png" 
                   alt="WhatsApp Integration" 
                   className="w-11 h-11 object-contain"
                 />
@@ -598,6 +688,40 @@ export function AdminIntegrationsPage() {
               
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Google Ads
+              </span>
+            </div>
+
+            {/* Google Form Integration Card */}
+            <div
+              onClick={() => setActiveModal('googleForm')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleFormActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleFormActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+              <div className="w-16 h-16 bg-[#F3F7FF] rounded-2xl flex items-center justify-center overflow-hidden">
+                <img src="/images/google_form.png" alt="Google Forms" className="w-12 h-12 object-contain" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Google Forms
+              </span>
+            </div>
+
+            {/* Google Sheet Integration Card */}
+            <div
+              onClick={() => setActiveModal('googleSheet')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleSheetActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleSheetActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+              <div className="w-16 h-16 bg-[#E8F5EC] rounded-2xl flex items-center justify-center overflow-hidden">
+                <img src="/images/Googlesheet.png" alt="Google Sheets" className="w-12 h-12 object-contain" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                Google Sheets
               </span>
             </div>
           </div>
@@ -1482,7 +1606,7 @@ export function AdminIntegrationsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/150px-WhatsApp.svg.png" alt="WhatsApp" className="w-6 h-6 object-contain" />
+                  <img src="/images/whatsApp.png" alt="WhatsApp" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Webhook Configuration</h2>
               </div>
@@ -1670,6 +1794,322 @@ export function AdminIntegrationsPage() {
               >
                 Cancel
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Google Form Modal */}
+      {activeModal === 'googleForm' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <img src="/images/google_form.png" alt="Google Forms" className="w-7 h-7 object-contain" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Forms Webhook Integration</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowGoogleFormHelp(!showGoogleFormHelp)}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+                >
+                  <span>📋</span>
+                  {showGoogleFormHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-5">
+              {showGoogleFormHelp ? (
+                <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-xl p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">📋 Google Forms Setup Guide</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Connect any Google Form to your CRM using a Google Apps Script trigger. When a user submits the form, the script automatically sends the response to your CRM webhook.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">🔗 Your Webhook URL (copy this):</p>
+                    <code className="block p-2 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 break-all text-blue-600 dark:text-blue-400 text-xs select-all">{googleFormWebhookUrl}</code>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">📝 Step-by-step Setup:</p>
+                    <ol className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
+                      <li>Open your Google Form → click ⋮ menu → <strong>Script editor</strong></li>
+                      <li>Delete any existing code and paste the Apps Script below</li>
+                      <li>Replace the WEBHOOK_URL value with your URL above</li>
+                      <li>Click <strong>Save</strong>, then <strong>Triggers</strong> (alarm icon)</li>
+                      <li>Add trigger: Function <strong>onFormSubmit</strong> → Event type <strong>On form submit</strong></li>
+                      <li>Authorize the script when prompted → Done!</li>
+                    </ol>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">📋 Apps Script Code:</p>
+                    <pre className="text-xs bg-slate-900 text-green-400 p-3 rounded-lg overflow-x-auto">{`var WEBHOOK_URL = "${googleFormWebhookUrl}";
+
+function onFormSubmit(e) {
+  var responses = e.response.getItemResponses();
+  var data = {};
+  responses.forEach(function(r) {
+    var key = r.getItem().getTitle().toLowerCase().trim();
+    data[key] = r.getResponse();
+  });
+  var options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ row_data: data }),
+    muteHttpExceptions: true
+  };
+  UrlFetchApp.fetch(WEBHOOK_URL, options);
+}`}</pre>
+                    <button
+                      onClick={() => {
+                        const script = `var WEBHOOK_URL = "${googleFormWebhookUrl}";
+
+function onFormSubmit(e) {
+  var responses = e.response.getItemResponses();
+  var data = {};
+  responses.forEach(function(r) {
+    var key = r.getItem().getTitle().toLowerCase().trim();
+    data[key] = r.getResponse();
+  });
+  var options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ row_data: data }),
+    muteHttpExceptions: true
+  };
+  UrlFetchApp.fetch(WEBHOOK_URL, options);
+}`;
+                        navigator.clipboard.writeText(script);
+                        toast.success('Apps Script code copied!');
+                      }}
+                      className="w-full text-xs py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      📋 Copy Apps Script Code
+                    </button>
+                  </div>
+                  <button onClick={() => setShowGoogleFormHelp(false)} className="text-xs text-blue-600 dark:text-blue-400 underline mt-1">Hide Guide</button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 p-4">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Your Webhook Endpoint</p>
+                    <code className="block text-xs break-all text-blue-600 dark:text-blue-400 select-all">{googleFormWebhookUrl}</code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(googleFormWebhookUrl); toast.success('Webhook URL copied!'); }}
+                      className="mt-2 text-xs px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-md text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Copy URL
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Forms Integration</h4>
+                      <p className="text-xs text-gray-500">Accept leads from Google Form submissions via webhook.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={googleFormSettings.enabled}
+                      onChange={(e) => setGoogleFormSettings({ ...googleFormSettings, enabled: e.target.checked })}
+                      className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Lead Assignment Rule</h4>
+                    <p className="text-xs text-gray-500">How should incoming leads from Google Forms be distributed?</p>
+                    <select
+                      value={googleFormSettings.assignmentRule}
+                      onChange={(e) => setGoogleFormSettings({ ...googleFormSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      className="w-full p-2 text-sm border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="manual">Manual Assignment</option>
+                      <option value="round_robin">Round Robin (Auto)</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3">
+                    <p className="text-xs text-amber-700 dark:text-amber-300"><strong>💡 Field Mapping Tip:</strong> Make sure your Google Form question titles include keywords like <em>Name</em>, <em>Phone</em>, <em>Email</em>, <em>City</em>, <em>Budget</em>, <em>Project</em> so the CRM can auto-map them. Click "Setup Help Guide" for the Apps Script code.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
+              <button
+                onClick={handleSaveGoogleFormSettings}
+                disabled={savingGoogleForm}
+                className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {savingGoogleForm ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Sheet Modal */}
+      {activeModal === 'googleSheet' && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <img src="/images/Googlesheet.png" alt="Google Sheets" className="w-7 h-7 object-contain" />
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Sheets Webhook Integration</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowGoogleSheetHelp(!showGoogleSheetHelp)}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+                >
+                  <span>📋</span>
+                  {showGoogleSheetHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-5">
+              {showGoogleSheetHelp ? (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-4 space-y-3">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">📊 Google Sheets Setup Guide</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Connect Google Sheets to your CRM using Apps Script. Every time a new row is added or edited in your sheet, the script will automatically push the row data to your CRM.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">🔗 Your Webhook URL (copy this):</p>
+                    <code className="block p-2 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 break-all text-emerald-600 dark:text-emerald-400 text-xs select-all">{googleSheetWebhookUrl}</code>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">📝 Step-by-step Setup:</p>
+                    <ol className="text-xs text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
+                      <li>Open your Google Sheet → <strong>Extensions</strong> → <strong>Apps Script</strong></li>
+                      <li>Delete any existing code and paste the Apps Script below</li>
+                      <li>Replace the WEBHOOK_URL value with your URL above</li>
+                      <li>Ensure Row 1 has column headers matching: <em>Name, Phone, Email, City, Budget, Project</em></li>
+                      <li>Click <strong>Save</strong>, then <strong>Triggers</strong> (alarm icon)</li>
+                      <li>Add trigger: Function <strong>onSheetEdit</strong> → Event type <strong>On edit</strong></li>
+                      <li>Authorize the script when prompted → Done!</li>
+                    </ol>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">📋 Apps Script Code:</p>
+                    <pre className="text-xs bg-slate-900 text-green-400 p-3 rounded-lg overflow-x-auto">{`var WEBHOOK_URL = "${googleSheetWebhookUrl}";
+
+function onSheetEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+  var row = range.getRow();
+  if (row <= 1) return; // skip header row
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var data = {};
+  headers.forEach(function(header, i) {
+    data[header.toString().toLowerCase().trim()] = rowData[i];
+  });
+  var options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ row_data: data }),
+    muteHttpExceptions: true
+  };
+  UrlFetchApp.fetch(WEBHOOK_URL, options);
+}`}</pre>
+                    <button
+                      onClick={() => {
+                        const script = `var WEBHOOK_URL = "${googleSheetWebhookUrl}";
+
+function onSheetEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  var range = e.range;
+  var row = range.getRow();
+  if (row <= 1) return;
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var data = {};
+  headers.forEach(function(header, i) {
+    data[header.toString().toLowerCase().trim()] = rowData[i];
+  });
+  var options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ row_data: data }),
+    muteHttpExceptions: true
+  };
+  UrlFetchApp.fetch(WEBHOOK_URL, options);
+}`;
+                        navigator.clipboard.writeText(script);
+                        toast.success('Apps Script code copied!');
+                      }}
+                      className="w-full text-xs py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"
+                    >
+                      📋 Copy Apps Script Code
+                    </button>
+                  </div>
+                  <button onClick={() => setShowGoogleSheetHelp(false)} className="text-xs text-emerald-600 dark:text-emerald-400 underline mt-1">Hide Guide</button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 p-4">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Your Webhook Endpoint</p>
+                    <code className="block text-xs break-all text-emerald-600 dark:text-emerald-400 select-all">{googleSheetWebhookUrl}</code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(googleSheetWebhookUrl); toast.success('Webhook URL copied!'); }}
+                      className="mt-2 text-xs px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded-md text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Copy URL
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Sheets Integration</h4>
+                      <p className="text-xs text-gray-500">Accept leads from Google Sheet row edits via webhook.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={googleSheetSettings.enabled}
+                      onChange={(e) => setGoogleSheetSettings({ ...googleSheetSettings, enabled: e.target.checked })}
+                      className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Lead Assignment Rule</h4>
+                    <p className="text-xs text-gray-500">How should incoming leads from Google Sheets be distributed?</p>
+                    <select
+                      value={googleSheetSettings.assignmentRule}
+                      onChange={(e) => setGoogleSheetSettings({ ...googleSheetSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      className="w-full p-2 text-sm border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="manual">Manual Assignment</option>
+                      <option value="round_robin">Round Robin (Auto)</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-3">
+                    <p className="text-xs text-amber-700 dark:text-amber-300"><strong>💡 Column Header Tip:</strong> Ensure your Google Sheet's Row 1 headers include keywords like <em>Name</em>, <em>Phone</em>, <em>Email</em>, <em>City</em>, <em>Budget</em>, <em>Project</em>. The CRM auto-maps column names to lead fields. Click "Setup Help Guide" for the Apps Script.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-3 flex-shrink-0">
+              <button onClick={() => setActiveModal(null)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
+              <button
+                onClick={handleSaveGoogleSheetSettings}
+                disabled={savingGoogleSheet}
+                className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {savingGoogleSheet ? 'Saving...' : 'Save Settings'}
+              </button>
             </div>
           </div>
         </div>

@@ -749,6 +749,10 @@ export const saveUnifiedInboundLead = mutation({
             lastAssignedId = tenant.settings?.integrations?.housing?.lastAssignedExecutiveId;
           } else if (sourceLower.includes("whatsapp")) {
             lastAssignedId = tenant.settings?.integrations?.whatsapp?.lastAssignedExecutiveId;
+          } else if (sourceLower.includes("google form")) {
+            lastAssignedId = tenant.settings?.integrations?.googleForm?.lastAssignedExecutiveId;
+          } else if (sourceLower.includes("google sheet")) {
+            lastAssignedId = tenant.settings?.integrations?.googleSheet?.lastAssignedExecutiveId;
           }
 
           let nextIndex = 0;
@@ -782,6 +786,16 @@ export const saveUnifiedInboundLead = mutation({
           } else if (sourceLower.includes("whatsapp")) {
             updatedIntegrations.whatsapp = {
               ...(updatedIntegrations.whatsapp || { enabled: true, assignmentRule: 'round_robin' }),
+              lastAssignedExecutiveId: assignedExec._id,
+            };
+          } else if (sourceLower.includes("google form")) {
+            updatedIntegrations.googleForm = {
+              ...(updatedIntegrations.googleForm || { enabled: true, assignmentRule: 'round_robin' }),
+              lastAssignedExecutiveId: assignedExec._id,
+            };
+          } else if (sourceLower.includes("google sheet")) {
+            updatedIntegrations.googleSheet = {
+              ...(updatedIntegrations.googleSheet || { enabled: true, assignmentRule: 'round_robin' }),
               lastAssignedExecutiveId: assignedExec._id,
             };
           }
