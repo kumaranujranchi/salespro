@@ -56,12 +56,16 @@ export function AdminIntegrationsPage() {
   const [magicbricksSettings, setMagicbricksSettings] = useState({
     enabled: false,
     apiKey: '',
+    username: '',
+    agentId: '',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
   // Housing State
   const [housingSettings, setHousingSettings] = useState({
     enabled: false,
+    mobileNumber: '',
+    profileId: '',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
@@ -100,12 +104,16 @@ export function AdminIntegrationsPage() {
       setMagicbricksSettings({
         enabled: tenant.settings.integrations.magicbricks.enabled ?? false,
         apiKey: tenant.settings.integrations.magicbricks.apiKey ?? '',
+        username: tenant.settings.integrations.magicbricks.username ?? '',
+        agentId: tenant.settings.integrations.magicbricks.agentId ?? '',
         assignmentRule: (tenant.settings.integrations.magicbricks.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
     if (tenant?.settings?.integrations?.housing) {
       setHousingSettings({
         enabled: tenant.settings.integrations.housing.enabled ?? false,
+        mobileNumber: tenant.settings.integrations.housing.mobileNumber ?? '',
+        profileId: tenant.settings.integrations.housing.profileId ?? '',
         assignmentRule: (tenant.settings.integrations.housing.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
@@ -343,6 +351,8 @@ export function AdminIntegrationsPage() {
           magicbricks: {
             enabled: magicbricksSettings.enabled,
             apiKey: magicbricksSettings.apiKey,
+            username: magicbricksSettings.username,
+            agentId: magicbricksSettings.agentId,
             assignmentRule: magicbricksSettings.assignmentRule,
           }
         }
@@ -375,6 +385,8 @@ export function AdminIntegrationsPage() {
           ...tenant.settings?.integrations,
           housing: {
             enabled: housingSettings.enabled,
+            mobileNumber: housingSettings.mobileNumber,
+            profileId: housingSettings.profileId,
             assignmentRule: housingSettings.assignmentRule,
           }
         }
@@ -412,19 +424,23 @@ export function AdminIntegrationsPage() {
     : 'https://<your-convex-deployment>.convex.site/google-webhook?tenantId=tenant_id';
 
   const housingWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/housing-webhook?tenantId=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/housing-webhook?tenantId=tenant_id';
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=housing&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=housing&token=tenant_id';
 
   const nineNineWebhookUrl = tenant?._id && convexUrl
     ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=99acres&token=${tenant._id}`
     : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=99acres&token=tenant_id';
 
+  const magicbricksWebhookUrl = tenant?._id && convexUrl
+    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=magicbricks&token=${tenant._id}`
+    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=magicbricks&token=tenant_id';
+
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
   const isNineNineActive = nineNineSettings.enabled && (!!nineNineSettings.username || !!nineNineSettings.clientId);
-  const isMagicbricksActive = magicbricksSettings.enabled && !!magicbricksSettings.apiKey;
-  const isHousingActive = housingSettings.enabled;
+  const isMagicbricksActive = magicbricksSettings.enabled && (!!magicbricksSettings.username || !!magicbricksSettings.agentId || !!magicbricksSettings.apiKey);
+  const isHousingActive = housingSettings.enabled && (!!housingSettings.mobileNumber || !!housingSettings.profileId);
 
   return (
     <div className="space-y-6">
@@ -1012,13 +1028,13 @@ export function AdminIntegrationsPage() {
       {/* Magicbricks Modal Overlay */}
       {activeModal === 'magicbricks' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
                   <img src="/images/magicbricks.png" alt="Magicbricks" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks API Configuration</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks Webhook Configuration</h2>
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                 <X size={20} />
@@ -1028,8 +1044,8 @@ export function AdminIntegrationsPage() {
             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Magicbricks Integration</h4>
-                  <p className="text-xs text-gray-500">Temporarily enable or disable automated polling for Magicbricks leads.</p>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Magicbricks Webhook Integration</h4>
+                  <p className="text-xs text-gray-500">Temporarily stop or start importing leads from Magicbricks webhooks.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -1042,35 +1058,86 @@ export function AdminIntegrationsPage() {
                 </label>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Magicbricks Developer API Key
-                  </label>
-                  <input
-                    type="text"
-                    value={magicbricksSettings.apiKey}
-                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, apiKey: e.target.value })}
-                    placeholder="Enter your Magicbricks API key"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
-                  />
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Specify the security key provided by Magicbricks to authenticate lead query pull requests.
-                  </p>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Options */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Magicbricks Registered Username / Agent ID
+                    </label>
+                    <input
+                      type="text"
+                      value={magicbricksSettings.username || ""}
+                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, username: e.target.value })}
+                      placeholder="Enter registered Username or Agent ID"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      LMS API Key (Optional Developer Key)
+                    </label>
+                    <input
+                      type="text"
+                      value={magicbricksSettings.apiKey || ""}
+                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, apiKey: e.target.value })}
+                      placeholder="Enter LMS API Key if provided"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                    <p className="text-[9px] text-gray-500 mt-1">
+                      Only required if your account uses a pull-based API sync instead of push webhook.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Lead Assignment Rule
+                    </label>
+                    <Select
+                      value={magicbricksSettings.assignmentRule}
+                      onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      options={[
+                        { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                        { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                      ]}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Lead Assignment Rule
-                  </label>
-                  <Select
-                    value={magicbricksSettings.assignmentRule}
-                    onChange={(e) => setMagicbricksSettings({ ...magicbricksSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                    options={[
-                      { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                      { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                    ]}
-                  />
+                {/* Guide */}
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Activation Guide</h3>
+                  <p>
+                    Magicbricks requires their support team to map webhooks manually. Send your Webhook URL and account details to your **Magicbricks Account Representative**.
+                  </p>
+                  
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Integration Type:</span> Push API
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Webhook URL:</span>
+                      <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{magicbricksWebhookUrl}</code>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200 dark:border-white/5">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Representative:</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const emailText = `Subject: Inquiry Regarding Magicbricks Lead Push API Integration - Agent ID: ${magicbricksSettings.username || "[Your Agent ID]"}\n\nHi Magicbricks Support,\n\nI want to integrate my Magicbricks leads with my CRM using the Lead Push API.\n\nPlease map my account with the following parameters:\n\n- Magicbricks Username / Agent ID: ${magicbricksSettings.username || "[Your Agent ID]"}\n- Webhook URL: ${magicbricksWebhookUrl}\n- Request Method: HTTP POST\n- Content-Type: application/json\n\nPlease activate this Lead Push integration and let me know once verified.\n\nThanks!`;
+                        navigator.clipboard.writeText(emailText);
+                        toast.success("Email template copied to clipboard!");
+                      }}
+                      className="w-full text-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Copy Magicbricks Support Email
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1122,6 +1189,32 @@ export function AdminIntegrationsPage() {
                 {/* Options */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Settings</h3>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Housing.com Registered Mobile Number
+                    </label>
+                    <input
+                      type="text"
+                      value={housingSettings.mobileNumber || ""}
+                      onChange={(e) => setHousingSettings({ ...housingSettings, mobileNumber: e.target.value })}
+                      placeholder="Enter registered mobile number"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Housing.com Profile ID
+                    </label>
+                    <input
+                      type="text"
+                      value={housingSettings.profileId || ""}
+                      onChange={(e) => setHousingSettings({ ...housingSettings, profileId: e.target.value })}
+                      placeholder="Enter your Housing Profile ID"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs"
+                    />
+                  </div>
                   
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -1141,16 +1234,37 @@ export function AdminIntegrationsPage() {
                 {/* Guide */}
                 <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Webhook Setup Guide</h3>
-                  <ol className="space-y-3 list-decimal pl-4">
-                    <li>Contact your Housing.com partner support or log in to your developer dashboard.</li>
-                    <li>Provide the following callback URL for the **Lead Push Webhook** configuration:
-                      <div className="mt-2">
-                        <span className="font-semibold block text-slate-700 dark:text-slate-300 text-[11px]">Webhook URL:</span>
-                        <code className="block p-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 break-all select-all font-mono text-[10px] text-blue-500">{housingWebhookUrl}</code>
-                      </div>
-                    </li>
-                    <li>Send a test request via Housing.com. Leads will instantly appear in the Leads list under source **Housing**.</li>
-                  </ol>
+                  <p>
+                    Housing.com requires their support team or your partner account representative to map the lead push hook.
+                  </p>
+                  
+                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Request Type:</span> POST
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Webhook URL:</span>
+                      <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{housingWebhookUrl}</code>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">Security Token:</span> URL Parameter authentication (`token`) is already embedded in the URL. No custom headers are needed.
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200 dark:border-white/5">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Representative:</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const emailText = `Subject: Webhook URL Mapping Request for Housing.com - Profile ID: ${housingSettings.profileId || "[Your Profile ID]"}\n\nHi Housing.com Support,\n\nI want to integrate my Housing.com leads into my CRM using a Lead Webhook Push.\n\nPlease map my account with the following parameters:\n\n- Housing Profile ID: ${housingSettings.profileId || "[Your Profile ID]"}\n- Registered Mobile Number: ${housingSettings.mobileNumber || "[Your Registered Mobile]"}\n- Webhook URL: ${housingWebhookUrl}\n- Request Method: HTTP POST\n- Content-Type: application/json\n\nKindly map this endpoint to my listings and verify once active.\n\nThanks!`;
+                        navigator.clipboard.writeText(emailText);
+                        toast.success("Housing.com email template copied!");
+                      }}
+                      className="w-full text-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Copy Housing Support Email
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

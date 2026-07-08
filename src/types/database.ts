@@ -54,11 +54,15 @@ export interface TenantSettings {
     magicbricks?: {
       enabled: boolean;
       apiKey?: string;
+      username?: string;
+      agentId?: string;
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
     housing?: {
       enabled: boolean;
+      mobileNumber?: string;
+      profileId?: string;
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
     };
