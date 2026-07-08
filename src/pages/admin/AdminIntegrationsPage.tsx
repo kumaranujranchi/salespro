@@ -501,9 +501,12 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isNineNineActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isNineNineActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
-              <div className="w-16 h-16 bg-[#FFF2E8] rounded-2xl flex flex-col items-center justify-center border border-orange-100 dark:border-orange-500/10">
-                <span className="text-orange-600 font-extrabold text-xl leading-none">99</span>
-                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider mt-0.5">acres</span>
+              <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/99acres.png" 
+                  alt="99acres" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 99acres
@@ -519,9 +522,12 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMagicbricksActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isMagicbricksActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
-              <div className="w-16 h-16 bg-[#FFF1F0] rounded-2xl flex flex-col items-center justify-center border border-red-100 dark:border-red-500/10">
-                <span className="text-red-600 font-extrabold text-xl leading-none">magic</span>
-                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider">bricks</span>
+              <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/magicbricks.png" 
+                  alt="Magicbricks" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Magicbricks
@@ -537,9 +543,12 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isHousingActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isHousingActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
-              <div className="w-16 h-16 bg-[#E6F8F6] rounded-2xl flex flex-col items-center justify-center border border-teal-100 dark:border-teal-500/10">
-                <span className="text-teal-600 font-extrabold text-xl leading-none">H</span>
-                <span className="text-slate-600 dark:text-slate-400 font-bold text-[9px] uppercase tracking-wider mt-0.5">housing</span>
+              <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/hosing.png" 
+                  alt="Housing.com" 
+                  className="w-12 h-12 object-contain"
+                />
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Housing.com
@@ -870,7 +879,9 @@ export function AdminIntegrationsPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#FFF2E8] rounded-lg flex items-center justify-center font-extrabold text-[#FF6A00] text-sm border border-orange-100">99</div>
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img src="/images/99acres.png" alt="99acres" className="w-6 h-6 object-contain" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres API Configuration</h2>
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
@@ -944,7 +955,9 @@ export function AdminIntegrationsPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#FFF1F0] rounded-lg flex items-center justify-center font-extrabold text-[#D9383A] text-[10px] border border-red-100">MB</div>
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img src="/images/magicbricks.png" alt="Magicbricks" className="w-6 h-6 object-contain" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks API Configuration</h2>
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
@@ -1018,7 +1031,9 @@ export function AdminIntegrationsPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#E6F8F6] rounded-lg flex items-center justify-center font-extrabold text-teal-600 text-sm border border-teal-100">H</div>
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+                  <img src="/images/hosing.png" alt="Housing.com" className="w-6 h-6 object-contain" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Housing.com Webhook Configuration</h2>
               </div>
               <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
