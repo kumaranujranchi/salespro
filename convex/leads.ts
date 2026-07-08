@@ -503,3 +503,141 @@ export const getLeadByMobile = query({
       .unique();
   },
 });
+
+export const processMetaLead = mutation({
+  args: {
+    tenant_id: v.id("tenants"),
+    customer_name: v.string(),
+    mobile: v.string(),
+    email: v.optional(v.string()),
+    city: v.optional(v.string()),
+    budget_range: v.optional(v.string()),
+    assignment_rule: v.string(), // "manual" | "round_robin"
+  },
+  handler: async (ctx, args) => {
+    const tenant = await ctx.db.get(args.tenant_id);
+    if (!tenant) throw new Error("Tenant not found");
+
+    // Clean phone number (remove spaces, etc.)
+    const cleanMobile = args.mobile.replace(/\s+/g, "");
+
+    // Check duplicate
+    const existing = await ctx.db
+      .query("leads")
+      .withIndex("by_tenant_mobile", (q) =>
+        q.eq("tenant_id", args.tenant_id).eq("mobile", cleanMobile)
+      )
+      .unique();
+
+    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+    if (existing) {
+      // Reopen or add note
+      const isClosed = ["Lost", "Disqualified"].includes(existing.lead_status);
+      const noteContent = `\n[Meta Integration - ${timestamp}]: Fresh lead inquiry received via Meta Ads.`;
+      
+      const updatedNotes = existing.internal_notes 
+        ? `${existing.internal_notes}${noteContent}`
+        : noteContent.trim();
+
+      if (isClosed) {
+        // Reopen lead
+        await ctx.db.patch(existing._id, {
+          lead_status: "New",
+          internal_notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        // Just add note
+        await ctx.db.patch(existing._id, {
+          internal_notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      return existing._id;
+    }
+
+    // Lead does not exist, create new lead
+    let currentCount = tenant.leads_count ?? 0;
+    if (currentCount >= 100000) {
+      throw new Error("Lead limit reached for this tenant.");
+    }
+
+    // 1. Determine assignment
+    let sales_executive_id: Id<"profiles"> | undefined = undefined;
+    if (args.assignment_rule === "round_robin") {
+      const salesExecutives = await ctx.db
+        .query("profiles")
+        .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("role"), "sales_executive"),
+            q.eq(q.field("is_active"), true)
+          )
+        )
+        .collect();
+
+      if (salesExecutives.length > 0) {
+        // Sort deterministically by ID
+        salesExecutives.sort((a, b) => a._id.localeCompare(b._id));
+        
+        let lastAssignedId = tenant.settings?.integrations?.meta?.lastAssignedExecutiveId;
+        let nextIndex = 0;
+        
+        if (lastAssignedId) {
+          const lastIndex = salesExecutives.findIndex(se => se._id === lastAssignedId);
+          if (lastIndex !== -1) {
+            nextIndex = (lastIndex + 1) % salesExecutives.length;
+          }
+        }
+        
+        const assignedExec = salesExecutives[nextIndex];
+        sales_executive_id = assignedExec._id;
+
+        // Update lastAssignedExecutiveId in tenant settings
+        const currentMetaSettings = tenant.settings?.integrations?.meta || {};
+        const updatedSettings = {
+          ...tenant.settings,
+          integrations: {
+            ...tenant.settings?.integrations,
+            meta: {
+              ...currentMetaSettings,
+              lastAssignedExecutiveId: assignedExec._id,
+            }
+          }
+        };
+
+        await ctx.db.patch(args.tenant_id, {
+          settings: updatedSettings
+        });
+      }
+    }
+
+    const lead_id = await generateLeadId(ctx, args.tenant_id);
+    const now = new Date().toISOString();
+
+    const newLeadId = await ctx.db.insert("leads", {
+      tenant_id: args.tenant_id,
+      lead_id,
+      lead_source: "Meta",
+      customer_name: args.customer_name,
+      mobile: cleanMobile,
+      email: args.email,
+      city: args.city,
+      budget_range: args.budget_range,
+      lead_status: "New",
+      lead_score: "Warm",
+      sales_executive_id,
+      lead_date: now.split("T")[0],
+      internal_notes: `[Meta Integration - ${timestamp}]: Lead created via Meta Ads.`,
+      metadata: { import_source: "meta_lead_ads" },
+    });
+
+    await ctx.db.patch(args.tenant_id, {
+      leads_count: currentCount + 1,
+    });
+
+    return newLeadId;
+  },
+});
+

@@ -203,3 +203,14 @@ export const resetUserPassword = mutation({
     console.log(`Resetting password for user ${args.userId} to ${args.newPassword}`);
   },
 });
+
+export const getByMetaPageId = query({
+  args: { pageId: v.string() },
+  handler: async (ctx, args) => {
+    const tenants = await ctx.db.query("tenants").collect();
+    return tenants.find(
+      (tenant) => tenant.settings?.integrations?.meta?.pageId === args.pageId
+    );
+  },
+});
+

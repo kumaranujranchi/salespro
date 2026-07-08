@@ -29,6 +29,15 @@ export interface TenantSettings {
     tax_id: string; // GSTIN, etc.
     logo_url?: string;
   };
+  integrations?: {
+    meta?: {
+      enabled: boolean;
+      accessToken?: string;
+      pageId?: string;
+      assignmentRule: 'manual' | 'round_robin';
+      lastAssignedExecutiveId?: string;
+    };
+  };
 }
 
 export interface RolePermissions {
