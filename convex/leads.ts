@@ -71,7 +71,17 @@ export const createLead = mutation({
       .filter((q) => q.eq(q.field("mobile"), args.mobile))
       .unique();
     
-    if (existing) throw new ConvexError("A lead with this mobile number already exists");
+    if (existing) {
+      if (existing.lead_status === "Lost" || existing.lead_status === "Disqualified") {
+        throw new ConvexError({
+          code: "DUPLICATE_LOST_LEAD",
+          message: "Lead already available in lost leads",
+          leadId: existing._id
+        });
+      } else {
+        throw new ConvexError("A lead with this mobile number already exists");
+      }
+    }
 
     const lead_id = await generateLeadId(ctx, args.tenant_id);
     const now = new Date().toISOString();
@@ -196,11 +206,21 @@ export const listLeadsByTenant = query({
           .filter((q) => q.eq(q.field("mobile"), "FORCE_EMPTY_NOT_AUTHORIZED"));
       }
     } else if (args.statusFilter && args.statusFilter !== 'all') {
-      q = ctx.db
-        .query("leads")
-        .withIndex("by_tenant_status", (q) => 
-          q.eq("tenant_id", args.tenant_id).eq("lead_status", args.statusFilter!)
-        );
+      if (args.statusFilter === 'active') {
+        q = ctx.db
+          .query("leads")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+          .filter((q) => q.and(
+            q.neq(q.field("lead_status"), "Lost"),
+            q.neq(q.field("lead_status"), "Disqualified")
+          ));
+      } else {
+        q = ctx.db
+          .query("leads")
+          .withIndex("by_tenant_status", (q) => 
+            q.eq("tenant_id", args.tenant_id).eq("lead_status", args.statusFilter!)
+          );
+      }
     }
 
     // Apply allowedIds constraint to status or default queries

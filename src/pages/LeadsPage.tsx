@@ -71,7 +71,7 @@ export function LeadsPage() {
 
   // Filter & Search State
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
@@ -349,6 +349,29 @@ export function LeadsPage() {
     toast.success('Copied to clipboard');
   };
 
+  const handleReactivateLead = async (leadId: string) => {
+    const confirmed = await dialog.confirm(
+      'Are you sure you want to reactivate this lead? Its status will be reset to New.',
+      {
+        title: 'Reactivate Lead',
+        variant: 'success'
+      }
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await updateLeadMutation({
+        id: leadId as Id<"leads">,
+        lead_status: 'New',
+      });
+      toast.success('Lead reactivated successfully');
+    } catch (error: any) {
+      console.error('Reactivate error', error);
+      toast.error(error.message || 'Failed to reactivate lead');
+    }
+  };
+
   const handleDeleteLead = async (leadId: string) => {
     if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return;
 
@@ -569,11 +592,13 @@ export function LeadsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             >
-              <option value="all">All Status</option>
+              <option value="active">Active Leads</option>
+              <option value="all">All Leads (incl. Lost)</option>
               <option value="New">New</option>
               <option value="Contacted">Contacted</option>
               <option value="In Progress">In Progress</option>
               <option value="Qualified">Qualified</option>
+              <option value="Lost">Lost</option>
               <option value="Disqualified">Disqualified</option>
               <option value="Closed">Closed</option>
             </select>
@@ -797,11 +822,15 @@ export function LeadsPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
+                                    if (lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified') {
+                                       handleReactivateLead(lead.id);
+                                     } else {
+                                       setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
+                                     }
                                   }}
-                                  className="px-2 py-1 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 dark:border-slate-700"
+                                  className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200'}`}
                                 >
-                                  Update
+                                  {lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'Reactivate' : 'Update'}
                                 </Button>
                               )}
                               <ActionMenu
@@ -816,6 +845,11 @@ export function LeadsPage() {
                                     icon: Eye,
                                     onClick: () => handleViewDetails(lead)
                                   },
+                                   ...((lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified') ? [{
+                                     label: 'Reactivate',
+                                     icon: RefreshCw,
+                                     onClick: () => handleReactivateLead(lead.id)
+                                   }] : []),
                                   ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
                                     label: 'Delete',
                                     icon: Trash2,

@@ -173,11 +173,81 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       onClose();
     } catch (error: any) {
       console.error('Error saving lead:', error);
-      let errorMessage = error.message || 'Failed to save lead';
-      if (errorMessage.includes('ConvexError:')) {
-        errorMessage = errorMessage.split('ConvexError:')[1].trim();
+      let errorMessage = 'Failed to save lead';
+      let isDuplicateLost = false;
+      let lostLeadId: string | null = null;
+
+      // Extract error details if it came from ConvexError
+      if (error.data) {
+        if (typeof error.data === 'object') {
+          if (error.data.code === 'DUPLICATE_LOST_LEAD') {
+            isDuplicateLost = true;
+            errorMessage = error.data.message;
+            lostLeadId = error.data.leadId;
+          } else {
+            errorMessage = error.data.message || JSON.stringify(error.data);
+          }
+        } else {
+          errorMessage = String(error.data);
+        }
+      } else {
+        const rawMessage = error.message || '';
+        if (rawMessage.includes('ConvexError:')) {
+          const content = rawMessage.split('ConvexError:')[1].trim();
+          try {
+            const parsed = JSON.parse(content);
+            if (parsed && parsed.code === 'DUPLICATE_LOST_LEAD') {
+              isDuplicateLost = true;
+              errorMessage = parsed.message;
+              lostLeadId = parsed.leadId;
+            } else {
+              errorMessage = parsed.message || content;
+            }
+          } catch (e) {
+            errorMessage = content;
+          }
+        } else {
+          errorMessage = rawMessage || 'Failed to save lead';
+        }
       }
-      await dialog.alert(errorMessage, { variant: 'danger', title: 'Error' });
+
+      if (isDuplicateLost && lostLeadId) {
+        const confirmReactivate = await dialog.confirm(
+          "Lead already available in lost leads. Do you want to reactivate it?",
+          {
+            title: "Lead in Lost Leads",
+            variant: "success"
+          }
+        );
+        if (confirmReactivate) {
+          try {
+            setLoading(true);
+            await updateLeadMutation({
+              id: lostLeadId as Id<"leads">,
+              lead_status: "New",
+              customer_name: formData.customer_name,
+              lead_source: formData.lead_source,
+              project_id: (formData.project_id as Id<"projects">) || null,
+              sales_executive_id: formData.sales_executive_id as Id<"profiles">,
+              email: formData.email || null,
+              city: formData.city || null,
+              budget_range: formData.budget_range,
+              purpose: formData.purpose,
+              preferred_locations: formData.preferred_locations,
+              lead_score: formData.lead_score,
+              internal_notes: formData.internal_notes || null,
+              lead_date: new Date(formData.lead_date).toISOString(),
+            });
+            await dialog.alert('Lead reactivated successfully!', { variant: 'success', title: 'Success' });
+            onClose();
+          } catch (reactivateErr: any) {
+            console.error('Reactivation failed:', reactivateErr);
+            await dialog.alert('Failed to reactivate lead', { variant: 'danger', title: 'Error' });
+          }
+        }
+      } else {
+        await dialog.alert(errorMessage, { variant: 'danger', title: 'Error' });
+      }
     } finally {
       setLoading(false);
     }
