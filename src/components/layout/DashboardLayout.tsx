@@ -72,7 +72,6 @@ const navGroups: NavGroup[] = [
   {
     label: 'Operations',
     items: [
-      { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
       { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
       { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
     ]
@@ -110,6 +109,7 @@ const crmNavItems: NavItem[] = [
   { label: 'Dashboard', path: '/crm', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
   { label: 'Leads', path: '/leads', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
   { label: 'Pipeline', path: '/crm/pipeline', icon: BarChart2, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive'] },
+  { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'driver', 'receptionist'] },
 ];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -239,10 +239,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // 3. Global Tenant Feature Flags
     const features = tenant?.settings?.features;
     if (features) {
-      if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') return features.crm !== false;
+      if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline' || item.path === '/site-visits') return features.crm !== false;
       if (item.path === '/projects') return features.inventory !== false;
       if (item.path === '/reports') return features.reports !== false;
-      if (item.path === '/site-visits') return features.site_visits !== false;
       if (item.path === '/incentives' || item.path === '/targets') return features.incentives !== false;
     }
 

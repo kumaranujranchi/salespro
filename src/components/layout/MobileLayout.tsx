@@ -26,19 +26,20 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
     const location = useLocation();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
     const filteredNavItems = navItems.filter((item) => {
-        const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
+        const normalizedRoles = item.roles?.map(r => r.toLowerCase().replace(/[\s_-]+/g, '_')) || [];
+        const roleAccess = !item.roles || normalizedRoles.includes(normalizedRole);
         if (!roleAccess) return false;
 
         // Feature Flag System
         const features = tenant?.settings?.features;
         if (features) {
-            if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline') {
+            if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline' || item.path === '/site-visits') {
                 return features.crm !== false;
             }
             if (item.path === '/projects') return features.inventory !== false;
             if (item.path === '/reports') return features.reports !== false;
-            if (item.path === '/site-visits') return features.site_visits !== false;
             if (item.path === '/incentives') return features.incentives !== false;
         }
 
