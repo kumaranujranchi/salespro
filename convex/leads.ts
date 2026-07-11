@@ -35,7 +35,8 @@ export const createLead = mutation({
     lead_score: v.string(),
     internal_notes: v.optional(v.string()),
     created_by: v.optional(v.id("profiles")),
-    metadata: v.any(),
+    lead_date: v.optional(v.string()),
+    metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     // Check and update tenant leads count to enforce 100,000 limit
@@ -67,11 +68,14 @@ export const createLead = mutation({
     const lead_id = await generateLeadId(ctx, args.tenant_id);
     const now = new Date().toISOString();
 
+    const { lead_date, metadata, ...otherSchemaArgs } = args;
+
     const newLeadId = await ctx.db.insert("leads", {
-      ...args,
+      ...otherSchemaArgs,
       lead_id,
-      lead_date: now.split("T")[0],
+      lead_date: lead_date || now.split("T")[0],
       updated_by: args.created_by,
+      metadata: metadata || {},
     });
 
     await ctx.db.patch(args.tenant_id, {
@@ -79,6 +83,38 @@ export const createLead = mutation({
     });
 
     return newLeadId;
+  },
+});
+
+export const updateLead = mutation({
+  args: {
+    id: v.id("leads"),
+    lead_source: v.optional(v.string()),
+    project_id: v.optional(v.union(v.id("projects"), v.null())),
+    sales_executive_id: v.optional(v.id("profiles")),
+    customer_name: v.optional(v.string()),
+    mobile: v.optional(v.string()),
+    email: v.optional(v.union(v.string(), v.null())),
+    city: v.optional(v.union(v.string(), v.null())),
+    budget_range: v.optional(v.string()),
+    purpose: v.optional(v.string()),
+    preferred_locations: v.optional(v.array(v.string())),
+    lead_status: v.optional(v.string()),
+    lead_score: v.optional(v.string()),
+    internal_notes: v.optional(v.union(v.string(), v.null())),
+    lead_date: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...data } = args;
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Lead not found");
+
+    await ctx.db.patch(id, {
+      ...data,
+      updated_at: new Date().toISOString(),
+    });
+    return id;
   },
 });
 
