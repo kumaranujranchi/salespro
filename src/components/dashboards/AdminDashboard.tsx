@@ -13,7 +13,8 @@ import {
   Award,
   CreditCard,
   Sparkles,
-  Building
+  Building,
+  Target
 } from 'lucide-react';
 import {
   XAxis,
@@ -23,6 +24,9 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import { RecentActivityLog } from './widgets/RecentActivityLog';
@@ -70,6 +74,9 @@ export function AdminDashboard() {
   );
   const activityLogsData = useQuery(api.activity_logs.listRecent, 
     tenantId ? { tenant_id: tenantId, limit: 50 } : "skip"
+  );
+  const leadStats = useQuery(api.leads.getDashboardStats, 
+    (tenantId && profileId) ? { tenant_id: tenantId, callerProfileId: profileId } : "skip"
   );
 
   const loading = !salesOverview || !salesAnalytics || !projects || !users;
@@ -310,7 +317,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Leaderboard Widget */}
+      {/* Leaderboard Widget & Leads by Source Pie Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         {permissions.leaderboard && (
@@ -398,6 +405,9 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Leads by Source - Pie Chart */}
+        <LeadsBySourcePieChart leadStats={leadStats} />
       </div>
 
       {/* Recent Activity Log & Announcements */}
@@ -476,5 +486,149 @@ export function AdminDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ─── Leads by Source Pie Chart Component ─── */
+const LEAD_SOURCE_COLORS: Record<string, string> = {
+  Referral: '#6366f1',
+  '99acres': '#eab308',
+  MagicBrick: '#ef4444',
+  Housing: '#3b82f6',
+  Meta: '#ec4899',
+  Google: '#10b981',
+  'Walk-in': '#64748b',
+};
+
+function LeadsBySourcePieChart({ leadStats }: { leadStats: any }) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const sourceData = leadStats
+    ? [
+        { name: 'Referral', value: leadStats.referralLeads || 0 },
+        { name: '99acres', value: leadStats.acresLeads || 0 },
+        { name: 'MagicBrick', value: leadStats.magicBrickLeads || 0 },
+        { name: 'Housing', value: leadStats.housingLeads || 0 },
+        { name: 'Meta', value: leadStats.metaLeads || 0 },
+        { name: 'Google', value: leadStats.googleLeads || 0 },
+        { name: 'Walk-in', value: leadStats.walkInLeads || 0 },
+      ].filter((s) => s.value > 0)
+    : [];
+
+  const totalLeads = leadStats?.totalLeads || 0;
+  const hasData = sourceData.length > 0;
+
+  return (
+    <Card className="h-[500px] flex flex-col rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
+      <CardHeader className="border-b border-slate-100/50 dark:border-white/10 pb-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
+            <div className="p-2 bg-violet-50 dark:bg-violet-500/20 rounded-xl text-violet-600 dark:text-violet-400 ring-1 ring-violet-100 dark:ring-violet-500/30">
+              <Target size={20} />
+            </div>
+            Leads by Source
+          </CardTitle>
+          <div className="px-3 py-1.5 bg-slate-50 dark:bg-white/5 rounded-lg">
+            <span className="text-xs font-bold text-slate-600 dark:text-gray-300">{totalLeads} Total</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col items-center justify-center p-6 gap-4 overflow-hidden">
+        {!hasData ? (
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-gray-500 gap-2">
+            <Target size={40} strokeWidth={1.2} />
+            <p className="text-sm font-medium">No lead data yet</p>
+            <p className="text-xs">Leads will appear here once added</p>
+          </div>
+        ) : (
+          <>
+            {/* Pie Chart */}
+            <div className="w-full" style={{ height: '240px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={sourceData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={2}
+                    stroke="#fff"
+                    onMouseEnter={(_, index) => setActiveIndex(index)}
+                    onMouseLeave={() => setActiveIndex(null)}
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
+                  >
+                    {sourceData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={LEAD_SOURCE_COLORS[entry.name] || '#94a3b8'}
+                        opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
+                        style={{
+                          filter: activeIndex === index ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' : 'none',
+                          transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)',
+                          transformOrigin: 'center',
+                          transition: 'all 0.2s ease',
+                        }}
+                      />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                    }}
+                    formatter={(value: number, name: string) => [
+                      `${value} leads (${totalLeads > 0 ? ((value / totalLeads) * 100).toFixed(1) : 0}%)`,
+                      name,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend Grid */}
+            <div className="w-full grid grid-cols-2 gap-x-6 gap-y-2 px-2">
+              {sourceData.map((entry, index) => {
+                const percentage = totalLeads > 0 ? ((entry.value / totalLeads) * 100).toFixed(1) : '0';
+                return (
+                  <div
+                    key={entry.name}
+                    className={`flex items-center justify-between py-2 px-3 rounded-lg transition-all cursor-default ${
+                      activeIndex === index ? 'bg-slate-50 dark:bg-white/5' : ''
+                    }`}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onMouseLeave={() => setActiveIndex(null)}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-900"
+                        style={{
+                          backgroundColor: LEAD_SOURCE_COLORS[entry.name] || '#94a3b8',
+                          ringColor: LEAD_SOURCE_COLORS[entry.name] || '#94a3b8',
+                        }}
+                      />
+                      <span className="text-xs font-medium text-slate-600 dark:text-gray-300 truncate">
+                        {entry.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs font-bold text-slate-800 dark:text-white">{entry.value}</span>
+                      <span className="text-[10px] text-slate-400 dark:text-gray-500">({percentage}%)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
