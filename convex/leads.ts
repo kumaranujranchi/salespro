@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
@@ -49,7 +49,7 @@ export const createLead = mutation({
   handler: async (ctx, args) => {
     // Check and update tenant leads count to enforce 100,000 limit
     const tenant = await ctx.db.get(args.tenant_id);
-    if (!tenant) throw new Error("Tenant not found");
+    if (!tenant) throw new ConvexError("Tenant not found");
 
     let currentCount = tenant.leads_count;
     if (currentCount === undefined) {
@@ -61,7 +61,7 @@ export const createLead = mutation({
     }
 
     if (currentCount >= 100000) {
-      throw new Error("Lead limit reached. You cannot add more than 1,00,000 leads.");
+      throw new ConvexError("Lead limit reached. You cannot add more than 1,00,000 leads.");
     }
 
     // Check for duplicate mobile within tenant
@@ -71,7 +71,7 @@ export const createLead = mutation({
       .filter((q) => q.eq(q.field("mobile"), args.mobile))
       .unique();
     
-    if (existing) throw new Error("A lead with this mobile number already exists");
+    if (existing) throw new ConvexError("A lead with this mobile number already exists");
 
     const lead_id = await generateLeadId(ctx, args.tenant_id);
     const now = new Date().toISOString();

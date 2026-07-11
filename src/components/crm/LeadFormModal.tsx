@@ -173,7 +173,11 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       onClose();
     } catch (error: any) {
       console.error('Error saving lead:', error);
-      await dialog.alert(error.message || 'Failed to save lead', { variant: 'danger', title: 'Error' });
+      let errorMessage = error.message || 'Failed to save lead';
+      if (errorMessage.includes('ConvexError:')) {
+        errorMessage = errorMessage.split('ConvexError:')[1].trim();
+      }
+      await dialog.alert(errorMessage, { variant: 'danger', title: 'Error' });
     } finally {
       setLoading(false);
     }

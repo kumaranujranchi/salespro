@@ -164,7 +164,11 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
             onSuccess();
             onClose();
         } catch (err: any) {
-            toast.error(err.message || "Failed to save sale");
+            let errorMessage = err.message || "Failed to save sale";
+            if (errorMessage.includes('ConvexError:')) {
+                errorMessage = errorMessage.split('ConvexError:')[1].trim();
+            }
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
