@@ -987,3 +987,45 @@ export const saveUnifiedInboundLead = mutation({
   }
 });
 
+export const listAllLeadsForTenant = query({
+  args: {
+    tenant_id: v.id("tenants"),
+    profileId: v.optional(v.id("profiles")),
+  },
+  handler: async (ctx, args) => {
+    let q = ctx.db
+      .query("leads")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
+
+    let allowedIds: any[] | null = null;
+    if (args.profileId) {
+      const callerProfile = await ctx.db.get(args.profileId);
+      if (callerProfile && !['super_admin', 'admin', 'director', 'platform_admin'].includes(callerProfile.role)) {
+        const subIds = await getSubordinateProfileIds(ctx, args.tenant_id, args.profileId);
+        allowedIds = [args.profileId, ...subIds];
+      }
+    }
+
+    if (allowedIds) {
+      q = q.filter((q) => 
+        q.or(
+          ...allowedIds!.map(id => q.eq(q.field("sales_executive_id"), id))
+        )
+      );
+    }
+
+    const leads = await q.collect();
+    
+    return leads.map(lead => {
+      const overdue_followup = lead.next_followup_date
+        ? new Date(lead.next_followup_date) < new Date()
+        : false;
+      return {
+        ...lead,
+        overdue_followup,
+      };
+    });
+  }
+});
+
+

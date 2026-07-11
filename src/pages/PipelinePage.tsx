@@ -26,7 +26,10 @@ export function PipelinePage() {
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
   // Convex Query
-  const leads = useQuery(api.leads.listLeadsByTenant, tenantId ? { tenant_id: tenantId } : "skip");
+  const leads = useQuery(
+    api.leads.listAllLeadsForTenant,
+    tenantId ? { tenant_id: tenantId, profileId: profile?.id } : "skip"
+  );
 
   const { stats, funnelData, inProgressData, lostData } = useMemo(() => {
     if (!leads) return { stats: { total: 0, inProgress: 0, closed: 0 }, funnelData: [], inProgressData: [], lostData: [] };
