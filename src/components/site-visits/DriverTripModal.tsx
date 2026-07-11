@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useDialog } from '../../contexts/DialogContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useMutation } from "convex/react";
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
@@ -17,6 +17,7 @@ interface DriverTripModalProps {
 }
 
 export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTripModalProps) {
+    const { profile } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [odometer, setOdometer] = useState('');
 
@@ -37,7 +38,7 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
             return;
         }
 
-        const reading = odometer; // Keeping as string for Convex args validation if needed
+        const reading = odometer;
 
         if (visit.status === 'trip_started') {
             if (visit.start_odometer && Number(reading) <= Number(visit.start_odometer)) {
@@ -61,9 +62,10 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
                     id: visit._id,
                     status: 'completed',
                     end_odometer: reading,
-                    trip_end_time: new Date().toISOString()
+                    trip_end_time: new Date().toISOString(),
+                    completed_by_profile_id: profile?.id as Id<"profiles"> | undefined,
                 });
-                toast.success("Trip completed!");
+                toast.success("Trip completed! Timeline updated on the linked lead.");
             }
 
             onSuccess();

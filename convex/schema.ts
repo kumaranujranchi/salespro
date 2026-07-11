@@ -182,6 +182,7 @@ export default defineSchema({
   site_visits: defineTable({
     tenant_id: v.id("tenants"),
     requested_by: v.id("profiles"),
+    lead_id: v.optional(v.id("leads")), // Link to CRM lead
     customer_name: v.string(),
     mobile: v.string(),
     visit_date: v.string(),
@@ -201,6 +202,7 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_driver", ["driver_id"])
     .index("by_requester", ["requested_by"])
+    .index("by_lead", ["lead_id"])
     .index("by_tenant_status", ["tenant_id", "status"]),
 
   sales: defineTable({

@@ -46,18 +46,19 @@ export const listSiteVisits = query({
     
     const paginatedVisits = await q.order("desc").paginate(args.paginationOpts);
 
-    // Filter by date for non-admins (last 30 days) - this is done in memory on the page
     // Map relations (requester, driver)
     const page = await Promise.all(
       paginatedVisits.page.map(async (visit) => {
         const requester = await ctx.db.get(visit.requested_by);
         const driver = visit.driver_id ? await ctx.db.get(visit.driver_id) : null;
+        const lead = visit.lead_id ? await ctx.db.get(visit.lead_id) : null;
         
         return {
           ...visit,
           id: visit._id,
           requester,
           driver,
+          lead,
         };
       })
     );
@@ -70,6 +71,7 @@ export const createSiteVisit = mutation({
   args: {
     tenant_id: v.id("tenants"),
     requested_by: v.id("profiles"),
+    lead_id: v.optional(v.id("leads")), // Optional link to CRM lead
     customer_name: v.string(),
     mobile: v.string(),
     visit_date: v.string(),
@@ -98,10 +100,61 @@ export const updateSiteVisit = mutation({
     trip_start_time: v.optional(v.string()),
     trip_end_time: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    // For timeline entry on completion
+    completed_by_profile_id: v.optional(v.id("profiles")),
   },
   handler: async (ctx, args) => {
-    const { id, ...data } = args;
+    const { id, completed_by_profile_id, ...data } = args;
     await ctx.db.patch(id, data);
+
+    // Auto-add a site visit timeline entry when trip is marked as completed
+    if (args.status === "completed") {
+      const visit = await ctx.db.get(id);
+      if (visit?.lead_id) {
+        // Get the lead to preserve its current status
+        const lead = await ctx.db.get(visit.lead_id);
+        if (lead) {
+          const visitDateTime = `${visit.visit_date} ${visit.visit_time}`;
+          const completedTime = new Date().toISOString();
+
+          // Check daily followup limit
+          const todayStr = new Date().toISOString().split("T")[0];
+          const todayFollowups = (
+            await ctx.db
+              .query("lead_followups")
+              .withIndex("by_lead", (q) => q.eq("lead_id", visit.lead_id!))
+              .collect()
+          ).filter((f) => f.followup_date.slice(0, 10) === todayStr);
+
+          // Add timeline entry (skip if daily limit hit)
+          if (todayFollowups.length < 3) {
+            await ctx.db.insert("lead_followups", {
+              tenant_id: visit.tenant_id,
+              lead_id: visit.lead_id,
+              followup_type: "Site Visit",
+              followup_date: completedTime,
+              discussion_summary: `Site visit completed. Pickup: ${visit.pickup_location}. Scheduled: ${visitDateTime}.${visit.notes ? " Notes: " + visit.notes : ""}`,
+              new_status: lead.lead_status, // Keep existing lead status
+              previous_status: lead.lead_status,
+              is_editable: false,
+              created_by: completed_by_profile_id ?? visit.requested_by,
+              metadata: {
+                type: "site_visit_completed",
+                site_visit_id: id,
+                end_odometer: args.end_odometer,
+              },
+            });
+
+            // Update lead's latest followup date
+            await ctx.db.patch(visit.lead_id, {
+              latest_followup_date: completedTime,
+              latest_followup_status: "Site Visit",
+              updated_at: completedTime,
+            });
+          }
+        }
+      }
+    }
   },
 });
 
