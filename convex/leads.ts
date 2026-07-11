@@ -18,24 +18,32 @@ async function generateLeadId(ctx: QueryCtx | MutationCtx, tenantId: Id<"tenants
   return `L-${datePart}-${sequenceNum}`;
 }
 
+function cleanNullFields<T extends Record<string, any>>(obj: T): { [K in keyof T]: T[K] extends null ? undefined : T[K] } {
+  const result: any = {};
+  for (const key in obj) {
+    result[key] = obj[key] === null ? undefined : obj[key];
+  }
+  return result;
+}
+
 export const createLead = mutation({
   args: {
     tenant_id: v.id("tenants"),
     lead_source: v.string(),
-    project_id: v.optional(v.id("projects")),
-    sales_executive_id: v.optional(v.id("profiles")),
+    project_id: v.optional(v.union(v.id("projects"), v.null())),
+    sales_executive_id: v.optional(v.union(v.id("profiles"), v.null())),
     customer_name: v.string(),
     mobile: v.string(),
-    email: v.optional(v.string()),
-    city: v.optional(v.string()),
-    budget_range: v.optional(v.string()),
-    purpose: v.optional(v.string()),
+    email: v.optional(v.union(v.string(), v.null())),
+    city: v.optional(v.union(v.string(), v.null())),
+    budget_range: v.optional(v.union(v.string(), v.null())),
+    purpose: v.optional(v.union(v.string(), v.null())),
     preferred_locations: v.optional(v.array(v.string())),
     lead_status: v.string(),
     lead_score: v.string(),
-    internal_notes: v.optional(v.string()),
-    created_by: v.optional(v.id("profiles")),
-    lead_date: v.optional(v.string()),
+    internal_notes: v.optional(v.union(v.string(), v.null())),
+    created_by: v.optional(v.union(v.id("profiles"), v.null())),
+    lead_date: v.optional(v.union(v.string(), v.null())),
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -69,12 +77,13 @@ export const createLead = mutation({
     const now = new Date().toISOString();
 
     const { lead_date, metadata, ...otherSchemaArgs } = args;
+    const cleanedSchemaArgs = cleanNullFields(otherSchemaArgs);
 
     const newLeadId = await ctx.db.insert("leads", {
-      ...otherSchemaArgs,
+      ...cleanedSchemaArgs,
       lead_id,
       lead_date: lead_date || now.split("T")[0],
-      updated_by: args.created_by,
+      updated_by: cleanedSchemaArgs.created_by,
       metadata: metadata || {},
     });
 
@@ -91,18 +100,18 @@ export const updateLead = mutation({
     id: v.id("leads"),
     lead_source: v.optional(v.string()),
     project_id: v.optional(v.union(v.id("projects"), v.null())),
-    sales_executive_id: v.optional(v.id("profiles")),
+    sales_executive_id: v.optional(v.union(v.id("profiles"), v.null())),
     customer_name: v.optional(v.string()),
     mobile: v.optional(v.string()),
     email: v.optional(v.union(v.string(), v.null())),
     city: v.optional(v.union(v.string(), v.null())),
-    budget_range: v.optional(v.string()),
-    purpose: v.optional(v.string()),
+    budget_range: v.optional(v.union(v.string(), v.null())),
+    purpose: v.optional(v.union(v.string(), v.null())),
     preferred_locations: v.optional(v.array(v.string())),
     lead_status: v.optional(v.string()),
     lead_score: v.optional(v.string()),
     internal_notes: v.optional(v.union(v.string(), v.null())),
-    lead_date: v.optional(v.string()),
+    lead_date: v.optional(v.union(v.string(), v.null())),
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -111,7 +120,7 @@ export const updateLead = mutation({
     if (!existing) throw new Error("Lead not found");
 
     await ctx.db.patch(id, {
-      ...data,
+      ...cleanNullFields(data),
       updated_at: new Date().toISOString(),
     });
     return id;
