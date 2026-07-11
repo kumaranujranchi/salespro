@@ -377,17 +377,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-transparent">
           {/* Logo Section */}
-          {/* Logo Section */}
-          <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-6'} border-b border-dashed border-slate-200 dark:border-white/10`}>
+          <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-6'} border-b border-dashed border-slate-200 dark:border-white/10 relative`}>
             {isCollapsed ? (
-              <>
-                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm dark:hidden" />
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm hidden dark:block" />
-              </>
+              tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (
+                <img src={tenant.settings.appearance.resolved_logo_url || tenant.settings.appearance.logo_url || undefined} alt={tenant.name} className="w-10 h-10 object-contain rounded-xl shadow-sm" />
+              ) : (
+                <>
+                  <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm dark:hidden" />
+                  <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 object-contain rounded-xl shadow-sm hidden dark:block" />
+                </>
+              )
             ) : (
-              <div className="flex items-center justify-start w-full">
-                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm dark:hidden" />
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm hidden dark:block" />
+              <div className="flex flex-col items-start gap-1.5 w-full pr-4">
+                {tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (
+                  <img src={tenant.settings.appearance.resolved_logo_url || tenant.settings.appearance.logo_url || undefined} alt={tenant.name} className="h-9 max-w-full object-contain rounded-lg shadow-sm" />
+                ) : (
+                  <>
+                    <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm dark:hidden" />
+                    <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-9 w-auto object-contain rounded-xl shadow-sm hidden dark:block" />
+                  </>
+                )}
+                {tenant?.name && (
+                  <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider truncate w-full uppercase mt-1">
+                    {tenant.name}
+                  </div>
+                )}
               </div>
             )}
 

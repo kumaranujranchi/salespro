@@ -60,8 +60,19 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
             {/* Top Header */}
             <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 z-40 px-4 flex items-center justify-between pt-[env(safe-area-inset-top)]">
                 <div className="flex items-center gap-2 shrink-0">
-                    <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain dark:hidden" />
-                    <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain hidden dark:block" />
+                    {tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (
+                        <img src={tenant.settings.appearance.resolved_logo_url || tenant.settings.appearance.logo_url || undefined} alt={tenant.name} className="w-8 h-8 rounded-lg object-contain" />
+                    ) : (
+                        <>
+                            <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain dark:hidden" />
+                            <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain hidden dark:block" />
+                        </>
+                    )}
+                    {tenant?.name && (
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 tracking-wide uppercase">
+                            {tenant.name}
+                        </span>
+                    )}
                 </div>
 
                 {/* Module Toggle - Centered/Flexible */}

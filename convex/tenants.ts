@@ -1,13 +1,46 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
+async function resolveTenantLogo(ctx: any, tenant: any) {
+  if (!tenant) return tenant;
+  if (tenant.settings?.appearance?.logo_url) {
+    const logoUrlStr = tenant.settings.appearance.logo_url;
+    if (logoUrlStr && !logoUrlStr.startsWith('http://') && !logoUrlStr.startsWith('https://') && !logoUrlStr.startsWith('data:')) {
+      try {
+        const logoUrl = await ctx.storage.getUrl(logoUrlStr);
+        if (logoUrl) {
+          tenant.settings = {
+            ...tenant.settings,
+            appearance: {
+              ...tenant.settings.appearance,
+              resolved_logo_url: logoUrl
+            }
+          };
+        }
+      } catch (e) {
+        // Ignore
+      }
+    } else {
+      tenant.settings = {
+        ...tenant.settings,
+        appearance: {
+          ...tenant.settings.appearance,
+          resolved_logo_url: logoUrlStr
+        }
+      };
+    }
+  }
+  return tenant;
+}
+
 export const getBySlug = query({
   args: { slug: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const tenant = await ctx.db
       .query("tenants")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .unique();
+    return await resolveTenantLogo(ctx, tenant);
   },
 });
 
@@ -35,7 +68,8 @@ export const create = mutation({
 export const getById = query({
   args: { id: v.id("tenants") },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
+    const tenant = await ctx.db.get(args.id);
+    return await resolveTenantLogo(ctx, tenant);
   },
 });
 
@@ -80,8 +114,10 @@ export const list = query({
           )
           .first();
 
+        const resolvedTenant = await resolveTenantLogo(ctx, tenant);
+
         return {
-          ...tenant,
+          ...resolvedTenant,
           contact_email: adminProfile?.email || null,
           contact_phone: adminProfile?.phone || null,
         };
