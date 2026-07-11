@@ -25,10 +25,11 @@ export function SiteVisitsPage() {
   // Filtering
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const canViewAll = ['super_admin', 'admin', 'director'].includes(profile?.role || '');
-  const canManage = ['super_admin', 'admin'].includes(profile?.role || '');
-  const isDriver = profile?.role === 'driver';
-  const isSales = profile?.role === 'sales_executive' || profile?.role === 'team_leader';
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const canViewAll = ['super_admin', 'admin', 'director'].includes(normalizedRole);
+  const canManage = ['super_admin', 'admin'].includes(normalizedRole);
+  const isDriver = normalizedRole === 'driver';
+  const isSales = normalizedRole === 'sales_executive' || normalizedRole === 'team_leader';
 
   // State for Modals
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);

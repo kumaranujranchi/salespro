@@ -16,10 +16,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 export function CRMDashboardPage() {
   const { profile } = useAuth();
   const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'this_week' | 'this_month' | 'all_time'>('today');
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   
   const stats = useQuery(api.leads.getDashboardStats, profile?.tenant_id ? {
     tenant_id: profile.tenant_id as Id<"tenants">,
-    executive_id: profile.role === 'sales_executive' ? profile.id as Id<"profiles"> : undefined,
+    executive_id: normalizedRole === 'sales_executive' ? profile.id as Id<"profiles"> : undefined,
     callerProfileId: profile.id as Id<"profiles">
   } : "skip");
 

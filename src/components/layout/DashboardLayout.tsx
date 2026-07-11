@@ -134,7 +134,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Check if user has access to CRM (Sales Department)
   // Assuming 'sales_executive', 'team_leader' are in Sales department + Admins
-  const hasCRMAccess = isCRMEnabled && ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
+  const userRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const roleDetails = profile?.role_details;
+  const permissions = roleDetails?.permissions;
+  const hasCRMAccess = isCRMEnabled && (
+    ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(userRole) ||
+    permissions?.menu?.crm === 'read' ||
+    permissions?.menu?.crm === 'edit'
+  );
 
   useEffect(() => {
     // Sync module state with URL
@@ -225,7 +232,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     // 2. Fallback/Role-string based check (System Roles or missing permission data)
     // Only used if permission mapping didn't provide a definitive true/false
-    const roleAccess = !item.roles || item.roles.includes(profile?.role || '');
+    const normalizedRoles = item.roles?.map(r => r.toLowerCase().replace(/[\s_-]+/g, '_')) || [];
+    const roleAccess = !item.roles || normalizedRoles.includes(userRole);
     if (!roleAccess) return false;
 
     // 3. Global Tenant Feature Flags

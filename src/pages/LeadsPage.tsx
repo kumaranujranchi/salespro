@@ -29,6 +29,7 @@ import { motion } from 'framer-motion';
 
 export function LeadsPage() {
   const { profile } = useAuth();
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   const dialog = useDialog();
   const toast = useToast();
 
@@ -75,7 +76,7 @@ export function LeadsPage() {
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
-    profile?.role === 'sales_executive'
+    normalizedRole === 'sales_executive'
   );
 
   // Dashboard Stats using optimized query
@@ -104,8 +105,8 @@ export function LeadsPage() {
   const loading = status === "LoadingFirstPage";
 
   // Permissions
-  const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(profile?.role || '');
-  const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(profile?.role || '');
+  const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(normalizedRole);
+  const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
 
   // No manual pagination needed anymore
   useEffect(() => {
@@ -817,7 +818,7 @@ export function LeadsPage() {
                           {/* Actions (Menu) */}
                           <TableCell className="w-[120px]">
                             <div className="flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
-                              {((['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '')) || lead.sales_executive_id === profile?.id) && (
+                              {((['admin', 'super_admin', 'director', 'team_leader'].includes(normalizedRole)) || lead.sales_executive_id === profile?.id) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -909,7 +910,7 @@ export function LeadsPage() {
                                     </div>
 
                                     {/* Quick Update Section */}
-                                    {((['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '')) || lead.sales_executive_id === profile?.id) && (
+                                    {((['admin', 'super_admin', 'director', 'team_leader'].includes(normalizedRole)) || lead.sales_executive_id === profile?.id) && (
                                       lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? (
                                         <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900/50 text-center space-y-3">
                                           <div className="text-red-600 dark:text-red-400 font-semibold text-sm">

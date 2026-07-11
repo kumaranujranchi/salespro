@@ -25,8 +25,9 @@ export function TargetsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<any>(null);
 
-  const isExecutive = profile?.role === 'sales_executive';
-  const canManage = ['super_admin', 'admin', 'director', 'team_leader'].includes(profile?.role || '');
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isExecutive = normalizedRole === 'sales_executive';
+  const canManage = ['super_admin', 'admin', 'director', 'team_leader'].includes(normalizedRole);
 
   // Convex Queries
   const targets = useQuery(api.targets.listTargets, profile?.tenant_id ? { 

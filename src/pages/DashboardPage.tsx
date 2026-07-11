@@ -15,8 +15,10 @@ export function DashboardPage() {
   const role = profile.role;
   const permissions = profile.role_details?.permissions;
 
+  const normalizedRole = role.toLowerCase().replace(/[\s_-]+/g, '_');
+
   // 1. Precise Match for System Roles
-  switch (role) {
+  switch (normalizedRole) {
     case 'platform_admin':
       return <PlatformDashboard />;
     case 'super_admin':
@@ -43,6 +45,11 @@ export function DashboardPage() {
     if (view === 'overall') return <AdminDashboard />;
     if (view === 'team') return <TeamLeaderDashboard />;
     if (view === 'self') return <SalesExecutiveDashboard />;
+  }
+
+  // 3. Fallback based on CRM menu permission
+  if (permissions?.menu?.crm === 'read' || permissions?.menu?.crm === 'edit') {
+    return <CRMDashboard />;
   }
 
   // 3. Last Resort Fallback

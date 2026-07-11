@@ -20,7 +20,8 @@ export const listSiteVisits = query({
     filterStatus: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const canViewAll = ["super_admin", "admin", "director"].includes(args.role);
+    const normalizedRole = args.role.toLowerCase().replace(/[\s_-]+/g, "_");
+    const canViewAll = ["super_admin", "admin", "director"].includes(normalizedRole);
     
     let q;
     
@@ -32,7 +33,7 @@ export const listSiteVisits = query({
         q = ctx.db.query("site_visits")
           .withIndex("by_tenant", q => q.eq("tenant_id", args.tenant_id));
       }
-    } else if (args.role === "driver") {
+    } else if (normalizedRole === "driver") {
        q = ctx.db.query("site_visits")
          .withIndex("by_driver", q => q.eq("driver_id", args.userId))
          .filter(q => q.eq(q.field("tenant_id"), args.tenant_id));
