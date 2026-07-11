@@ -40,15 +40,13 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
         clarificationResponse: ''
     });
 
-    // Fetch leads for the current executive
-    const leads = useQuery(
-        api.leads.listLeadsByTenant,
-        profile?.tenant_id ? {
+    // Fetch leads for search — uses the lightweight non-paginated searchLeads query
+    const searchResults = useQuery(
+        api.leads.searchLeads,
+        profile?.tenant_id && leadSearch.length >= 2 ? {
             tenant_id: profile.tenant_id as Id<"tenants">,
-            showOnlyMyLeads: false,
+            searchQuery: leadSearch,
             profileId: profile.id as Id<"profiles">,
-            statusFilter: 'all',
-            searchQuery: leadSearch.length >= 2 ? leadSearch : ''
         } : "skip"
     );
 
@@ -171,12 +169,8 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
         }
     };
 
-    // Filter leads for dropdown
-    const filteredLeads = (leads || []).filter((l: any) =>
-        leadSearch.length >= 2 &&
-        (l.customer_name?.toLowerCase().includes(leadSearch.toLowerCase()) ||
-         l.mobile?.includes(leadSearch))
-    ).slice(0, 8);
+    // searchResults is already filtered by the backend
+    const filteredLeads = searchResults || [];
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={editingVisit ? "Edit Request" : "Schedule Site Visit"}>

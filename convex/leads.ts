@@ -153,6 +153,52 @@ async function getSubordinateProfileIds(ctx: any, tenantId: any, managerId: any)
   return ids;
 }
 
+// Lightweight lead search for form pickers (no pagination)
+export const searchLeads = query({
+  args: {
+    tenant_id: v.id("tenants"),
+    searchQuery: v.string(),
+    profileId: v.optional(v.id("profiles")),
+  },
+  handler: async (ctx, args) => {
+    if (!args.searchQuery || args.searchQuery.length < 2) return [];
+
+    const q = args.searchQuery.toLowerCase();
+
+    // Determine allowed leads scope
+    let allowedIds: any[] | null = null;
+    if (args.profileId) {
+      const caller = await ctx.db.get(args.profileId);
+      if (caller && !['super_admin', 'admin', 'director', 'platform_admin'].includes(caller.role)) {
+        const subIds = await getSubordinateProfileIds(ctx, args.tenant_id, args.profileId);
+        allowedIds = [args.profileId, ...subIds];
+      }
+    }
+
+    const all = await ctx.db
+      .query("leads")
+      .withIndex("by_tenant", (dbq) => dbq.eq("tenant_id", args.tenant_id))
+      .collect();
+
+    return all
+      .filter((lead) => {
+        const nameMatch = lead.customer_name?.toLowerCase().includes(q);
+        const phoneMatch = lead.mobile?.includes(args.searchQuery);
+        if (!nameMatch && !phoneMatch) return false;
+        if (allowedIds) return allowedIds.includes(lead.sales_executive_id);
+        return true;
+      })
+      .slice(0, 10)
+      .map((lead) => ({
+        _id: lead._id,
+        customer_name: lead.customer_name,
+        mobile: lead.mobile,
+        lead_status: lead.lead_status,
+        lead_id: lead.lead_id,
+      }));
+  },
+});
+
 export const listLeadsByTenant = query({
   args: { 
     paginationOpts: v.any(),
