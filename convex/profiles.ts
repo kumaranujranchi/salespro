@@ -206,10 +206,9 @@ export const listActiveStaff = query({
       .filter((q) => 
         q.and(
           q.eq(q.field("is_active"), true),
-          q.or(
-            q.eq(q.field("role"), "sales_executive"),
-            q.eq(q.field("role"), "team_leader")
-          )
+          q.neq(q.field("role"), "driver"),
+          q.neq(q.field("role"), "platform_admin"),
+          q.neq(q.field("role"), "affiliate")
         )
       )
       .collect();
@@ -241,10 +240,9 @@ export const listExecutives = query({
       .filter((q) => 
         q.and(
           q.eq(q.field("is_active"), true),
-          q.or(
-            q.eq(q.field("role"), "sales_executive"),
-            q.eq(q.field("role"), "team_leader")
-          )
+          q.neq(q.field("role"), "driver"),
+          q.neq(q.field("role"), "platform_admin"),
+          q.neq(q.field("role"), "affiliate")
         )
       )
       .collect();
