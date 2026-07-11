@@ -627,7 +627,7 @@ export function AdminIntegrationsPage() {
 
               <div className="w-16 h-16 bg-[#ECF2FF] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/facebook_ads.png" 
+                  src="/images/facebook_ads.webp" 
                   alt="Facebook & Instagram" 
                   className="w-12 h-12 object-contain"
                 />
@@ -651,7 +651,7 @@ export function AdminIntegrationsPage() {
 
               <div className="w-16 h-16 bg-[#E8F8F0] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/whatsApp.png" 
+                  src="/images/whatsApp.webp" 
                   alt="WhatsApp Integration" 
                   className="w-11 h-11 object-contain"
                 />
@@ -680,7 +680,7 @@ export function AdminIntegrationsPage() {
 
               <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/google_ads.png" 
+                  src="/images/google_ads.webp" 
                   alt="Google Ads" 
                   className="w-12 h-12 object-contain"
                 />
@@ -701,7 +701,7 @@ export function AdminIntegrationsPage() {
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleFormActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
               <div className="w-16 h-16 bg-[#F3F7FF] rounded-2xl flex items-center justify-center overflow-hidden">
-                <img src="/images/google_form.png" alt="Google Forms" className="w-12 h-12 object-contain" />
+                <img src="/images/google_form.webp" alt="Google Forms" className="w-12 h-12 object-contain" />
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Google Forms
@@ -718,7 +718,7 @@ export function AdminIntegrationsPage() {
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleSheetActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
               <div className="w-16 h-16 bg-[#E8F5EC] rounded-2xl flex items-center justify-center overflow-hidden">
-                <img src="/images/Googlesheet.png" alt="Google Sheets" className="w-12 h-12 object-contain" />
+                <img src="/images/Googlesheet.webp" alt="Google Sheets" className="w-12 h-12 object-contain" />
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Google Sheets
@@ -742,7 +742,7 @@ export function AdminIntegrationsPage() {
               </span>
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/99acres.png" 
+                  src="/images/99acres.webp" 
                   alt="99acres" 
                   className="w-12 h-12 object-contain"
                 />
@@ -763,7 +763,7 @@ export function AdminIntegrationsPage() {
               </span>
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/magicbricks.png" 
+                  src="/images/magicbricks.webp" 
                   alt="Magicbricks" 
                   className="w-12 h-12 object-contain"
                 />
@@ -784,7 +784,7 @@ export function AdminIntegrationsPage() {
               </span>
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
-                  src="/images/hosing.png" 
+                  src="/images/hosing.webp" 
                   alt="Housing.com" 
                   className="w-12 h-12 object-contain"
                 />
@@ -1165,7 +1165,7 @@ export function AdminIntegrationsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src="/images/99acres.png" alt="99acres" className="w-6 h-6 object-contain" />
+                  <img src="/images/99acres.webp" alt="99acres" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres Webhook Configuration</h2>
               </div>
@@ -1312,7 +1312,7 @@ export function AdminIntegrationsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src="/images/magicbricks.png" alt="Magicbricks" className="w-6 h-6 object-contain" />
+                  <img src="/images/magicbricks.webp" alt="Magicbricks" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks Webhook Configuration</h2>
               </div>
@@ -1459,7 +1459,7 @@ export function AdminIntegrationsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src="/images/hosing.png" alt="Housing.com" className="w-6 h-6 object-contain" />
+                  <img src="/images/hosing.webp" alt="Housing.com" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Housing.com Webhook Configuration</h2>
               </div>
@@ -1606,7 +1606,7 @@ export function AdminIntegrationsPage() {
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src="/images/whatsApp.png" alt="WhatsApp" className="w-6 h-6 object-contain" />
+                  <img src="/images/whatsApp.webp" alt="WhatsApp" className="w-6 h-6 object-contain" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Webhook Configuration</h2>
               </div>
@@ -1805,7 +1805,7 @@ export function AdminIntegrationsPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <img src="/images/google_form.png" alt="Google Forms" className="w-7 h-7 object-contain" />
+                <img src="/images/google_form.webp" alt="Google Forms" className="w-7 h-7 object-contain" />
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Forms Webhook Integration</h2>
               </div>
               <div className="flex items-center gap-2">
@@ -1959,7 +1959,7 @@ function onFormSubmit(e) {
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <img src="/images/Googlesheet.png" alt="Google Sheets" className="w-7 h-7 object-contain" />
+                <img src="/images/Googlesheet.webp" alt="Google Sheets" className="w-7 h-7 object-contain" />
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Sheets Webhook Integration</h2>
               </div>
               <div className="flex items-center gap-2">
