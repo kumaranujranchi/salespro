@@ -219,7 +219,7 @@ export function SettingsPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    Supports PNG, JPG, or SVG. Max size 5MB.
+                    Supports PNG, JPG, or SVG. Max size 5MB. Recommended size: 200x50px (Landscape) or 200x200px (Square).
                   </p>
                 </div>
               </div>
