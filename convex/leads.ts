@@ -470,6 +470,91 @@ export const getDashboardStats = query({
       return (await q.collect()).length;
     };
 
+    // Fetch all follow-ups for the tenant
+    const followups = await ctx.db
+      .query("lead_followups")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .collect();
+
+    // Filter followups based on visibility (allowedIds)
+    let filteredFollowups = followups;
+    if (allowedIds) {
+      const allowedSet = new Set(allowedIds.map((id) => id.toString()));
+      filteredFollowups = followups.filter(
+        (f) => f.created_by && allowedSet.has(f.created_by.toString())
+      );
+    }
+
+    // Helper to format date as YYYY-MM-DD
+    const formatDate = (date: Date) => {
+      return date.toISOString().split("T")[0];
+    };
+
+    const today = new Date();
+    const todayStr = formatDate(today);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = formatDate(yesterday);
+
+    // Start of week (Monday)
+    const startOfWeek = new Date(today);
+    const dayOfWeek = today.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    startOfWeek.setDate(today.getDate() + diffToMonday);
+    const startOfWeekStr = formatDate(startOfWeek);
+
+    // Start of month
+    const startOfMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
+    const getPeriodStats = (periodFollowups: any[]) => {
+      const callFollowups = periodFollowups.filter(f => f.followup_type === 'Call');
+      const total = callFollowups.length;
+      const connected = callFollowups.filter(f => f.call_status === 'Connected' || f.call_status === 'Asked to call later').length;
+      const notResponding = callFollowups.filter(f => f.call_status === 'Not Responding').length;
+      const ringing = callFollowups.filter(f => f.call_status === 'Ringing').length;
+      const busy = callFollowups.filter(f => f.call_status === 'Busy').length;
+      const disconnected = callFollowups.filter(f => f.call_status === 'Disconnected').length;
+      return { total, connected, notResponding, ringing, busy, disconnected };
+    };
+
+    const getActiveAgentsCount = (periodFollowups: any[]) => {
+      return new Set(
+        periodFollowups
+          .filter(f => f.created_by)
+          .map(f => f.created_by!.toString())
+      ).size;
+    };
+
+    const todayFollowups = filteredFollowups.filter(f => f.followup_date === todayStr);
+    const yesterdayFollowups = filteredFollowups.filter(f => f.followup_date === yesterdayStr);
+    const weekFollowups = filteredFollowups.filter(f => f.followup_date >= startOfWeekStr);
+    const monthFollowups = filteredFollowups.filter(f => f.followup_date >= startOfMonthStr);
+
+    // Fetch tenant profiles to get total agents (sales executives)
+    const tenantProfiles = await ctx.db
+      .query("profiles")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .collect();
+    const totalAgentsCount = tenantProfiles.filter(p => p.role === 'sales_executive' && p.is_active).length || 1;
+
+    const callOverview = {
+      today: getPeriodStats(todayFollowups),
+      yesterday: getPeriodStats(yesterdayFollowups),
+      this_week: getPeriodStats(weekFollowups),
+      this_month: getPeriodStats(monthFollowups),
+      all_time: getPeriodStats(filteredFollowups),
+    };
+
+    const agentActivity = {
+      total: totalAgentsCount,
+      today: getActiveAgentsCount(todayFollowups),
+      yesterday: getActiveAgentsCount(yesterdayFollowups),
+      this_week: getActiveAgentsCount(weekFollowups),
+      this_month: getActiveAgentsCount(monthFollowups),
+      all_time: getActiveAgentsCount(filteredFollowups),
+    };
+
     return {
       totalLeads: await getCount(),
       newLeads: await getCount('New'),
@@ -486,6 +571,9 @@ export const getDashboardStats = query({
       metaLeads: await getSourceCount('Meta'),
       googleLeads: await getSourceCount('Google'),
       walkInLeads: await getSourceCount('Walk-in'),
+
+      callOverview,
+      agentActivity,
     };
   },
 });
