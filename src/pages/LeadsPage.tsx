@@ -71,7 +71,7 @@ export function LeadsPage() {
 
   // Filter & Search State
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
@@ -349,11 +349,11 @@ export function LeadsPage() {
     toast.success('Copied to clipboard');
   };
 
-  const handleReactivateLead = async (leadId: string) => {
+  const handleReopenLead = async (leadId: string) => {
     const confirmed = await dialog.confirm(
-      'Are you sure you want to reactivate this lead? Its status will be reset to New.',
+      'Are you sure you want to reopen this lead? Its status will be reset to New.',
       {
-        title: 'Reactivate Lead',
+        title: 'Reopen Lead',
         variant: 'success'
       }
     );
@@ -365,10 +365,10 @@ export function LeadsPage() {
         id: leadId as Id<"leads">,
         lead_status: 'New',
       });
-      toast.success('Lead reactivated successfully');
+      toast.success('Lead reopened successfully');
     } catch (error: any) {
-      console.error('Reactivate error', error);
-      toast.error(error.message || 'Failed to reactivate lead');
+      console.error('Reopen error', error);
+      toast.error(error.message || 'Failed to reopen lead');
     }
   };
 
@@ -724,7 +724,7 @@ export function LeadsPage() {
                     {leads.map((lead) => (
                       <Fragment key={lead.id}>
                         <TableRow
-                          className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.overdue_followup ? 'bg-red-50 dark:bg-red-900/10' : ''} ${expandedLeadId === lead.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                          className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'bg-red-50 dark:bg-red-950/25 border-l-4 border-l-red-500' : lead.overdue_followup ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${expandedLeadId === lead.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                           onClick={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
                         >
                           <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
@@ -822,15 +822,11 @@ export function LeadsPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    if (lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified') {
-                                       handleReactivateLead(lead.id);
-                                     } else {
-                                       setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
-                                     }
+                                    setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
                                   }}
-                                  className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200'}`}
+                                  className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200'}`}
                                 >
-                                  {lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'Reactivate' : 'Update'}
+                                  {lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'View / Reopen' : 'Update'}
                                 </Button>
                               )}
                               <ActionMenu
@@ -846,9 +842,9 @@ export function LeadsPage() {
                                     onClick: () => handleViewDetails(lead)
                                   },
                                    ...((lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified') ? [{
-                                     label: 'Reactivate',
+                                     label: 'Reopen',
                                      icon: RefreshCw,
-                                     onClick: () => handleReactivateLead(lead.id)
+                                     onClick: () => handleReopenLead(lead.id)
                                    }] : []),
                                   ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
                                     label: 'Delete',
@@ -914,7 +910,26 @@ export function LeadsPage() {
 
                                     {/* Quick Update Section */}
                                     {((['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '')) || lead.sales_executive_id === profile?.id) && (
-                                      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                      lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? (
+                                        <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900/50 text-center space-y-3">
+                                          <div className="text-red-600 dark:text-red-400 font-semibold text-sm">
+                                            This lead is currently ${lead.lead_status}.
+                                          </div>
+                                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                                            To make updates or log follow-ups, you must reopen the lead first.
+                                          </p>
+                                          <Button
+                                            type="button"
+                                            variant="success"
+                                            size="sm"
+                                            onClick={() => handleReopenLead(lead.id)}
+                                            className="w-full mt-2"
+                                          >
+                                            Reopen Lead
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                                         <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
                                           <Plus size={16} className="text-blue-500" />
                                           Quick Follow-up Update
@@ -1052,7 +1067,8 @@ export function LeadsPage() {
                                           </div>
                                         </form>
                                       </div>
-                                    )}
+                                    )
+                                  )}
                                   </div>
 
                                   {/* Right Column: Timeline */}

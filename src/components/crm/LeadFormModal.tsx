@@ -212,14 +212,14 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       }
 
       if (isDuplicateLost && lostLeadId) {
-        const confirmReactivate = await dialog.confirm(
-          "Lead already available in lost leads. Do you want to reactivate it?",
+        const confirmReopen = await dialog.confirm(
+          "Lead already available in lost/disqualified leads. Do you want to reopen it?",
           {
             title: "Lead in Lost Leads",
             variant: "success"
           }
         );
-        if (confirmReactivate) {
+        if (confirmReopen) {
           try {
             setLoading(true);
             await updateLeadMutation({
@@ -238,11 +238,11 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
               internal_notes: formData.internal_notes || null,
               lead_date: new Date(formData.lead_date).toISOString(),
             });
-            await dialog.alert('Lead reactivated successfully!', { variant: 'success', title: 'Success' });
+            await dialog.alert('Lead reopened successfully!', { variant: 'success', title: 'Success' });
             onClose();
-          } catch (reactivateErr: any) {
-            console.error('Reactivation failed:', reactivateErr);
-            await dialog.alert('Failed to reactivate lead', { variant: 'danger', title: 'Error' });
+          } catch (reopenErr: any) {
+            console.error('Reopening failed:', reopenErr);
+            await dialog.alert('Failed to reopen lead', { variant: 'danger', title: 'Error' });
           }
         }
       } else {
