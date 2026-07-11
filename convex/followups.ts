@@ -4,11 +4,25 @@ import { mutation, query } from "./_generated/server";
 export const listByLead = query({
   args: { leadId: v.id("leads") },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const followups = await ctx.db
       .query("lead_followups")
       .withIndex("by_lead", (q) => q.eq("lead_id", args.leadId))
       .order("desc")
       .collect();
+
+    return await Promise.all(
+      followups.map(async (f) => {
+        const creator = f.created_by ? await ctx.db.get(f.created_by) : null;
+        return {
+          ...f,
+          creator: creator ? {
+            id: creator._id,
+            full_name: creator.full_name,
+            role: creator.role,
+          } : null,
+        };
+      })
+    );
   },
 });
 
@@ -24,26 +38,31 @@ export const addFollowup = mutation({
     new_status: v.string(),
     next_followup_date: v.optional(v.string()),
     created_by: v.optional(v.id("profiles")),
+    followup_date: v.optional(v.string()),
     metadata: v.any(),
   },
   handler: async (ctx, args) => {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
+    const followupDateVal = args.followup_date || now.toISOString();
 
     // Check daily limit (max 3 per day)
-    const todayFollowups = await ctx.db
-      .query("lead_followups")
-      .withIndex("by_lead", (q) => q.eq("lead_id", args.lead_id))
-      .filter((q) => q.eq(q.field("followup_date"), todayStr))
-      .collect();
+    const todayFollowups = (
+      await ctx.db
+        .query("lead_followups")
+        .withIndex("by_lead", (q) => q.eq("lead_id", args.lead_id))
+        .collect()
+    ).filter((f) => f.followup_date.slice(0, 10) === todayStr);
 
     if (todayFollowups.length >= 3) {
       throw new Error("Maximum 3 follow-ups per day allowed for this lead");
     }
 
+    const { followup_date, ...insertArgs } = args;
+
     const id = await ctx.db.insert("lead_followups", {
-      ...args,
-      followup_date: todayStr,
+      ...insertArgs,
+      followup_date: followupDateVal,
       is_editable: true,
     });
 
@@ -53,7 +72,7 @@ export const addFollowup = mutation({
 
     await ctx.db.patch(args.lead_id, {
       lead_status: args.new_status,
-      latest_followup_date: todayStr,
+      latest_followup_date: followupDateVal,
       latest_followup_status: args.new_status,
       next_followup_date: args.next_followup_date,
       followup_count: currentCount + 1,

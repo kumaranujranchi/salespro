@@ -5,7 +5,7 @@ import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
-import { LeadWithRelations } from '../types/database';
+import { LeadWithRelations, LeadStatus, FollowupType, CustomerResponse, CallStatus } from '../types/database';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
@@ -21,7 +21,8 @@ import { ActionMenu } from '../components/ui/ActionMenu';
 import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, TrendingDown, Minus, Search, Download, Upload,
-  UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy
+  UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy,
+  Calendar, Clock
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
@@ -34,6 +35,8 @@ export function LeadsPage() {
   // Convex Mutations
   const deleteLeadMutation = useMutation(api.leads.deleteLead);
   const bulkDeleteLeadsMutation = useMutation(api.leads.bulkDeleteLeads);
+  const addFollowupMutation = useMutation(api.followups.addFollowup);
+  const updateLeadMutation = useMutation(api.leads.updateLead);
 
   // State Management
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -45,6 +48,24 @@ export function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<LeadWithRelations | null>(null);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+  
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [quickFollowupData, setQuickFollowupData] = useState({
+    followup_type: 'Call' as FollowupType,
+    followup_date: new Date().toISOString().slice(0, 16),
+    discussion_summary: '',
+    customer_response: '' as CustomerResponse | '',
+    call_status: 'Connected' as CallStatus,
+    new_status: 'New' as LeadStatus,
+    schedule_followup: false,
+    next_followup_date: '',
+    lost_reason: ''
+  });
+
+  // Query for the expanded lead's timeline
+  const expandedFollowups = useQuery(api.followups.listByLead, 
+    expandedLeadId ? { leadId: expandedLeadId as Id<"leads"> } : "skip"
+  );
 
   const [isCRMActive, setIsCRMActive] = useState(true);
 
@@ -90,6 +111,180 @@ export function LeadsPage() {
   useEffect(() => {
     // Scroll to top or reset internal state if needed
   }, [searchTerm, statusFilter, scoreFilter, executiveFilter, showOnlyMyLeads]);
+
+  useEffect(() => {
+    if (expandedLeadId) {
+      const activeLead = leads?.find(l => l.id === expandedLeadId);
+      if (activeLead) {
+        setQuickFollowupData({
+          followup_type: 'Call',
+          followup_date: new Date().toISOString().slice(0, 16),
+          discussion_summary: '',
+          customer_response: '',
+          call_status: 'Connected',
+          new_status: activeLead.lead_status as LeadStatus,
+          schedule_followup: false,
+          next_followup_date: '',
+          lost_reason: ''
+        });
+      }
+    }
+  }, [expandedLeadId, leads]);
+
+  const handleQuickFollowupSubmit = async (e: React.FormEvent, lead: LeadWithRelations) => {
+    e.preventDefault();
+    if (!profile) return;
+
+    if (quickFollowupData.discussion_summary.trim().length < 5) {
+      toast.error('Remark must be at least 5 characters');
+      return;
+    }
+
+    if (quickFollowupData.schedule_followup && !quickFollowupData.next_followup_date) {
+      toast.error('Next follow-up date is required when scheduling');
+      return;
+    }
+
+    // Require Project for Conversion
+    if (quickFollowupData.new_status === 'Converted' && !lead.project_id) {
+      toast.error('Cannot convert to sale without a selected Project. Edit lead details to assign a project first.');
+      return;
+    }
+
+    setSubmitLoading(true);
+    try {
+      const previousStatus = lead.lead_status;
+
+      await addFollowupMutation({
+        tenant_id: profile.tenant_id as Id<"tenants">,
+        lead_id: lead.id as Id<"leads">,
+        followup_type: quickFollowupData.followup_type,
+        followup_date: new Date(quickFollowupData.followup_date).toISOString(),
+        discussion_summary: quickFollowupData.discussion_summary,
+        customer_response: quickFollowupData.customer_response || undefined,
+        call_status: quickFollowupData.followup_type === 'Call' ? quickFollowupData.call_status : undefined,
+        previous_status: previousStatus,
+        new_status: quickFollowupData.new_status,
+        next_followup_date: quickFollowupData.schedule_followup && quickFollowupData.next_followup_date 
+          ? new Date(quickFollowupData.next_followup_date).toISOString() 
+          : undefined,
+        created_by: profile.id as Id<"profiles">,
+        metadata: {},
+      });
+
+      // Update lead status
+      await updateLeadMutation({
+        id: lead.id as Id<"leads">,
+        lead_status: quickFollowupData.new_status,
+      });
+
+      toast.success('Follow-up and status updated successfully');
+      
+      // Reset remark text but keep status
+      setQuickFollowupData(prev => ({
+        ...prev,
+        discussion_summary: '',
+        schedule_followup: false,
+        next_followup_date: ''
+      }));
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'Failed to save update');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  const renderTimeline = (lead: LeadWithRelations, followupsList: any[]) => {
+    const events = [
+      {
+        id: 'creation',
+        type: 'Creation',
+        date: lead._creationTime || new Date(lead.lead_date).getTime(),
+        title: 'Lead Created',
+        description: `Source: ${lead.lead_source}`,
+        creator_name: 'System',
+        previous_status: undefined,
+        new_status: undefined,
+        call_status: undefined,
+        customer_response: undefined,
+        next_followup_date: undefined,
+      },
+      ...followupsList.map(f => ({
+        id: f._id,
+        type: f.followup_type,
+        date: new Date(f.followup_date).getTime(),
+        title: `${f.followup_type} Update`,
+        description: f.discussion_summary,
+        creator_name: f.creator?.full_name || 'Unknown Agent',
+        previous_status: f.previous_status,
+        new_status: f.new_status,
+        call_status: f.call_status,
+        customer_response: f.customer_response,
+        next_followup_date: f.next_followup_date,
+      }))
+    ];
+
+    events.sort((a, b) => b.date - a.date);
+
+    return (
+      <div className="space-y-4 max-h-[360px] overflow-y-auto pr-2 mt-2">
+        {events.map((event) => {
+          const isCreation = event.type === 'Creation';
+          return (
+            <div key={event.id} className="relative pl-6 pb-4 border-l border-gray-200 dark:border-gray-700 last:border-0">
+              <div className={`absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full ${isCreation ? 'bg-green-500' : 'bg-blue-600'}`} />
+              
+              <div className="text-xs text-gray-500 flex items-center justify-between mb-1">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  {event.title}
+                </span>
+                <span className="text-[10px]">
+                  {new Date(event.date).toLocaleString()}
+                </span>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-slate-800/40 p-2.5 rounded border border-gray-100 dark:border-slate-800">
+                {event.previous_status && event.new_status && (
+                  <div className="mb-1">
+                    <Badge variant="outline" className="text-[9px] px-1 py-0">
+                      {event.previous_status} → {event.new_status}
+                    </Badge>
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {event.description}
+                </p>
+
+                {event.call_status && (
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Call Status: <span className="font-medium">{event.call_status}</span>
+                  </div>
+                )}
+
+                {event.customer_response && (
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Response: <span className="font-medium">{event.customer_response}</span>
+                  </div>
+                )}
+
+                {event.next_followup_date && (
+                  <div className="mt-1 text-[10px] text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                    <Calendar size={10} /> Next Follow-up: {new Date(event.next_followup_date).toLocaleString()}
+                  </div>
+                )}
+                
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-slate-800/80 text-[10px] text-gray-400 flex justify-between">
+                  <span>By: {event.creator_name}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const handleCreateLead = () => {
     setSelectedLead(null);
@@ -497,7 +692,7 @@ export function LeadsPage() {
                       <TableHead>Assigned To</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Follow-ups</TableHead>
-                      <TableHead className="w-[50px]"><span /></TableHead>
+                      <TableHead className="w-[120px] text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -595,27 +790,41 @@ export function LeadsPage() {
                           </TableCell>
 
                           {/* Actions (Menu) */}
-                          <TableCell className="w-[50px]">
-                            <ActionMenu
-                              actions={[
-                                {
-                                  label: 'Edit',
-                                  icon: Edit,
-                                  onClick: () => handleEditLead(lead)
-                                },
-                                {
-                                  label: 'View Details',
-                                  icon: Eye,
-                                  onClick: () => handleViewDetails(lead)
-                                },
-                                ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
-                                  label: 'Delete',
-                                  icon: Trash2,
-                                  variant: 'danger' as const,
-                                  onClick: () => handleDeleteLead(lead.id)
-                                }] : [])
-                              ]}
-                            />
+                          <TableCell className="w-[120px]">
+                            <div className="flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                              {((['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '')) || lead.sales_executive_id === profile?.id) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
+                                  }}
+                                  className="px-2 py-1 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 dark:border-slate-700"
+                                >
+                                  Update
+                                </Button>
+                              )}
+                              <ActionMenu
+                                actions={[
+                                  {
+                                    label: 'Edit',
+                                    icon: Edit,
+                                    onClick: () => handleEditLead(lead)
+                                  },
+                                  {
+                                    label: 'View Details',
+                                    icon: Eye,
+                                    onClick: () => handleViewDetails(lead)
+                                  },
+                                  ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
+                                    label: 'Delete',
+                                    icon: Trash2,
+                                    variant: 'danger' as const,
+                                    onClick: () => handleDeleteLead(lead.id)
+                                  }] : [])
+                                ]}
+                              />
+                            </div>
                           </TableCell>
                         </TableRow>
                         
@@ -630,41 +839,201 @@ export function LeadsPage() {
                                 transition={{ duration: 0.2 }}
                                 className="overflow-hidden"
                               >
-                                <div className="p-4 grid grid-cols-2 gap-6">
-                                  {/* About Lead Section */}
-                                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                                    <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                      <Users size={16} className="text-blue-500" />
-                                      About Lead
-                                    </h4>
-                                    <div className="text-sm space-y-3">
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                          <p className="text-xs text-gray-500">Lead ID</p>
-                                          <p className="font-mono text-blue-600">{lead.lead_id}</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500">Created</p>
-                                          <p>{new Date(lead.lead_date).toLocaleDateString()}</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500">Source</p>
-                                          <p>{lead.lead_source || '-'}</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500">Score</p>
-                                          <p>{lead.lead_score}</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500">Budget</p>
-                                          <p>{lead.budget_range || '-'}</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-xs text-gray-500">Purpose</p>
-                                          <p>{lead.purpose || '-'}</p>
+                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Left Column: About Lead & Quick Update */}
+                                  <div className="space-y-4">
+                                    {/* About Lead Section */}
+                                    <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                      <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                        <Users size={16} className="text-blue-500" />
+                                        About Lead
+                                      </h4>
+                                      <div className="text-sm space-y-3">
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <p className="text-xs text-gray-500">Lead ID</p>
+                                            <p className="font-mono text-blue-600">{lead.lead_id}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500">Created</p>
+                                            <p>{new Date(lead.lead_date).toLocaleDateString()}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500">Source</p>
+                                            <p>{lead.lead_source || '-'}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500">Score</p>
+                                            <p>{lead.lead_score}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500">Budget</p>
+                                            <p>{lead.budget_range || '-'}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-gray-500">Purpose</p>
+                                            <p>{lead.purpose || '-'}</p>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
+
+                                    {/* Quick Update Section */}
+                                    {((['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '')) || lead.sales_executive_id === profile?.id) && (
+                                      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                                        <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                          <Plus size={16} className="text-blue-500" />
+                                          Quick Follow-up Update
+                                        </h4>
+                                        <form onSubmit={(e) => handleQuickFollowupSubmit(e, lead)} className="space-y-3">
+                                          <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                                              <select
+                                                value={quickFollowupData.new_status}
+                                                onChange={(e) => setQuickFollowupData(prev => ({ ...prev, new_status: e.target.value as LeadStatus }))}
+                                                className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                              >
+                                                <option value="New">New</option>
+                                                <option value="Contacted">Contacted</option>
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Site Visit Scheduled">Site Visit Scheduled</option>
+                                                <option value="Site Visit Done">Site Visit Done</option>
+                                                <option value="Qualified">Qualified</option>
+                                                <option value="Disqualified">Disqualified</option>
+                                                <option value="Lost">Lost</option>
+                                                <option value="Converted">Converted</option>
+                                              </select>
+                                            </div>
+                                            
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-500 mb-1">Interaction Type</label>
+                                              <select
+                                                value={quickFollowupData.followup_type}
+                                                onChange={(e) => setQuickFollowupData(prev => ({ ...prev, followup_type: e.target.value as FollowupType }))}
+                                                className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                              >
+                                                <option value="Call">Call</option>
+                                                <option value="WhatsApp">WhatsApp</option>
+                                                <option value="Visit">Visit</option>
+                                                <option value="Email">Email</option>
+                                              </select>
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                              <label className="block text-xs font-medium text-gray-500 mb-1">Interaction Date & Time</label>
+                                              <input
+                                                type="datetime-local"
+                                                value={quickFollowupData.followup_date}
+                                                onChange={(e) => setQuickFollowupData(prev => ({ ...prev, followup_date: e.target.value }))}
+                                                className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                                required
+                                              />
+                                            </div>
+
+                                            {quickFollowupData.followup_type === 'Call' ? (
+                                              <div>
+                                                <label className="block text-xs font-medium text-gray-500 mb-1">Call Status</label>
+                                                <select
+                                                  value={quickFollowupData.call_status}
+                                                  onChange={(e) => setQuickFollowupData(prev => ({ ...prev, call_status: e.target.value as CallStatus }))}
+                                                  className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                                >
+                                                  <option value="Connected">Connected</option>
+                                                  <option value="Ringing">Ringing</option>
+                                                  <option value="Disconnected">Disconnected</option>
+                                                  <option value="Busy">Busy</option>
+                                                  <option value="Not Responding">Not Responding</option>
+                                                  <option value="Asked to call later">Asked to call later</option>
+                                                </select>
+                                              </div>
+                                            ) : (
+                                              <div>
+                                                <label className="block text-xs font-medium text-gray-500 mb-1">Customer Response</label>
+                                                <select
+                                                  value={quickFollowupData.customer_response}
+                                                  onChange={(e) => setQuickFollowupData(prev => ({ ...prev, customer_response: e.target.value as CustomerResponse }))}
+                                                  className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                                >
+                                                  <option value="">Select Response</option>
+                                                  <option value="Positive">Positive</option>
+                                                  <option value="Neutral">Neutral</option>
+                                                  <option value="Negative">Negative</option>
+                                                </select>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Remarks / Note</label>
+                                            <textarea
+                                              value={quickFollowupData.discussion_summary}
+                                              onChange={(e) => setQuickFollowupData(prev => ({ ...prev, discussion_summary: e.target.value }))}
+                                              placeholder="Type discussion summary (min 5 chars)..."
+                                              rows={2}
+                                              className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                              required
+                                            />
+                                          </div>
+
+                                          {!['Converted', 'Disqualified', 'Lost'].includes(quickFollowupData.new_status) && (
+                                            <div className="space-y-2">
+                                              <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={quickFollowupData.schedule_followup}
+                                                  onChange={(e) => setQuickFollowupData(prev => ({ ...prev, schedule_followup: e.target.checked }))}
+                                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                Schedule Next Follow-up
+                                              </label>
+                                              
+                                              {quickFollowupData.schedule_followup && (
+                                                <div>
+                                                  <label className="block text-xs font-medium text-gray-500 mb-1">Next Follow-up Date & Time</label>
+                                                  <input
+                                                    type="datetime-local"
+                                                    value={quickFollowupData.next_followup_date}
+                                                    onChange={(e) => setQuickFollowupData(prev => ({ ...prev, next_followup_date: e.target.value }))}
+                                                    className="w-full text-xs px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                                    required
+                                                  />
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          <div className="flex justify-end pt-1">
+                                            <Button
+                                              type="submit"
+                                              variant="primary"
+                                              size="sm"
+                                              isLoading={submitLoading}
+                                              className="w-full"
+                                            >
+                                              Save Update
+                                            </Button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Right Column: Timeline */}
+                                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full">
+                                    <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                      <Clock size={16} className="text-blue-500" />
+                                      Timeline
+                                    </h4>
+                                    {expandedFollowups === undefined ? (
+                                      <div className="flex justify-center py-8">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+                                      </div>
+                                    ) : (
+                                      renderTimeline(lead, expandedFollowups)
+                                    )}
                                   </div>
                                 </div>
                               </motion.div>

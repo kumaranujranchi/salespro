@@ -571,10 +571,10 @@ export const getDashboardStats = query({
       ).size;
     };
 
-    const todayFollowups = filteredFollowups.filter(f => f.followup_date === todayStr);
-    const yesterdayFollowups = filteredFollowups.filter(f => f.followup_date === yesterdayStr);
-    const weekFollowups = filteredFollowups.filter(f => f.followup_date >= startOfWeekStr);
-    const monthFollowups = filteredFollowups.filter(f => f.followup_date >= startOfMonthStr);
+    const todayFollowups = filteredFollowups.filter(f => f.followup_date.slice(0, 10) === todayStr);
+    const yesterdayFollowups = filteredFollowups.filter(f => f.followup_date.slice(0, 10) === yesterdayStr);
+    const weekFollowups = filteredFollowups.filter(f => f.followup_date.slice(0, 10) >= startOfWeekStr);
+    const monthFollowups = filteredFollowups.filter(f => f.followup_date.slice(0, 10) >= startOfMonthStr);
 
     // Fetch tenant profiles to get total agents (sales executives)
     const tenantProfiles = await ctx.db
