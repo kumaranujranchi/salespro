@@ -145,7 +145,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     // Sync module state with URL
-    if (location.pathname.startsWith('/crm') || location.pathname.startsWith('/leads')) {
+    const isCRMPath = location.pathname.startsWith('/crm') || 
+                      location.pathname.startsWith('/leads') ||
+                      location.pathname === '/site-visits';
+    if (isCRMPath) {
       if (!isCRMEnabled) {
         navigate('/dashboard');
         return;
