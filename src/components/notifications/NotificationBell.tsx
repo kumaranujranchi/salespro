@@ -77,7 +77,7 @@ export function NotificationBell() {
                         setIsOpen(!isOpen);
                         setShowPopup(false);
                     }}
-                    className="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-[#1673FF]"
+                    className="relative p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-all focus:outline-none focus:ring-2 focus:ring-[#1673FF]"
                 >
                     <Bell size={20} />
                     {unreadCount > 0 && (
