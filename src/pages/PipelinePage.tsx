@@ -195,51 +195,88 @@ export function PipelinePage() {
             </div>
 
             {/* Right: Funnel Chart */}
-            <div className="md:col-span-9 h-[300px]">
+            <div className="md:col-span-9 flex justify-center items-center h-[350px]">
               {funnelData.every((d: any) => d.value === 0) ? (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm">
                   No data available for funnel
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <FunnelChart margin={{ top: 20, right: 150, bottom: 20, left: 20 }}>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                    />
-                    <Funnel
-                      dataKey="value"
-                      data={funnelData}
-                      isAnimationActive
-                      width="40%"
-                      stroke="#fff"
-                    >
-                      <LabelList
-                        position="right"
-                        dataKey="name"
-                        content={(props: any) => {
-                          const { x, y, width, index, fill } = props;
-                          const item = funnelData[index];
-                          const numericValue = item?.value || 0;
-                          const name = item?.name || '';
+                <div className="w-full max-w-[550px] h-full">
+                  <svg viewBox="0 0 600 320" className="w-full h-full">
+                    {/* Definitions for drop shadows */}
+                    <defs>
+                      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.15" />
+                      </filter>
+                    </defs>
 
-                          const total = funnelData.reduce((acc, curr) => acc + curr.value, 0);
-                          const percent = total > 0 ? ((numericValue / total) * 100).toFixed(2) : '0';
-
-                          const startX = x + width;
-
-                          return (
-                            <g>
-                              <line x1={startX} y1={y} x2={startX + 30} y2={y} stroke={fill} strokeWidth={1} />
-                              <text x={startX + 35} y={y} dy={4} fill="#333" fontSize={12} fontWeight="bold">
-                                {name} ({percent}%)
-                              </text>
-                            </g>
-                          );
-                        }}
+                    {/* Stage 1: OPEN (Top Layer) */}
+                    <g className="cursor-pointer group">
+                      <polygon
+                        points="60,20 340,20 300,85 100,85"
+                        fill="#2196F3"
+                        opacity="0.9"
+                        filter="url(#shadow)"
+                        className="transition-all duration-300 hover:opacity-100 hover:scale-[1.01]"
                       />
-                    </Funnel>
-                  </FunnelChart>
-                </ResponsiveContainer>
+                      <title>{`OPEN: ${funnelData[0].value} leads`}</title>
+                      {/* Connecting Line */}
+                      <path d="M 320,52.5 L 380,52.5" stroke="#2196F3" strokeWidth="1.5" strokeDasharray="3,3" />
+                      {/* Text Label */}
+                      <text x="390" y="57" className="fill-slate-700 dark:fill-slate-200 text-sm font-semibold">
+                        OPEN: <tspan className="fill-blue-600 dark:fill-blue-400 font-bold">{`${funnelData[0].value} (${((funnelData[0].value / (stats.total || 1)) * 100).toFixed(1)}%)`}</tspan>
+                      </text>
+                    </g>
+
+                    {/* Stage 2: IN PROGRESS */}
+                    <g className="cursor-pointer group">
+                      <polygon
+                        points="104,90 296,90 260,155 140,155"
+                        fill="#3F51B5"
+                        opacity="0.9"
+                        filter="url(#shadow)"
+                        className="transition-all duration-300 hover:opacity-100 hover:scale-[1.01]"
+                      />
+                      <title>{`IN PROGRESS: ${funnelData[1].value} leads`}</title>
+                      <path d="M 278,122.5 L 380,122.5" stroke="#3F51B5" strokeWidth="1.5" strokeDasharray="3,3" />
+                      <text x="390" y="127" className="fill-slate-700 dark:fill-slate-200 text-sm font-semibold">
+                        IN PROGRESS: <tspan className="fill-indigo-600 dark:fill-indigo-400 font-bold">{`${funnelData[1].value} (${((funnelData[1].value / (stats.total || 1)) * 100).toFixed(1)}%)`}</tspan>
+                      </text>
+                    </g>
+
+                    {/* Stage 3: Site Visit Scheduled */}
+                    <g className="cursor-pointer group">
+                      <polygon
+                        points="144,160 256,160 220,225 180,225"
+                        fill="#00E676"
+                        opacity="0.9"
+                        filter="url(#shadow)"
+                        className="transition-all duration-300 hover:opacity-100 hover:scale-[1.01]"
+                      />
+                      <title>{`Site Visit Scheduled: ${funnelData[2].value} leads`}</title>
+                      <path d="M 238,192.5 L 380,192.5" stroke="#00E676" strokeWidth="1.5" strokeDasharray="3,3" />
+                      <text x="390" y="197" className="fill-slate-700 dark:fill-slate-200 text-sm font-semibold">
+                        Site Visit Scheduled: <tspan className="fill-green-600 dark:fill-green-400 font-bold">{`${funnelData[2].value} (${((funnelData[2].value / (stats.total || 1)) * 100).toFixed(1)}%)`}</tspan>
+                      </text>
+                    </g>
+
+                    {/* Stage 4: Site Visit Done */}
+                    <g className="cursor-pointer group">
+                      <polygon
+                        points="184,230 216,230 200,295 200,295"
+                        fill="#FF9800"
+                        opacity="0.9"
+                        filter="url(#shadow)"
+                        className="transition-all duration-300 hover:opacity-100 hover:scale-[1.01]"
+                      />
+                      <title>{`Site Visit Done: ${funnelData[3].value} leads`}</title>
+                      <path d="M 208,262.5 L 380,262.5" stroke="#FF9800" strokeWidth="1.5" strokeDasharray="3,3" />
+                      <text x="390" y="267" className="fill-slate-700 dark:fill-slate-200 text-sm font-semibold">
+                        Site Visit Done: <tspan className="fill-orange-600 dark:fill-orange-400 font-bold">{`${funnelData[3].value} (${((funnelData[3].value / (stats.total || 1)) * 100).toFixed(1)}%)`}</tspan>
+                      </text>
+                    </g>
+                  </svg>
+                </div>
               )}
             </div>
           </div>
