@@ -4,7 +4,8 @@ import { IncentiveManagement } from '../components/admin/IncentiveManagement';
 
 export function IncentivesPage() {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isAdmin = normalizedRole === 'admin' || normalizedRole === 'super_admin' || normalizedRole === 'director';
 
   return (
     <div className="space-y-6">

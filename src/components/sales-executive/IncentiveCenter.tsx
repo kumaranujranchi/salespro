@@ -24,7 +24,7 @@ export function IncentiveCenter() {
         tenantId ? { tenant_id: tenantId } : "skip"
     );
 
-    const tenant = useQuery(api.tenants.get, 
+    const tenant = useQuery(api.tenants.getById, 
         tenantId ? { id: tenantId } : "skip"
     );
 
