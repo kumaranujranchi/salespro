@@ -118,7 +118,7 @@ export function CRMDashboardPage() {
               </ResponsiveContainer>
               
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
-                <div className="text-2xl font-extrabold text-slate-800 dark:text-white">
+                <div className="text-lg font-extrabold text-slate-800 dark:text-white leading-tight">
                   {percentage.toFixed(2)}%
                 </div>
                 <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
