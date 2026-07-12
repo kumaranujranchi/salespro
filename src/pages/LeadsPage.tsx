@@ -833,18 +833,28 @@ export function LeadsPage() {
                                   onClick={() => {
                                     setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
                                   }}
-                                  className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200' : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200'}`}
+                                  className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${
+                                    lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' 
+                                      ? 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200' 
+                                      : lead.lead_status === 'Converted'
+                                      ? 'text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200'
+                                      : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200'
+                                  }`}
                                 >
-                                  {lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'View / Reopen' : 'Update'}
+                                  {lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' 
+                                    ? 'View / Reopen' 
+                                    : lead.lead_status === 'Converted'
+                                    ? 'View'
+                                    : 'Update'}
                                 </Button>
                               )}
                               <ActionMenu
                                 actions={[
-                                  {
+                                  ...(lead.lead_status !== 'Converted' ? [{
                                     label: 'Edit',
                                     icon: Edit,
                                     onClick: () => handleEditLead(lead)
-                                  },
+                                  }] : []),
                                   {
                                     label: 'View Details',
                                     icon: Eye,
@@ -921,10 +931,19 @@ export function LeadsPage() {
 
                                     {/* Quick Update Section */}
                                     {((['admin', 'super_admin', 'director', 'team_leader'].includes(normalizedRole)) || lead.sales_executive_id === profile?.id) && (
-                                      lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? (
+                                      lead.lead_status === 'Converted' ? (
+                                        <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-900/50 text-center space-y-2">
+                                          <div className="text-green-700 dark:text-green-400 font-semibold text-sm">
+                                            This lead has been Converted.
+                                          </div>
+                                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                                            Any further changes should be managed from the Sales / Inventory module.
+                                          </p>
+                                        </div>
+                                      ) : lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? (
                                         <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900/50 text-center space-y-3">
                                           <div className="text-red-600 dark:text-red-400 font-semibold text-sm">
-                                            This lead is currently ${lead.lead_status}.
+                                            This lead is currently {lead.lead_status}.
                                           </div>
                                           <p className="text-xs text-gray-600 dark:text-gray-400">
                                             To make updates or log follow-ups, you must reopen the lead first.
