@@ -684,6 +684,64 @@ export function TenantsPage() {
                   </div>
                 </div>
 
+                {/* Plan Tier Control */}
+                <div className="space-y-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200/50 dark:border-white/10 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 uppercase flex items-center gap-2">
+                        <Award className="w-5 h-5" />
+                        Subscription Plan Tier
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">Manage billing tier and limits for this company</p>
+                    </div>
+                    <select
+                      value={selectedTenant.plan_tier || 'starter'}
+                      onChange={async (e) => {
+                        const newPlan = e.target.value;
+                        try {
+                          await updateTenantMutation({
+                            id: selectedTenant._id,
+                            plan_tier: newPlan,
+                            subscription_status: 'active'
+                          });
+                          toast.success(`Plan updated to ${newPlan.toUpperCase()}`);
+                        } catch {
+                          toast.error('Failed to update plan tier');
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border rounded-md font-semibold text-indigo-700 dark:text-indigo-300 outline-none"
+                    >
+                      <option value="free">Free Forever Plan</option>
+                      <option value="starter">Starter Plan</option>
+                      <option value="agency">Agency Plan</option>
+                      <option value="pro">Pro Plan (Full Access)</option>
+                    </select>
+                  </div>
+                  
+                  {selectedTenant.plan_tier !== 'pro' && (
+                    <div className="mt-3 flex items-center justify-between bg-indigo-100/50 dark:bg-indigo-950/20 p-3 rounded-xl border border-indigo-200/30">
+                      <span className="text-xs text-indigo-800 dark:text-indigo-300">Convert this tenant to the premium <strong>Pro Plan</strong> immediately.</span>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await updateTenantMutation({
+                              id: selectedTenant._id,
+                              plan_tier: 'pro',
+                              subscription_status: 'active'
+                            });
+                            toast.success('Successfully upgraded tenant to PRO plan!');
+                          } catch {
+                            toast.error('Failed to upgrade to PRO plan');
+                          }
+                        }}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors"
+                      >
+                        UPGRADE TO PRO
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Billing History Section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
