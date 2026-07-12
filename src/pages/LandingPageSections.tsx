@@ -328,70 +328,29 @@ export function ValuePropositionSection() {
     );
 }
 
-const MetaLogo = () => (
-<svg className="w-8 h-8 text-[#0064E0]" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12.04 2C6.51 2 2.01 6.5 2.01 12.03c0 1.95.56 3.77 1.54 5.31l1.43-1.12c-.74-1.2-1.17-2.61-1.17-4.19 0-4.52 3.67-8.19 8.23-8.19 4.56 0 8.23 3.67 8.23 8.19 0 2.2-.87 4.19-2.28 5.67-.14.15-.3.29-.46.43-1.28 1.13-2.92 1.77-4.63 1.77-1.18 0-2.31-.3-3.32-.87L6.8 20.35c1.55.93 3.35 1.48 5.24 1.48 2.51 0 4.9-.94 6.78-2.65.23-.21.45-.43.66-.67C21.08 16.66 22.07 14.43 22.07 12.03 22.07 6.5 17.57 2 12.04 2zm-1.63 12.3c-.63-.38-1.2-.88-1.67-1.46L6.5 14.61c.88 1.1 2.01 1.97 3.3 2.52l.61-2.83zm5.72-.51c.32-.42.58-.88.77-1.39l-2.73-.83c-.09.28-.24.53-.41.76l2.37 1.46z" />
-    <path d="M12.87 9.87c.21 0 .42.02.62.06l.57-2.84c-.39-.08-.79-.12-1.19-.12-3.17 0-5.74 2.57-5.74 5.74 0 .91.22 1.77.6 2.53l2.5-1.54c-.16-.3-.25-.64-.25-.99 0-1.6 1.29-2.84 2.89-2.84z" />
-</svg>
-);
-
-const GoogleAdsLogo = () => (
-<svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-    <path d="M16.5 3L6 21h10.5L27 3H16.5z" fill="#FBBC05" />
-    <path d="M6 21l10.5-18H6L-4.5 21H6z" fill="#4285F4" />
-    <path d="M6 21l5.25-9L6 3 .75 12 6 21z" fill="#34A853" />
-</svg>
-);
-
-const MagicbricksLogo = () => (
-<div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white font-black text-xs">
-    mb
-</div>
-);
-
-const NinetyNineAcresLogo = () => (
-<div className="w-8 h-8 bg-[#002C6C] rounded-lg flex items-center justify-center text-white font-bold text-[10px] tracking-tight">
-    99ac
-</div>
-);
-
-const HousingLogo = () => (
-<div className="w-8 h-8 bg-[#DF147A] rounded-lg flex items-center justify-center text-white font-black text-sm">
-    H
-</div>
-);
-
-const WhatsAppLogo = () => (
-<svg className="w-8 h-8 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-</svg>
-);
-
-const GoogleSheetsLogo = () => (
-<svg className="w-8 h-8 text-[#0F9D58]" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
-</svg>
-);
-
-const GoogleFormsLogo = () => (
-<svg className="w-8 h-8 text-[#7248B9]" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 12H7v-2h10v2zm0-4H7V9h10v2z" />
-</svg>
-);
+interface IntegrationItem {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    logo: string | (() => JSX.Element);
+    status: string;
+    color: string;
+}
 
 const WebhooksLogo = () => (
-<div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-[#10B981]">
-    <Code className="w-5 h-5" />
-</div>
+    <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-[#10B981]">
+        <Code className="w-5 h-5" />
+    </div>
 );
 
-const integrationData = [
+const integrationData: IntegrationItem[] = [
 {
     id: "meta",
     name: "Meta Ads (Facebook & Instagram)",
     category: "ads",
     description: "Capture real estate inquiries directly from Facebook & Instagram lead generation form campaigns in real-time.",
-    logo: MetaLogo,
+    logo: "/images/facebook_ads.webp",
     status: "Auto-Sync Enabled",
     color: "from-blue-500/10 to-indigo-500/5 hover:border-blue-500/30"
 },
@@ -400,7 +359,7 @@ const integrationData = [
     name: "Google Ads",
     category: "ads",
     description: "Sync leads submitted through Google Search campaigns, Map listings, and Local Display lead forms instantly.",
-    logo: GoogleAdsLogo,
+    logo: "/images/google_ads.webp",
     status: "Real-time Webhook",
     color: "from-amber-500/10 to-red-500/5 hover:border-amber-500/30"
 },
@@ -409,7 +368,7 @@ const integrationData = [
     name: "Magicbricks",
     category: "portals",
     description: "Sync buyers looking at your listings on India's leading property search portal directly into your CRM funnel.",
-    logo: MagicbricksLogo,
+    logo: "/images/magicbricks.webp",
     status: "API Connected",
     color: "from-red-500/10 to-orange-500/5 hover:border-red-500/30"
 },
@@ -418,7 +377,7 @@ const integrationData = [
     name: "99acres",
     category: "portals",
     description: "Import listings responses and direct buyer inquiries from 99acres without using manual CSV exports.",
-    logo: NinetyNineAcresLogo,
+    logo: "/images/99acres.webp",
     status: "Instant Delivery",
     color: "from-blue-900/20 to-blue-700/5 hover:border-[#002C6C]/40"
 },
@@ -427,7 +386,7 @@ const integrationData = [
     name: "Housing.com",
     category: "portals",
     description: "Sync leads from property page views and premium advertisements on Housing.com in less than 30 seconds.",
-    logo: HousingLogo,
+    logo: "/images/hosing.webp",
     status: "Real-time Sync",
     color: "from-pink-500/10 to-rose-500/5 hover:border-pink-500/30"
 },
@@ -436,7 +395,7 @@ const integrationData = [
     name: "WhatsApp Business API",
     category: "chat",
     description: "Collect leads directly via WhatsApp chat bots, verify numbers instantly, and initiate automated welcome flows.",
-    logo: WhatsAppLogo,
+    logo: "/images/whatsApp.webp",
     status: "Instant Auto-Reply",
     color: "from-emerald-500/10 to-green-500/5 hover:border-emerald-500/30"
 },
@@ -445,7 +404,7 @@ const integrationData = [
     name: "Google Sheets",
     category: "productivity",
     description: "Sync offline broker databases, walk-in events, or legacy client data from any shared Google spreadsheet.",
-    logo: GoogleSheetsLogo,
+    logo: "/images/Googlesheet.webp",
     status: "2-Way Sync",
     color: "from-green-600/10 to-emerald-600/5 hover:border-green-600/30"
 },
@@ -454,7 +413,7 @@ const integrationData = [
     name: "Google Forms",
     category: "productivity",
     description: "Directly channel inputs from contact pages, property survey forms, and booking forms into your database.",
-    logo: GoogleFormsLogo,
+    logo: "/images/google_form.webp",
     status: "Instant Add",
     color: "from-purple-500/10 to-violet-500/5 hover:border-purple-500/30"
 },
@@ -533,8 +492,14 @@ return (
                         >
                             <div>
                                 <div className="flex items-center justify-between mb-6">
-                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-gray-50 group-hover:scale-110 transition-transform duration-500">
-                                        <LogoComponent />
+                                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-gray-50 group-hover:scale-110 transition-transform duration-500 p-2">
+                                        {typeof integration.logo === 'string' ? (
+                                            <img src={integration.logo} alt={integration.name} className="w-full h-full object-contain rounded-lg" />
+                                        ) : (
+                                            typeof integration.logo === 'function' ? (
+                                                <LogoComponent />
+                                            ) : null
+                                        )}
                                     </div>
                                     <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
                                         {integration.status}
@@ -590,15 +555,14 @@ return (
                                 Lead Sources
                             </div>
                             {[
-                                { name: "Meta Ads", icon: MetaLogo },
-                                { name: "Magicbricks", icon: MagicbricksLogo },
-                                { name: "WhatsApp", icon: WhatsAppLogo }
+                                { name: "Meta Ads", logo: "/images/facebook_ads.webp" },
+                                { name: "Magicbricks", logo: "/images/magicbricks.webp" },
+                                { name: "WhatsApp", logo: "/images/whatsApp.webp" }
                             ].map((source, index) => {
-                                const Icon = source.icon;
                                 return (
                                     <div key={index} className="flex items-center justify-between md:justify-start gap-3 bg-[#0E1A15] border border-white/10 p-3 rounded-xl hover:border-emerald-500/50 transition-all duration-300">
-                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                                            <Icon />
+                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center p-1.5">
+                                            <img src={source.logo} alt={source.name} className="w-full h-full object-contain rounded-md" />
                                         </div>
                                         <span className="text-xs font-semibold text-gray-200">{source.name}</span>
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse md:ml-auto"></div>
