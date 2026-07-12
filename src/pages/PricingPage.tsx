@@ -247,7 +247,7 @@ export function PricingPage() {
 
           {/* Billing Cycle Selector for Pro Plan */}
           <div className="flex justify-center mb-12">
-            <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-200 flex gap-1">
+            <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-200 flex items-center gap-1">
               <button
                 onClick={() => setBillingCycle('monthly')}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
@@ -260,27 +260,27 @@ export function PricingPage() {
               </button>
               <button
                 onClick={() => setBillingCycle('semi_annual')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all relative ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-1.5 ${
                   billingCycle === 'semi_annual'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                6 Months
-                <span className="absolute -top-3 -right-2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                <span>6 Months</span>
+                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   Save 20%
                 </span>
               </button>
               <button
                 onClick={() => setBillingCycle('yearly')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all relative ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all flex items-center gap-1.5 ${
                   billingCycle === 'yearly'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Yearly
-                <span className="absolute -top-3 -right-2 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                <span>Yearly</span>
+                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   Save 33%
                 </span>
               </button>
