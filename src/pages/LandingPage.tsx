@@ -148,7 +148,7 @@ export function LandingPage() {
                                     : 'bg-white text-[#10B981] hover:bg-gray-100'
                                     }`}
                             >
-                                Start Free Trial
+                                Get Started Free
                             </button>
                         </div>
 
@@ -195,7 +195,7 @@ export function LandingPage() {
                                 onClick={handleRegisterClick}
                                 className="w-full px-6 py-3 bg-[#10B981] text-white rounded-lg hover:bg-[#0E1A15] transition-all font-semibold"
                             >
-                                Start 30-Day Free Trial
+                                Get Started Free
                             </button>
                         </div>
                     </div>
@@ -220,19 +220,19 @@ export function LandingPage() {
                         <div className="space-y-8 animate-slideInLeft text-center lg:text-left">
                             <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 hover:bg-white/20 transition-colors cursor-default">
                                 <Globe size={16} className="text-[#10B981]" />
-                                <span className="text-sm text-gray-200">Start your 30-day free trial today</span>
+                                <span className="text-sm text-gray-200">100% Free CRM for Small Businesses</span>
                             </div>
 
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white tracking-tight">
-                                Transform Your <br />
+                                Free Real Estate <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-[#34D399] to-white">
                                     Sales & CRM
                                 </span>
                             </h1>
 
                             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                The <strong>One-Stop Solution</strong> for Real Estate Developers. seamlessly manage
-                                <strong>Leads, Pipelines, Inventory, and Sales Teams</strong> in a single, powerful platform.
+                                The **100% Free CRM** for Real Estate Developers & Agencies. Seamlessly manage
+                                **Leads, Pipelines, Inventory, and Sales Teams** in a single, powerful platform. Completely Free up to 1,000 leads.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -240,7 +240,7 @@ export function LandingPage() {
                                     onClick={handleRegisterClick}
                                     className="group px-8 py-4 bg-[#10B981] text-white rounded-xl font-bold text-lg hover:bg-[#059669] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
                                 >
-                                    <span>Start Free Trial</span>
+                                    <span>Get Started Free</span>
                                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 <button className="px-8 py-4 bg-white/5 backdrop-blur-sm border border-white/10 text-white rounded-xl font-bold text-lg hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
@@ -250,8 +250,8 @@ export function LandingPage() {
 
                             <div className="pt-8 border-t border-white/10 flex justify-center lg:justify-start gap-12 text-gray-400">
                                 <div className="text-center lg:text-left">
-                                    <div className="text-3xl font-bold text-white mb-1">30 Days</div>
-                                    <div className="text-sm">Free Access</div>
+                                    <div className="text-3xl font-bold text-white mb-1">Free Plan</div>
+                                    <div className="text-sm">Up to 1k Leads</div>
                                 </div>
                                 <div className="text-center lg:text-left">
                                     <div className="text-3xl font-bold text-white mb-1">No Card</div>
@@ -702,13 +702,13 @@ export function LandingPage() {
                             <p className="text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
                                 Join 50+ Real Estate Developers who trust RealSalePro.
                                 <br />
-                                <span className="font-bold text-white">Start your 30-day free trial now.</span>
+                                <span className="font-bold text-white">Get started with our Free Forever Plan now.</span>
                             </p>
                             <button
                                 onClick={handleRegisterClick}
                                 className="px-10 py-4 bg-white text-[#10B981] rounded-xl font-bold text-lg hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50"
                             >
-                                Start Free Trial
+                                Get Started Free
                             </button>
                         </div>
                     </div>

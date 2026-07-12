@@ -17,8 +17,8 @@ const faqs = [
         answer: "Yes! Every subscription includes comprehensive onboarding support. Our team provides: 1) Live video training sessions for your team, 2) Dedicated onboarding manager for the first 30 days, 3) Complete data migration assistance from Excel/other CRMs, 4) 24/7 email & chat support, and 5) Priority phone support for enterprise plans. We ensure your team is fully trained before going live."
     },
     {
-        question: "Is there a free trial?",
-        answer: "Yes! We offer a 14-day free trial with full access to all features (no credit card required). During the trial, you can add unlimited users, import your data, and test all modules including CRM, inventory management, and incentive calculations. Our team is available to assist you throughout the trial period."
+        question: "Is it really free?",
+        answer: "Yes! RealSalePro is 100% Free Forever for small teams. Our Free Forever plan supports up to 1,000 leads, unlimited users, and includes all pro features such as automated lead routing, pipeline visualization, and inventory tracking without requiring any credit card details."
     },
     {
         question: "How secure is my client data?",
@@ -318,7 +318,7 @@ export function ValuePropositionSection() {
                             to="/register"
                             className="inline-flex items-center gap-2 bg-[#10B981] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#0E1A15] transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
-                            Start Your Free Trial
+                            Get Started for Free
                             <ChevronDown className="w-5 h-5" />
                         </Link>
                     </div>
