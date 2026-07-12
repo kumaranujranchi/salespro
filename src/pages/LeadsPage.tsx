@@ -648,26 +648,26 @@ export function LeadsPage() {
 
       {/* Bulk Action Bar */}
       {selectedLeadIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 shadow-xl rounded-full px-6 py-3 flex items-center gap-4 z-40 animate-in slide-in-from-bottom-5">
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 shadow-xl rounded-full px-6 py-3 flex items-center gap-3 md:gap-4 z-40 animate-in slide-in-from-bottom-5 w-max max-w-[95vw] overflow-x-auto custom-scrollbar">
+          <span className="text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
             {selectedLeadIds.length} Selected
           </span>
-          <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
+          <div className="h-4 w-px bg-gray-300 dark:bg-gray-600 shrink-0"></div>
           {['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '') && (
-            <Button size="sm" variant="primary" onClick={() => setIsAssignModalOpen(true)}>
-              <UserPlus size={16} className="mr-2" />
+            <Button size="sm" variant="primary" onClick={() => setIsAssignModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
+              <UserPlus size={14} className="mr-1.5" />
               Assign Executive
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => setIsProjectModalOpen(true)}>
-            <Building size={16} className="mr-2" />
+          <Button size="sm" variant="outline" onClick={() => setIsProjectModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
+            <Building size={14} className="mr-1.5" />
             Assign Project
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setIsStatusModalOpen(true)}>
-            <RefreshCw size={16} className="mr-2" />
+          <Button size="sm" variant="outline" onClick={() => setIsStatusModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
+            <RefreshCw size={14} className="mr-1.5" />
             Change Status
           </Button>
-          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => setSelectedLeadIds([])}>
+          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 whitespace-nowrap text-xs shrink-0" onClick={() => setSelectedLeadIds([])}>
             Cancel
           </Button>
           {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
@@ -675,9 +675,11 @@ export function LeadsPage() {
               size="sm" 
               variant={isFreePlan ? "outline" : "danger"} 
               onClick={isFreePlan ? () => toast.info("Lead deletion is a Pro feature. Please upgrade your plan.") : handleBulkDelete}
-              className={isFreePlan ? "text-gray-400 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-700" : ""}
+              className={`whitespace-nowrap text-xs shrink-0 ${
+                isFreePlan ? "text-gray-400 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-700" : ""
+              }`}
             >
-              {isFreePlan ? <Lock size={16} className="mr-2" /> : <Trash2 size={16} className="mr-2" />}
+              {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Trash2 size={14} className="mr-1.5" />}
               {isFreePlan ? "Delete (Pro Feature)" : "Delete"}
             </Button>
           )}
