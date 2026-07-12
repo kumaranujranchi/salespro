@@ -38,7 +38,7 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
     // Convex Queries
     const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
         tenant_id: profile.tenant_id as Id<"tenants">,
-        sale_id: sale._id as Id<"sales">
+        sale_id: sale?._id as Id<"sales">
     } : "skip");
 
     // Mutations
