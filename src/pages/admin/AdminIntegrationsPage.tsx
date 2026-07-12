@@ -6,10 +6,11 @@ import { api } from '../../../convex/_generated/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight } from 'lucide-react';
+import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock } from 'lucide-react';
 
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
+  const isFreePlan = tenant?.plan_tier === 'free';
   const toast = useToast();
   const [savingMeta, setSavingMeta] = useState(false);
   const [savingGoogle, setSavingGoogle] = useState(false);
@@ -616,7 +617,7 @@ export function AdminIntegrationsPage() {
           <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Social Media</h2>
           <div className="flex flex-wrap gap-6 mt-4">
             <div 
-              onClick={() => setActiveModal('meta')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('meta')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -624,6 +625,13 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMetaActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isMetaActive ? 'bg-emerald-500' : isMetaConnected ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
 
               <div className="w-16 h-16 bg-[#ECF2FF] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
@@ -640,7 +648,7 @@ export function AdminIntegrationsPage() {
 
             {/* WhatsApp Integration Card */}
             <div 
-              onClick={() => setActiveModal('whatsapp')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('whatsapp')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -648,6 +656,13 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isWhatsappActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isWhatsappActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
 
               <div className="w-16 h-16 bg-[#E8F8F0] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
@@ -669,7 +684,7 @@ export function AdminIntegrationsPage() {
           <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Google Apps</h2>
           <div className="flex flex-wrap gap-6 mt-4">
             <div 
-              onClick={() => setActiveModal('google')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('google')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -677,6 +692,13 @@ export function AdminIntegrationsPage() {
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
 
               <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
@@ -693,13 +715,21 @@ export function AdminIntegrationsPage() {
 
             {/* Google Form Integration Card */}
             <div
-              onClick={() => setActiveModal('googleForm')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleForm')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleFormActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleFormActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
               <div className="w-16 h-16 bg-[#F3F7FF] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img src="/images/google_form.webp" alt="Google Forms" className="w-12 h-12 object-contain" />
               </div>
@@ -710,13 +740,21 @@ export function AdminIntegrationsPage() {
 
             {/* Google Sheet Integration Card */}
             <div
-              onClick={() => setActiveModal('googleSheet')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleSheet')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleSheetActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleSheetActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
               <div className="w-16 h-16 bg-[#E8F5EC] rounded-2xl flex items-center justify-center overflow-hidden">
                 <img src="/images/Googlesheet.webp" alt="Google Sheets" className="w-12 h-12 object-contain" />
               </div>
@@ -733,13 +771,21 @@ export function AdminIntegrationsPage() {
           <div className="flex flex-wrap gap-6 mt-4">
             {/* 99acres */}
             <div 
-              onClick={() => setActiveModal('nineNineAcres')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('nineNineAcres')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isNineNineActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isNineNineActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
                   src="/images/99acres.webp" 
@@ -754,13 +800,21 @@ export function AdminIntegrationsPage() {
 
             {/* Magicbricks */}
             <div 
-              onClick={() => setActiveModal('magicbricks')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('magicbricks')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMagicbricksActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isMagicbricksActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
                   src="/images/magicbricks.webp" 
@@ -775,13 +829,21 @@ export function AdminIntegrationsPage() {
 
             {/* Housing.com */}
             <div 
-              onClick={() => setActiveModal('housing')}
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('housing')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isHousingActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isHousingActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
               </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
               <div className="w-16 h-16 bg-white border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
                 <img 
                   src="/images/hosing.webp" 
