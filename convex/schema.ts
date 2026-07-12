@@ -337,4 +337,17 @@ export default defineSchema({
     .index("by_tenant", ["tenant_id"])
     .index("by_status", ["status"])
     .index("by_creator", ["created_by"]),
+
+  project_units: defineTable({
+    tenant_id: v.id("tenants"),
+    project_id: v.id("projects"),
+    unit_number: v.string(), // E.g., "Flat-101", "Plot-45"
+    status: v.string(), // "Available", "Hold", "Booked", "Sold"
+    custom_values: v.any(), // Record<field_id, value>
+    created_at: v.optional(v.string()),
+    updated_at: v.optional(v.string()),
+  })
+    .index("by_tenant", ["tenant_id"])
+    .index("by_project", ["project_id"])
+    .index("by_tenant_project", ["tenant_id", "project_id"]),
 });
