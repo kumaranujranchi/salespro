@@ -143,9 +143,56 @@ export const updateLead = mutation({
       ...cleanNullFields(data),
       updated_at: new Date().toISOString(),
     });
+
+    if (data.lead_status === 'Converted') {
+      await checkAndCreateSaleForLead(ctx, id);
+    }
+
     return id;
   },
 });
+
+// Helper to auto-create a skeleton Sales record when a lead is converted
+async function checkAndCreateSaleForLead(ctx: MutationCtx, leadId: Id<"leads">) {
+  const existing = await ctx.db.get(leadId);
+  if (!existing) return;
+
+  const existingSale = await ctx.db
+    .query("sales")
+    .withIndex("by_customer", (q) => q.eq("customer_id", leadId))
+    .first();
+
+  if (!existingSale) {
+    const firstProject = await ctx.db
+      .query("projects")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", existing.tenant_id))
+      .first();
+    const projectId = existing.project_id || firstProject?._id;
+
+    const firstProfile = await ctx.db
+      .query("profiles")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", existing.tenant_id))
+      .first();
+    const executiveId = existing.sales_executive_id || firstProfile?._id;
+
+    if (projectId && executiveId) {
+      await ctx.db.insert("sales", {
+        tenant_id: existing.tenant_id,
+        customer_id: leadId,
+        project_id: projectId,
+        sales_executive_id: executiveId,
+        sale_date: new Date().toISOString().slice(0, 10),
+        area_sqft: 0,
+        total_revenue: 0,
+        booking_amount: 0,
+        is_agreement_done: false,
+        is_registry_done: false,
+        status: "booked",
+        metadata: { is_draft: true }
+      });
+    }
+  }
+}
 
 // Helper to get subordinate profiles recursively
 async function getSubordinateProfileIds(ctx: any, tenantId: any, managerId: any): Promise<any[]> {
@@ -490,6 +537,9 @@ export const bulkUpdateLeadStatus = mutation({
         lead_status: args.lead_status,
         updated_by: args.updated_by,
       });
+      if (args.lead_status === 'Converted') {
+        await checkAndCreateSaleForLead(ctx, id);
+      }
     }
   },
 });

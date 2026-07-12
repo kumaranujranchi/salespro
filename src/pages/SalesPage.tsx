@@ -48,10 +48,37 @@ export function SalesPage() {
     tenant_id: profile.tenant_id as Id<"tenants">
   } : "skip");
 
-  const handleDelete = async (id: Id<"sales">) => {
+  const deleteSale = useMutation(api.sales.deleteSale);
+
+  const handleDelete = async (sale: any) => {
+    setIsDetailOpen(false);
     if (!await dialog.confirm('Delete this sale record?')) return;
-    // deletion logic via mutation...
+    try {
+      await deleteSale({ id: sale._id });
+      toast.success('Sale record deleted successfully.');
+    } catch {
+      toast.error('Failed to delete sale record.');
+    }
   };
+
+  const handleEdit = (sale: any) => {
+    setIsDetailOpen(false);
+    setSelectedSale(sale);
+    setIsFormOpen(true);
+  };
+
+  const handleCancelSale = (sale: any) => {
+    setIsDetailOpen(false);
+    setSelectedSale(sale);
+    setIsCancelOpen(true);
+  };
+
+  const canEdit = profile?.role === 'super_admin' || 
+    profile?.role === 'admin' || 
+    profile?.role === 'director' || 
+    profile?.role === 'sales_manager' || 
+    profile?.role === 'team_leader' || 
+    (profile as any)?.role_details?.permissions?.menu?.sales === 'edit';
 
   // Safe date helper
   const safeFormatDate = (dateStr: any) => {
@@ -180,7 +207,21 @@ export function SalesPage() {
       </Card>
 
       <SalesFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSuccess={() => {}} editingSale={selectedSale} />
-      <SalesDetailsModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} sale={selectedSale} />
+      <SalesDetailsModal 
+         isOpen={isDetailOpen} 
+         onClose={() => setIsDetailOpen(false)} 
+         sale={selectedSale}
+         onEdit={handleEdit}
+         onCancel={handleCancelSale}
+         onDelete={handleDelete}
+         canEdit={canEdit}
+      />
+      <SalesCancellationModal 
+         isOpen={isCancelOpen} 
+         onClose={() => setIsCancelOpen(false)} 
+         sale={selectedSale}
+         onSuccess={() => setIsCancelOpen(false)} 
+      />
     </div>
   );
 }
