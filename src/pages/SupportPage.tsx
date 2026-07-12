@@ -4,7 +4,7 @@ import { api } from '../../convex/_generated/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Plus, Loader2, MessageSquare, Clock, CheckCircle2, XCircle, X } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Clock, CheckCircle2, XCircle, X, Lock } from 'lucide-react';
 
 interface Ticket {
   _id: string;
@@ -25,6 +25,7 @@ interface Notification {
 
 export function SupportPage() {
   const { tenant, user, profile } = useAuth();
+  const isFreePlan = tenant?.plan_tier === 'free';
   
   const ticketsData = useQuery(api.support.listByTenant, 
     tenant?._id ? { tenant_id: tenant._id } : "skip"
@@ -37,10 +38,17 @@ export function SupportPage() {
   const [notification, setNotification] = useState<Notification | null>(null);
 
   // Form State
+  const [requestType, setRequestType] = useState<'ticket' | 'feedback'>(isFreePlan ? 'feedback' : 'ticket');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
   const [submitting, setSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (isFreePlan) {
+      setRequestType('feedback');
+    }
+  }, [isFreePlan]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +56,14 @@ export function SupportPage() {
     setSubmitting(true);
 
     try {
-      // 1. Insert Ticket using Convex Mutation
+      // 1. Insert Ticket / Feedback using Convex Mutation
       const ticketId = await createTicket({
         subject,
         description,
-        priority,
+        priority: requestType === 'feedback' ? 'low' : priority,
         tenant_id: tenant._id,
-        created_by: profile._id
+        created_by: profile._id,
+        status: requestType === 'feedback' ? 'feedback' : 'open'
       });
 
       // 2. Send Confirmation Email via Convex Action
@@ -78,15 +87,17 @@ export function SupportPage() {
 
       setNotification({
         type: 'success',
-        title: 'Ticket Raised Successfully!',
-        message: 'Your support request has been submitted.'
+        title: requestType === 'feedback' ? 'Feedback Submitted!' : 'Ticket Raised Successfully!',
+        message: requestType === 'feedback' 
+          ? 'Thank you for your feedback. We appreciate your input!' 
+          : 'Your support request has been submitted.'
       });
 
     } catch (error: any) {
       console.error('Error creating ticket:', error);
       setNotification({
         type: 'error',
-        title: 'Failed to Raise Ticket',
+        title: requestType === 'feedback' ? 'Failed to Submit Feedback' : 'Failed to Raise Ticket',
         message: error.message || 'An unexpected error occurred. Please try again.'
       });
     } finally {
@@ -100,6 +111,7 @@ export function SupportPage() {
       case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       case 'resolved': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'closed': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+      case 'feedback': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -109,42 +121,80 @@ export function SupportPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support & Help Desk</h1>
         <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : (
-            <>
-              <Plus className="h-4 w-4 mr-2" />
-              Raise Ticket
-            </>
-          )}
+          {showForm ? 'Cancel' : isFreePlan ? 'Submit Feedback' : 'Raise Ticket / Feedback'}
         </Button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-surface-dark p-6 rounded-lg shadow-sm border border-gray-200 dark:border-white/10">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">New Support Request</h2>
-          <form onSubmit={handleCreateTicket} className="space-y-4">
+        <div className="bg-white dark:bg-surface-dark p-6 rounded-lg shadow-sm border border-gray-200 dark:border-white/10 space-y-4">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+            {isFreePlan ? 'Submit App Feedback' : 'New Support Request or Feedback'}
+          </h2>
+
+          {/* Request Type Switcher */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Request Type</label>
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-white/10 w-fit">
+              <button
+                type="button"
+                disabled={isFreePlan}
+                onClick={() => setRequestType('ticket')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 relative ${
+                  requestType === 'ticket' 
+                    ? 'bg-indigo-600 text-white shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isFreePlan && <Lock size={12} />}
+                Support Ticket
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequestType('feedback')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                  requestType === 'feedback' 
+                    ? 'bg-indigo-600 text-white shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Feedback / Bug Report
+              </button>
+            </div>
+            {isFreePlan && (
+              <p className="text-xs text-rose-500 mt-2 font-medium">
+                * Dedicated Support Tickets are a Pro plan feature. Free plan users can submit App Feedbacks or report bugs.
+              </p>
+            )}
+          </div>
+
+          <form onSubmit={handleCreateTicket} className="space-y-4 pt-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {requestType === 'feedback' ? 'Feedback Subject' : 'Subject'}
+              </label>
               <Input
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 required
-                placeholder="e.g., Cannot upload CSV file"
+                placeholder={requestType === 'feedback' ? "e.g., Request to add dark mode details, or button issue" : "e.g., Cannot upload CSV file"}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
-              >
-                <option value="low">Low - General Question</option>
-                <option value="medium">Medium - Feature Issue</option>
-                <option value="high">High - Something Broken</option>
-                <option value="critical">Critical - System Down</option>
-              </select>
-            </div>
+            {requestType === 'ticket' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
+                >
+                  <option value="low">Low - General Question</option>
+                  <option value="medium">Medium - Feature Issue</option>
+                  <option value="high">High - Something Broken</option>
+                  <option value="critical">Critical - System Down</option>
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
@@ -154,7 +204,7 @@ export function SupportPage() {
                 required
                 rows={4}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm p-2 border"
-                placeholder="Please describe the issue in detail..."
+                placeholder={requestType === 'feedback' ? "Please describe your feedback, suggestion, or bug in detail..." : "Please describe the issue in detail..."}
               />
             </div>
 
@@ -165,7 +215,7 @@ export function SupportPage() {
                     <Loader2 className="animate-spin h-4 w-4 mr-2" />
                     Submitting...
                   </>
-                ) : 'Submit Ticket'}
+                ) : requestType === 'feedback' ? 'Submit Feedback' : 'Submit Ticket'}
               </Button>
             </div>
           </form>

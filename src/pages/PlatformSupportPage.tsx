@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-import { CheckCircle2, XCircle, X, LifeBuoy, Building2, ChevronDown, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, X, LifeBuoy, Building2, ChevronDown, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
 
 interface Ticket {
   _id: string;
@@ -34,11 +34,20 @@ export function PlatformSupportPage() {
   const resolveTicket = useMutation(api.support.resolve);
   const sendEmailAction = useAction(api.emails.sendEmail);
 
+  const [activeTab, setActiveTab] = useState<'tickets' | 'feedbacks'>('tickets');
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [resolutionNote, setResolutionNote] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
+
+  const filteredTickets = tickets.filter((t: Ticket) => {
+    if (activeTab === 'feedbacks') {
+      return t.status === 'feedback';
+    } else {
+      return t.status !== 'feedback';
+    }
+  });
 
   const handleResolveTicket = async () => {
     if (!selectedTicket || !resolutionNote) return;
@@ -89,22 +98,22 @@ export function PlatformSupportPage() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Platform Support</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage and resolve customer support requests
+            Manage support requests and view client feedbacks
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">Total: </span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">Total Requests: </span>
             <span className="font-bold text-indigo-600 dark:text-indigo-400">{tickets.length}</span>
           </div>
           <div className="text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">Open: </span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">Open Tickets: </span>
             <span className="font-bold text-red-600 dark:text-red-400">
               {tickets.filter((t: Ticket) => t.status === 'open').length}
             </span>
@@ -112,64 +121,99 @@ export function PlatformSupportPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="border-b border-gray-200 dark:border-gray-700 flex">
+        <button
+          onClick={() => { setActiveTab('tickets'); setExpandedTicketId(null); }}
+          className={`whitespace-nowrap py-4 px-6 border-b-2 font-bold text-sm transition-all ${
+            activeTab === 'tickets'
+              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Support Tickets ({tickets.filter((t: Ticket) => t.status !== 'feedback').length})
+        </button>
+        <button
+          onClick={() => { setActiveTab('feedbacks'); setExpandedTicketId(null); }}
+          className={`whitespace-nowrap py-4 px-6 border-b-2 font-bold text-sm transition-all ${
+            activeTab === 'feedbacks'
+              ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          App Feedbacks ({tickets.filter((t: Ticket) => t.status === 'feedback').length})
+        </button>
+      </div>
+
       {/* Tickets List */}
       {ticketsData === undefined ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
         </div>
-      ) : tickets.length === 0 ? (
+      ) : filteredTickets.length === 0 ? (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
           <LifeBuoy className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">No support tickets</h3>
-          <p className="text-sm text-gray-500 mt-1">All caught up! No pending requests.</p>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+            {activeTab === 'feedbacks' ? 'No app feedbacks yet' : 'No support tickets'}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">All caught up! No requests found.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {tickets.map((ticket) => (
-            <div key={ticket.id} className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all shadow-sm">
+          {filteredTickets.map((ticket) => (
+            <div key={ticket._id} className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all shadow-sm">
               {/* Header - Always Visible */}
               <div
                 className="p-4 flex items-center justify-between cursor-pointer active:bg-gray-50 dark:active:bg-gray-700/50"
-                onClick={() => setExpandedTicketId(expandedTicketId === ticket.id ? null : ticket.id)}
+                onClick={() => setExpandedTicketId(expandedTicketId === ticket._id ? null : ticket._id)}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Status Icon/Badge */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${ticket.status === 'open' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'}`}>
-                    {ticket.status === 'open' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                    ticket.status === 'feedback' 
+                      ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' 
+                      : (ticket.status === 'open' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400')
+                  }`}>
+                    {ticket.status === 'feedback' 
+                      ? <MessageSquare size={16} /> 
+                      : (ticket.status === 'open' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />)
+                    }
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-xs font-mono text-gray-500">#{ticket.ticket_number}</span>
-                      <span className="text-xs text-gray-400">• {new Date(ticket.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-400">• {new Date(ticket._creationTime).toLocaleDateString()}</span>
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate pr-2">
                       {ticket.subject}
                     </h3>
                   </div>
                 </div>
-                <ChevronDown size={18} className={`text-gray-400 ml-2 shrink-0 transition-transform ${expandedTicketId === ticket.id ? 'rotate-180' : ''}`} />
+                <ChevronDown size={18} className={`text-gray-400 ml-2 shrink-0 transition-transform ${expandedTicketId === ticket._id ? 'rotate-180' : ''}`} />
               </div>
 
               {/* Expanded Body */}
-              {expandedTicketId === ticket.id && (
+              {expandedTicketId === ticket._id && (
                 <div className="px-4 pb-4 pt-0 text-sm animate-fadeIn">
                   <div className="pt-3 border-t border-slate-100 dark:border-gray-700 space-y-3">
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                        {ticket.status === 'feedback' ? 'Feedback Message' : 'Description'}
+                      </p>
                       <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50 dark:bg-gray-900/50 p-2.5 rounded-md text-xs">
                         {ticket.description}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Raised by: <strong>{ticket.profiles?.full_name}</strong></span>
+                      <span>Submitted by: <strong>{ticket.profiles?.full_name}</strong></span>
                       <span className="flex items-center gap-1"><Building2 size={12} /> {ticket.tenants?.name}</span>
                     </div>
 
                     {ticket.resolution_notes && (
                       <div className="bg-green-50 dark:bg-green-900/10 p-3 rounded-md border border-green-100 dark:border-green-900/30">
                         <p className="text-xs font-bold text-green-800 dark:text-green-300 mb-1 flex items-center gap-1">
-                          <CheckCircle2 size={12} /> Resolution
+                          <CheckCircle2 size={12} /> {ticket.status === 'resolved' && ticket.resolution_notes === 'Acknowledged by Admin' ? 'Status' : 'Resolution'}
                         </p>
                         <p className="text-xs text-green-900 dark:text-green-200">{ticket.resolution_notes}</p>
                       </div>
@@ -181,6 +225,31 @@ export function PlatformSupportPage() {
                         className="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transition-colors"
                       >
                         Resolve Ticket
+                      </button>
+                    )}
+
+                    {ticket.status === 'feedback' && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await resolveTicket({ id: ticket._id as Id<"support_tickets">, resolution_notes: "Acknowledged by Admin" });
+                            setNotification({
+                              type: 'success',
+                              title: 'Feedback Acknowledged!',
+                              message: 'Thank you for acknowledging this user feedback.'
+                            });
+                          } catch (err: any) {
+                            setNotification({
+                              type: 'error',
+                              title: 'Action Failed',
+                              message: err.message || 'An error occurred.'
+                            });
+                          }
+                        }}
+                        className="w-full py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 transition-colors"
+                      >
+                        Acknowledge Feedback
                       </button>
                     )}
                   </div>

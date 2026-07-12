@@ -44,6 +44,7 @@ export const create = mutation({
     description: v.string(),
     priority: v.string(),
     created_by: v.id("profiles"),
+    status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Generate simple ticket number
@@ -54,9 +55,13 @@ export const create = mutation({
     const ticketNumber = (lastTicket?.ticket_number || 1000) + 1;
 
     return await ctx.db.insert("support_tickets", {
-      ...args,
+      tenant_id: args.tenant_id,
+      subject: args.subject,
+      description: args.description,
+      priority: args.priority,
+      created_by: args.created_by,
       ticket_number: ticketNumber,
-      status: "open",
+      status: args.status || "open",
     });
   },
 });
