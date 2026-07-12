@@ -231,8 +231,8 @@ export function LandingPage() {
                             </h1>
 
                             <p className="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                                The **100% Free CRM** for Real Estate Developers & Agencies. Seamlessly manage
-                                **Leads, Pipelines, Inventory, and Sales Teams** in a single, powerful platform. Completely Free up to 1,000 leads.
+                                The <strong>100% Free CRM</strong> for Real Estate Developers & Agencies. Seamlessly manage
+                                <strong>Leads, Pipelines, Inventory, and Sales Teams</strong> in a single, powerful platform. Completely Free up to 1,000 leads.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
