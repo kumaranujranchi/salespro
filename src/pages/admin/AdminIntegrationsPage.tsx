@@ -835,7 +835,7 @@ export function AdminIntegrationsPage() {
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-200">Step 1: Connect your Facebook Account</h4>
                       <p className="mt-1">
-                        Click the **"Connect Account"** button inside settings to log in with Facebook. RealSalePro will fetch the Facebook Pages linked to your profile automatically.
+                        Click the <strong className="font-bold text-slate-800 dark:text-slate-200">"Connect Account"</strong> button inside settings to log in with Facebook. RealSalePro will fetch the Facebook Pages linked to your profile automatically.
                       </p>
                     </div>
                     <div>
@@ -847,13 +847,13 @@ export function AdminIntegrationsPage() {
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-200">Step 3: Assign Lead Access in Business Manager</h4>
                       <p className="mt-1">
-                        After connecting your page, go to your **Facebook Business Manager Settings → Integrations → Lead Access**. Ensure that this App is granted permissions to access lead data for your page.
+                        After connecting your page, go to your <strong className="font-bold text-slate-800 dark:text-slate-200">Facebook Business Manager Settings → Integrations → Lead Access</strong>. Ensure that this App is granted permissions to access lead data for your page.
                       </p>
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-200">📌 Important Note:</h4>
                       <p className="mt-1">
-                        Only leads generated through Facebook **Instant Forms (Lead Ads Campaigns)** will be automatically captured and synced to the CRM.
+                        Only leads generated through Facebook <strong className="font-bold text-slate-800 dark:text-slate-200">Instant Forms (Lead Ads Campaigns)</strong> will be automatically captured and synced to the CRM.
                       </p>
                     </div>
                   </div>
