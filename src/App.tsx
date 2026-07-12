@@ -13,6 +13,7 @@ import { PlatformSupportPage } from './pages/PlatformSupportPage';
 import { UsersPage } from './pages/UsersPage';
 import { DepartmentsPage } from './pages/DepartmentsPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { InventoryPage } from './pages/InventoryPage';
 import { AnnouncementsPage } from './pages/AnnouncementsPage';
 import { TargetsPage } from './pages/TargetsPage';
 import { SiteVisitsPage } from './pages/SiteVisitsPage';
@@ -200,6 +201,17 @@ function App() {
                     <ProtectedRoute permissionKey="inventory" requiredFeature="inventory">
                       <DashboardLayout>
                         <ProjectsPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/inventory"
+                  element={
+                    <ProtectedRoute permissionKey="inventory" requiredFeature="inventory">
+                      <DashboardLayout>
+                        <InventoryPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

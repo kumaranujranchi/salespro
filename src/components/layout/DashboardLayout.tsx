@@ -79,7 +79,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'Configuration',
     items: [
-      { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'Sales Executive', 'crm_staff', 'accountant', 'sales_manager'] },
+      { label: 'Inventory', path: '/inventory', icon: Building, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'Sales Executive', 'crm_staff', 'accountant', 'sales_manager'] },
       { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
       { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
@@ -206,7 +206,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (item.path === '/dashboard') permKey = 'dashboard';
       if (item.path === '/sales' || item.path === '/performance') permKey = 'sales';
       if (item.path === '/crm' || item.path === '/leads' || item.path === '/crm/pipeline') permKey = 'crm';
-      if (item.path === '/projects') permKey = 'inventory';
+      if (item.path === '/inventory') permKey = 'inventory';
       if (item.path === '/site-visits') permKey = 'site_visits';
       if (item.path === '/incentives' || item.path === '/targets') permKey = 'incentives';
       if (item.path === '/reports') permKey = 'reports';
@@ -243,7 +243,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const features = tenant?.settings?.features;
     if (features) {
       if (item.path === '/leads' || item.path === '/crm' || item.path === '/crm/pipeline' || item.path === '/site-visits') return features.crm !== false;
-      if (item.path === '/projects') return features.inventory !== false;
+      if (item.path === '/inventory') return features.inventory !== false;
       if (item.path === '/reports') return features.reports !== false;
       if (item.path === '/incentives' || item.path === '/targets') return features.incentives !== false;
     }
