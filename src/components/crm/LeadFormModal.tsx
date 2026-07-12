@@ -19,7 +19,9 @@ interface LeadFormModalProps {
 }
 
 export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
+  const isFreePlan = tenant?.plan_tier === 'free';
+  const isEditing = !!lead;
   const dialog = useDialog();
 
   const [loading, setLoading] = useState(false);
@@ -352,19 +354,21 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Full Name"
+              label={isFreePlan && isEditing ? "Full Name (Locked - Pro Feature)" : "Full Name"}
               value={formData.customer_name}
               onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
               required
+              disabled={isFreePlan && isEditing}
               placeholder="Enter customer name"
             />
 
             <Input
-              label="Mobile Number"
+              label={isFreePlan && isEditing ? "Mobile Number (Locked - Pro Feature)" : "Mobile Number"}
               type="tel"
               value={formData.mobile}
               onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
               required
+              disabled={isFreePlan && isEditing}
               placeholder="10-digit mobile number"
               maxLength={10}
             />

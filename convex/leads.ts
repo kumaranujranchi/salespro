@@ -130,6 +130,15 @@ export const updateLead = mutation({
     const existing = await ctx.db.get(id);
     if (!existing) throw new Error("Lead not found");
 
+    const tenant = await ctx.db.get(existing.tenant_id);
+    if (tenant?.plan_tier === 'free') {
+      const hasNameChanged = data.customer_name !== undefined && data.customer_name !== existing.customer_name;
+      const hasMobileChanged = data.mobile !== undefined && data.mobile !== existing.mobile;
+      if (hasNameChanged || hasMobileChanged) {
+        throw new ConvexError("Editing Lead Name or Mobile number is a Pro Feature on the Free Forever Plan.");
+      }
+    }
+
     await ctx.db.patch(id, {
       ...cleanNullFields(data),
       updated_at: new Date().toISOString(),
