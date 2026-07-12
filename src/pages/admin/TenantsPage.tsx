@@ -458,7 +458,7 @@ export function TenantsPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-slate-900 dark:text-white">{tenant.name}</h3>
-                        <p className="text-xs text-slate-500 capitalize">{tenant.plan_tier || 'Starter'} Plan</p>
+                        <p className="text-xs text-slate-500 capitalize">{tenant.plan_tier || 'free'} Plan</p>
                       </div>
                     </div>
                     <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${expandedId === tenant._id ? 'rotate-180' : ''}`} />
@@ -570,7 +570,7 @@ export function TenantsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                          {tenant.plan_tier || 'Starter'}
+                          {tenant.plan_tier || 'free'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {(() => {
@@ -695,7 +695,7 @@ export function TenantsPage() {
                       <p className="text-xs text-slate-500 mt-1">Manage billing tier and limits for this company</p>
                     </div>
                     <select
-                      value={selectedTenant.plan_tier || 'starter'}
+                      value={selectedTenant.plan_tier || 'free'}
                       onChange={async (e) => {
                         const newPlan = e.target.value;
                         try {
@@ -712,8 +712,6 @@ export function TenantsPage() {
                       className="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border rounded-md font-semibold text-indigo-700 dark:text-indigo-300 outline-none"
                     >
                       <option value="free">Free Forever Plan</option>
-                      <option value="starter">Starter Plan</option>
-                      <option value="agency">Agency Plan</option>
                       <option value="pro">Pro Plan (Full Access)</option>
                     </select>
                   </div>
