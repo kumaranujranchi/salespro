@@ -324,10 +324,15 @@ export const deleteLead = mutation({
     const lead = await ctx.db.get(args.id);
     if (lead) {
       const tenant = await ctx.db.get(lead.tenant_id);
-      if (tenant && tenant.leads_count !== undefined) {
-        await ctx.db.patch(lead.tenant_id, {
-          leads_count: Math.max(0, tenant.leads_count - 1),
-        });
+      if (tenant) {
+        if (tenant.plan_tier === "free") {
+          throw new ConvexError("Lead deletion is a Pro feature. Please upgrade your plan.");
+        }
+        if (tenant.leads_count !== undefined) {
+          await ctx.db.patch(lead.tenant_id, {
+            leads_count: Math.max(0, tenant.leads_count - 1),
+          });
+        }
       }
       await ctx.db.delete(args.id);
     }

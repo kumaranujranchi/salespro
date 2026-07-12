@@ -22,14 +22,15 @@ import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, TrendingDown, Minus, Search, Download, Upload,
   UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy,
-  Calendar, Clock
+  Calendar, Clock, Lock
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
 
 export function LeadsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isFreePlan = tenant?.plan_tier === 'free';
   const dialog = useDialog();
   const toast = useToast();
 
@@ -670,9 +671,14 @@ export function LeadsPage() {
             Cancel
           </Button>
           {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
-            <Button size="sm" variant="danger" onClick={handleBulkDelete}>
-              <Trash2 size={16} className="mr-2" />
-              Delete
+            <Button 
+              size="sm" 
+              variant={isFreePlan ? "outline" : "danger"} 
+              onClick={isFreePlan ? () => toast.info("Lead deletion is a Pro feature. Please upgrade your plan.") : handleBulkDelete}
+              className={isFreePlan ? "text-gray-400 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-700" : ""}
+            >
+              {isFreePlan ? <Lock size={16} className="mr-2" /> : <Trash2 size={16} className="mr-2" />}
+              {isFreePlan ? "Delete (Pro Feature)" : "Delete"}
             </Button>
           )}
         </div>
@@ -848,10 +854,12 @@ export function LeadsPage() {
                                      onClick: () => handleReopenLead(lead.id)
                                    }] : []),
                                   ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
-                                    label: 'Delete',
-                                    icon: Trash2,
-                                    variant: 'danger' as const,
-                                    onClick: () => handleDeleteLead(lead.id)
+                                    label: isFreePlan ? 'Delete (Pro Feature)' : 'Delete',
+                                    icon: isFreePlan ? Lock : Trash2,
+                                    variant: isFreePlan ? 'neutral' as const : 'danger' as const,
+                                    onClick: isFreePlan 
+                                      ? () => toast.info('Lead deletion is a Pro feature. Please upgrade your plan.')
+                                      : () => handleDeleteLead(lead.id)
                                   }] : [])
                                 ]}
                               />

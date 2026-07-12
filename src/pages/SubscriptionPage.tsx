@@ -317,17 +317,6 @@ export function SubscriptionPage() {
     }
   };
 
-  const trialFeatures = [
-    'All Pro Features Included',
-    'Unlimited Users',
-    'Real-time Analytics',
-    'Priority Email Support',
-    'Full CRM Module Access',
-    'Lead Management',
-    'Sales Tracking',
-    'Custom Reports'
-  ];
-
   if (!tenant) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -337,8 +326,31 @@ export function SubscriptionPage() {
   }
 
   const isPro = tenant.plan_tier === 'pro';
-  const isTrial = tenant.subscription_status === 'trial';
   const isActive = tenant.subscription_status === 'active';
+
+  const planFeatures = isPro ? [
+    'All Pro Features Included',
+    'Up to 1,00,000 Leads Limit',
+    'Lead Deletion Enabled',
+    'Unlimited Users',
+    'Real-time Analytics',
+    'Priority Email Support',
+    'Full CRM Module Access',
+    'Lead Management',
+    'Sales Tracking',
+    'Custom Reports'
+  ] : [
+    'All Pro Features Included',
+    'Up to 1,00,000 Leads (1,000 Max for Free Plan)',
+    'Lead Deletion Disabled (Pro Feature)',
+    'Unlimited Users',
+    'Real-time Analytics',
+    'Standard Email Support',
+    'Full CRM Module Access',
+    'Lead Management',
+    'Sales Tracking',
+    'Custom Reports'
+  ];
 
   // Calculate generic next billing date if not in DB
   const getNextBillingDate = () => {
@@ -595,23 +607,20 @@ export function SubscriptionPage() {
                 <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
                   <Shield className="w-6 h-6" />
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                  isTrial ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                  {isActive ? 'Active' : isTrial ? 'Trial Phase' : 'Inactive'}
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  Active
                 </span>
               </div>
               <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
                 Current Plan
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {isPro ? 'Pro Subscription' : 'Starter Plan'}
+                {isPro ? 'Pro Plan' : 'Free Forever Plan'}
               </div>
               <div className="text-sm text-slate-600 dark:text-gray-400">
-                {isActive
-                  ? `Billed ${tenantData.billing_cycle === 'yearly' ? 'Yearly' : tenantData.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
-                  : `${daysRemaining} days left in trial`
+                {isPro
+                  ? `Billed ${tenant.billing_cycle === 'yearly' ? 'Yearly' : tenant.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
+                  : 'Manage up to 1,00,000 leads'
                 }
               </div>
             </div>
@@ -630,16 +639,20 @@ export function SubscriptionPage() {
                 Upcoming Invoice
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {formatCurrency(billingAmount)}
+                {isPro ? formatCurrency(billingAmount) : '₹0'}
               </div>
               <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <span>Renewing on {getNextBillingDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span>
+                  {isPro 
+                    ? `Renewing on ${getNextBillingDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` 
+                    : 'No upcoming renewals'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Usage / Stats (Placeholder for now) */}
+          {/* Card 3: Usage / Stats */}
           <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
             <div className="relative z-10">
@@ -649,13 +662,13 @@ export function SubscriptionPage() {
                 </div>
               </div>
               <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
-                Plan Benefits
+                Leads Managed
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                All Systems Go
+                {(tenant.leads_count || 0).toLocaleString()} / {isPro ? '1,00,000' : '1,000'}
               </div>
               <div className="text-sm text-slate-600 dark:text-gray-400">
-                You have full access to all Pro features
+                {isPro ? 'Upgrade custom for more limits' : 'Upgrade to Pro for more leads'}
               </div>
             </div>
           </div>
@@ -669,7 +682,7 @@ export function SubscriptionPage() {
               Included in your plan
             </h3>
             <ul className="space-y-4">
-              {trialFeatures.map((feature) => (
+              {planFeatures.map((feature) => (
                 <li key={feature} className="flex items-start gap-3 text-sm">
                   <div className="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                     <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
@@ -678,11 +691,11 @@ export function SubscriptionPage() {
                 </li>
               ))}
             </ul>
-            {!isActive && (
+            {!isPro && (
               <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade now for full access</h4>
+                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade to Pro for more leads</h4>
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
-                  Don't lose your data when the trial ends. Secure your pricing today.
+                  Manage more than 1,00,000 leads and unlock lead deletion. Upgrade now.
                 </p>
                 <button onClick={() => navigate('/pricing')} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
                   View Plans →
