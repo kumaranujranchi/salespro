@@ -402,9 +402,9 @@ export function SubscriptionPage() {
             {!isActive && (
               <button
                 onClick={() => navigate('/pricing')}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2"
+                className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 shrink-0"
               >
-                <Zap className="w-5 h-5" />
+                <Zap className="w-4 h-4" />
                 Upgrade
               </button>
             )}
