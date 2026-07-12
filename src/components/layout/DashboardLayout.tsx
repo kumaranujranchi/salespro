@@ -489,8 +489,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                               ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
                             `} />
 
-                            {!isCollapsed && (
-                              <span className="relative z-10 font-semibold text-[13px] tracking-wide">{item.label}</span>
+                             {!isCollapsed && (
+                              <span className="relative z-10 font-semibold text-[13px] tracking-wide flex items-center justify-between w-full">
+                                <span>{item.label}</span>
+                                {item.label === 'Integrations' && tenant?.plan_tier === 'free' && (
+                                  <span className={`
+                                    ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
+                                    ${isActive 
+                                      ? 'bg-rose-600 text-white' 
+                                      : 'bg-red-500 text-white'
+                                    }
+                                  `}>
+                                    Pro
+                                  </span>
+                                )}
+                              </span>
                             )}
 
                             {!isCollapsed && isActive && (
@@ -536,7 +549,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       `} />
 
                       {!isCollapsed && (
-                        <span className="relative z-10 font-semibold text-[13.5px] tracking-wide">{item.label}</span>
+                        <span className="relative z-10 font-semibold text-[13.5px] tracking-wide flex items-center justify-between w-full">
+                          <span>{item.label}</span>
+                          {item.label === 'Integrations' && tenant?.plan_tier === 'free' && (
+                            <span className={`
+                              ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
+                              ${isActive 
+                                ? 'bg-rose-600 text-white' 
+                                : 'bg-red-500 text-white'
+                              }
+                            `}>
+                              Pro
+                            </span>
+                          )}
+                        </span>
                       )}
 
                       {!isCollapsed && isActive && (
