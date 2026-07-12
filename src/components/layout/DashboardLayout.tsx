@@ -79,7 +79,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'Configuration',
     items: [
-      { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'Sales Executive', 'crm_staff', 'accountant', 'sales_manager'] },
       { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
       { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
