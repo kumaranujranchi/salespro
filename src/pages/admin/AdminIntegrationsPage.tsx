@@ -931,6 +931,7 @@ export function AdminIntegrationsPage() {
                             <Select
                               value={metaSettings.assignmentRule}
                               onChange={(e) => setMetaSettings({ ...metaSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                              className="text-xs py-1.5 h-9"
                               options={[
                                 { label: 'Manual Assignment (Unassigned)', value: 'manual' },
                                 { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
