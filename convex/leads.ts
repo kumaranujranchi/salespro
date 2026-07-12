@@ -60,8 +60,9 @@ export const createLead = mutation({
       currentCount = existingLeads.length;
     }
 
-    if (currentCount >= 100000) {
-      throw new ConvexError("Lead limit reached. You cannot add more than 1,00,000 leads.");
+    const maxLimit = tenant.plan_tier === "free" ? 1000 : 100000;
+    if (currentCount >= maxLimit) {
+      throw new ConvexError(`Lead limit reached. Please upgrade to Pro plan to manage more than ${maxLimit.toLocaleString()} leads.`);
     }
 
     // Check for duplicate mobile within tenant
@@ -379,8 +380,9 @@ export const bulkInsertLeads = mutation({
       const rowNum = i + 2;
 
       try {
-        if (currentCount >= 100000) {
-          throw new Error("Lead limit reached (maximum 1,00,000 leads).");
+        const maxLimit = tenant.plan_tier === "free" ? 1000 : 100000;
+        if (currentCount >= maxLimit) {
+          throw new Error(`Lead limit reached (maximum ${maxLimit.toLocaleString()} leads for ${tenant.plan_tier === "free" ? "Free" : "Pro"} plan).`);
         }
 
         const existing = await ctx.db
@@ -760,8 +762,9 @@ export const processWebhookLead = mutation({
 
     // Lead does not exist, create new lead
     let currentCount = tenant.leads_count ?? 0;
-    if (currentCount >= 100000) {
-      throw new Error("Lead limit reached for this tenant.");
+    const maxLimit = tenant.plan_tier === "free" ? 1000 : 100000;
+    if (currentCount >= maxLimit) {
+      throw new Error(`Lead limit reached for this tenant (maximum ${maxLimit.toLocaleString()} leads for ${tenant.plan_tier === "free" ? "Free" : "Pro"} plan).`);
     }
 
     // 1. Determine assignment
@@ -917,8 +920,9 @@ export const saveUnifiedInboundLead = mutation({
     } else {
       // Create new lead
       let currentCount = tenant.leads_count ?? 0;
-      if (currentCount >= 100000) {
-        throw new Error("Lead limit reached (maximum 1,00,000 leads).");
+      const maxLimit = tenant.plan_tier === "free" ? 1000 : 100000;
+      if (currentCount >= maxLimit) {
+        throw new Error(`Lead limit reached (maximum ${maxLimit.toLocaleString()} leads for ${tenant.plan_tier === "free" ? "Free" : "Pro"} plan).`);
       }
 
       // Handle Round Robin lead assignment if requested

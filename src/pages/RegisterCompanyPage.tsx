@@ -142,7 +142,7 @@ export function RegisterCompanyPage() {
       // Sign In locally
       await signIn(formData.email, formData.password);
 
-      if (planName && planAmount) {
+      if (planName && planName !== 'Free' && planName !== 'Free Forever' && planAmount && parseInt(planAmount) > 0) {
         const referralParam = formData.referralCode ? `&referralCode=${encodeURIComponent(formData.referralCode)}` : '';
         navigate(`/pricing?checkout=true&plan=${encodeURIComponent(planName)}&amount=${planAmount}${referralParam}`);
       } else {
@@ -172,7 +172,7 @@ export function RegisterCompanyPage() {
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           {verificationStep
             ? `We've sent a 6-digit code to ${formData.email}`
-            : 'Start your 30-day free trial. No credit card required.'
+            : 'Start managing your real estate leads today.'
           }
         </p>
       </div>

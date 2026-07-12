@@ -163,10 +163,9 @@ export const register = mutation({
         general: { target_model: 'area' },
         branding: { primary_color: '#3B82F6' }
       },
-      subscription_status: "trialing",
+      subscription_status: "active",
       plan_tier: "free",
       is_active: true,
-      trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
     // 3. Create Super Admin Profile
