@@ -845,9 +845,15 @@ export function AdminIntegrationsPage() {
                       </p>
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200">💡 Important Development Bypass:</h4>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200">Step 3: Assign Lead Access in Business Manager</h4>
                       <p className="mt-1">
-                        While in local/sandbox development mode, Facebook Ads lead ingestion can be fully tested by the development administrator account without requiring a formal business verification or app review.
+                        After connecting your page, go to your **Facebook Business Manager Settings → Integrations → Lead Access**. Ensure that this App is granted permissions to access lead data for your page.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-200">📌 Important Note:</h4>
+                      <p className="mt-1">
+                        Only leads generated through Facebook **Instant Forms (Lead Ads Campaigns)** will be automatically captured and synced to the CRM.
                       </p>
                     </div>
                   </div>
