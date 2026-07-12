@@ -32,7 +32,7 @@ interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {
 
 export function CardHeader({ children, className = '', ...props }: CardHeaderProps) {
   return (
-    <div className={cn("px-6 py-5 border-b border-gray-100/80 dark:border-white/5", className)} {...props}>
+    <div className={cn("px-5 py-3.5 border-b border-gray-100/80 dark:border-white/5", className)} {...props}>
       {children}
     </div>
   );
@@ -44,7 +44,7 @@ interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 
 export function CardTitle({ children, className = '', ...props }: CardTitleProps) {
   return (
-    <h3 className={cn("text-lg font-bold text-gray-900 dark:text-white tracking-tight", className)} {...props}>
+    <h3 className={cn("text-sm md:text-base font-bold text-gray-900 dark:text-white tracking-tight", className)} {...props}>
       {children}
     </h3>
   );
@@ -56,7 +56,7 @@ interface CardContentProps extends HTMLAttributes<HTMLDivElement> {
 
 export function CardContent({ children, className = '', ...props }: CardContentProps) {
   return (
-    <div className={cn("p-6", className)} {...props}>
+    <div className={cn("p-4 md:p-5", className)} {...props}>
       {children}
     </div>
   );
@@ -68,7 +68,7 @@ interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
 
 export function CardDescription({ children, className = '', ...props }: CardDescriptionProps) {
   return (
-    <p className={cn("text-sm text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed", className)} {...props}>
+    <p className={cn("text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed", className)} {...props}>
       {children}
     </p>
   );

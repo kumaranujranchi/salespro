@@ -40,33 +40,33 @@ export function KPICard({
   if (iconColor.includes('purple')) gradientFrom = 'from-purple-50';
 
   return (
-    <div className={`relative group overflow-hidden bg-gradient-to-br ${gradientFrom} to-white dark:from-surface-highlight dark:to-surface-dark dark:border dark:border-white/5 rounded-xl md:rounded-3xl shadow-card-custom p-2 md:p-6 transition-all duration-300 hover:-translate-y-1 h-full ${className}`}>
+    <div className={`relative group overflow-hidden bg-gradient-to-br ${gradientFrom} to-white dark:from-surface-highlight dark:to-surface-dark dark:border dark:border-white/5 rounded-lg md:rounded-2xl shadow-card-custom p-2 md:p-4 transition-all duration-300 hover:-translate-y-1 h-full ${className}`}>
       {/* Background Decoration */}
-      <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-transparent rounded-bl-full -mr-6 -mt-6 md:-mr-10 md:-mt-10 transition-transform group-hover:scale-110 pointer-events-none" />
-      <div className={`absolute bottom-0 right-0 w-12 h-12 md:w-24 md:h-24 rounded-full opacity-5 hover:opacity-10 dark:opacity-20 blur-lg md:blur-2xl group-hover:opacity-10 dark:group-hover:opacity-30 transition-opacity ${iconBgColor.replace('bg-', 'bg-')}`} />
+      <div className="absolute top-0 right-0 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-transparent rounded-bl-full -mr-6 -mt-6 md:-mr-8 md:-mt-8 transition-transform group-hover:scale-110 pointer-events-none" />
+      <div className={`absolute bottom-0 right-0 w-12 h-12 md:w-20 md:h-20 rounded-full opacity-5 hover:opacity-10 dark:opacity-20 blur-lg md:blur-2xl group-hover:opacity-10 dark:group-hover:opacity-30 transition-opacity ${iconBgColor.replace('bg-', 'bg-')}`} />
 
-      <div className="relative flex justify-between items-start mb-2 md:mb-6">
-        <div className={`p-1.5 md:p-3.5 rounded-lg md:rounded-2xl ${iconBgColor} ${iconColor} bg-opacity-80 dark:bg-opacity-20 dark:text-white ring-1 ring-black/5 dark:ring-white/10 shadow-sm group-hover:scale-105 transition-transform duration-300`}>
-          <Icon className="w-3.5 h-3.5 md:w-6 md:h-6 stroke-[2]" />
+      <div className="relative flex justify-between items-start mb-2 md:mb-3">
+        <div className={`p-1.5 md:p-2.5 rounded-lg md:rounded-xl ${iconBgColor} ${iconColor} bg-opacity-80 dark:bg-opacity-20 dark:text-white ring-1 ring-black/5 dark:ring-white/10 shadow-sm group-hover:scale-105 transition-transform duration-300`}>
+          <Icon className="w-3.5 h-3.5 md:w-5 md:h-5 stroke-[2]" />
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full text-[9px] md:text-xs font-bold border ${isPositive
+          <div className={`flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-full text-[9px] md:text-[11px] font-bold border ${isPositive
             ? 'bg-emerald-100/50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30'
             : 'bg-rose-100/50 text-rose-700 border-rose-100 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30'
             }`}>
-            {isPositive ? <TrendingUp size={10} className="md:w-3.5 md:h-3.5" /> : <TrendingDown size={10} className="md:w-3.5 md:h-3.5" />}
+            {isPositive ? <TrendingUp size={10} className="md:w-3 md:h-3" /> : <TrendingDown size={10} className="md:w-3 md:h-3" />}
             <span>{Math.abs(trend.value)}%</span>
           </div>
         )}
       </div>
 
       <div className="relative z-10">
-        <p className="text-[9px] md:text-xs font-semibold text-slate-500 dark:text-text-muted mb-0 md:mb-1 tracking-wide uppercase truncate">{title}</p>
-        <h3 className={`text-base md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight truncate leading-tight ${valueClassName}`}>
+        <p className="text-[9px] md:text-[11px] font-semibold text-slate-500 dark:text-text-muted mb-0 md:mb-0.5 tracking-wide uppercase truncate">{title}</p>
+        <h3 className={`text-base md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate leading-tight ${valueClassName}`}>
           {formatter ? formatter(value) : value}
         </h3>
         {subtitle && (
-          <p className="text-[9px] md:text-xs text-slate-400 dark:text-gray-500 mt-0.5 md:mt-2 font-medium flex items-center gap-1 truncate">
+          <p className="text-[9px] md:text-[11px] text-slate-400 dark:text-gray-500 mt-0.5 md:mt-1 font-medium flex items-center gap-1 truncate">
             <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-gray-600 shrink-0"></span>
             {subtitle}
           </p>

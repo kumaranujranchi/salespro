@@ -27,24 +27,24 @@ export function RecentActivityLog({ activities }: RecentActivityLogProps) {
                     <CardTitle className="text-slate-800 dark:text-white text-base">Recent Activity</CardTitle>
                 </div>
             </CardHeader>
-            <CardContent className="pt-4">
-                <div className="relative space-y-0 pl-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <CardContent className="pt-3">
+                <div className="relative space-y-0 pl-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {activities.length === 0 ? (
-                        <p className="text-center text-slate-400 dark:text-gray-500 py-8 text-sm">No recent activity</p>
+                        <p className="text-center text-slate-400 dark:text-gray-500 py-6 text-xs">No recent activity</p>
                     ) : (
-                        <div className="relative border-l border-slate-200 dark:border-white/10 ml-2 space-y-6 py-2">
+                        <div className="relative border-l border-slate-200 dark:border-white/10 ml-2 space-y-4 py-1.5">
                             {activities.map((log) => (
                                 <div key={log._id || log.id} className="relative pl-6 group">
                                     <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-gray-600 ring-2 ring-white dark:ring-surface-dark group-hover:bg-blue-500 transition-colors"></div>
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-sm font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                                    <div className="flex flex-col gap-0.5">
+                                        <p className="text-xs font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                                             <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{log.user?.full_name || 'System'}</span> {log.action.replace('_', ' ').toLowerCase()}
                                         </p>
-                                        <p className="text-[11px] text-slate-400 dark:text-gray-500 font-medium">
+                                        <p className="text-[10px] text-slate-400 dark:text-gray-500 font-medium">
                                             {new Date(log.created_at).toLocaleString()}
                                         </p>
                                         {log.details && (
-                                            <div className="mt-1 p-2 bg-slate-50 dark:bg-white/5 rounded-lg text-xs text-slate-500 dark:text-gray-400 border border-slate-100/50 dark:border-white/5">
+                                            <div className="mt-1 p-1.5 bg-slate-50 dark:bg-white/5 rounded-lg text-[10px] text-slate-500 dark:text-gray-400 border border-slate-100/50 dark:border-white/5">
                                                 <code className="break-all font-mono">{JSON.stringify(log.details).slice(0, 100)}...</code>
                                             </div>
                                         )}

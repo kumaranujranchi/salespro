@@ -97,35 +97,35 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-5 pb-5">
       {/* Welcome Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 to-slate-900 rounded-3xl p-6 md:p-8 shadow-sm">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none hidden md:block"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none hidden md:block"></div>
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-4 md:p-5 shadow-sm">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none hidden md:block"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-12 -mb-12 pointer-events-none hidden md:block"></div>
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-white">
-          <div className="flex items-center gap-4 md:gap-5 w-full md:w-auto">
-            <div className="flex-shrink-0 p-1 bg-white/20 rounded-2xl backdrop-blur-sm">
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 text-white">
+          <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
+            <div className="flex-shrink-0 p-1 bg-white/20 rounded-xl backdrop-blur-sm">
               {profile?.image_url ? (
-                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover border-2 border-white/50" />
+                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover border-2 border-white/50" />
               ) : (
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-white/10 flex items-center justify-center text-xl md:text-2xl font-bold border-2 border-white/50">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-white/10 flex items-center justify-center text-lg md:text-xl font-bold border-2 border-white/50">
                   {profile?.full_name?.charAt(0)}
                 </div>
               )}
             </div>
-            <div className="space-y-1 min-w-0">
-              <h1 className="text-xl md:text-3xl font-bold tracking-tight">
+            <div className="space-y-0.5 min-w-0">
+              <h1 className="text-lg md:text-2xl font-bold tracking-tight">
                 Welcome Back, {profile?.full_name?.split(' ')[0]}!
               </h1>
-              <p className="text-blue-100 text-sm font-medium">
+              <p className="text-blue-100 text-xs font-medium">
                 Here's the system overview for today.
               </p>
             </div>
           </div>
 
           <div className="flex w-full md:w-auto mt-2 md:mt-0 justify-start md:justify-end">
-            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 text-xs md:text-sm font-medium whitespace-nowrap">
+            <div className="px-3.5 py-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 text-xs font-medium whitespace-nowrap">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
           </div>
@@ -134,7 +134,7 @@ export function AdminDashboard() {
 
       {/* Financial Metrics (Month vs YTD) */}
       {permissions.kpi_cards && salesView !== 'none' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <KPICard
             title={salesView === 'self' ? "My Sales (Month)" : "Sales (This Month)"}
             value={stats.monthlySales}
@@ -173,7 +173,7 @@ export function AdminDashboard() {
       {/* Project Performance Cards (All Time) */}
       {permissions.project_performance && tenant?.settings?.features?.inventory !== false && stats.projectStats.length > 0 && (
         <div
-          className={`grid gap-4 md:gap-6 transition-all duration-300 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
+          className={`grid gap-3 md:gap-4 transition-all duration-300 ${stats.projectStats.length === 1 ? 'grid-cols-1' :
             stats.projectStats.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
               stats.projectStats.length === 3 ? 'grid-cols-1 md:grid-cols-3' :
                 'grid-cols-2 md:grid-cols-2 lg:grid-cols-4'
@@ -203,9 +203,9 @@ export function AdminDashboard() {
 
       {/* Main Graphs: Sales Trends & Payment Collection */}
       {salesView !== 'none' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
-            <CardHeader className="border-b border-slate-100/50 pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Card className="rounded-2xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
+            <CardHeader className="border-b border-slate-100/50 pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
                   <div className="p-2 bg-indigo-50 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100 dark:ring-indigo-500/30">
@@ -215,8 +215,8 @@ export function AdminDashboard() {
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="h-[320px] w-full">
+            <CardContent className="pt-5">
+              <div className="h-[260px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={salesAnalytics || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
@@ -259,8 +259,8 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
-            <CardHeader className="border-b border-slate-50 dark:border-white/10 pb-4">
+          <Card className="rounded-2xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
+            <CardHeader className="border-b border-slate-50 dark:border-white/10 pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
                   <div className="p-2 bg-emerald-50 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/30">
@@ -270,8 +270,8 @@ export function AdminDashboard() {
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="h-[320px] w-full">
+            <CardContent className="pt-5">
+              <div className="h-[260px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={salesAnalytics || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
@@ -318,12 +318,12 @@ export function AdminDashboard() {
       )}
 
       {/* Leaderboard Widget & Leads by Source Pie Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {permissions.leaderboard && (
-          <Card className="h-[500px] flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark overflow-hidden">
-            <CardHeader className="border-b border-slate-100/50 dark:border-white/10 pb-4">
-              <div className="flex flex-row items-center justify-between mb-4">
+          <Card className="h-[400px] flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark overflow-hidden rounded-2xl">
+            <CardHeader className="border-b border-slate-100/50 dark:border-white/10 pb-3">
+              <div className="flex flex-row items-center justify-between mb-2">
                 <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
                   <div className="p-2 bg-amber-50 dark:bg-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-500/30">
                     <Award size={20} />
@@ -366,11 +366,11 @@ export function AdminDashboard() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 transition-all group cursor-default"
+                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-slate-100 dark:hover:border-white/10 transition-all group cursor-default"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className={`absolute -top-2 -left-2 w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold border-2 border-white dark:border-surface-dark shadow-sm z-10
+                          <div className={`absolute -top-2 -left-2 w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold border-2 border-white dark:border-surface-dark shadow-sm z-10
                             ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
                               index === 1 ? 'bg-slate-300 text-slate-700' :
                                 index === 2 ? 'bg-orange-300 text-orange-800' : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-gray-400'}
@@ -378,9 +378,9 @@ export function AdminDashboard() {
                             #{index + 1}
                           </div>
                           {user.image_url ? (
-                            <img src={user.image_url} alt={user.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-slate-50 dark:ring-white/10" />
+                            <img src={user.image_url} alt={user.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-50 dark:ring-white/10" />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 dark:from-indigo-500/20 dark:to-slate-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 dark:from-indigo-500/20 dark:to-slate-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
                               {user.name.charAt(0)}
                             </div>
                           )}
@@ -411,15 +411,15 @@ export function AdminDashboard() {
       </div>
 
       {/* Recent Activity Log & Announcements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {permissions.recent_activity && (
-          <div className="h-[500px]">
+          <div className="h-[400px]">
             <RecentActivityLog activities={activityLogsData || []} />
           </div>
         )}
 
-        <Card className="h-[500px] flex flex-col rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
-          <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4 flex-shrink-0">
+        <Card className="h-[400px] flex flex-col rounded-2xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
+          <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-3 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-rose-50/50 dark:bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 ring-1 ring-rose-100/50 dark:ring-rose-500/30">
                 <Megaphone size={20} />
@@ -430,7 +430,7 @@ export function AdminDashboard() {
           <CardContent className="pt-4 flex-1 overflow-auto custom-scrollbar">
             <div className="space-y-4">
               {(announcementsData || []).map((ann: any) => (
-                <div key={ann._id} className="p-4 bg-white dark:bg-surface-dark rounded-xl border border-slate-100 dark:border-white/10 hover:border-rose-200 transition-all">
+                <div key={ann._id} className="p-3 bg-white dark:bg-surface-dark rounded-xl border border-slate-100 dark:border-white/10 hover:border-rose-200 transition-all">
                   <h4 className="font-bold text-slate-800 dark:text-white text-sm">{ann.title}</h4>
                   <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-2">{ann.content}</p>
                   <div className="mt-2 text-[10px] text-slate-400">{new Date(ann.created_at).toLocaleDateString()}</div>
@@ -442,34 +442,34 @@ export function AdminDashboard() {
       </div>
 
       {/* Activity Calendar & Recent Sales */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {permissions.recent_activity && (
-          <div className="h-[500px]">
+          <div className="h-[400px]">
             <ActivityCalendar activities={activityLogsData || []} />
           </div>
         )}
 
         {salesView !== 'none' && (
-          <div className="h-[500px]">
-            <Card className="h-full rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
-              <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-4">
+          <div className="h-[400px]">
+            <Card className="h-full rounded-2xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 overflow-hidden dark:bg-surface-dark">
+              <CardHeader className="border-b border-slate-100 dark:border-white/10 pb-3">
                 <CardTitle className="text-slate-800 dark:text-white text-base">Recent Sales</CardTitle>
               </CardHeader>
               <CardContent className="p-0 overflow-auto custom-scrollbar">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-gray-400 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
-                      <th className="px-4 py-3">Customer</th>
-                      <th className="px-4 py-3">Project</th>
-                      <th className="px-4 py-3 text-right">Revenue</th>
+                      <th className="px-3.5 py-2">Customer</th>
+                      <th className="px-3.5 py-2">Project</th>
+                      <th className="px-3.5 py-2 text-right">Revenue</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/10">
                     {(recentSalesData || []).map((sale: any) => (
                       <tr key={sale._id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                        <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">{sale.customer?.name}</td>
-                        <td className="px-4 py-3 text-slate-500 dark:text-gray-400">{sale.project?.name}</td>
-                        <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(sale.total_revenue, true)}</td>
+                        <td className="px-3.5 py-2 font-medium text-slate-800 dark:text-white text-xs">{sale.customer?.name}</td>
+                        <td className="px-3.5 py-2 text-slate-500 dark:text-gray-400 text-xs">{sale.project?.name}</td>
+                        <td className="px-3.5 py-2 text-right font-bold text-emerald-600 text-xs">{formatCurrency(sale.total_revenue, true)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -519,8 +519,8 @@ function LeadsBySourcePieChart({ leadStats }: { leadStats: any }) {
   const hasData = sourceData.length > 0;
 
   return (
-    <Card className="h-[500px] flex flex-col rounded-3xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
-      <CardHeader className="border-b border-slate-100/50 dark:border-white/10 pb-4 flex-shrink-0">
+    <Card className="h-[400px] flex flex-col rounded-2xl border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] overflow-hidden ring-1 ring-slate-100 dark:ring-white/10 dark:bg-surface-dark dark:shadow-none">
+      <CardHeader className="border-b border-slate-100/50 dark:border-white/10 pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-white">
             <div className="p-2 bg-violet-50 dark:bg-violet-500/20 rounded-xl text-violet-600 dark:text-violet-400 ring-1 ring-violet-100 dark:ring-violet-500/30">
@@ -543,15 +543,15 @@ function LeadsBySourcePieChart({ leadStats }: { leadStats: any }) {
         ) : (
           <>
             {/* Pie Chart */}
-            <div className="w-full" style={{ height: '240px' }}>
+            <div className="w-full" style={{ height: '170px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={sourceData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
+                    innerRadius={45}
+                    outerRadius={75}
                     paddingAngle={3}
                     dataKey="value"
                     strokeWidth={2}
@@ -594,13 +594,13 @@ function LeadsBySourcePieChart({ leadStats }: { leadStats: any }) {
             </div>
 
             {/* Legend Grid */}
-            <div className="w-full grid grid-cols-2 gap-x-6 gap-y-2 px-2">
+            <div className="w-full grid grid-cols-2 gap-x-4 gap-y-1 px-2">
               {sourceData.map((entry, index) => {
                 const percentage = totalLeads > 0 ? ((entry.value / totalLeads) * 100).toFixed(1) : '0';
                 return (
                   <div
                     key={entry.name}
-                    className={`flex items-center justify-between py-2 px-3 rounded-lg transition-all cursor-default ${
+                    className={`flex items-center justify-between py-1 px-2.5 rounded-lg transition-all cursor-default ${
                       activeIndex === index ? 'bg-slate-50 dark:bg-white/5' : ''
                     }`}
                     onMouseEnter={() => setActiveIndex(index)}

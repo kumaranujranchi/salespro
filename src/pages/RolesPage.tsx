@@ -250,16 +250,19 @@ export function RolesPage() {
                 <div className="space-y-3">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Permissions</p>
                   <div className="flex flex-wrap gap-2">
-                    {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 4).map(([key, val]) => (
+                    {Object.entries(role.permissions?.menu || {}).filter(([, val]) => val !== 'none').slice(0, 4).map(([key, val]) => (
                       <div key={key} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                         {val === 'edit' ? <Check size={12} /> : <Eye size={12} />}
                         {MENU_ITEMS.find(m => m.id === key)?.label}
                       </div>
                     ))}
-                    {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 4 && (
+                    {Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length > 4 && (
                       <div className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
-                        +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 4} more
+                        +{Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length - 4} more
                       </div>
+                    )}
+                    {Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length === 0 && (
+                      <span className="text-xs text-slate-400 italic">No permissions set</span>
                     )}
                   </div>
                 </div>
@@ -293,15 +296,18 @@ export function RolesPage() {
                     <TableCell className="max-w-xs truncate">{role.description || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(role.permissions.menu).filter(([, val]) => val !== 'none').slice(0, 3).map(([key, val]) => (
+                        {Object.entries(role.permissions?.menu || {}).filter(([, val]) => val !== 'none').slice(0, 3).map(([key, val]) => (
                           <span key={key} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                             {val === 'edit' ? 'Edit' : 'View'} : {MENU_ITEMS.find(m => m.id === key)?.label}
                           </span>
                         ))}
-                        {Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length > 3 && (
+                        {Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length > 3 && (
                           <span className="px-2 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-500 text-xs font-medium">
-                            +{Object.keys(role.permissions.menu).filter(k => role.permissions.menu[k] !== 'none').length - 3} more
+                            +{Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length - 3} more
                           </span>
+                        )}
+                        {Object.keys(role.permissions?.menu || {}).filter(k => (role.permissions?.menu || {})[k] !== 'none').length === 0 && (
+                          <span className="text-xs text-slate-400 italic">No permissions</span>
                         )}
                       </div>
                     </TableCell>

@@ -120,17 +120,17 @@ export function UpcomingEvents() {
         return date;
     };
 
-    const displayedEvents = isExpanded ? events : events.slice(0, 5);
+    const displayedEvents = isExpanded ? events : events.slice(0, 4);
 
     if (loading) return <div className="h-48 bg-gray-50 rounded-xl animate-pulse" />;
     if (events.length === 0) return null;
 
     return (
-        <Card className="h-full bg-white/80 dark:bg-surface-dark backdrop-blur-sm border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 rounded-3xl overflow-hidden">
-            <CardHeader className="pb-4 border-b border-slate-100 dark:border-white/10 bg-white dark:bg-surface-dark">
+        <Card className="h-full bg-white/80 dark:bg-surface-dark backdrop-blur-sm border-0 shadow-[0_2px_20px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 dark:ring-white/10 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-3 border-b border-slate-100 dark:border-white/10 bg-white dark:bg-surface-dark">
                 <CardTitle className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-50/50 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100/50 dark:ring-indigo-500/30">
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100/50 dark:ring-indigo-500/30">
                             <Calendar size={18} />
                         </div>
                         <span className="text-slate-800 dark:text-white">Upcoming Celebrations</span>
@@ -140,7 +140,7 @@ export function UpcomingEvents() {
                     </span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 max-h-[320px] overflow-y-auto custom-scrollbar">
+            <CardContent className="pt-3 max-h-[240px] overflow-y-auto custom-scrollbar">
                 <div className="space-y-4">
                     {displayedEvents.map((event) => (
                         <div key={event.id} className="flex items-center gap-3 group p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-default">
@@ -188,15 +188,15 @@ export function UpcomingEvents() {
                     ))}
                 </div>
 
-                {events.length > 5 && (
+                {events.length > 4 && (
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="w-full mt-4 py-2 flex items-center justify-center gap-1 text-xs font-medium text-slate-500 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-all"
+                        className="w-full mt-3 py-1.5 flex items-center justify-center gap-1 text-[11px] font-medium text-slate-500 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-all"
                     >
                         {isExpanded ? (
                             <>Show Less <ChevronUp size={14} /></>
                         ) : (
-                            <>View All ({events.length - 5} more) <ChevronDown size={14} /></>
+                            <>View All ({events.length - 4} more) <ChevronDown size={14} /></>
                         )}
                     </button>
                 )}

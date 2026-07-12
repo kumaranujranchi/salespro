@@ -579,11 +579,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <main
         className={`
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          mt-[calc(4rem+env(safe-area-inset-top))] p-4 md:p-6 overflow-x-hidden
+          mt-[calc(4rem+env(safe-area-inset-top))] p-4 md:p-5 overflow-x-hidden
           ${isCollapsed ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-72'}
         `}
       >
-        <div className="max-w-[1600px] space-y-8 animate-fadeIn">
+        <div className="max-w-[1600px] space-y-6 animate-fadeIn">
           {children}
         </div>
       </main>
