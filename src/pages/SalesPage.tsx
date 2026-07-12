@@ -53,12 +53,43 @@ export function SalesPage() {
     // deletion logic via mutation...
   };
 
+  // Safe date helper
+  const safeFormatDate = (dateStr: any) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const parsed = parseISO(dateStr);
+      if (isNaN(parsed.getTime())) {
+        const fallback = new Date(dateStr);
+        if (isNaN(fallback.getTime())) return 'N/A';
+        return format(fallback, 'dd/MM/yyyy');
+      }
+      return format(parsed, 'dd/MM/yyyy');
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  const safeIsSameMonth = (dateStr: any, compareDate: Date) => {
+    if (!dateStr) return false;
+    try {
+      const parsed = parseISO(dateStr);
+      if (isNaN(parsed.getTime())) {
+        const fallback = new Date(dateStr);
+        if (isNaN(fallback.getTime())) return false;
+        return isSameMonth(fallback, compareDate);
+      }
+      return isSameMonth(parsed, compareDate);
+    } catch {
+      return false;
+    }
+  };
+
   const filteredSales = useMemo(() => {
     if (!sales) return [];
     return sales.filter(s => {
       const matchSearch = !searchQuery || 
-        s.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.project?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+        String(s.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(s.project?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchSearch;
     });
   }, [sales, searchQuery]);
@@ -70,10 +101,10 @@ export function SalesPage() {
     
     return {
       totalSales: activeSales.length,
-      thisMonth: activeSales.filter(s => isSameMonth(parseISO(s.sale_date), now)).length,
-      totalArea: activeSales.reduce((sum, s) => sum + s.area_sqft, 0),
-      totalRevenue: activeSales.reduce((sum, s) => sum + s.total_revenue, 0),
-      totalReceived: payments.reduce((sum, p) => sum + p.amount, 0)
+      thisMonth: activeSales.filter(s => safeIsSameMonth(s.sale_date, now)).length,
+      totalArea: activeSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0),
+      totalRevenue: activeSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0),
+      totalReceived: payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
     };
   }, [filteredSales, payments]);
 
@@ -122,7 +153,7 @@ export function SalesPage() {
                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                     {filteredSales.map(sale => (
                        <tr key={sale._id} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                          <td className="px-4 py-3">{format(parseISO(sale.sale_date), 'dd/MM/yyyy')}</td>
+                          <td className="px-4 py-3">{safeFormatDate(sale.sale_date)}</td>
                           <td className="px-4 py-3">
                              <div className="font-medium">{sale.customer?.name}</div>
                              <div className="text-xs text-gray-500">{sale.customer?.phone}</div>
@@ -134,7 +165,7 @@ export function SalesPage() {
                           <td className="px-4 py-3 text-right font-bold text-green-600">{formatCurrency(sale.total_revenue)}</td>
                           <td className="px-4 py-3 text-center">
                              <span className={`px-2 py-1 rounded-full text-xs ${sale.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                {sale.status.toUpperCase()}
+                                {(sale.status || 'Booked').toUpperCase()}
                              </span>
                           </td>
                           <td className="px-4 py-3 text-right">
