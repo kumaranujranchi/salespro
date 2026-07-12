@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { ParticlesBackground } from '../components/ui/ParticlesBackground';
 import { Modal } from '../components/ui/Modal';
-import { FAQSection, TestimonialsSection, ValuePropositionSection } from './LandingPageSections';
+import { FAQSection, TestimonialsSection, ValuePropositionSection, LeadIntegrationsSection } from './LandingPageSections';
 
 export function LandingPage() {
     const navigate = useNavigate();
@@ -119,7 +119,7 @@ export function LandingPage() {
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center space-x-8">
-                            {['Features', 'Benefits', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'Integrations', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -166,7 +166,7 @@ export function LandingPage() {
                 {mobileMenuOpen && (
                     <div className="md:hidden bg-white border-t animate-fadeIn absolute w-full shadow-xl">
                         <div className="px-4 py-4 space-y-3">
-                            {['Features', 'Benefits', 'About'].map((item) => (
+                            {['Features', 'Benefits', 'Integrations', 'About'].map((item) => (
                                 <a
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
@@ -419,8 +419,8 @@ export function LandingPage() {
                 </div>
             </section>
 
-
-
+            {/* Lead Integrations Section */}
+            <LeadIntegrationsSection />
 
             {/* Data Privacy & Security Section */}
             <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 relative overflow-hidden">
