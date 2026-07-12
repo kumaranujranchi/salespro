@@ -620,7 +620,7 @@ export function SubscriptionPage() {
               <div className="text-sm text-slate-600 dark:text-gray-400">
                 {isPro
                   ? `Billed ${tenant.billing_cycle === 'yearly' ? 'Yearly' : tenant.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
-                  : 'Manage up to 1,00,000 leads'
+                  : 'Manage up to 1,000 leads'
                 }
               </div>
             </div>
