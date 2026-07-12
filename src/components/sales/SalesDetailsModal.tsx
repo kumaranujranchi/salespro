@@ -5,7 +5,7 @@ import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Modal } from '../ui/Modal';
 import { format, parseISO } from 'date-fns';
-import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2 } from 'lucide-react';
+import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger } from '../../utils/export';
@@ -22,6 +22,8 @@ interface SalesDetailsModalProps {
 
 export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onDelete, canEdit }: SalesDetailsModalProps) {
     const { profile, tenant } = useAuth();
+    const toast = useToast();
+    const isFreePlan = tenant?.plan_tier === 'free';
     
     // Convex Queries
     const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
@@ -92,6 +94,46 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         <StatusBadge label="Registry" done={sale.is_registry_done} date={sale.registry_date} />
                     </div>
                 </section>
+
+                {/* Payment Ledger Actions */}
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Payment Ledger</h4>
+                        <p className="text-xs text-gray-500">Download or share the complete statement of accounts.</p>
+                    </div>
+                    <div className="flex gap-2.5">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                            title="Download PDF"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileText size={14} className="mr-1.5" />}
+                            PDF Ledger {isFreePlan && "(Pro)"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                            title="Download Excel"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileSpreadsheet size={14} className="mr-1.5" />}
+                            Excel {isFreePlan && "(Pro)"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Sharing payment ledger is a Pro feature. Please upgrade your plan.") : () => sharePaymentLedger(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            title="Share Ledger"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Share2 size={14} className="mr-1.5" />}
+                            Share {isFreePlan && "(Pro)"}
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-4 border-t">
