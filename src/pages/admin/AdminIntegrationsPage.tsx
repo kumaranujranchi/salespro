@@ -899,12 +899,12 @@ export function AdminIntegrationsPage() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-xs">
+                          <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-xl flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0">
                                 FB
                               </div>
-                              <div className="truncate max-w-[150px]">
+                              <div className="min-w-0 flex-1">
                                 <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                                   {metaSettings.pageName || "Connected Page"}
                                 </p>
@@ -918,7 +918,7 @@ export function AdminIntegrationsPage() {
                               size="sm"
                               onClick={handleDisconnectMeta}
                               isLoading={savingMeta}
-                              className="text-[10px] py-1 px-2.5 flex items-center gap-1"
+                              className="text-[10px] py-1 px-2.5 flex items-center gap-1 flex-shrink-0"
                             >
                               <LogOut size={10} /> Disconnect
                             </Button>
