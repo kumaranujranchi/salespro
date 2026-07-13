@@ -28,7 +28,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
 
     // Convex Queries
     const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
-    const executives = useQuery(api.profiles.listDrivers, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
+    const executives = useQuery(api.profiles.listExecutives, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
     // Mutations
     const createSale = useMutation(api.sales.createSale);
