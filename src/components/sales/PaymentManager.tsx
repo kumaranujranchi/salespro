@@ -9,18 +9,20 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet } from 'lucide-react';
+import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet, Lock, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
+import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger } from '../../utils/export';
 
 interface PaymentManagerProps {
     isOpen: boolean;
     onClose: () => void;
     sale: any | null;
+    canEdit?: boolean;
 }
 
-export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
-    const { profile } = useAuth();
+export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: PaymentManagerProps) {
+    const { profile, tenant } = useAuth();
     const dialog = useDialog();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -82,15 +84,11 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
 
     if (!sale) return null;
 
+    const isFreePlan = tenant?.plan_tier === 'free';
     const totalReceived = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const totalRevenue = sale.total_revenue || 0;
     const pendingAmount = totalRevenue - totalReceived;
     const receivedPercentage = totalRevenue > 0 ? (totalReceived / totalRevenue) * 100 : 0;
-
-    const chartData = [
-        { name: 'Received', value: totalReceived },
-        { name: 'Pending', value: pendingAmount < 0 ? 0 : pendingAmount }
-    ];
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${sale.customer?.name}`} size="xl">
@@ -101,14 +99,52 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                     <SummaryCard title="Pending" value={formatCurrency(pendingAmount)} color="text-red-600" />
                 </div>
 
-                <div className="flex justify-between items-center">
-                    <h4 className="font-bold flex items-center gap-2"><History size={18}/> Payment History</h4>
-                    <Button onClick={() => setShowAddForm(!showAddForm)} variant={showAddForm ? "outline" : "primary"}>
-                        {showAddForm ? "Cancel" : "Add Payment"}
-                    </Button>
+                {/* Ledger actions bar */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                            title="Download PDF"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileText size={14} className="mr-1.5" />}
+                            PDF Ledger {isFreePlan && "(Pro)"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                            title="Download Excel"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileSpreadsheet size={14} className="mr-1.5" />}
+                            Excel {isFreePlan && "(Pro)"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={isFreePlan ? () => toast.info("Sharing payment ledger is a Pro feature. Please upgrade your plan.") : () => sharePaymentLedger(sale, payments || [], tenant)}
+                            className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            title="Share Ledger"
+                        >
+                            {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Share2 size={14} className="mr-1.5" />}
+                            Share {isFreePlan && "(Pro)"}
+                        </Button>
+                    </div>
+                    {canEdit && (
+                        <Button onClick={() => setShowAddForm(!showAddForm)} variant={showAddForm ? "outline" : "primary"}>
+                            {showAddForm ? "Cancel" : "Add Payment"}
+                        </Button>
+                    )}
                 </div>
 
-                {showAddForm && (
+                <div className="flex justify-between items-center">
+                    <h4 className="font-bold flex items-center gap-2"><History size={18}/> Payment History</h4>
+                </div>
+
+                {showAddForm && canEdit && (
                     <form onSubmit={handleAddPayment} className="bg-gray-50 p-4 rounded-lg grid grid-cols-2 gap-4">
                         <Input label="Date" type="date" value={paymentData.paymentDate} onChange={e => setPaymentData({ ...paymentData, paymentDate: e.target.value })} required />
                         <Input label="Amount" type="number" value={paymentData.amount} onChange={e => setPaymentData({ ...paymentData, amount: e.target.value })} required />
@@ -138,7 +174,7 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                                 <th className="px-4 py-2 text-left">Date</th>
                                 <th className="px-4 py-2 text-left">Type</th>
                                 <th className="px-4 py-2 text-right">Amount</th>
-                                <th className="px-4 py-2 text-right">Actions</th>
+                                {canEdit && <th className="px-4 py-2 text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -147,9 +183,22 @@ export function PaymentManager({ isOpen, onClose, sale }: PaymentManagerProps) {
                                     <td className="px-4 py-2">{p.payment_date}</td>
                                     <td className="px-4 py-2 capitalize">{p.payment_type}</td>
                                     <td className="px-4 py-2 text-right font-bold">{formatCurrency(p.amount)}</td>
-                                    <td className="px-4 py-2 text-right">
-                                        <button onClick={() => deletePayment({ id: p._id })} className="text-red-500 hover:text-red-700 ml-2"><X size={14}/></button>
-                                    </td>
+                                    {canEdit && (
+                                        <td className="px-4 py-2 text-right">
+                                            <button 
+                                                onClick={async () => {
+                                                    if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
+                                                        await deletePayment({ id: p._id });
+                                                        toast.success("Payment record deleted successfully");
+                                                    }
+                                                }} 
+                                                className="text-red-500 hover:text-red-700 ml-2"
+                                                title="Delete Payment"
+                                            >
+                                                <X size={14}/>
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>
