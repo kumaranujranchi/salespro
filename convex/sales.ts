@@ -41,7 +41,12 @@ export const listSales = query({
       return {
         ...sale,
         project: project ? { name: project.name } : null,
-        customer: customer ? { name: customer.customer_name, phone: customer.mobile } : null,
+        customer: customer ? { 
+          name: customer.customer_name, 
+          phone: customer.mobile,
+          email: customer.email,
+          lead_id: customer.lead_id
+        } : null,
         executive: executive ? { full_name: executive.full_name, reporting_manager_id: executive.reporting_manager_id } : null
       };
     }));
@@ -69,6 +74,37 @@ export const createSale = mutation({
     registry_date: v.optional(v.string()),
     status: v.string(),
     metadata: v.any(),
+    // Customer Info (Primary Applicant)
+    father_husband_name: v.optional(v.string()),
+    dob: v.optional(v.string()),
+    gender: v.optional(v.string()),
+    alternate_mobile: v.optional(v.string()),
+    pan_number: v.optional(v.string()),
+    aadhaar_number: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    company_name: v.optional(v.string()),
+    annual_income: v.optional(v.string()),
+    marital_status: v.optional(v.string()),
+    nationality: v.optional(v.string()),
+    passport: v.optional(v.string()),
+    // Current Address
+    address_house_no: v.optional(v.string()),
+    address_street: v.optional(v.string()),
+    address_city: v.optional(v.string()),
+    address_state: v.optional(v.string()),
+    address_pin_code: v.optional(v.string()),
+    // Permanent Address
+    address_same_as_current: v.optional(v.boolean()),
+    perm_address_house_no: v.optional(v.string()),
+    perm_address_street: v.optional(v.string()),
+    perm_address_city: v.optional(v.string()),
+    perm_address_state: v.optional(v.string()),
+    perm_address_pin_code: v.optional(v.string()),
+    // Co-Applicant Details
+    co_applicant_name: v.optional(v.string()),
+    co_applicant_relation: v.optional(v.string()),
+    co_applicant_mobile: v.optional(v.string()),
+    co_applicant_aadhaar: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const saleId = await ctx.db.insert("sales", args);
@@ -89,6 +125,48 @@ export const updateSale = mutation({
     is_registry_done: v.optional(v.boolean()),
     registry_date: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    project_id: v.optional(v.id("projects")),
+    sales_executive_id: v.optional(v.id("profiles")),
+    team_leader_id: v.optional(v.id("profiles")),
+    sale_date: v.optional(v.string()),
+    property_type: v.optional(v.string()),
+    unit_number: v.optional(v.string()),
+    area_sqft: v.optional(v.number()),
+    rate_per_sqft: v.optional(v.number()),
+    base_price: v.optional(v.number()),
+    total_revenue: v.optional(v.number()),
+    booking_amount: v.optional(v.number()),
+    // Customer Info (Primary Applicant)
+    father_husband_name: v.optional(v.string()),
+    dob: v.optional(v.string()),
+    gender: v.optional(v.string()),
+    alternate_mobile: v.optional(v.string()),
+    pan_number: v.optional(v.string()),
+    aadhaar_number: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    company_name: v.optional(v.string()),
+    annual_income: v.optional(v.string()),
+    marital_status: v.optional(v.string()),
+    nationality: v.optional(v.string()),
+    passport: v.optional(v.string()),
+    // Current Address
+    address_house_no: v.optional(v.string()),
+    address_street: v.optional(v.string()),
+    address_city: v.optional(v.string()),
+    address_state: v.optional(v.string()),
+    address_pin_code: v.optional(v.string()),
+    // Permanent Address
+    address_same_as_current: v.optional(v.boolean()),
+    perm_address_house_no: v.optional(v.string()),
+    perm_address_street: v.optional(v.string()),
+    perm_address_city: v.optional(v.string()),
+    perm_address_state: v.optional(v.string()),
+    perm_address_pin_code: v.optional(v.string()),
+    // Co-Applicant Details
+    co_applicant_name: v.optional(v.string()),
+    co_applicant_relation: v.optional(v.string()),
+    co_applicant_mobile: v.optional(v.string()),
+    co_applicant_aadhaar: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...data } = args;

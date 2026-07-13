@@ -96,6 +96,85 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                     </div>
                 </section>
 
+                {/* Additional Customer Information */}
+                <div className="grid grid-cols-2 gap-8 border-t pt-6">
+                    {/* Primary Applicant Profile */}
+                    <section className="space-y-3">
+                        <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
+                            <User size={18}/> Applicant Profile
+                        </h4>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Customer ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.lead_id || 'System Generated'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Father/Husband:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.father_husband_name || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">DOB:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(sale.dob) || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Gender:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.gender || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Alt Mobile:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.alternate_mobile || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Email ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.email || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">PAN Number:</span> <span className="font-semibold uppercase text-gray-800 dark:text-gray-200">{sale.pan_number || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Aadhaar No:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.aadhaar_number || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Occupation:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.occupation || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Company Name:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.company_name || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Annual Income:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.annual_income || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Marital Status:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.marital_status || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Nationality:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.nationality || 'Indian'}</span></p>
+                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Passport (NRI):</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.passport || 'N/A'}</span></p>
+                        </div>
+                    </section>
+
+                    {/* Co-Applicant & Addresses */}
+                    <div className="space-y-6">
+                        {/* Co-Applicant Details */}
+                        <section className="space-y-3">
+                            <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
+                                <User size={18}/> Co-Applicant Details
+                            </h4>
+                            {sale.co_applicant_name ? (
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Name:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_name}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Relation:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_relation || 'N/A'}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Mobile:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_mobile || 'N/A'}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Aadhaar:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_aadhaar || 'N/A'}</span></p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-400 italic">No co-applicant details provided.</p>
+                            )}
+                        </section>
+
+                        {/* Addresses */}
+                        <section className="space-y-3">
+                            <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
+                                <MapPin size={18}/> Addresses
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase">Current Address</p>
+                                    {sale.address_house_no || sale.address_street || sale.address_city ? (
+                                        <div className="text-gray-800 dark:text-gray-200 mt-1">
+                                            <p>{sale.address_house_no} {sale.address_street}</p>
+                                            <p>{sale.address_city}, {sale.address_state} - {sale.address_pin_code}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-400 italic text-xs mt-1">Not provided</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-bold uppercase">Permanent Address</p>
+                                    {sale.address_same_as_current ? (
+                                        <p className="text-gray-500 italic mt-1">Same as Current Address</p>
+                                    ) : sale.perm_address_house_no || sale.perm_address_street || sale.perm_address_city ? (
+                                        <div className="text-gray-800 dark:text-gray-200 mt-1">
+                                            <p>{sale.perm_address_house_no} {sale.perm_address_street}</p>
+                                            <p>{sale.perm_address_city}, {sale.perm_address_state} - {sale.perm_address_pin_code}</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-400 italic text-xs mt-1">Not provided</p>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
                 {/* Payment Ledger Actions */}
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>

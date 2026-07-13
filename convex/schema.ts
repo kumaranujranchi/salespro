@@ -226,6 +226,37 @@ export default defineSchema({
     registry_date: v.optional(v.string()),
     status: v.string(), // booked, completed, cancelled
     metadata: v.any(),
+    // Customer Info (Primary Applicant)
+    father_husband_name: v.optional(v.string()),
+    dob: v.optional(v.string()),
+    gender: v.optional(v.string()),
+    alternate_mobile: v.optional(v.string()),
+    pan_number: v.optional(v.string()),
+    aadhaar_number: v.optional(v.string()),
+    occupation: v.optional(v.string()),
+    company_name: v.optional(v.string()),
+    annual_income: v.optional(v.string()),
+    marital_status: v.optional(v.string()),
+    nationality: v.optional(v.string()),
+    passport: v.optional(v.string()),
+    // Current Address
+    address_house_no: v.optional(v.string()),
+    address_street: v.optional(v.string()),
+    address_city: v.optional(v.string()),
+    address_state: v.optional(v.string()),
+    address_pin_code: v.optional(v.string()),
+    // Permanent Address
+    address_same_as_current: v.optional(v.boolean()),
+    perm_address_house_no: v.optional(v.string()),
+    perm_address_street: v.optional(v.string()),
+    perm_address_city: v.optional(v.string()),
+    perm_address_state: v.optional(v.string()),
+    perm_address_pin_code: v.optional(v.string()),
+    // Co-Applicant Details
+    co_applicant_name: v.optional(v.string()),
+    co_applicant_relation: v.optional(v.string()),
+    co_applicant_mobile: v.optional(v.string()),
+    co_applicant_aadhaar: v.optional(v.string()),
   }).index("by_tenant", ["tenant_id"])
     .index("by_executive", ["sales_executive_id"])
     .index("by_project", ["project_id"])
