@@ -25,6 +25,13 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
     const { profile, tenant } = useAuth();
     const toast = useToast();
     const isFreePlan = tenant?.plan_tier === 'free';
+    const [activeTab, setActiveTab] = useState<'profile' | 'coapplicant_address'>('profile');
+
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab('profile');
+        }
+    }, [isOpen]);
     
     // Convex Queries
     const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
@@ -96,84 +103,106 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                     </div>
                 </section>
 
-                {/* Additional Customer Information */}
-                <div className="grid grid-cols-2 gap-8 border-t pt-6">
-                    {/* Primary Applicant Profile */}
-                    <section className="space-y-3">
-                        <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
-                            <User size={18}/> Applicant Profile
-                        </h4>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Customer ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.lead_id || 'System Generated'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Father/Husband:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.father_husband_name || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">DOB:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(sale.dob) || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Gender:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.gender || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Alt Mobile:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.alternate_mobile || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Email ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.email || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">PAN Number:</span> <span className="font-semibold uppercase text-gray-800 dark:text-gray-200">{sale.pan_number || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Aadhaar No:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.aadhaar_number || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Occupation:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.occupation || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Company Name:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.company_name || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Annual Income:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.annual_income || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Marital Status:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.marital_status || 'N/A'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Nationality:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.nationality || 'Indian'}</span></p>
-                            <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Passport (NRI):</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.passport || 'N/A'}</span></p>
-                        </div>
-                    </section>
+                {/* Tabs Navigation for Details */}
+                <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/20 pt-2 rounded-t-lg border-t mt-4">
+                    <button
+                        type="button"
+                        className={`pb-2.5 px-5 font-semibold text-sm border-b-2 transition-all ${
+                            activeTab === 'profile'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        }`}
+                        onClick={() => setActiveTab('profile')}
+                    >
+                        Applicant Profile
+                    </button>
+                    <button
+                        type="button"
+                        className={`pb-2.5 px-5 font-semibold text-sm border-b-2 transition-all ${
+                            activeTab === 'coapplicant_address'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        }`}
+                        onClick={() => setActiveTab('coapplicant_address')}
+                    >
+                        Co-Applicant & Addresses
+                    </button>
+                </div>
 
-                    {/* Co-Applicant & Addresses */}
-                    <div className="space-y-6">
-                        {/* Co-Applicant Details */}
-                        <section className="space-y-3">
+                {/* Tab Content */}
+                {activeTab === 'profile' && (
+                    <div className="bg-slate-50/30 dark:bg-slate-900/10 p-5 rounded-xl border border-slate-100 dark:border-slate-800/40">
+                        <div className="grid grid-cols-3 gap-x-8 gap-y-4 text-sm">
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Customer ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.lead_id || 'System Generated'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Father/Husband:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.father_husband_name || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Date of Birth:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{formatDate(sale.dob) || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Gender:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.gender || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Alt Mobile:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.alternate_mobile || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Email ID:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.customer?.email || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">PAN Number:</span> <span className="font-semibold uppercase text-gray-800 dark:text-gray-200">{sale.pan_number || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Aadhaar No:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.aadhaar_number || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Occupation:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.occupation || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Company Name:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.company_name || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Annual Income:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.annual_income || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Marital Status:</span> <span className="font-semibold capitalize text-gray-800 dark:text-gray-200">{sale.marital_status || 'N/A'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Nationality:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.nationality || 'Indian'}</span></p>
+                            <p className="flex justify-between border-b pb-1.5"><span className="text-gray-500 font-medium">Passport (NRI):</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.passport || 'N/A'}</span></p>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'coapplicant_address' && (
+                    <div className="grid grid-cols-3 gap-6">
+                        {/* Current Address Card */}
+                        <div className="bg-slate-50/50 dark:bg-slate-900/10 p-5 rounded-xl border border-slate-100 dark:border-slate-800/40 space-y-3">
                             <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
-                                <User size={18}/> Co-Applicant Details
+                                <MapPin size={18} className="text-blue-500" /> Current Address
+                            </h4>
+                            {sale.address_house_no || sale.address_street || sale.address_city ? (
+                                <div className="text-sm text-gray-800 dark:text-gray-200 space-y-1">
+                                    <p className="font-semibold">{sale.address_house_no} {sale.address_street}</p>
+                                    <p className="text-gray-600 dark:text-gray-400">{sale.address_city}, {sale.address_state} - {sale.address_pin_code}</p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-400 italic">Not provided</p>
+                            )}
+                        </div>
+
+                        {/* Permanent Address Card */}
+                        <div className="bg-slate-50/50 dark:bg-slate-900/10 p-5 rounded-xl border border-slate-100 dark:border-slate-800/40 space-y-3">
+                            <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
+                                <MapPin size={18} className="text-green-500" /> Permanent Address
+                            </h4>
+                            {sale.address_same_as_current ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">Same as Current Address</p>
+                            ) : sale.perm_address_house_no || sale.perm_address_street || sale.perm_address_city ? (
+                                <div className="text-sm text-gray-800 dark:text-gray-200 space-y-1">
+                                    <p className="font-semibold">{sale.perm_address_house_no} {sale.perm_address_street}</p>
+                                    <p className="text-gray-600 dark:text-gray-400">{sale.perm_address_city}, {sale.perm_address_state} - {sale.perm_address_pin_code}</p>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-400 italic">Not provided</p>
+                            )}
+                        </div>
+
+                        {/* Co-Applicant Details Card */}
+                        <div className="bg-slate-50/50 dark:bg-slate-900/10 p-5 rounded-xl border border-slate-100 dark:border-slate-800/40 space-y-3">
+                            <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
+                                <User size={18} className="text-indigo-500" /> Co-Applicant Details
                             </h4>
                             {sale.co_applicant_name ? (
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Name:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_name}</span></p>
-                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Relation:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_relation || 'N/A'}</span></p>
-                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Mobile:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_mobile || 'N/A'}</span></p>
-                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500 font-medium">Aadhaar:</span> <span className="font-semibold text-gray-800 dark:text-gray-200">{sale.co_applicant_aadhaar || 'N/A'}</span></p>
+                                <div className="text-sm text-gray-800 dark:text-gray-200 space-y-2">
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500">Name:</span> <span className="font-semibold">{sale.co_applicant_name}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500">Relation:</span> <span className="font-semibold">{sale.co_applicant_relation || 'N/A'}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500">Mobile:</span> <span className="font-semibold">{sale.co_applicant_mobile || 'N/A'}</span></p>
+                                    <p className="flex justify-between border-b pb-1"><span className="text-gray-500">Aadhaar:</span> <span className="font-semibold">{sale.co_applicant_aadhaar || 'N/A'}</span></p>
                                 </div>
                             ) : (
                                 <p className="text-sm text-gray-400 italic">No co-applicant details provided.</p>
                             )}
-                        </section>
-
-                        {/* Addresses */}
-                        <section className="space-y-3">
-                            <h4 className="font-bold flex items-center gap-2 border-b pb-2 text-slate-800 dark:text-slate-200">
-                                <MapPin size={18}/> Addresses
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase">Current Address</p>
-                                    {sale.address_house_no || sale.address_street || sale.address_city ? (
-                                        <div className="text-gray-800 dark:text-gray-200 mt-1">
-                                            <p>{sale.address_house_no} {sale.address_street}</p>
-                                            <p>{sale.address_city}, {sale.address_state} - {sale.address_pin_code}</p>
-                                        </div>
-                                    ) : (
-                                        <p className="text-gray-400 italic text-xs mt-1">Not provided</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-400 font-bold uppercase">Permanent Address</p>
-                                    {sale.address_same_as_current ? (
-                                        <p className="text-gray-500 italic mt-1">Same as Current Address</p>
-                                    ) : sale.perm_address_house_no || sale.perm_address_street || sale.perm_address_city ? (
-                                        <div className="text-gray-800 dark:text-gray-200 mt-1">
-                                            <p>{sale.perm_address_house_no} {sale.perm_address_street}</p>
-                                            <p>{sale.perm_address_city}, {sale.perm_address_state} - {sale.perm_address_pin_code}</p>
-                                        </div>
-                                    ) : (
-                                        <p className="text-gray-400 italic text-xs mt-1">Not provided</p>
-                                    )}
-                                </div>
-                            </div>
-                        </section>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Payment Ledger Actions */}
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
