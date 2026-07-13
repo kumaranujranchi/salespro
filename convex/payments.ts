@@ -12,7 +12,7 @@ export const listPayments = query({
       .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id));
     
     if (args.sale_id) {
-       q = ctx.db.query("payments").withIndex("by_sale", q => q.eq("sale_id", args.sale_id!));
+       q = q.filter((q) => q.eq(q.field("sale_id"), args.sale_id));
     }
 
     return await q.collect();

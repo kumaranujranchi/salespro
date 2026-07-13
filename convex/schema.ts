@@ -164,7 +164,8 @@ export default defineSchema({
     remarks: v.optional(v.string()),
     recorded_by: v.optional(v.id("profiles")),
   }).index("by_tenant", ["tenant_id"])
-    .index("by_tenant_date", ["tenant_id", "payment_date"]),
+    .index("by_tenant_date", ["tenant_id", "payment_date"])
+    .index("by_sale", ["sale_id"]),
 
   notifications: defineTable({
     user_id: v.id("profiles"),
