@@ -34,6 +34,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
     const createSale = useMutation(api.sales.createSale);
     const updateSale = useMutation(api.sales.updateSale);
     const createLead = useMutation(api.leads.createLead);
+    const updateLead = useMutation(api.leads.updateLead);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -255,25 +256,46 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
         }
 
         try {
-            // Find or Create Lead (Customer)
-            const existingLead = await convex.query(api.leads.getLeadByMobile, { 
-                tenant_id: profile.tenant_id as Id<"tenants">, 
-                mobile: formData.customerPhone 
-            });
-
-            let leadId = existingLead?._id;
-            if (!leadId) {
-                leadId = await createLead({
-                    tenant_id: profile.tenant_id as Id<"tenants">,
+            // Find or Create/Update Lead (Customer)
+            let leadId = editingSale?.customer_id;
+            
+            if (leadId) {
+                // If editing, update the existing lead details
+                await updateLead({
+                    id: leadId,
                     customer_name: formData.customerName,
                     mobile: formData.customerPhone,
                     email: formData.customerEmail || undefined,
-                    lead_source: 'Walk-in',
-                    lead_status: 'Converted',
-                    lead_score: 'Hot',
-                    created_by: profile.id as Id<"profiles">,
-                    metadata: { auto_created_from_sale: true }
                 });
+            } else {
+                // If creating, find lead by mobile or create it
+                const existingLead = await convex.query(api.leads.getLeadByMobile, { 
+                    tenant_id: profile.tenant_id as Id<"tenants">, 
+                    mobile: formData.customerPhone 
+                });
+
+                leadId = existingLead?._id;
+                if (!leadId) {
+                    leadId = await createLead({
+                        tenant_id: profile.tenant_id as Id<"tenants">,
+                        customer_name: formData.customerName,
+                        mobile: formData.customerPhone,
+                        email: formData.customerEmail || undefined,
+                        lead_source: 'Walk-in',
+                        lead_status: 'Converted',
+                        lead_score: 'Hot',
+                        created_by: profile.id as Id<"profiles">,
+                        metadata: { auto_created_from_sale: true }
+                    });
+                } else {
+                    // Update existing lead details if found
+                    await updateLead({
+                        id: leadId,
+                        customer_name: formData.customerName,
+                        mobile: formData.customerPhone,
+                        email: formData.customerEmail || undefined,
+                    });
+                }
             }
 
             const saleData = {

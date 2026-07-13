@@ -119,6 +119,8 @@ export const createSale = mutation({
 export const updateSale = mutation({
   args: {
     id: v.id("sales"),
+    tenant_id: v.optional(v.id("tenants")),
+    customer_id: v.optional(v.id("leads")),
     status: v.optional(v.string()),
     is_agreement_done: v.optional(v.boolean()),
     agreement_date: v.optional(v.string()),
