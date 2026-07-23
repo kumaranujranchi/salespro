@@ -755,6 +755,59 @@ export const getDashboardStats = query({
   },
 });
 
+// New query: per-executive lead stats (only sales_executive role)
+export const getExecutiveLeadStats = query({
+  args: {
+    tenant_id: v.id("tenants"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Fetch all active sales_executive profiles
+    const executives = await ctx.db
+      .query("profiles")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("role"), "sales_executive"),
+          q.eq(q.field("is_active"), true)
+        )
+      )
+      .collect();
+
+    // 2. Fetch all leads for the tenant once
+    const allLeads = await ctx.db
+      .query("leads")
+      .withIndex("by_tenant", (q) => q.eq("tenant_id", args.tenant_id))
+      .collect();
+
+    // 3. Group leads by executive
+    return executives.map((exec) => {
+      const execLeads = allLeads.filter(
+        (l) => l.sales_executive_id?.toString() === exec._id.toString()
+      );
+      const total = execLeads.length;
+      const newLeads = execLeads.filter((l) => l.lead_status === "New").length;
+      const contacted = execLeads.filter((l) => l.lead_status === "Contacted").length;
+      const inProgress = execLeads.filter((l) => l.lead_status === "In Progress").length;
+      const qualified = execLeads.filter((l) => l.lead_status === "Qualified").length;
+      const converted = execLeads.filter((l) => l.lead_status === "Converted").length;
+      const lost = execLeads.filter((l) => l.lead_status === "Lost").length;
+
+      return {
+        id: exec._id,
+        name: exec.full_name,
+        avatar: exec.avatar_url ?? null,
+        total,
+        new: newLeads,
+        contacted,
+        inProgress,
+        qualified,
+        converted,
+        lost,
+      };
+    });
+  },
+});
+
 export const getLeadByMobile = query({
   args: { 
     tenant_id: v.id("tenants"),

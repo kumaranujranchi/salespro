@@ -89,6 +89,16 @@ export function LeadsPage() {
     } : "skip"
   );
 
+  // Permissions (defined early so useQuery hooks below can use them)
+  const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(normalizedRole);
+  const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
+
+  // Per-executive lead stats (only for roles that can see all leads)
+  const executiveStats = useQuery(
+    api.leads.getExecutiveLeadStats,
+    profile?.tenant_id && canViewAllLeads ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+
   // Fetch Leads using Paginated Query
   const { results: leads, status, loadMore } = usePaginatedQuery(
     api.leads.listLeadsByTenant,
@@ -105,9 +115,8 @@ export function LeadsPage() {
 
   const loading = status === "LoadingFirstPage";
 
-  // Permissions
-  const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(normalizedRole);
-  const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
+
+
 
   // No manual pagination needed anymore
   useEffect(() => {
@@ -538,39 +547,164 @@ export function LeadsPage() {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Leads</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalLeads}</div>
+      {/* Statistics Cards — compact row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+        <Card className="!shadow-sm">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+              <Users size={14} className="text-slate-500 dark:text-slate-300" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total</div>
+              <div className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{stats.totalLeads}</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">New Leads</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.newLeads}</div>
+        <Card className="!shadow-sm">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+              <Plus size={14} className="text-blue-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">New</div>
+              <div className="text-lg font-bold text-blue-600 leading-tight">{stats.newLeads}</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Qualified</div>
-            <div className="text-2xl font-bold text-green-600">{stats.qualified}</div>
+        <Card className="!shadow-sm">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+              <TrendingUp size={14} className="text-green-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Qualified</div>
+              <div className="text-lg font-bold text-green-600 leading-tight">{stats.qualified}</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">In Progress</div>
-            <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
+        <Card className="!shadow-sm">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+              <Clock size={14} className="text-orange-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">In Progress</div>
+              <div className="text-lg font-bold text-orange-600 leading-tight">{stats.inProgress}</div>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Converted</div>
-            <div className="text-2xl font-bold text-purple-600">{stats.converted}</div>
+        <Card className="!shadow-sm">
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+              <TrendingUp size={14} className="text-purple-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Converted</div>
+              <div className="text-lg font-bold text-purple-600 leading-tight">{stats.converted}</div>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Sales Executive Lead Distribution Cards */}
+      {canViewAllLeads && executiveStats && executiveStats.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Users size={15} className="text-slate-500" />
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sales Executive — Lead Overview</h3>
+            <span className="text-xs text-gray-400">({executiveStats.length} executives)</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {executiveStats
+              .sort((a, b) => b.total - a.total)
+              .map((exec) => {
+                const initials = exec.name
+                  .split(' ')
+                  .map((n: string) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase();
+                const isSelected = executiveFilter === exec.id;
+                return (
+                  <motion.div
+                    key={exec.id}
+                    whileHover={{ y: -2, scale: 1.01 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setExecutiveFilter(isSelected ? 'all' : exec.id)}
+                    className={`cursor-pointer rounded-xl border p-3 transition-all ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 hover:shadow-sm'
+                    }`}
+                  >
+                    {/* Executive header */}
+                    <div className="flex items-center gap-2 mb-2.5">
+                      {exec.avatar ? (
+                        <img src={exec.avatar} alt={exec.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{exec.name}</div>
+                        <div className="text-[10px] text-gray-400">Sales Executive</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">{exec.total}</div>
+                        <div className="text-[10px] text-gray-400">Total</div>
+                      </div>
+                    </div>
+
+                    {/* Mini status bar */}
+                    {exec.total > 0 && (
+                      <div className="w-full flex h-1.5 rounded-full overflow-hidden gap-px mb-2">
+                        {exec.new > 0 && <div className="bg-blue-400" style={{ width: `${(exec.new / exec.total) * 100}%` }} title={`New: ${exec.new}`} />}
+                        {exec.contacted > 0 && <div className="bg-yellow-400" style={{ width: `${(exec.contacted / exec.total) * 100}%` }} title={`Contacted: ${exec.contacted}`} />}
+                        {exec.inProgress > 0 && <div className="bg-orange-400" style={{ width: `${(exec.inProgress / exec.total) * 100}%` }} title={`In Progress: ${exec.inProgress}`} />}
+                        {exec.qualified > 0 && <div className="bg-green-400" style={{ width: `${(exec.qualified / exec.total) * 100}%` }} title={`Qualified: ${exec.qualified}`} />}
+                        {exec.converted > 0 && <div className="bg-purple-500" style={{ width: `${(exec.converted / exec.total) * 100}%` }} title={`Converted: ${exec.converted}`} />}
+                        {exec.lost > 0 && <div className="bg-red-400" style={{ width: `${(exec.lost / exec.total) * 100}%` }} title={`Lost: ${exec.lost}`} />}
+                      </div>
+                    )}
+
+                    {/* Status pill grid */}
+                    <div className="grid grid-cols-3 gap-1">
+                      <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-blue-600">{exec.new}</div>
+                        <div className="text-[9px] text-blue-400">New</div>
+                      </div>
+                      <div className="rounded-md bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-yellow-600">{exec.contacted}</div>
+                        <div className="text-[9px] text-yellow-500">Contacted</div>
+                      </div>
+                      <div className="rounded-md bg-orange-50 dark:bg-orange-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-orange-600">{exec.inProgress}</div>
+                        <div className="text-[9px] text-orange-400">Progress</div>
+                      </div>
+                      <div className="rounded-md bg-green-50 dark:bg-green-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-green-600">{exec.qualified}</div>
+                        <div className="text-[9px] text-green-400">Qualified</div>
+                      </div>
+                      <div className="rounded-md bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-purple-600">{exec.converted}</div>
+                        <div className="text-[9px] text-purple-400">Converted</div>
+                      </div>
+                      <div className="rounded-md bg-red-50 dark:bg-red-900/20 px-1.5 py-1 text-center">
+                        <div className="text-xs font-semibold text-red-500">{exec.lost}</div>
+                        <div className="text-[9px] text-red-400">Lost</div>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="mt-2 text-center text-[10px] text-blue-500 font-medium">✓ Filtering by this executive — click to clear</div>
+                    )}
+                  </motion.div>
+                );
+              })}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
