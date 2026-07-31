@@ -292,6 +292,59 @@ Do not include any markdown styling, code blocks like \`\`\`json, or extra comme
   },
 });
 
+// Helper to get UTC date string (Format: YYYY-MM-DD)
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(now.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Check chat limit query
+export const checkChatLimit = query({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    const date = getLocalDateString();
+    const record = await ctx.db
+      .query("ai_chat_limits")
+      .withIndex("by_tenant_date", (q) =>
+        q.eq("tenant_id", args.tenant_id).eq("date", date)
+      )
+      .unique();
+
+    const count = record?.count || 0;
+    return {
+      count,
+      allowed: count < 20,
+    };
+  },
+});
+
+// Increment chat limit mutation
+export const incrementChatLimit = mutation({
+  args: { tenant_id: v.id("tenants") },
+  handler: async (ctx, args) => {
+    const date = getLocalDateString();
+    const record = await ctx.db
+      .query("ai_chat_limits")
+      .withIndex("by_tenant_date", (q) =>
+        q.eq("tenant_id", args.tenant_id).eq("date", date)
+      )
+      .unique();
+
+    if (record) {
+      await ctx.db.patch(record._id, { count: record.count + 1 });
+    } else {
+      await ctx.db.insert("ai_chat_limits", {
+        tenant_id: args.tenant_id,
+        date,
+        count: 1,
+      });
+    }
+  },
+});
+
 // 5. Action to handle AI Sales Copilot chatbot conversations
 export const chatWithAI = action({
   args: {
@@ -302,37 +355,49 @@ export const chatWithAI = action({
   handler: async (_ctx, args) => {
     const apiKey = process.env.GEMINI_API_KEY;
 
+    if (!args.tenant_id) {
+      return "Error: Tenant context is required to use AI Chatbot.";
+    }
+
+    // Check rate limit (20 messages per day per tenant)
+    const limitStatus = await _ctx.runQuery(api.ai.checkChatLimit, {
+      tenant_id: args.tenant_id as any,
+    });
+
+    if (!limitStatus.allowed) {
+      return "AI Limit Reached: You have reached the daily limit of 20 messages per tenant. Please try again tomorrow! 🔒";
+    }
+
     // Fetch database statistics & context if tenant_id is available
     let leadsSummary = "";
-    if (args.tenant_id) {
-      try {
-        const leads = await _ctx.runQuery(api.leads.listAllLeadsForTenant, {
-          tenant_id: args.tenant_id as any,
-          profileId: args.profileId as any,
+    try {
+      const leads = await _ctx.runQuery(api.leads.listAllLeadsForTenant, {
+        tenant_id: args.tenant_id as any,
+        profileId: args.profileId as any,
+      });
+
+      if (leads && leads.length > 0) {
+        const totalLeads = leads.length;
+        const hotCount = leads.filter((l: any) => l.lead_score === "Hot").length;
+        const warmCount = leads.filter((l: any) => l.lead_score === "Warm").length;
+        const coldCount = leads.filter((l: any) => l.lead_score === "Cold").length;
+        
+        const statusCounts: Record<string, number> = {};
+        leads.forEach((l: any) => {
+          const status = l.lead_status || "Unknown";
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
+        const statusStr = Object.entries(statusCounts)
+          .map(([status, count]) => `${status}: ${count}`)
+          .join(", ");
 
-        if (leads && leads.length > 0) {
-          const totalLeads = leads.length;
-          const hotCount = leads.filter((l: any) => l.lead_score === "Hot").length;
-          const warmCount = leads.filter((l: any) => l.lead_score === "Warm").length;
-          const coldCount = leads.filter((l: any) => l.lead_score === "Cold").length;
-          
-          const statusCounts: Record<string, number> = {};
-          leads.forEach((l: any) => {
-            const status = l.lead_status || "Unknown";
-            statusCounts[status] = (statusCounts[status] || 0) + 1;
-          });
-          const statusStr = Object.entries(statusCounts)
-            .map(([status, count]) => `${status}: ${count}`)
-            .join(", ");
+        // Get details of up to 10 active leads
+        const sampleLeads = leads
+          .slice(0, 10)
+          .map((l: any) => `• Name: ${l.customer_name || 'Unnamed'}, Score: ${l.lead_score || 'N/A'}, Status: ${l.lead_status || 'N/A'}`)
+          .join("\n");
 
-          // Get details of up to 10 active leads
-          const sampleLeads = leads
-            .slice(0, 10)
-            .map((l: any) => `• Name: ${l.customer_name || 'Unnamed'}, Score: ${l.lead_score || 'N/A'}, Status: ${l.lead_status || 'N/A'}`)
-            .join("\n");
-
-          leadsSummary = `You have access to the user's active database statistics:
+        leadsSummary = `You have access to the user's active database statistics:
 - Total Leads Count: ${totalLeads}
 - Hot Leads Count: ${hotCount}
 - Warm Leads Count: ${warmCount}
@@ -340,12 +405,11 @@ export const chatWithAI = action({
 - Status Breakdown: ${statusStr}
 - Sample Active Leads (Up to 10):
 ${sampleLeads}`;
-        } else {
-          leadsSummary = "The user currently has no leads in their database.";
-        }
-      } catch (err) {
-        console.error("Failed to query leads for chatbot context:", err);
+      } else {
+        leadsSummary = "The user currently has no leads in their database.";
       }
+    } catch (err) {
+      console.error("Failed to query leads for chatbot context:", err);
     }
 
     if (!apiKey) {
@@ -354,27 +418,35 @@ ${sampleLeads}`;
       const lastMessage = args.messages[args.messages.length - 1]?.content || "";
       const lastMsgLower = lastMessage.toLowerCase();
 
+      // Helper function to increment and return custom messages in Demo Mode
+      const handleDemoResponse = async (text: string) => {
+        await _ctx.runMutation(api.ai.incrementChatLimit, {
+          tenant_id: args.tenant_id as any,
+        });
+        return text;
+      };
+
       // Rules-based smart templates for Demo Mode
       if (lastMsgLower.includes("how many") || lastMsgLower.includes("lead count") || lastMsgLower.includes("total lead") || lastMsgLower.includes("my lead")) {
         if (leadsSummary) {
-          return `Here are your live database statistics (Demo Mode): \n\n${leadsSummary}`;
+          return handleDemoResponse(`Here are your live database statistics (Demo Mode): \n\n${leadsSummary}`);
         }
-        return "You currently have 0 leads in the database. Try adding some leads on the Leads page!";
+        return handleDemoResponse("You currently have 0 leads in the database. Try adding some leads on the Leads page!");
       }
       if (lastMsgLower.includes("hello") || lastMsgLower.includes("hi") || lastMsgLower.includes("hey")) {
-        return "Hello! I am your AI Sales Copilot. 👋 (Demo Mode: Set GEMINI_API_KEY in Convex dashboard to enable live Gemini answers).\n\nHow can I assist you with your sales pitching or lead nurturing today?";
+        return handleDemoResponse("Hello! I am your AI Sales Copilot. 👋 (Demo Mode: Set GEMINI_API_KEY in Convex dashboard to enable live Gemini answers).\n\nHow can I assist you with your sales pitching or lead nurturing today?");
       }
       if (lastMsgLower.includes("script") || lastMsgLower.includes("pitch") || lastMsgLower.includes("call")) {
-        return "Here is a quick Objection Handling script for budget constraints:\n\n* **Client:** 'Your price is too high.'\n* **Response:** 'I completely understand that price is an important factor. Let's look at the long-term value, including location benefits and premium amenities, which actually save you money and ensure better appreciation. We also have flexible payment plans to ease your cash flow.'";
+        return handleDemoResponse("Here is a quick Objection Handling script for budget constraints:\n\n* **Client:** 'Your price is too high.'\n* **Response:** 'I completely understand that price is an important factor. Let's look at the long-term value, including location benefits and premium amenities, which actually save you money and ensure better appreciation. We also have flexible payment plans to ease your cash flow.'");
       }
       if (lastMsgLower.includes("objection") || lastMsgLower.includes("budget") || lastMsgLower.includes("price")) {
-        return "When handling price objections, always pivot to value:\n\n1. **Acknowledge and validate:** *'I understand price is a key factor...'*\n2. **Highlight appreciation:** *'This project is in a high-growth sector which is expected to appreciate 20% in the next 2 years...'*\n3. **Offer structured payment plans:** *'We have a construction-linked payment schedule that spreads out the cost.'*";
+        return handleDemoResponse("When handling price objections, always pivot to value:\n\n1. **Acknowledge and validate:** *'I understand price is a key factor...'*\n2. **Highlight appreciation:** *'This project is in a high-growth sector which is expected to appreciate 20% in the next 2 years...'*\n3. **Offer structured payment plans:** *'We have a construction-linked payment schedule that spreads out the cost.'*");
       }
       if (lastMsgLower.includes("lead") || lastMsgLower.includes("hot") || lastMsgLower.includes("score")) {
-        return "To convert warm leads to hot leads:\n\n1. **Speed to lead:** Respond within 5 minutes of inquiry.\n2. **Physical site visit:** Schedule a site visit (visits have a 4x higher conversion rate).\n3. **Structured follow-up:** Use the SalesPro AI Outreach assistant to send customized WhatsApp messages!";
+        return handleDemoResponse("To convert warm leads to hot leads:\n\n1. **Speed to lead:** Respond within 5 minutes of inquiry.\n2. **Physical site visit:** Schedule a site visit (visits have a 4x higher conversion rate).\n3. **Structured follow-up:** Use the SalesPro AI Outreach assistant to send customized WhatsApp messages!");
       }
       
-      return "I'm currently running in Demo Mode. To activate my full potential, please configure `GEMINI_API_KEY` in your Convex environment variables! I can provide generic tips on objection handling, sales scripts, or converting leads. Try asking: 'Give me a sales script'.";
+      return handleDemoResponse("I'm currently running in Demo Mode. To activate my full potential, please configure `GEMINI_API_KEY` in your Convex environment variables! I can provide generic tips on objection handling, sales scripts, or converting leads. Try asking: 'Give me a sales script'.");
     }
 
     // Map client messages to Gemini content format (role: 'user' or 'model')
@@ -421,6 +493,11 @@ ${leadsSummary ? `Here is the current database context for the logged-in user. U
       if (!responseText) {
         return "I apologize, but I could not formulate a response at this moment. Please try again.";
       }
+
+      // Increment successful message limit count
+      await _ctx.runMutation(api.ai.incrementChatLimit, {
+        tenant_id: args.tenant_id as any,
+      });
 
       return responseText.trim();
     } catch (e: any) {

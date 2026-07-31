@@ -382,4 +382,11 @@ export default defineSchema({
     .index("by_tenant", ["tenant_id"])
     .index("by_project", ["project_id"])
     .index("by_tenant_project", ["tenant_id", "project_id"]),
+
+  ai_chat_limits: defineTable({
+    tenant_id: v.id("tenants"),
+    date: v.string(), // Format: "YYYY-MM-DD"
+    count: v.number(),
+  })
+    .index("by_tenant_date", ["tenant_id", "date"]),
 });
