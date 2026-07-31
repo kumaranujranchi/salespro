@@ -291,3 +291,84 @@ Do not include any markdown styling, code blocks like \`\`\`json, or extra comme
     return { whatsapp, emailSubject, emailBody };
   },
 });
+
+// 5. Action to handle AI Sales Copilot chatbot conversations
+export const chatWithAI = action({
+  args: {
+    messages: v.array(v.object({ role: v.string(), content: v.string() })),
+  },
+  handler: async (_ctx, args) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY is not configured in Convex. Running chatWithAI in Demo Mode.");
+      
+      const lastMessage = args.messages[args.messages.length - 1]?.content || "";
+      const lastMsgLower = lastMessage.toLowerCase();
+
+      // Rules-based smart templates for Demo Mode
+      if (lastMsgLower.includes("hello") || lastMsgLower.includes("hi") || lastMsgLower.includes("hey")) {
+        return "Hello! I am your AI Sales Copilot. 👋 (Demo Mode: Set GEMINI_API_KEY in Convex dashboard to enable live Gemini answers).\n\nHow can I assist you with your sales pitching or lead nurturing today?";
+      }
+      if (lastMsgLower.includes("script") || lastMsgLower.includes("pitch") || lastMsgLower.includes("call")) {
+        return "Here is a quick Objection Handling script for budget constraints:\n\n* **Client:** 'Your price is too high.'\n* **Response:** 'I completely understand that price is an important factor. Let's look at the long-term value, including location benefits and premium amenities, which actually save you money and ensure better appreciation. We also have flexible payment plans to ease your cash flow.'";
+      }
+      if (lastMsgLower.includes("objection") || lastMsgLower.includes("budget") || lastMsgLower.includes("price")) {
+        return "When handling price objections, always pivot to value:\n\n1. **Acknowledge and validate:** *'I understand price is a key factor...'*\n2. **Highlight appreciation:** *'This project is in a high-growth sector which is expected to appreciate 20% in the next 2 years...'*\n3. **Offer structured payment plans:** *'We have a construction-linked payment schedule that spreads out the cost.'*";
+      }
+      if (lastMsgLower.includes("lead") || lastMsgLower.includes("hot") || lastMsgLower.includes("score")) {
+        return "To convert warm leads to hot leads:\n\n1. **Speed to lead:** Respond within 5 minutes of inquiry.\n2. **Physical site visit:** Schedule a site visit (visits have a 4x higher conversion rate).\n3. **Structured follow-up:** Use the SalesPro AI Outreach assistant to send customized WhatsApp messages!";
+      }
+      
+      return "I'm currently running in Demo Mode. To activate my full potential, please configure `GEMINI_API_KEY` in your Convex environment variables! I can provide generic tips on objection handling, sales scripts, or converting leads. Try asking: 'Give me a sales script'.";
+    }
+
+    // Map client messages to Gemini content format (role: 'user' or 'model')
+    const contents = args.messages.map((msg) => ({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.content }],
+    }));
+
+    // Prepend system instructions as the first message
+    const systemPrompt = {
+      role: "user",
+      parts: [
+        {
+          text: "System Instructions: You are a professional AI Sales Copilot for a real estate & CRM platform named SalesPro. Your job is to assist sales executives and managers. Give short, highly tactical, and professional answers. Provide cold call scripts, objection handling advice, follow-up strategies, and help with conversion ideas. Use markdown formatting with bullet points and bold headers. Keep answers under 150 words.",
+        },
+      ],
+    };
+    contents.unshift(systemPrompt);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Gemini HTTP Error: ${errText}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!responseText) {
+        return "I apologize, but I could not formulate a response at this moment. Please try again.";
+      }
+
+      return responseText.trim();
+    } catch (e: any) {
+      console.error("Failed to query Gemini API for chatbot:", e);
+      return `Failed to fetch response from AI: ${e.message || e}. Please try again later.`;
+    }
+  },
+});
+

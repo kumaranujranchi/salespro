@@ -29,8 +29,14 @@ import {
   Building2,
   Settings,
   Plug,
-  LucideIcon
+  LucideIcon,
+  Send,
+  Sparkles,
+  X
 } from 'lucide-react';
+
+import { useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -123,6 +129,58 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { startTutorial } = useTutorial();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // AI Chatbot State
+  const chatAction = useAction(api.ai.chatWithAI);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'model'; content: string }>>([
+    {
+      role: 'model',
+      content: "Hello! I am your AI Sales Copilot. 👋 Ask me anything about sales coaching, objection handling, pitching scripts, or follow-up tips!"
+    }
+  ]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    
+    // Add user message to local chat
+    const updatedMessages = [...chatMessages, { role: 'user' as const, content: userMessage }];
+    setChatMessages(updatedMessages);
+    setChatLoading(true);
+
+    try {
+      // Call Convex action with the messages list
+      const response = await chatAction({ messages: updatedMessages });
+      setChatMessages([...updatedMessages, { role: 'model' as const, content: response }]);
+    } catch (err) {
+      console.error(err);
+      setChatMessages([
+        ...updatedMessages,
+        { role: 'model' as const, content: "Sorry, I encountered an error connecting to the AI helper. Please try again." }
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // Auto scroll to bottom of chat
+  useEffect(() => {
+    if (isChatOpen) {
+      const chatContainer = document.getElementById('chat-messages-container');
+      if (chatContainer) {
+        // Run after React layout renders
+        setTimeout(() => {
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 50);
+      }
+    }
+  }, [chatMessages, chatLoading, isChatOpen]);
 
   // Module State
   const [activeModule, setActiveModule] = useState<'sales' | 'crm'>('sales');
@@ -615,6 +673,101 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </main>
       <AppTutorial />
+
+      {/* AI Chatbot Float Button */}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full shadow-2xl hover:scale-110 hover:shadow-emerald-300/30 transition-all duration-300 group cursor-pointer focus:outline-none"
+      >
+        {isChatOpen ? (
+          <X size={24} className="transition-transform duration-200 rotate-90" />
+        ) : (
+          <div className="relative">
+            <Sparkles size={24} className="animate-pulse" />
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
+            </span>
+          </div>
+        )}
+      </button>
+
+      {/* AI Chatbot Drawer Pane */}
+      {isChatOpen && (
+        <div className="fixed bottom-24 right-6 z-50 w-[340px] sm:w-[380px] h-[500px] bg-white dark:bg-[#121e18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-[#00E576] to-[#00C853] px-4 py-3.5 flex items-center justify-between text-[#0A1C37]">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-[#0A1C37]" />
+              <div>
+                <h4 className="font-bold text-sm text-[#0A1C37]">AI Sales Copilot</h4>
+                <div className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0A1C37] animate-pulse"></span>
+                  <span className="text-[10px] text-[#0A1C37] opacity-80 font-medium">Ready to assist</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsChatOpen(false)}
+              className="text-[#0A1C37] hover:bg-black/10 p-1 rounded-lg transition-colors focus:outline-none"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Message Area */}
+          <div
+            id="chat-messages-container"
+            className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 dark:bg-black/20 scroll-smooth"
+          >
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
+                      : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-sm whitespace-pre-wrap'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-bl-none px-3.5 py-2.5 shadow-sm">
+                  <div className="flex items-center gap-1.5 py-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-150"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-300"></span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Form */}
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask a sales question..."
+              className="flex-1 text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            />
+            <button
+              type="submit"
+              disabled={!chatInput.trim() || chatLoading}
+              className="flex items-center justify-center p-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 hover:opacity-90 transition-opacity duration-150 focus:outline-none cursor-pointer"
+            >
+              <Send size={15} />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
