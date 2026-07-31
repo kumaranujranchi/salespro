@@ -32,7 +32,9 @@ import {
   LucideIcon,
   Send,
   Sparkles,
-  X
+  X,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 import { useAction } from 'convex/react';
@@ -133,14 +135,52 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // AI Chatbot State
   const chatAction = useAction(api.ai.chatWithAI);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'model'; content: string }>>([
     {
       role: 'model',
-      content: "Hello! I am your AI Sales Copilot. 👋 Ask me anything about sales coaching, objection handling, pitching scripts, or follow-up tips!"
+      content: "Welcome! Ready to boost your pipeline and close more deals today?\n\nHere is how I can assist you right now:\n\n* **Cold Call Scripts:** Pitching SalesPro to real estate brokers or team leads.\n* **Objection Handling:** Crushing pushback like \"We already use a CRM\" or \"It's too expensive.\"\n* **Follow-up Cadences:** High-converting multi-channel strategies (Email, SMS, WhatsApp).\n* **Pipeline Strategy:** Ideas to re-engage dead leads and boost conversion rates.\n\nWhat are you working on right now? Tell me your immediate goal or challenge!"
     }
   ]);
+
+  // Clean formatting symbols (* and **) to render them natively as bullet lists and bold text
+  const renderFormattedMessage = (content: string) => {
+    const lines = content.split('\n');
+    return lines.map((line, idx) => {
+      let trimmed = line.trim();
+      const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || (trimmed.startsWith('*') && !trimmed.startsWith('**'));
+      
+      if (isBullet) {
+        trimmed = trimmed.replace(/^[\*\-]\s*/, '');
+      }
+
+      // Parse bold elements inside the line
+      const parts = trimmed.split('**');
+      const formattedText = parts.map((part, i) => {
+        if (i % 2 === 1) {
+          return <strong key={i} className="font-extrabold text-slate-900 dark:text-white">{part}</strong>;
+        }
+        return part;
+      });
+
+      if (isBullet) {
+        return (
+          <div key={idx} className="flex items-start gap-2 ml-2 my-1.5 leading-relaxed">
+            <span className="text-emerald-500 dark:text-[#00E576] font-bold text-sm select-none">•</span>
+            <span className="flex-1">{formattedText}</span>
+          </div>
+        );
+      }
+
+      return (
+        <div key={idx} className={trimmed ? "my-1.5 leading-relaxed min-h-[1em]" : "my-2.5 min-h-[0.5em]"}>
+          {formattedText}
+        </div>
+      );
+    });
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -694,7 +734,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* AI Chatbot Drawer Pane */}
       {isChatOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[340px] sm:w-[380px] h-[500px] bg-white dark:bg-[#121e18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
+        <div className={`fixed bottom-24 right-6 z-50 bg-white dark:bg-[#121e18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300 transition-all duration-300 ${isChatMaximized ? 'w-[600px] max-w-[95vw] h-[80vh]' : 'w-[340px] sm:w-[380px] h-[500px]'}`}>
           {/* Header */}
           <div className="bg-gradient-to-r from-[#00E576] to-[#00C853] px-4 py-3.5 flex items-center justify-between text-[#0A1C37]">
             <div className="flex items-center gap-2">
@@ -707,12 +747,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsChatOpen(false)}
-              className="text-[#0A1C37] hover:bg-black/10 p-1 rounded-lg transition-colors focus:outline-none"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsChatMaximized(!isChatMaximized)}
+                className="text-[#0A1C37] hover:bg-black/10 p-1.5 rounded-lg transition-colors focus:outline-none cursor-pointer"
+                title={isChatMaximized ? "Minimize chat" : "Maximize chat"}
+              >
+                {isChatMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button
+                onClick={() => setIsChatOpen(false)}
+                className="text-[#0A1C37] hover:bg-black/10 p-1.5 rounded-lg transition-colors focus:outline-none cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Message Area */}
@@ -732,7 +782,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-sm whitespace-pre-wrap'
                   }`}
                 >
-                  {msg.content}
+                  {renderFormattedMessage(msg.content)}
                 </div>
               </div>
             ))}
