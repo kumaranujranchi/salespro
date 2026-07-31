@@ -9,6 +9,7 @@
  */
 
 import type * as activity_logs from "../activity_logs.js";
+import type * as ai from "../ai.js";
 import type * as announcements from "../announcements.js";
 import type * as departments from "../departments.js";
 import type * as files from "../files.js";
@@ -37,6 +38,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activity_logs: typeof activity_logs;
+  ai: typeof ai;
   announcements: typeof announcements;
   departments: typeof departments;
   files: typeof files;

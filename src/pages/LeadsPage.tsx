@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
-import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery, useAction } from "convex/react";
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,11 +18,12 @@ import { AssignLeadModal } from '../components/crm/AssignLeadModal';
 import { BulkStatusModal } from '../components/crm/BulkStatusModal';
 import { BulkProjectModal } from '../components/crm/BulkProjectModal';
 import { ActionMenu } from '../components/ui/ActionMenu';
+import { Modal } from '../components/ui/Modal';
 import {
   Users, Plus, Phone, Mail, MapPin,
-  TrendingUp, TrendingDown, Minus, Search, Download, Upload,
+  TrendingUp, Search, Download, Upload,
   UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy,
-  Calendar, Clock, Lock
+  Calendar, Clock, Lock, Sparkles
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
@@ -39,6 +40,8 @@ export function LeadsPage() {
   const bulkDeleteLeadsMutation = useMutation(api.leads.bulkDeleteLeads);
   const addFollowupMutation = useMutation(api.followups.addFollowup);
   const updateLeadMutation = useMutation(api.leads.updateLead);
+  const runAIScoring = useAction(api.ai.analyzeFollowupAndScoreLead);
+  const getOutreach = useAction(api.ai.generateOutreach);
 
   // State Management
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -50,6 +53,12 @@ export function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<LeadWithRelations | null>(null);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+
+  // AI Outreach Modal State
+  const [isOutreachModalOpen, setIsOutreachModalOpen] = useState(false);
+  const [outreachLoading, setOutreachLoading] = useState(false);
+  const [outreachLead, setOutreachLead] = useState<LeadWithRelations | null>(null);
+  const [outreachDrafts, setOutreachDrafts] = useState<{ whatsapp: string; emailSubject: string; emailBody: string } | null>(null);
   
   const [submitLoading, setSubmitLoading] = useState(false);
   const [quickFollowupData, setQuickFollowupData] = useState({
@@ -142,6 +151,22 @@ export function LeadsPage() {
     }
   }, [expandedLeadId, leads]);
 
+  const handleOpenAIOutreach = async (lead: LeadWithRelations) => {
+    setOutreachLead(lead);
+    setIsOutreachModalOpen(true);
+    setOutreachLoading(true);
+    setOutreachDrafts(null);
+    try {
+      const data = await getOutreach({ leadId: lead.id as Id<"leads"> });
+      setOutreachDrafts(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate AI outreach templates");
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
+
   const handleQuickFollowupSubmit = async (e: React.FormEvent, lead: LeadWithRelations) => {
     e.preventDefault();
     if (!profile) return;
@@ -166,7 +191,9 @@ export function LeadsPage() {
     try {
       const previousStatus = lead.lead_status;
 
-      await addFollowupMutation({
+      const remarkForAI = quickFollowupData.discussion_summary;
+
+      const fId = await addFollowupMutation({
         tenant_id: profile.tenant_id as Id<"tenants">,
         lead_id: lead.id as Id<"leads">,
         followup_type: quickFollowupData.followup_type,
@@ -190,6 +217,17 @@ export function LeadsPage() {
       });
 
       toast.success('Follow-up and status updated successfully');
+
+      // Trigger AI lead scoring in the background
+      try {
+        runAIScoring({
+          leadId: lead.id as Id<"leads">,
+          followupRemark: remarkForAI,
+          followupId: fId,
+        }).catch((e) => console.error("AI scoring failed background promise:", e));
+      } catch (aiErr) {
+        console.error("AI scoring background trigger failed:", aiErr);
+      }
       
       // Reset remark text but keep status
       setQuickFollowupData(prev => ({
@@ -1002,7 +1040,7 @@ export function LeadsPage() {
                                   ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
                                     label: isFreePlan ? 'Delete (Pro Feature)' : 'Delete',
                                     icon: isFreePlan ? Lock : Trash2,
-                                    variant: isFreePlan ? 'neutral' as const : 'danger' as const,
+                                    variant: isFreePlan ? 'default' as const : 'danger' as const,
                                     onClick: isFreePlan 
                                       ? () => toast.info('Lead deletion is a Pro feature. Please upgrade your plan.')
                                       : () => handleDeleteLead(lead.id)
@@ -1029,9 +1067,20 @@ export function LeadsPage() {
                                   <div className="space-y-4">
                                     {/* About Lead Section */}
                                     <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                                      <h4 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                        <Users size={16} className="text-blue-500" />
-                                        About Lead
+                                      <h4 className="flex items-center justify-between font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                        <span className="flex items-center gap-2">
+                                          <Users size={16} className="text-blue-500" />
+                                          About Lead
+                                        </span>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-xs py-1 px-2 flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 dark:border-slate-700 dark:hover:bg-slate-700/50"
+                                          onClick={() => handleOpenAIOutreach(lead)}
+                                        >
+                                          <Sparkles size={13} className="text-blue-500 animate-pulse" />
+                                          AI Outreach
+                                        </Button>
                                       </h4>
                                       <div className="text-sm space-y-3">
                                         <div className="grid grid-cols-2 gap-2">
@@ -1059,6 +1108,32 @@ export function LeadsPage() {
                                             <p className="text-xs text-gray-500">Purpose</p>
                                             <p>{lead.purpose || '-'}</p>
                                           </div>
+                                          {lead.metadata?.aiSentiment && (
+                                            <div className="col-span-2 border-t border-gray-100 dark:border-gray-700 pt-2.5 mt-1 space-y-2">
+                                              <div className="flex items-center justify-between">
+                                                <p className="text-xs font-semibold text-gray-500 flex items-center gap-1">
+                                                  <Sparkles size={12} className="text-blue-500" />
+                                                  AI Sentiment
+                                                </p>
+                                                <Badge
+                                                  variant={
+                                                    lead.metadata.aiSentiment === 'Positive' ? 'success' :
+                                                    lead.metadata.aiSentiment === 'Negative' ? 'danger' : 'warning'
+                                                  }
+                                                >
+                                                  {lead.metadata.aiSentiment}
+                                                </Badge>
+                                              </div>
+                                              {lead.metadata.aiReason && (
+                                                <div>
+                                                  <p className="text-[11px] text-gray-400">AI Next Step / Reason</p>
+                                                  <p className="text-xs text-gray-700 dark:text-gray-300 italic">
+                                                    "{lead.metadata.aiReason}"
+                                                  </p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -1084,7 +1159,7 @@ export function LeadsPage() {
                                           </p>
                                           <Button
                                             type="button"
-                                            variant="success"
+                                            variant="primary"
                                             size="sm"
                                             onClick={() => handleReopenLead(lead.id)}
                                             className="w-full mt-2"
@@ -1318,6 +1393,117 @@ export function LeadsPage() {
         leadIds={selectedLeadIds}
         onSuccess={handleBulkSuccess}
       />
+
+      {/* AI Outreach Modal */}
+      {isOutreachModalOpen && outreachLead && (
+        <Modal
+          isOpen={isOutreachModalOpen}
+          onClose={() => setIsOutreachModalOpen(false)}
+          title={`AI Outreach Drafts - ${outreachLead.customer_name}`}
+          size="lg"
+          footer={
+            <Button
+              variant="outline"
+              onClick={() => setIsOutreachModalOpen(false)}
+            >
+              Close
+            </Button>
+          }
+        >
+          {outreachLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+              <p className="text-sm text-gray-500 italic">Generating personalized drafts using AI...</p>
+            </div>
+          ) : outreachDrafts ? (
+            <div className="space-y-6">
+              {/* WhatsApp Tab */}
+              <div className="bg-green-50/50 dark:bg-green-950/10 p-4 rounded-xl border border-green-100 dark:border-green-900/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-semibold text-sm text-green-800 dark:text-green-400 flex items-center gap-1.5">
+                    <Phone size={14} className="text-green-500" />
+                    WhatsApp Outreach Draft
+                  </h5>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-gray-50 text-xs text-gray-700 h-7 px-2.5 flex items-center gap-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(outreachDrafts.whatsapp);
+                        toast.success("WhatsApp message copied to clipboard!");
+                      }}
+                    >
+                      <Copy size={12} /> Copy
+                    </Button>
+                    <a
+                      href={`https://api.whatsapp.com/send?phone=${encodeURIComponent(outreachLead.mobile)}&text=${encodeURIComponent(outreachDrafts.whatsapp)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded-lg border border-transparent bg-green-600 hover:bg-green-700 text-white font-medium text-xs h-7 px-2.5 transition-colors duration-150 gap-1 font-semibold"
+                    >
+                      Send Message
+                    </a>
+                  </div>
+                </div>
+                <textarea
+                  readOnly
+                  className="w-full text-xs p-3 border border-gray-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 focus:outline-none dark:text-white leading-relaxed resize-none"
+                  rows={4}
+                  value={outreachDrafts.whatsapp}
+                />
+              </div>
+
+              {/* Email Tab */}
+              <div className="bg-blue-50/50 dark:bg-blue-950/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-semibold text-sm text-blue-800 dark:text-blue-400 flex items-center gap-1.5">
+                    <Mail size={14} className="text-blue-500" />
+                    Email Outreach Draft
+                  </h5>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white hover:bg-gray-50 text-xs text-gray-700 h-7 px-2.5 flex items-center gap-1"
+                      onClick={() => {
+                        const emailText = `Subject: ${outreachDrafts.emailSubject}\n\n${outreachDrafts.emailBody}`;
+                        navigator.clipboard.writeText(emailText);
+                        toast.success("Email subject and body copied to clipboard!");
+                      }}
+                    >
+                      <Copy size={12} /> Copy Entire Email
+                    </Button>
+                    <a
+                      href={`mailto:${encodeURIComponent(outreachLead.email || "")}?subject=${encodeURIComponent(outreachDrafts.emailSubject)}&body=${encodeURIComponent(outreachDrafts.emailBody)}`}
+                      className="inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs h-7 px-2.5 transition-colors duration-150 gap-1 font-semibold"
+                    >
+                      Open in Mail
+                    </a>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 bg-white dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
+                  <div className="text-xs border-b border-gray-100 dark:border-slate-800 pb-2">
+                    <span className="font-semibold text-gray-500">Subject: </span>
+                    <span className="text-gray-900 dark:text-white font-medium">{outreachDrafts.emailSubject}</span>
+                  </div>
+                  <textarea
+                    readOnly
+                    className="w-full text-xs pt-2 border-0 bg-transparent focus:outline-none dark:text-white leading-relaxed resize-none"
+                    rows={6}
+                    value={outreachDrafts.emailBody}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-sm text-gray-500">
+              No drafts generated. Click AI Outreach to retry.
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
