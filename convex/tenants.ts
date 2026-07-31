@@ -108,6 +108,7 @@ export const list = query({
           .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
           .filter((q) =>
             q.or(
+              q.eq(q.field("role"), "super_admin"),
               q.eq(q.field("role"), "admin"),
               q.eq(q.field("role"), "platform_admin")
             )
