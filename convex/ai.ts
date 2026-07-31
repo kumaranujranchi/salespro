@@ -296,9 +296,57 @@ Do not include any markdown styling, code blocks like \`\`\`json, or extra comme
 export const chatWithAI = action({
   args: {
     messages: v.array(v.object({ role: v.string(), content: v.string() })),
+    tenant_id: v.optional(v.string()),
+    profileId: v.optional(v.string()),
   },
   handler: async (_ctx, args) => {
     const apiKey = process.env.GEMINI_API_KEY;
+
+    // Fetch database statistics & context if tenant_id is available
+    let leadsSummary = "";
+    if (args.tenant_id) {
+      try {
+        const leads = await _ctx.runQuery(api.leads.listAllLeadsForTenant, {
+          tenant_id: args.tenant_id as any,
+          profileId: args.profileId as any,
+        });
+
+        if (leads && leads.length > 0) {
+          const totalLeads = leads.length;
+          const hotCount = leads.filter((l: any) => l.lead_score === "Hot").length;
+          const warmCount = leads.filter((l: any) => l.lead_score === "Warm").length;
+          const coldCount = leads.filter((l: any) => l.lead_score === "Cold").length;
+          
+          const statusCounts: Record<string, number> = {};
+          leads.forEach((l: any) => {
+            const status = l.lead_status || "Unknown";
+            statusCounts[status] = (statusCounts[status] || 0) + 1;
+          });
+          const statusStr = Object.entries(statusCounts)
+            .map(([status, count]) => `${status}: ${count}`)
+            .join(", ");
+
+          // Get details of up to 10 active leads
+          const sampleLeads = leads
+            .slice(0, 10)
+            .map((l: any) => `• Name: ${l.customer_name || 'Unnamed'}, Score: ${l.lead_score || 'N/A'}, Status: ${l.lead_status || 'N/A'}`)
+            .join("\n");
+
+          leadsSummary = `You have access to the user's active database statistics:
+- Total Leads Count: ${totalLeads}
+- Hot Leads Count: ${hotCount}
+- Warm Leads Count: ${warmCount}
+- Cold Leads Count: ${coldCount}
+- Status Breakdown: ${statusStr}
+- Sample Active Leads (Up to 10):
+${sampleLeads}`;
+        } else {
+          leadsSummary = "The user currently has no leads in their database.";
+        }
+      } catch (err) {
+        console.error("Failed to query leads for chatbot context:", err);
+      }
+    }
 
     if (!apiKey) {
       console.warn("GEMINI_API_KEY is not configured in Convex. Running chatWithAI in Demo Mode.");
@@ -307,6 +355,12 @@ export const chatWithAI = action({
       const lastMsgLower = lastMessage.toLowerCase();
 
       // Rules-based smart templates for Demo Mode
+      if (lastMsgLower.includes("how many") || lastMsgLower.includes("lead count") || lastMsgLower.includes("total lead") || lastMsgLower.includes("my lead")) {
+        if (leadsSummary) {
+          return `Here are your live database statistics (Demo Mode): \n\n${leadsSummary}`;
+        }
+        return "You currently have 0 leads in the database. Try adding some leads on the Leads page!";
+      }
       if (lastMsgLower.includes("hello") || lastMsgLower.includes("hi") || lastMsgLower.includes("hey")) {
         return "Hello! I am your AI Sales Copilot. 👋 (Demo Mode: Set GEMINI_API_KEY in Convex dashboard to enable live Gemini answers).\n\nHow can I assist you with your sales pitching or lead nurturing today?";
       }
@@ -330,11 +384,15 @@ export const chatWithAI = action({
     }));
 
     // Prepend system instructions as the first message
+    const systemPromptText = `System Instructions: You are a professional AI Sales Copilot for a real estate & CRM platform named SalesPro. Your job is to assist sales executives and managers. Give short, highly tactical, and professional answers. Use markdown formatting with bullet points and bold headers. Keep answers under 150 words.
+
+${leadsSummary ? `Here is the current database context for the logged-in user. Use this information to answer user questions about their leads count, status, or specific names:\n${leadsSummary}` : "No live database access is configured at the moment."}`;
+
     const systemPrompt = {
       role: "user",
       parts: [
         {
-          text: "System Instructions: You are a professional AI Sales Copilot for a real estate & CRM platform named SalesPro. Your job is to assist sales executives and managers. Give short, highly tactical, and professional answers. Provide cold call scripts, objection handling advice, follow-up strategies, and help with conversion ideas. Use markdown formatting with bullet points and bold headers. Keep answers under 150 words.",
+          text: systemPromptText,
         },
       ],
     };

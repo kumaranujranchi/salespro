@@ -195,8 +195,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setChatLoading(true);
 
     try {
-      // Call Convex action with the messages list
-      const response = await chatAction({ messages: updatedMessages });
+      // Call Convex action with the messages list and current profile/tenant IDs
+      const response = await chatAction({
+        messages: updatedMessages,
+        tenant_id: profile?.tenant_id,
+        profileId: profile?.id,
+      });
       setChatMessages([...updatedMessages, { role: 'model' as const, content: response }]);
     } catch (err) {
       console.error(err);
