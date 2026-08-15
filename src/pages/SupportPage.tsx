@@ -28,7 +28,7 @@ export function SupportPage() {
   const isFreePlan = tenant?.plan_tier === 'free';
   
   const ticketsData = useQuery(api.support.listByTenant, 
-    tenant?._id ? { tenant_id: tenant._id } : "skip"
+    tenant?._id ? { tenant_id: tenant._id as any } : "skip"
   );
   const tickets = (ticketsData || []) as Ticket[];
   const createTicket = useMutation(api.support.create);
@@ -61,8 +61,8 @@ export function SupportPage() {
         subject,
         description,
         priority: requestType === 'feedback' ? 'low' : priority,
-        tenant_id: tenant._id,
-        created_by: profile._id,
+        tenant_id: tenant._id as any,
+        created_by: profile._id as any,
         status: requestType === 'feedback' ? 'feedback' : 'open'
       });
 
@@ -70,7 +70,7 @@ export function SupportPage() {
       try {
         await sendEmailAction({
           type: 'TICKET_CREATED',
-          email: user.email,
+          email: user.email || '',
           name: profile.full_name,
           data: {
             subject: subject

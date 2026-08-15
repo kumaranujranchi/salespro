@@ -12,6 +12,7 @@ import type * as activity_logs from "../activity_logs.js";
 import type * as ai from "../ai.js";
 import type * as announcements from "../announcements.js";
 import type * as departments from "../departments.js";
+import type * as emails from "../emails.js";
 import type * as files from "../files.js";
 import type * as followups from "../followups.js";
 import type * as incentives from "../incentives.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   announcements: typeof announcements;
   departments: typeof departments;
+  emails: typeof emails;
   files: typeof files;
   followups: typeof followups;
   incentives: typeof incentives;

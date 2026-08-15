@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import { useToast } from '../../contexts/ToastContext';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -20,7 +21,12 @@ import {
   EyeOff,
   KeyRound,
   Zap,
-  Award
+  Award,
+  TrendingUp,
+  MapPin,
+  Activity,
+  Calendar,
+  Users
 } from 'lucide-react';
 
 const formatDate = (dateString: string) => {
@@ -29,6 +35,19 @@ const formatDate = (dateString: string) => {
     month: 'short',
     year: 'numeric'
   });
+};
+
+const isUpgradeCandidate = (tenant: any) => {
+  if (tenant.plan_tier === 'pro' || tenant.plan_tier === 'enterprise') return false;
+  
+  const stats = tenant.stats;
+  if (!stats) return false;
+
+  return (
+    stats.salesCount > 0 ||
+    stats.activeUsers > 3 ||
+    stats.leadsCount > 15
+  );
 };
 
 
@@ -43,6 +62,7 @@ export function TenantsPage() {
   const toast = useToast();
   const dialog = useDialog();
   const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
+  const currentTenant = selectedTenant ? (tenantsData?.find((t: any) => t._id === selectedTenant._id) || selectedTenant) : null;
   const [incentiveRuleStr, setIncentiveRuleStr] = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -70,16 +90,16 @@ export function TenantsPage() {
 
   // Billing History via Convex Query
   const billingHistory = useQuery(api.tenants.listBillingHistory, 
-    selectedTenant?._id ? { tenant_id: selectedTenant._id } : "skip" as any
+    currentTenant?._id ? { tenant_id: currentTenant._id as Id<"tenants"> } : "skip"
   );
 
   useEffect(() => {
-    if (selectedTenant && selectedTenant.settings?.incentive_plan?.rules) {
-      setIncentiveRuleStr(JSON.stringify(selectedTenant.settings.incentive_plan.rules, null, 2));
+    if (currentTenant && currentTenant.settings?.incentive_plan?.rules) {
+      setIncentiveRuleStr(JSON.stringify(currentTenant.settings.incentive_plan.rules, null, 2));
     } else {
       setIncentiveRuleStr('{}');
     }
-  }, [selectedTenant]);
+  }, [currentTenant]);
 
   const handleAddTenant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,6 +281,40 @@ export function TenantsPage() {
           Onboard New Client
         </button>
       </div>
+
+      {/* Pro Upgrade Opportunities Widget */}
+      {tenantsData && (tenantsData as any[]).filter(isUpgradeCandidate).length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 rounded-2xl border border-amber-200 dark:border-amber-500/20 p-6 shadow-sm animate-fadeIn">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-400 font-bold">
+                <Zap className="w-5 h-5 fill-amber-500 text-amber-500 animate-pulse" />
+                <span>{(tenantsData as any[]).filter(isUpgradeCandidate).length} Pro Upgrade Opportunity Targets</span>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                These free-tier clients have reached high activity thresholds. Click a tenant to examine statistics or pitch the Pro Plan upgrade.
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              {(tenantsData as any[]).filter(isUpgradeCandidate).slice(0, 4).map((tenant: any) => (
+                <button
+                  key={tenant._id}
+                  onClick={() => setSelectedTenant(tenant)}
+                  className="flex items-center gap-2 px-3.5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl text-sm transition-all shadow-sm hover:translate-y-[-1px] font-semibold text-slate-800 dark:text-white"
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping absolute" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 relative" />
+                  <span>{tenant.name}</span>
+                  <span className="text-xs text-slate-400 font-normal">
+                    ({tenant.stats?.activeUsers}u / {tenant.stats?.leadsCount}l)
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Tenant Modal */}
       {addTenantModalOpen && (
@@ -477,6 +531,25 @@ export function TenantsPage() {
                           <p className="text-slate-500">Joined</p>
                           <p className="mt-1 font-medium text-slate-900 dark:text-white">{formatDate(new Date(tenant._creationTime).toISOString())}</p>
                         </div>
+                        <div className="col-span-2 border-t border-dashed border-slate-200 dark:border-white/5 pt-2 mt-1">
+                          <p className="text-slate-500">Usage Stats</p>
+                          <p className="mt-1 text-slate-950 dark:text-slate-50 font-semibold flex flex-wrap gap-2 items-center">
+                            <span>👥 {tenant.stats?.activeUsers || 0} Users</span>
+                            <span>•</span>
+                            <span>📋 {tenant.stats?.leadsCount || 0} Leads</span>
+                            {tenant.stats?.salesCount > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="text-green-600 dark:text-green-400">💰 {tenant.stats.salesCount} Sales</span>
+                              </>
+                            )}
+                          </p>
+                          {isUpgradeCandidate(tenant) && (
+                            <span className="inline-block mt-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 animate-pulse">
+                              🔥 Pro Upgrade Target
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2 text-xs">
@@ -512,6 +585,7 @@ export function TenantsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Details</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Usage</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trial Expiry</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Billing</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
@@ -521,13 +595,13 @@ export function TenantsPage() {
                 <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                   {tenantsData === undefined ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={9} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                         Loading tenants...
                       </td>
                     </tr>
                   ) : filteredTenants.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={9} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                         No tenants found matching your filter.
                       </td>
                     </tr>
@@ -569,8 +643,33 @@ export function TenantsPage() {
                             {tenant.subscription_status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                          {tenant.plan_tier || 'free'}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize font-medium">
+                          <div className="flex flex-col">
+                            <span>{tenant.plan_tier || 'free'}</span>
+                            {isUpgradeCandidate(tenant) && (
+                              <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 w-fit animate-pulse" title="High usage on Free plan - Pitch Pro Upgrade!">
+                                🔥 Upgrade Target
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300">
+                              <Users className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                              <span><strong>{tenant.stats?.activeUsers || 0}</strong> users</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300">
+                              <Building2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                              <span><strong>{tenant.stats?.leadsCount || 0}</strong> leads</span>
+                            </div>
+                            {tenant.stats?.salesCount > 0 && (
+                              <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                <span><strong>{tenant.stats.salesCount}</strong> sales</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {(() => {
@@ -621,17 +720,17 @@ export function TenantsPage() {
         </div>
 
         {/* Manage Tenant Detail Overlay */}
-        {selectedTenant && (
+        {selectedTenant && currentTenant && (
           <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
             <div className="bg-white dark:bg-[#1e1e2d] w-full max-w-2xl h-full flex flex-col shadow-2xl animate-slideIn">
               <div className="p-6 bg-indigo-600 text-white flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-xl">
-                    {selectedTenant.name.charAt(0)}
+                    {currentTenant.name.charAt(0)}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold">{selectedTenant.name}</h2>
-                    <p className="text-indigo-100 text-sm opacity-80">{selectedTenant.slug}</p>
+                    <h2 className="text-xl font-bold">{currentTenant.name}</h2>
+                    <p className="text-indigo-100 text-sm opacity-80">{currentTenant.slug}</p>
                   </div>
                 </div>
                 <button 
@@ -643,6 +742,126 @@ export function TenantsPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Usage & Activity Dashboard */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-500" />
+                    Usage & System Activity
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
+                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-indigo-500" /> Active Users
+                      </span>
+                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
+                        {currentTenant.stats?.activeUsers || 0} <span className="text-xs font-normal text-slate-400">/ {currentTenant.stats?.totalUsers || 0}</span>
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
+                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-blue-500" /> Total Leads
+                      </span>
+                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
+                        {currentTenant.stats?.leadsCount || 0}
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
+                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-amber-500" /> Site Visits
+                      </span>
+                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
+                        {currentTenant.stats?.visitsCount || 0}
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
+                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-emerald-500" /> Closed Sales
+                      </span>
+                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
+                        {currentTenant.stats?.salesCount || 0}
+                      </span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between col-span-2 sm:col-span-2">
+                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> Total Revenue Closed
+                      </span>
+                      <span className="text-2xl font-bold mt-2 text-emerald-600 dark:text-emerald-400">
+                        ₹{(currentTenant.stats?.totalRevenue || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Last Activity Recorded
+                    </span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {currentTenant.stats?.lastActive ? formatDate(currentTenant.stats.lastActive) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pro Upgrade Recommendation Banner */}
+                {currentTenant.plan_tier !== 'pro' && currentTenant.plan_tier !== 'enterprise' && isUpgradeCandidate(currentTenant) && (
+                  <div className="p-5 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl flex items-start gap-4 animate-fadeIn">
+                    <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        💡 High Conversion Potential Target
+                      </h4>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        This tenant shows strong system usage on the free tier:
+                      </p>
+                      <ul className="list-disc pl-4 text-xs text-amber-700 dark:text-amber-400 space-y-1 mt-1">
+                        {currentTenant.stats?.activeUsers > 3 && (
+                          <li>Team size is <strong>{currentTenant.stats.activeUsers} active users</strong> (optimal size for collaboration features)</li>
+                        )}
+                        {currentTenant.stats?.leadsCount > 15 && (
+                          <li>Managing a base of <strong>{currentTenant.stats.leadsCount} leads</strong></li>
+                        )}
+                        {currentTenant.stats?.salesCount > 0 && (
+                          <li>Closed <strong>{currentTenant.stats.salesCount} sale(s)</strong> with tracked revenue of <strong>₹{currentTenant.stats.totalRevenue?.toLocaleString()}</strong></li>
+                        )}
+                      </ul>
+                      <p className="text-xs text-amber-800 dark:text-amber-300 font-semibold mt-2 pt-1 border-t border-amber-200/50 dark:border-amber-900/10">
+                        Recommendation: Upgrade this client to the Pro Plan to support their team size, unlock automatic site visit tracking, and expand databases.
+                      </p>
+                      
+                      <div className="pt-3 border-t border-amber-200/50 dark:border-amber-950/20 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await sendEmailAction({
+                                type: 'PRO_UPGRADE_PITCH',
+                                email: currentTenant.contact_email || currentTenant.owner_id,
+                                name: currentTenant.adminName || 'Sales Leader',
+                                data: {
+                                  tenantName: currentTenant.name,
+                                  activeUsers: currentTenant.stats?.activeUsers || 0,
+                                  leadsCount: currentTenant.stats?.leadsCount || 0,
+                                  salesCount: currentTenant.stats?.salesCount || 0,
+                                }
+                              });
+                              toast.success(`Upgrade pitch email sent to ${currentTenant.contact_email || currentTenant.owner_id}!`);
+                            } catch (e: any) {
+                              toast.error(`Failed to send pitch: ${e.message || e}`);
+                            }
+                          }}
+                          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm flex items-center gap-1.5"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Send Pro Upgrade Pitch Email
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Feature Controls */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">

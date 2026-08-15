@@ -334,6 +334,64 @@ export const sendEmail = action({
       `;
       htmlContent = emailWrapper(content);
     }
+    else if (type === 'PRO_UPGRADE_PITCH') {
+      fromName = 'RealSalePro Team';
+      subject = `Unlock your team's potential - Upgrade to RealSalePro Pro`;
+      const content = `
+        <h2 style="margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; text-align: center;">
+          Grow Faster with RealSalePro Pro 🚀
+        </h2>
+        <p style="margin: 0 0 20px 0; color: #666666; font-size: 15px; line-height: 1.6;">
+          Hi <strong>${name || 'Sales Leader'}</strong>,
+        </p>
+        <p style="margin: 0 0 20px 0; color: #666666; font-size: 15px; line-height: 1.6;">
+          Your team on <strong>${data.tenantName}</strong> has been doing great work on the Free tier! Here's a quick look at your current usage activity:
+        </p>
+        
+        <!-- Usage Summary Table -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden;">
+          <tr style="background-color: #f8f8f8;">
+            <th align="left" style="padding: 12px 16px; font-size: 14px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5;">Metric</th>
+            <th align="right" style="padding: 12px 16px; font-size: 14px; color: #1a1a1a; border-bottom: 1px solid #e5e5e5;">Current Value</th>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; font-size: 14px; color: #666666; border-bottom: 1px solid #e5e5e5;">Active Team Users</td>
+            <td align="right" style="padding: 12px 16px; font-size: 14px; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #e5e5e5;">${data.activeUsers}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; font-size: 14px; color: #666666; border-bottom: 1px solid #e5e5e5;">Total Leads Managed</td>
+            <td align="right" style="padding: 12px 16px; font-size: 14px; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #e5e5e5;">${data.leadsCount}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 16px; font-size: 14px; color: #666666;">Closed Sales Tracked</td>
+            <td align="right" style="padding: 12px 16px; font-size: 14px; color: #1a1a1a; font-weight: 600;">${data.salesCount}</td>
+          </tr>
+        </table>
+
+        <p style="margin: 0 0 20px 0; color: #666666; font-size: 15px; line-height: 1.6;">
+          To support your growing team and help you close more sales, we recommend upgrading to our <strong>Pro Plan</strong>. With Pro, you'll unlock:
+        </p>
+        
+        <ul style="margin: 0 0 30px 0; padding-left: 20px; color: #666666; font-size: 14px; line-height: 1.8;">
+          <li><strong>Unlimited Leads & Projects</strong> - No caps on database items.</li>
+          <li><strong>Automated Round-Robin Assignment</strong> - Distribute incoming leads to your sales agents fairly and instantly.</li>
+          <li><strong>Advanced Analytics & Performance Reports</strong> - Track incentives, conversion funnels, and executive productivity.</li>
+          <li><strong>Priority Support</strong> - Dedicated assistance whenever your team needs help.</li>
+        </ul>
+        
+        <!-- CTA Button -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center" style="padding: 10px 0 20px 0;">
+              <a href="${BASE_URL}/subscription" style="background-color: #10B981; color: #ffffff; padding: 14px 30px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block; font-size: 16px;">
+                Upgrade Now to Pro
+              </a>
+            </td>
+          </tr>
+        </table>
+      `;
+      htmlContent = emailWrapper(content);
+    }
     else {
       throw new Error(`Invalid email type: ${type}`);
     }

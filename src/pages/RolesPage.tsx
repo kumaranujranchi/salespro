@@ -72,9 +72,9 @@ export function RolesPage() {
   const { tenant, profile, loading } = useAuth();
   
   const rolesData = useQuery(api.roles.list, 
-    tenant?._id ? { tenant_id: tenant._id } : "skip"
+    tenant?._id ? { tenant_id: tenant._id as any } : "skip"
   );
-  const roles = (rolesData || []) as TenantRole[];
+  const roles = (rolesData || []) as any[];
   
   const createRole = useMutation(api.roles.create);
   const updateRole = useMutation(api.roles.update);
@@ -138,7 +138,7 @@ export function RolesPage() {
         });
       } else {
         await createRole({
-          tenant_id: tenant._id,
+          tenant_id: tenant._id as any,
           name: formData.name,
           description: formData.description,
           permissions: formData.permissions,

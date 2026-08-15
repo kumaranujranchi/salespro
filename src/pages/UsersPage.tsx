@@ -49,13 +49,13 @@ export function UsersPage() {
   // Convex Queries
   const users = useQuery(api.profiles.listUsersByTenant, 
     tenant?._id ? { 
-      tenant_id: tenant._id,
+      tenant_id: tenant._id as any,
       is_active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
     } : "skip"
   );
   
-  const departments = useQuery(api.departments.list, tenant?._id ? { tenant_id: tenant._id } : "skip");
-  const roles = useQuery(api.roles.list, tenant?._id ? { tenant_id: tenant._id } : "skip");
+  const departments = useQuery(api.departments.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
+  const roles = useQuery(api.roles.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
 
   // Convex Mutations
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
@@ -201,7 +201,7 @@ export function UsersPage() {
         <div className="text-center py-8 text-gray-500">No users found.</div>
       ) : viewType === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(users as Profile[]).map((user: Profile) => (
+          {(users as any[]).map((user: any) => (
             <Card key={user._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col border-b-4 border-b-transparent hover:border-b-blue-500">
               <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
                 <div className="flex items-start justify-between">
@@ -277,7 +277,7 @@ export function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(users as Profile[]).map((user: Profile) => (
+                {(users as any[]).map((user: any) => (
                   <TableRow key={user._id} className={!user.is_active ? 'bg-gray-50' : ''}>
                     <TableCell className="font-mono text-xs">{user.employee_id}</TableCell>
                     <TableCell className="font-medium">

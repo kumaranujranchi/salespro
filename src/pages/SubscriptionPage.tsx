@@ -99,7 +99,7 @@ export function SubscriptionPage() {
      }
   }, [tenant]);
 
-  const daysRemaining = useMemo(() => {
+  const _daysRemaining = useMemo(() => {
     if (!tenant?.trial_ends_at) return 0;
     const endDate = new Date(tenant.trial_ends_at);
     const now = new Date();
@@ -221,7 +221,7 @@ export function SubscriptionPage() {
 
     if (companyProfile?.tax_id) {
       doc.text(`GSTIN: ${companyProfile.tax_id}`, 14, currentBillToY);
-    } else if (tenant?.email) {
+    } else if ((tenant as any)?.email) {
       doc.text((tenant as any).email, 14, currentBillToY);
     }
 
@@ -665,7 +665,7 @@ export function SubscriptionPage() {
                 Leads Managed
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {(tenant.leads_count || 0).toLocaleString()} / {isPro ? '1,00,000' : '1,000'}
+                {((tenant as any).leads_count || 0).toLocaleString()} / {isPro ? '1,00,000' : '1,000'}
               </div>
               <div className="text-sm text-slate-600 dark:text-gray-400">
                 {isPro ? 'Upgrade custom for more limits' : 'Upgrade to Pro for more leads'}

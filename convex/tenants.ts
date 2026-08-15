@@ -117,10 +117,59 @@ export const list = query({
 
         const resolvedTenant = await resolveTenantLogo(ctx, tenant);
 
+        // Fetch usage stats
+        const profiles = await ctx.db
+          .query("profiles")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .collect();
+        const activeUsers = profiles.filter(p => p.is_active).length;
+
+        const leads = await ctx.db
+          .query("leads")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .collect();
+        const leadsCount = leads.length;
+
+        const projects = await ctx.db
+          .query("projects")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .collect();
+        const projectsCount = projects.length;
+
+        const sales = await ctx.db
+          .query("sales")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .collect();
+        const salesCount = sales.length;
+        const totalRevenue = sales.reduce((sum, s) => sum + (s.total_revenue || 0), 0);
+
+        const visits = await ctx.db
+          .query("site_visits")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .collect();
+        const visitsCount = visits.length;
+
+        const latestActivity = await ctx.db
+          .query("activity_logs")
+          .withIndex("by_tenant", (q) => q.eq("tenant_id", tenant._id))
+          .order("desc")
+          .first();
+        const lastActive = latestActivity?.created_at || (latestActivity ? new Date(latestActivity._creationTime).toISOString() : new Date(tenant._creationTime).toISOString());
+
         return {
           ...resolvedTenant,
           contact_email: adminProfile?.email || null,
           contact_phone: adminProfile?.phone || null,
+          stats: {
+            activeUsers,
+            totalUsers: profiles.length,
+            leadsCount,
+            projectsCount,
+            salesCount,
+            totalRevenue,
+            visitsCount,
+            lastActive
+          }
         };
       })
     );

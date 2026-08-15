@@ -30,7 +30,7 @@ export function SettingsPage() {
     if (tenant) {
       setBrandName(tenant.name || '');
       setLogoUrl(tenant.settings?.appearance?.logo_url || null);
-      setLogoPreview(tenant.settings?.appearance?.resolved_logo_url || tenant.settings?.appearance?.logo_url || null);
+      setLogoPreview((tenant.settings?.appearance as any)?.resolved_logo_url || tenant.settings?.appearance?.logo_url || null);
     }
     if (tenant?.settings?.general?.target_model) {
       setSettings({
