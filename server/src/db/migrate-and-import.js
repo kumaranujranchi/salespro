@@ -223,6 +223,19 @@ async function main() {
 
     // --- PROJECT UNITS ---
     const projectUnits = readJsonl(path.join(dataDir, 'project_units/documents.jsonl'));
+    const knownProjectIds = new Set(projects.map(p => p._id));
+    for (const pu of projectUnits) {
+      if (pu.project_id && !knownProjectIds.has(pu.project_id)) {
+        await client.query(
+          `INSERT INTO projects (id, tenant_id, name, status, is_active)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [pu.project_id, pu.tenant_id, 'Archived Project', 'Completed', false]
+        );
+        knownProjectIds.add(pu.project_id);
+      }
+    }
+
     for (const pu of projectUnits) {
       await client.query(
         `INSERT INTO project_units (id, tenant_id, project_id, unit_number, status, custom_values, created_at)
@@ -243,6 +256,17 @@ async function main() {
 
     // --- LEADS ---
     const leads = readJsonl(path.join(dataDir, 'leads/documents.jsonl'));
+    for (const l of leads) {
+      if (l.project_id && !knownProjectIds.has(l.project_id)) {
+        await client.query(
+          `INSERT INTO projects (id, tenant_id, name, status, is_active)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [l.project_id, l.tenant_id, 'Archived Project', 'Completed', false]
+        );
+        knownProjectIds.add(l.project_id);
+      }
+    }
     for (const l of leads) {
       await client.query(
         `INSERT INTO leads (id, tenant_id, lead_id, customer_name, mobile, email, lead_source, project_id, sales_executive_id, city, budget_range, purpose, preferred_locations, lead_status, lead_score, internal_notes, lead_date, created_by, updated_by, latest_followup_date, latest_followup_status, next_followup_date, followup_count, metadata, created_at)
