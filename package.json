@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config config/vite.config.ts",
+    "server": "node --watch server/src/index.js",
+    "server:migrate": "node server/src/db/migrate.js",
     "build": "vite build --config config/vite.config.ts",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --config config/vite.config.ts",

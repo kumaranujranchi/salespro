@@ -2,19 +2,27 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Permanent Fix: Load env file explicitly to ensure it works on Windows/Localhost
   const env = loadEnv(mode, process.cwd(), '')
 
-  // Fallback to hardcoded values if .env fails to load (Common on some Windows setups)
-  const supabaseUrl = env.VITE_SUPABASE_URL || 'https://supa.synergybrandarchitect.in';
-  const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2NTcxOTYwMCwiZXhwIjo0OTIxMzkzMjAwLCJyb2xlIjoiYW5vbiJ9.0YMnAgbghZVyaB7XfcGsuD96167msLOI8o4UK9sdtvQ';
+  const apiUrl = env.VITE_API_URL || 'http://localhost:5001/api';
 
   return {
     define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+      'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+    },
+    resolve: {
+      alias: {
+        'convex/react': path.resolve(__dirname, '../src/lib/convex-bridge.ts'),
+      },
     },
     plugins: [
       react(),
