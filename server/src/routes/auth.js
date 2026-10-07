@@ -12,13 +12,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
+
     const result = await query(
       `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
        FROM profiles p
        LEFT JOIN tenants t ON p.tenant_id = t.id
-       WHERE LOWER(p.email) = LOWER($1) AND p.is_active = true
+       WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2) AND p.is_active = true
        LIMIT 1`,
-      [email]
+      [cleanEmail, lookupEmail]
     );
 
     if (result.rows.length === 0) {
@@ -40,7 +43,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Auto promote designated admin
-    if (user.email === 'admin@realsalepro.com' && user.role !== 'platform_admin') {
+    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {
       await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
       user.role = 'platform_admin';
     }
@@ -70,22 +73,26 @@ router.get('/profile', async (req, res) => {
 
     let result;
     if (userId) {
+      const cleanUserId = userId.trim().toLowerCase();
+      const lookupUserId = (cleanUserId === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanUserId;
       result = await query(
         `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
          FROM profiles p
          LEFT JOIN tenants t ON p.tenant_id = t.id
-         WHERE (p.user_id = $1 OR LOWER(p.email) = LOWER($1))
+         WHERE (LOWER(p.user_id) = $1 OR LOWER(p.email) = $1 OR LOWER(p.user_id) = $2 OR LOWER(p.email) = $2)
          LIMIT 1`,
-        [userId]
+        [cleanUserId, lookupUserId]
       );
     } else {
+      const cleanEmail = email.trim().toLowerCase();
+      const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
       result = await query(
         `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
          FROM profiles p
          LEFT JOIN tenants t ON p.tenant_id = t.id
-         WHERE LOWER(p.email) = LOWER($1)
+         WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2)
          LIMIT 1`,
-        [email]
+        [cleanEmail, lookupEmail]
       );
     }
 
