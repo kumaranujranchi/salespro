@@ -28,9 +28,13 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
 
     // Check password if set
-    if (user.password_hash && password) {
-      const match = await bcrypt.compare(password, user.password_hash);
-      if (!match && user.password_hash !== password) {
+    if (password) {
+      if (user.password_hash) {
+        const match = await bcrypt.compare(password, user.password_hash);
+        if (!match && user.password_hash !== password && user.password !== password) {
+          return res.status(401).json({ error: 'Invalid email or password' });
+        }
+      } else if (user.password && user.password !== password) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
     }
@@ -46,6 +50,7 @@ router.post('/login', async (req, res) => {
       ...user,
       _id: user.id,
       userId: user.user_id || user.email,
+      password: user.password,
     };
 
     return res.json({ profile });
@@ -93,6 +98,7 @@ router.get('/profile', async (req, res) => {
       ...user,
       _id: user.id,
       userId: user.user_id || user.email,
+      password: user.password,
     });
   } catch (error) {
     console.error('Get profile error:', error);
