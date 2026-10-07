@@ -1,4 +1,5 @@
 import fs from 'fs';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
@@ -7,10 +8,20 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
+
 const { Pool } = pg;
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://salesprouser:SalesProPass2026@localhost:5432/salespro';
-const pool = new Pool({ connectionString });
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL })
+  : new Pool({
+      user: process.env.PGUSER || 'salesprouser',
+      password: process.env.PGPASSWORD || 'SalesProPass@2026',
+      host: process.env.PGHOST || 'localhost',
+      port: parseInt(process.env.PGPORT || '5432', 10),
+      database: process.env.PGDATABASE || 'salespro',
+    });
 
 function readJsonl(filePath) {
   if (!fs.existsSync(filePath)) return [];
