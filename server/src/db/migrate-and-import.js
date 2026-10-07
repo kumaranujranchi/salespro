@@ -83,9 +83,8 @@ async function main() {
     await client.query(schemaSql);
     console.log('✔ All 21 tables created successfully.');
 
-    // 3. Disable FK constraints during bulk import
+    // 3. Import data in dependency order
     console.log('\n[3/4] Importing data from Convex snapshot...');
-    await client.query("SET session_replication_role = 'replica';");
 
     let dataDir = path.resolve(__dirname, '../../data/convex-data');
     if (!fs.existsSync(dataDir)) {
@@ -173,7 +172,7 @@ async function main() {
           safeStr(p.phone),
           p.role || 'sales_executive',
           safeStr(p.department_id),
-          safeStr(p.reporting_manager_id),
+          null, // Set reporting_manager_id in 2nd pass to satisfy FK
           safeStr(p.tenant_id),
           safeStr(p.role_id),
           safeStr(p.image_url),
@@ -186,6 +185,13 @@ async function main() {
         ]
       );
       importedUsers.push({ email: p.email.toLowerCase(), role: p.role, password });
+    }
+
+    // Update reporting managers now that all profiles are inserted
+    for (const p of profiles) {
+      if (p.reporting_manager_id) {
+        await client.query('UPDATE profiles SET reporting_manager_id = $1 WHERE id = $2', [p.reporting_manager_id, p._id]);
+      }
     }
     console.log(`✔ Profiles imported: ${profiles.length}`);
 
@@ -458,10 +464,6 @@ async function main() {
     }
     console.log(`✔ AI chat limits imported: ${aiLimits.length}`);
 
-    // 4. Restore constraints
-    console.log('\n[4/4] Restoring foreign key constraints...');
-    await client.query("SET session_replication_role = 'origin';");
-
     console.log('\n====================================================');
     console.log('🎉 MIGRATION FINISHED SUCCESSFULLY!');
     console.log('====================================================');
@@ -472,7 +474,6 @@ async function main() {
     console.log('====================================================\n');
   } catch (err) {
     console.error('\n❌ Migration failed:', err);
-    await client.query("SET session_replication_role = 'origin';").catch(() => {});
     process.exit(1);
   } finally {
     client.release();
