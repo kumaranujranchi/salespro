@@ -4,8 +4,7 @@
 -- Compatible with Convex string IDs & Native PostgreSQL UUIDs
 -- =====================================================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Native PostgreSQL gen_random_uuid() is built-in (PostgreSQL 13+)
 
 -- 1. TENANTS TABLE
 CREATE TABLE IF NOT EXISTS tenants (

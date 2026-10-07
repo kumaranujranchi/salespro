@@ -63,13 +63,17 @@ async function main() {
     console.log('🚀 RealSalePro: PostgreSQL Migration & Convex Import');
     console.log('====================================================');
 
-    // 1. Reset Schema
-    console.log('\n[1/4] Dropping old tables and recreating public schema...');
+    // 1. Reset Tables
+    console.log('\n[1/4] Dropping existing CRM tables...');
     await client.query(`
-      DROP SCHEMA IF EXISTS public CASCADE;
-      CREATE SCHEMA public;
-      GRANT ALL ON SCHEMA public TO CURRENT_USER;
-      GRANT ALL ON SCHEMA public TO public;
+      DROP TABLE IF EXISTS 
+        activity_logs, ai_chat_limits, announcements, billing_history,
+        commissions, departments, incentives, lead_followups,
+        lead_transfers, leads, notifications, payments,
+        profiles, project_units, projects, referral_campaigns,
+        sales, sales_targets, site_visits, subscriptions,
+        support_tickets, tenant_roles, tenants, user_referrals
+      CASCADE;
     `);
 
     // 2. Apply new schema
