@@ -435,6 +435,19 @@ async function main() {
 
     // --- SUBSCRIPTIONS ---
     const subscriptions = readJsonl(path.join(dataDir, 'subscriptions/documents.jsonl'));
+    const knownTenantIds = new Set(tenants.map(t => t._id));
+    for (const sub of subscriptions) {
+      if (sub.tenant_id && !knownTenantIds.has(sub.tenant_id)) {
+        await client.query(
+          `INSERT INTO tenants (id, name, slug, subscription_status, is_active)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [sub.tenant_id, 'Archived Tenant', sub.tenant_id, 'cancelled', false]
+        );
+        knownTenantIds.add(sub.tenant_id);
+      }
+    }
+
     for (const sub of subscriptions) {
       await client.query(
         `INSERT INTO subscriptions (id, tenant_id, razorpay_subscription_id, plan_id, status, current_start, current_end, metadata, created_at)
@@ -458,6 +471,17 @@ async function main() {
     // --- ACTIVITY LOGS ---
     const activityLogs = readJsonl(path.join(dataDir, 'activity_logs/documents.jsonl'));
     for (const a of activityLogs) {
+      if (a.tenant_id && !knownTenantIds.has(a.tenant_id)) {
+        await client.query(
+          `INSERT INTO tenants (id, name, slug, subscription_status, is_active)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [a.tenant_id, 'Archived Tenant', a.tenant_id, 'cancelled', false]
+        );
+        knownTenantIds.add(a.tenant_id);
+      }
+    }
+    for (const a of activityLogs) {
       await client.query(
         `INSERT INTO activity_logs (id, tenant_id, user_id, action, entity_type, entity_id, details, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
@@ -478,6 +502,17 @@ async function main() {
 
     // --- AI CHAT LIMITS ---
     const aiLimits = readJsonl(path.join(dataDir, 'ai_chat_limits/documents.jsonl'));
+    for (const al of aiLimits) {
+      if (al.tenant_id && !knownTenantIds.has(al.tenant_id)) {
+        await client.query(
+          `INSERT INTO tenants (id, name, slug, subscription_status, is_active)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (id) DO NOTHING`,
+          [al.tenant_id, 'Archived Tenant', al.tenant_id, 'cancelled', false]
+        );
+        knownTenantIds.add(al.tenant_id);
+      }
+    }
     for (const al of aiLimits) {
       await client.query(
         `INSERT INTO ai_chat_limits (id, tenant_id, date, count, created_at)
