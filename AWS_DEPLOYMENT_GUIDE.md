@@ -128,8 +128,8 @@ When users forget their password or want to sign in using an OTP security code, 
    EMAIL_HOST=smtp.gmail.com
    EMAIL_PORT=465
    EMAIL_SECURE=true
-   EMAIL_USER=yourgmail@gmail.com
-   EMAIL_PASS=abcdefghijklmnop
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASS=YOUR_APP_PASSWORD_HERE
    ```
 
 ### Option B: Hostinger / Custom Domain Webmail (`support@realsalepro.com`)
@@ -139,7 +139,7 @@ When users forget their password or want to sign in using an OTP security code, 
    EMAIL_PORT=465
    EMAIL_SECURE=true
    EMAIL_USER=support@realsalepro.com
-   EMAIL_PASS=your_hostinger_email_password
+   EMAIL_PASS=YOUR_EMAIL_PASSWORD_HERE
    ```
 
 ### Apply on AWS Lightsail Server:
