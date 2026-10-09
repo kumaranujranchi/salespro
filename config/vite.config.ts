@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   // Permanent Fix: Load env file explicitly to ensure it works on Windows/Localhost
   const env = loadEnv(mode, process.cwd(), '')
 
-  const apiUrl = env.VITE_API_URL || 'http://localhost:5001/api';
+  const apiUrl = env.VITE_API_URL || (mode === 'production' ? '/api' : 'http://localhost:5001/api');
 
   return {
     define: {
