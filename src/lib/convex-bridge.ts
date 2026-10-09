@@ -198,37 +198,37 @@ async function resolveApiCall(functionKey: any, args: any) {
 
 // Compatible useQuery hook connected to REST API
 export function useQuery(fn: any, args?: any): any {
-  if (args === 'skip' || !fn) {
-    return undefined;
-  }
-
-  const queryKey = JSON.stringify({ fn: String(fn), args });
+  const isSkip = args === 'skip' || !fn;
+  const queryKey = isSkip ? '' : JSON.stringify({ fn: String(fn), args });
   const [data, setData] = useState<any>(undefined);
 
-  const fetchData = useCallback(() => {
+  useEffect(() => {
+    if (isSkip) {
+      setData(undefined);
+      return;
+    }
+
     let isMounted = true;
-    resolveApiCall(fn, args)
-      .then((result) => {
-        if (isMounted) setData(result);
-      })
-      .catch((err) => {
-        console.error('Bridge query error:', err);
-      });
+    const executeQuery = () => {
+      resolveApiCall(fn, args)
+        .then((result) => {
+          if (isMounted) setData(result);
+        })
+        .catch((err) => {
+          console.error('Bridge query error:', err);
+        });
+    };
+
+    executeQuery();
+    const unregister = registerListener(queryKey, executeQuery);
+
     return () => {
       isMounted = false;
-    };
-  }, [queryKey]);
-
-  useEffect(() => {
-    const cleanup = fetchData();
-    const unregister = registerListener(queryKey, fetchData);
-    return () => {
-      if (cleanup) cleanup();
       unregister();
     };
-  }, [fetchData, queryKey]);
+  }, [isSkip, queryKey]);
 
-  return data;
+  return isSkip ? undefined : data;
 }
 
 // Compatible useMutation hook connected to REST API
