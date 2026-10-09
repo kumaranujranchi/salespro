@@ -9,7 +9,7 @@ interface AuthContextType {
   affiliate: ReferralCampaign | null;
   tenant: Tenant | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password?: string) => Promise<{ error: Error | null; profile?: Profile }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshTenant: () => Promise<void>;
@@ -122,8 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile.password && profile.password !== password) {
         return { error: new Error('Invalid email or password. Please try again.') };
       }
+      const userProfile = { ...profile, id: (profile._id || profile.id) as string } as Profile;
+      setProfile(userProfile);
       setSessionUser({ id: profile.userId, email: profile.email });
-      return { error: null };
+      return { error: null, profile: userProfile };
     } catch (err: any) {
       return { error: err };
     } finally {

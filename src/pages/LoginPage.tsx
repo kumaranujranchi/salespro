@@ -76,10 +76,9 @@ export function LoginPage() {
     setLoading(true);
 
     const cleanEmail = email.trim();
-    // Simulate minimum loading time for better UX
-    const minLoadTime = new Promise(resolve => setTimeout(resolve, 800));
+    const minLoadTime = new Promise(resolve => setTimeout(resolve, 500));
 
-    const { error: signInError } = await signIn(cleanEmail, password);
+    const { error: signInError, profile: loggedProfile } = await signIn(cleanEmail, password);
     await minLoadTime;
 
     if (signInError) {
@@ -88,6 +87,16 @@ export function LoginPage() {
       setLoading(false);
     } else {
       setSuccess('Login successful! Redirecting...');
+      const role = loggedProfile?.role || 'admin';
+      setTimeout(() => {
+        if (role === 'affiliate') {
+          navigate('/affiliate/dashboard');
+        } else if (role === 'platform_admin') {
+          navigate('/platform/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 400);
     }
   };
 
