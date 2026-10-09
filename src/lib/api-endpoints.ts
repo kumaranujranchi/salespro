@@ -2,10 +2,26 @@
 // Replaces deprecated Convex generated references seamlessly
 
 const createProxy = (path = ''): any => {
-  return new Proxy(() => {}, {
-    get: (_, prop: string) => createProxy(path ? `${path}.${prop}` : prop),
+  return new Proxy(() => path, {
+    get: (_target, prop) => {
+      if (typeof prop === 'symbol') {
+        if (prop === Symbol.toPrimitive) {
+          return () => path;
+        }
+        if (prop === Symbol.toStringTag) {
+          return 'ApiProxy';
+        }
+        return undefined;
+      }
+      if (prop === 'toString' || prop === 'valueOf') {
+        return () => path;
+      }
+      if (prop === '_name') {
+        return path;
+      }
+      return createProxy(path ? `${path}.${prop}` : prop);
+    },
     apply: () => path,
-    toString: () => path,
   });
 };
 

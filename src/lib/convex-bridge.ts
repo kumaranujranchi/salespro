@@ -35,7 +35,25 @@ function registerListener(key: string, listener: () => void) {
 
 // Map function names to REST API service calls
 async function resolveApiCall(functionKey: any, args: any) {
-  const key = typeof functionKey === 'string' ? functionKey : functionKey?._name || String(functionKey);
+  let key = '';
+  if (typeof functionKey === 'string') {
+    key = functionKey;
+  } else if (typeof functionKey === 'function') {
+    try {
+      key = functionKey._name || functionKey() || '';
+    } catch {
+      key = '';
+    }
+  } else if (functionKey && typeof functionKey === 'object') {
+    key = functionKey._name || '';
+  }
+  if (!key) {
+    try {
+      key = String(functionKey);
+    } catch {
+      key = '';
+    }
+  }
 
   // AUTH / PROFILES
   if (key.includes('profiles.getByUserId')) {
