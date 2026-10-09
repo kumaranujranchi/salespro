@@ -114,50 +114,6 @@ You can deploy the Node.js Express server using either **AWS App Runner** (autom
 
 ---
 
-## 📧 Step 4: Email / SMTP Setup for Security Code & Password Reset
-
-When users forget their password or want to sign in using an OTP security code, the system sends an email. Configure SMTP credentials in `server/.env`:
-
-### Option A: Gmail (Quickest & Free)
-1. Go to your **Google Account** > **Security**.
-2. Turn on **2-Step Verification** (if not already on).
-3. Search for **App Passwords** (or go to `myaccount.google.com/apppasswords`).
-4. Create a new App Password named `RealSalePro`. Google will give you a 16-character code (e.g. `abcd efgh ijkl mnop`).
-5. In `server/.env`, put:
-   ```env
-   EMAIL_HOST=smtp.gmail.com
-   EMAIL_PORT=465
-   EMAIL_SECURE=true
-   EMAIL_USER=your_email@gmail.com
-   EMAIL_PASS=YOUR_APP_PASSWORD_HERE
-   ```
-
-### Option B: Hostinger / Custom Domain Webmail (`support@realsalepro.com`)
-1. In `server/.env`, put:
-   ```env
-   EMAIL_HOST=smtp.hostinger.com
-   EMAIL_PORT=465
-   EMAIL_SECURE=true
-   EMAIL_USER=support@realsalepro.com
-   EMAIL_PASS=YOUR_EMAIL_PASSWORD_HERE
-   ```
-
-### Apply on AWS Lightsail Server:
-```bash
-# 1. SSH into Lightsail
-cd ~/salespro/server
-
-# 2. Edit .env
-nano .env
-
-# 3. Add the EMAIL_* variables, then press Ctrl+O, Enter, Ctrl+X
-
-# 4. Restart the Node.js backend so it loads the new .env:
-pm2 restart salespro-api
-```
-
----
-
 ## 🧪 Local Testing
 
 You can run both Frontend and Backend locally:
