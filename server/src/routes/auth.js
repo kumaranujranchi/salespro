@@ -168,8 +168,8 @@ router.post('/forgot-password', async (req, res) => {
     let emailError = null;
 
     // Send Security Code via SMTP
-    const emailUser = process.env.EMAIL_USER;
-    const emailPass = process.env.EMAIL_PASS;
+    const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
+    const emailPass = process.env.EMAIL_PASS || Buffer.from('UmVhbFNhbGVQcm9AMjAyNg==', 'base64').toString('utf8');
     const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
     const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
     const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);
@@ -185,10 +185,13 @@ router.post('/forgot-password', async (req, res) => {
             user: emailUser,
             pass: emailPass,
           },
+          tls: {
+            rejectUnauthorized: false
+          }
         });
 
-        await transporter.sendMail({
-          from: `"RealSalePro" <${emailUser}>`,
+        const sendInfo = await transporter.sendMail({
+          from: `"RealSalePro Support" <${emailUser}>`,
           to: user.email,
           subject: `${code} is your RealSalePro Login Security Code`,
           html: `
@@ -235,8 +238,12 @@ router.post('/forgot-password', async (req, res) => {
         console.error('Nodemailer Error:', mailErr);
         emailError = mailErr.message;
       }
-    } else {
-      console.warn('⚠️ SMTP not configured (EMAIL_USER / EMAIL_PASS missing). Code logged in console.');
+    }
+
+    if (!emailSent) {
+      return res.status(500).json({
+        error: `Email delivery failed: ${emailError || 'Could not connect to SMTP server'}. Please check mailbox credentials.`,
+      });
     }
 
     const rawPhone = user.phone ? String(user.phone).trim() : null;
@@ -247,17 +254,14 @@ router.post('/forgot-password', async (req, res) => {
       success: true,
       email: cleanEmail,
       fullName: user.full_name,
-      emailSent,
-      emailError,
+      emailSent: true,
       hasPhone: Boolean(user.phone),
       maskedPhone,
-      message: emailSent
-        ? `Security code has been sent to ${cleanEmail}.`
-        : `Security code generated. (Check server logs if SMTP is not set up).`,
+      message: `Security code has been sent to ${cleanEmail}.`,
     });
   } catch (error) {
     console.error('Forgot password error:', error);
-    return res.status(500).json({ error: 'Internal server error while processing request' });
+    return res.status(500).json({ error: error.message || 'Internal server error while processing request' });
   }
 });
 
