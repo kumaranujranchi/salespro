@@ -8,6 +8,24 @@ export const authService = {
     api.get<Profile | null>('/auth/profile', params),
   promote: (email: string) =>
     api.post<{ success: boolean }>('/auth/promote', { email }),
+  forgotPassword: (email: string) =>
+    api.post<{
+      success: boolean;
+      email: string;
+      fullName: string;
+      emailSent: boolean;
+      emailError?: string;
+      hasPhone: boolean;
+      maskedPhone: string | null;
+      message: string;
+    }>('/auth/forgot-password', { email }),
+  resetPassword: (data: {
+    email: string;
+    code: string;
+    newPassword?: string;
+    phone?: string;
+  }) =>
+    api.post<{ success: boolean; message: string; profile?: Profile }>('/auth/reset-password', data),
 };
 
 export const tenantsService = {

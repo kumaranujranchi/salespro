@@ -136,7 +136,7 @@ export function PricingPage() {
       // Import service dynamically
       const { createRazorpaySubscription } = await import('../lib/subscriptionService');
 
-      // Create subscription via backend (Netlify Function)
+      // Create subscription via backend API
       const { subscription } = await createRazorpaySubscription({
         tenantId: tenant.id,
         planId: '', // Handled by backend auto-provisioning

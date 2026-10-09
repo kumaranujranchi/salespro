@@ -10,6 +10,7 @@ import projectRoutes from './routes/projects.js';
 import siteVisitRoutes from './routes/site_visits.js';
 import targetRoutes from './routes/targets.js';
 import miscRoutes from './routes/misc.js';
+import subscriptionRoutes from './routes/subscriptions.js';
 import { pool } from './db/index.js';
 
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/site-visits', siteVisitRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api/misc', miscRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

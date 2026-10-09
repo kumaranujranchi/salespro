@@ -44,6 +44,22 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('profiles.getByEmail')) {
     return await authService.getProfile({ email: args?.email });
   }
+  if (key.includes('profiles.createUserProfile') || key.includes('profiles.create')) {
+    return await profilesService.create(args);
+  }
+  if (key.includes('profiles.updateProfile') || key.includes('profiles.update')) {
+    return await profilesService.update(args?.id || args?._id, args);
+  }
+  if (key.includes('profiles.resetPassword')) {
+    return await authService.resetPassword(args);
+  }
+  if (key.includes('tenants.resetUserPassword')) {
+    return await authService.resetPassword({
+      email: args?.userId,
+      newPassword: args?.newPassword,
+      phone: args?.phone,
+    });
+  }
   if (key.includes('profiles.listUsersByTenant')) {
     return await profilesService.listByTenant(args?.tenant_id, args);
   }
@@ -235,3 +251,14 @@ export function useConvex() {
     action: (fn: any, args: any) => resolveApiCall(fn, args),
   };
 }
+
+export const convex = {
+  query: (fn: any, args: any) => resolveApiCall(fn, args),
+  mutation: async (fn: any, args: any) => {
+    const p = await resolveApiCall(fn, args);
+    invalidateQuery();
+    return p;
+  },
+  action: (fn: any, args: any) => resolveApiCall(fn, args),
+};
+

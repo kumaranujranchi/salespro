@@ -20,9 +20,11 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
     },
     resolve: {
-      alias: {
-        'convex/react': path.resolve(__dirname, '../src/lib/convex-bridge.ts'),
-      },
+      alias: [
+        { find: /.*\/convex\/_generated\/api.*/, replacement: path.resolve(__dirname, '../src/lib/api-endpoints.ts') },
+        { find: /.*\/convex\/_generated\/dataModel.*/, replacement: path.resolve(__dirname, '../src/lib/api-endpoints.ts') },
+        { find: 'convex/react', replacement: path.resolve(__dirname, '../src/lib/convex-bridge.ts') },
+      ],
     },
     plugins: [
       react(),

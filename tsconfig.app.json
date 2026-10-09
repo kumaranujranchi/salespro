@@ -18,7 +18,14 @@
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "*/convex/_generated/api*": ["src/lib/api-endpoints.ts"],
+      "*/convex/_generated/dataModel*": ["src/lib/api-endpoints.ts"],
+      "convex/react": ["src/lib/convex-bridge.ts"]
+    }
   },
   "include": ["src"]
 }

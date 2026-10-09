@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQuery, useMutation, useConvex } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { api, Id } from '../lib/api-endpoints';
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
 
 interface AuthContextType {
@@ -14,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshTenant: () => Promise<void>;
+  setSessionUser: (user: { id: string; email?: string } | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,7 +104,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password?: string) => {
     setIsSigningIn(true);
     try {
-      const profile = await convex.query(api.profiles.getByEmail, { email });
+      const cleanEmail = email.trim().toLowerCase();
+      const lookupEmail = cleanEmail === 'admin@salespro.com' ? 'admin@realsalepro.com' : cleanEmail;
+
+      let profile = await convex.query(api.profiles.getByEmail, { email: cleanEmail });
+      if (!profile && lookupEmail !== cleanEmail) {
+        profile = await convex.query(api.profiles.getByEmail, { email: lookupEmail });
+      }
+      if (!profile) {
+        // Fallback for legacy case-sensitive records (e.g., VIVALAND9@GMAIL.COM)
+        profile = await convex.query(api.profiles.getByEmail, { email: email.trim() });
+      }
+
       if (!profile) {
         return { error: new Error('Invalid email or password. Please try again.') };
       }
@@ -145,7 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn, 
       signOut, 
       refreshProfile, 
-      refreshTenant 
+      refreshTenant,
+      setSessionUser
     }}>
       {children}
     </AuthContext.Provider>

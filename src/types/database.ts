@@ -1,4 +1,4 @@
-import { Id } from "../../convex/_generated/dataModel";
+import { Id } from "../lib/api-endpoints";
 
 export type UserRole = 'super_admin' | 'admin' | 'director' | 'team_leader' | 'sales_executive' | 'crm_staff' | 'accountant' | 'driver' | 'receptionist' | 'platform_admin' | 'affiliate';
 

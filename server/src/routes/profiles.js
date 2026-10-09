@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -41,16 +42,20 @@ router.post('/', async (req, res) => {
   try {
     const {
       tenant_id, email, full_name, employee_id, phone, role,
-      department_id, reporting_manager_id, role_id
+      department_id, reporting_manager_id, role_id, password
     } = req.body;
+
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const rawPass = password || 'Admin@123';
+    const passwordHash = await bcrypt.hash(rawPass, 10);
 
     const result = await query(
       `INSERT INTO profiles 
-        (tenant_id, user_id, email, full_name, employee_id, phone, role, department_id, reporting_manager_id, role_id, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
+        (tenant_id, user_id, email, password, password_hash, full_name, employee_id, phone, role, department_id, reporting_manager_id, role_id, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
        RETURNING *`,
       [
-        tenant_id, email, email, full_name, employee_id, phone, role,
+        tenant_id, cleanEmail, cleanEmail, rawPass, passwordHash, full_name, employee_id, phone, role,
         department_id || null, reporting_manager_id || null, role_id || null
       ]
     );

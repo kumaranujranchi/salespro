@@ -1,6 +1,6 @@
-import { convex } from './convex';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { convex } from './convex-bridge';
+import { api, Id } from './api-endpoints';
+import apiClient from './api';
 import { Subscription, BillingHistory } from '../types/database';
 
 export const RAZORPAY_PLANS = {
@@ -20,29 +20,13 @@ interface CreateSubscriptionParams {
 
 export async function createRazorpaySubscription(params: CreateSubscriptionParams): Promise<{ subscription: Subscription; shortUrl: string }> {
   try {
-    const response = await fetch('/.netlify/functions/create-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tenantId: params.tenantId,
-        tenantName: params.customerName,
-        customerEmail: params.customerEmail,
-        customerContact: params.customerContact,
-        planType: params.billingCycle,
-      }),
+    const data = await apiClient.post<any>('/subscriptions/create', {
+      tenantId: params.tenantId,
+      tenantName: params.customerName,
+      customerEmail: params.customerEmail,
+      customerContact: params.customerContact,
+      planType: params.billingCycle,
     });
-
-    let data;
-    try {
-      data = await response.json();
-    } catch (e) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Server status ${response.status}: ${text || 'Invalid JSON response'}`);
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || `Server error (${response.status})`);
-    }
 
     // Save the created subscription to Convex
     await convex.mutation(api.subscriptions.upsert, {
