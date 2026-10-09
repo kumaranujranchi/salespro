@@ -1,18 +1,29 @@
 // RealSalePro REST API Client for Node.js + PostgreSQL Backend
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:5001/api');
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return '/api';
+    }
+  }
+  return import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+};
 
 class ApiClient {
-  private baseUrl: string;
+  private baseUrl?: string;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl?: string) {
     this.baseUrl = baseUrl;
   }
 
+  private getBaseUrl(): string {
+    return this.baseUrl || getApiBaseUrl();
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const base = this.getBaseUrl();
+    const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -72,5 +83,5 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(API_BASE_URL);
+export const api = new ApiClient();
 export default api;
