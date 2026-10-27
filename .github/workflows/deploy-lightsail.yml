@@ -15,23 +15,28 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify GitHub Secrets Configuration
+      - name: Sanitize Host and Verify Configuration
         id: check_secrets
         run: |
-          if [ -n "${{ secrets.LIGHTSAIL_HOST }}" ] && [ -n "${{ secrets.LIGHTSAIL_SSH_KEY }}" ]; then
+          RAW_HOST="${{ secrets.LIGHTSAIL_HOST }}"
+          # Automatically strip http://, https://, trailing slashes, ports (:22), and whitespaces
+          CLEAN_HOST=$(echo "$RAW_HOST" | sed -E 's|^https?://||' | sed -E 's|:[0-9]+/?$||' | sed 's|/.*$||' | tr -d '[:space:]')
+          
+          if [ -n "$CLEAN_HOST" ] && [ -n "${{ secrets.LIGHTSAIL_SSH_KEY }}" ]; then
             echo "has_secrets=true" >> $GITHUB_OUTPUT
-            echo "✅ Found LIGHTSAIL_HOST and LIGHTSAIL_SSH_KEY secrets."
+            echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+            echo "✅ Valid target host sanitized: $CLEAN_HOST"
           else
             echo "has_secrets=false" >> $GITHUB_OUTPUT
-            echo "⚠️ LIGHTSAIL_HOST or LIGHTSAIL_SSH_KEY is not set in GitHub Secrets."
-            echo "Please configure repository secrets: LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY, LIGHTSAIL_USERNAME (default: ubuntu)."
+            echo "⚠️ LIGHTSAIL_HOST or LIGHTSAIL_SSH_KEY is invalid or missing."
+            echo "Please configure repository secrets: LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY, LIGHTSAIL_USERNAME."
           fi
 
       - name: Deploy via SSH to Lightsail
         if: steps.check_secrets.outputs.has_secrets == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
+          host: ${{ steps.check_secrets.outputs.host }}
           username: ${{ secrets.LIGHTSAIL_USERNAME || 'ubuntu' }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           port: ${{ secrets.LIGHTSAIL_PORT || 22 }}
