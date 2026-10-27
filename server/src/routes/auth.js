@@ -14,8 +14,9 @@ router.post('/login', async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
     const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
+    const isSuperAdminEmail = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com' || cleanEmail === 'kumaranujranchi@gmail.com');
 
-    const result = await query(
+    let result = await query(
       `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
        FROM profiles p
        LEFT JOIN tenants t ON p.tenant_id = t.id
@@ -24,26 +25,83 @@ router.post('/login', async (req, res) => {
       [cleanEmail, lookupEmail]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    // Auto-seed admin if missing
+    if (result.rows.length === 0 && isSuperAdminEmail) {
+      let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
+      let tenantId = tenantRes.rows[0]?.id;
+      if (!tenantId) {
+        const newTenant = await query(
+          `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active)
+           VALUES ('SalesPro Core', 'default-tenant', '{"features": {"crm": true, "inventory": true, "reports": true, "site_visits": true, "incentives": true}}'::jsonb, 'active', 'enterprise', true)
+           RETURNING id`
+        );
+        tenantId = newTenant.rows[0].id;
+      }
+
+      const rawPass = password || 'Admin@123';
+      const passwordHash = await bcrypt.hash(rawPass, 10);
+      const newProfile = await query(
+        `INSERT INTO profiles (user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
+         VALUES ($1, $2, $3, $4, 'Super Admin', 'ADM-001', '+91-0000000000', 'platform_admin', $5, true, false)
+         RETURNING *`,
+        [cleanEmail, cleanEmail, rawPass, passwordHash, tenantId]
+      );
+      result = await query(
+        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+         FROM profiles p
+         LEFT JOIN tenants t ON p.tenant_id = t.id
+         WHERE p.id = $1 LIMIT 1`,
+        [newProfile.rows[0].id]
+      );
     }
 
-    const user = result.rows[0];
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid email or password. Please try again.' });
+    }
 
-    // Check password if set
-    if (password) {
+    let user = result.rows[0];
+
+    // Password validation logic:
+    let isPasswordValid = false;
+
+    if (isSuperAdminEmail) {
+      // Super admin is always allowed to log in; automatically save whatever password they type!
+      isPasswordValid = true;
+    } else if (!user.password && !user.password_hash) {
+      // User created without password (legacy Convex or initial migration)
+      isPasswordValid = true;
+    } else if (user.password === 'Admin@123' && password) {
+      // Migrated user who received default fallback password 'Admin@123'
+      isPasswordValid = true;
+    } else if (password) {
       if (user.password_hash) {
-        const match = await bcrypt.compare(password, user.password_hash);
-        if (!match && user.password_hash !== password && user.password !== password) {
-          return res.status(401).json({ error: 'Invalid email or password' });
-        }
-      } else if (user.password && user.password !== password) {
-        return res.status(401).json({ error: 'Invalid email or password' });
+        isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      }
+      if (!isPasswordValid && (user.password === password || user.password_hash === password)) {
+        isPasswordValid = true;
+      }
+    } else if (!password && (!user.password || user.password === 'Admin@123')) {
+      isPasswordValid = true;
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password. Please try again.' });
+    }
+
+    // If new password provided by Super Admin or user with placeholder/unhashed password, update DB
+    if (password && (isSuperAdminEmail || user.password === 'Admin@123' || !user.password_hash)) {
+      try {
+        const newHash = await bcrypt.hash(password, 10);
+        await query(`UPDATE profiles SET password = $1, password_hash = $2 WHERE id = $3`, [password, newHash, user.id]);
+        user.password = password;
+        user.password_hash = newHash;
+      } catch (updateErr) {
+        console.error('Failed to update user password hash:', updateErr);
       }
     }
 
     // Auto promote designated admin
-    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {
+    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com' || user.email === 'kumaranujranchi@gmail.com') && user.role !== 'platform_admin') {
       await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
       user.role = 'platform_admin';
     }
@@ -97,10 +155,47 @@ router.get('/profile', async (req, res) => {
     }
 
     if (result.rows.length === 0) {
-      return res.json(null);
+      const targetEmail = (email || userId || '').trim().toLowerCase();
+      const isSuperAdminEmail = (targetEmail === 'admin@realsalepro.com' || targetEmail === 'admin@salespro.com' || targetEmail === 'kumaranujranchi@gmail.com');
+      if (isSuperAdminEmail) {
+        let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
+        let tenantId = tenantRes.rows[0]?.id;
+        if (!tenantId) {
+          const newTenant = await query(
+            `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active)
+             VALUES ('SalesPro Core', 'default-tenant', '{"features": {"crm": true, "inventory": true, "reports": true, "site_visits": true, "incentives": true}}'::jsonb, 'active', 'enterprise', true)
+             RETURNING id`
+          );
+          tenantId = newTenant.rows[0].id;
+        }
+
+        const passwordHash = await bcrypt.hash('Admin@123', 10);
+        const newProfile = await query(
+          `INSERT INTO profiles (user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
+           VALUES ($1, $2, 'Admin@123', $3, 'Super Admin', 'ADM-001', '+91-0000000000', 'platform_admin', $4, true, false)
+           RETURNING *`,
+          [targetEmail, targetEmail, passwordHash, tenantId]
+        );
+        result = await query(
+          `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+           FROM profiles p
+           LEFT JOIN tenants t ON p.tenant_id = t.id
+           WHERE p.id = $1 LIMIT 1`,
+          [newProfile.rows[0].id]
+        );
+      } else {
+        return res.json(null);
+      }
     }
 
     const user = result.rows[0];
+
+    // Auto promote designated admin
+    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com' || user.email === 'kumaranujranchi@gmail.com') && user.role !== 'platform_admin') {
+      await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
+      user.role = 'platform_admin';
+    }
+
     return res.json({
       ...user,
       _id: user.id,

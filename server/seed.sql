@@ -22,11 +22,13 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO profiles (id, user_id, email, full_name, employee_id, phone, role, tenant_id, role_id, is_active, force_password_change)
+INSERT INTO profiles (id, user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, role_id, is_active, force_password_change)
 VALUES (
     'c0000000-0000-0000-0000-000000000001',
     'admin@realsalepro.com',
     'admin@realsalepro.com',
+    'Admin@123',
+    '$2a$10$sbIm1.GnRwpBX2N16a9/sOXeTFcgD5.QWMQuR27Cce3j4LZAjge4q',
     'Super Admin',
     'ADM-001',
     '+91-0000000000',
@@ -36,4 +38,4 @@ VALUES (
     true,
     false
 )
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, password_hash = EXCLUDED.password_hash, role = 'platform_admin';
