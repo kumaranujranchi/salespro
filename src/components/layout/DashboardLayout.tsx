@@ -584,7 +584,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             `}
                           >
                             {!isActive && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                             )}
 
                             <Icon size={isCollapsed ? 22 : 18} className={`
@@ -643,7 +643,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       `}
                     >
                       {!isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                       )}
 
                       <Icon size={isCollapsed ? 22 : 20} className={`

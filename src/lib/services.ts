@@ -95,6 +95,12 @@ export const miscService = {
   markNotificationRead: (id: string) => api.patch<{ success: boolean }>(`/misc/notifications/${id}/read`),
   listAnnouncements: (tenantId: string) => api.get<any[]>('/misc/announcements', { tenant_id: tenantId }),
   listSupportTickets: (tenantId?: string) => api.get<any[]>('/misc/support-tickets', { tenant_id: tenantId }),
+  resolveSupportTicket: (id: string, notes?: string) =>
+    api.patch<{ success: boolean }>(`/misc/support-tickets/${id}`, { status: 'resolved', resolution_notes: notes }),
   getReferralCampaign: (params: { userId?: string; code?: string }) =>
     api.get<any>('/misc/referrals/campaign', params),
+  listReferralCampaigns: (tenantId?: string) =>
+    api.get<any[]>('/misc/referrals/campaigns', { tenant_id: tenantId }),
+  getReferralAnalytics: (tenantId?: string) =>
+    api.get<any>('/misc/referrals/analytics', { tenant_id: tenantId }),
 };

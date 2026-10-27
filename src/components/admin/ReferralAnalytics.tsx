@@ -12,11 +12,12 @@ export function ReferralAnalytics() {
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
   // Convex Query
-  const analytics = useQuery(api.referrals.getReferralAnalytics, tenantId ? { tenant_id: tenantId } : "skip");
+  const analyticsData = useQuery(api.referrals.getReferralAnalytics, tenantId ? { tenant_id: tenantId } : {});
+  const analytics = analyticsData || { totalReferrals: 0, totalCommissions: 0, pendingCommissions: 0, ledger: [] };
 
-  if (analytics === undefined) return <LoadingSpinner fullScreen />;
+  if (analyticsData === undefined) return <LoadingSpinner fullScreen />;
 
-  const { totalReferrals, totalCommissions, pendingCommissions, ledger } = analytics;
+  const { totalReferrals, totalCommissions, pendingCommissions, ledger = [] } = analytics;
 
   return (
     <div className="space-y-6">

@@ -40,20 +40,23 @@ async function resolveApiCall(functionKey: any, args: any) {
     key = functionKey;
   } else if (typeof functionKey === 'function') {
     try {
-      key = functionKey._name || functionKey() || '';
+      const name = functionKey._name;
+      key = typeof name === 'string' ? name : (typeof functionKey() === 'string' ? functionKey() : '');
     } catch {
       key = '';
     }
   } else if (functionKey && typeof functionKey === 'object') {
-    key = functionKey._name || '';
+    const name = functionKey._name;
+    key = typeof name === 'string' ? name : '';
   }
-  if (!key) {
+  if (!key || typeof key !== 'string') {
     try {
-      key = String(functionKey);
+      key = String(functionKey || '');
     } catch {
       key = '';
     }
   }
+  key = String(key || '');
 
   // AUTH / PROFILES
   if (key.includes('profiles.getByUserId')) {
@@ -185,11 +188,23 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('announcements.listAll') || key.includes('announcements.list')) {
     return await miscService.listAnnouncements(args?.tenant_id);
   }
+  if (key.includes('support.resolve')) {
+    return await miscService.resolveSupportTicket(args?.id || args?._id, args?.resolution_notes);
+  }
   if (key.includes('support.listAll') || key.includes('support.listByTenant')) {
     return await miscService.listSupportTickets(args?.tenant_id);
   }
+  if (key.includes('referrals.listCampaigns') || key.includes('referrals.list')) {
+    return await miscService.listReferralCampaigns(args?.tenant_id);
+  }
+  if (key.includes('referrals.getReferralAnalytics') || key.includes('referrals.getCampaignStats')) {
+    return await miscService.getReferralAnalytics(args?.tenant_id);
+  }
   if (key.includes('referrals.getCampaignByCreator')) {
     return await miscService.getReferralCampaign({ userId: args?.userId });
+  }
+  if (key.includes('emails.sendEmail')) {
+    return { success: true };
   }
 
   // Fallback

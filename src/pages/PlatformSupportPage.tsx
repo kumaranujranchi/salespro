@@ -182,7 +182,7 @@ export function PlatformSupportPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-xs font-mono text-gray-500">#{ticket.ticket_number}</span>
-                      <span className="text-xs text-gray-400">• {new Date(ticket._creationTime).toLocaleDateString()}</span>
+                      <span className="text-xs text-gray-400">• {new Date(ticket._creationTime || (ticket as any).created_at || Date.now()).toLocaleDateString()}</span>
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate pr-2">
                       {ticket.subject}

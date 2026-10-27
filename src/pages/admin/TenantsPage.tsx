@@ -29,12 +29,19 @@ import {
   Users
 } from 'lucide-react';
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
+const formatDate = (dateVal: any) => {
+  if (!dateVal) return 'N/A';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'N/A';
+    return d.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch {
+    return 'N/A';
+  }
 };
 
 const isUpgradeCandidate = (tenant: any) => {
@@ -196,7 +203,7 @@ export function TenantsPage() {
     if (tenant.trial_ends_at) {
       endDate = new Date(tenant.trial_ends_at);
     } else {
-      const start = new Date(tenant._creationTime);
+      const start = new Date(tenant._creationTime || tenant.created_at || Date.now());
       endDate = new Date(start);
       endDate.setDate(start.getDate() + 30);
     }
@@ -270,8 +277,8 @@ export function TenantsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Platform Overview</h1>
-          <p className="text-slate-500 dark:text-slate-400">Monitor SaaS growth and tenant health.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tenants</h1>
+          <p className="text-slate-500 dark:text-slate-400">Manage client organizations and subscriptions.</p>
         </div>
         <button
           onClick={() => setAddTenantModalOpen(true)}
@@ -529,7 +536,7 @@ export function TenantsPage() {
                         </div>
                         <div>
                           <p className="text-slate-500">Joined</p>
-                          <p className="mt-1 font-medium text-slate-900 dark:text-white">{formatDate(new Date(tenant._creationTime).toISOString())}</p>
+                          <p className="mt-1 font-medium text-slate-900 dark:text-white">{formatDate(tenant._creationTime || tenant.created_at)}</p>
                         </div>
                         <div className="col-span-2 border-t border-dashed border-slate-200 dark:border-white/5 pt-2 mt-1">
                           <p className="text-slate-500">Usage Stats</p>
@@ -693,7 +700,7 @@ export function TenantsPage() {
                           {tenant.billing_cycle || 'Monthly'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                          {formatDate(new Date(tenant._creationTime).toISOString())}
+                          {formatDate(tenant._creationTime || tenant.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button

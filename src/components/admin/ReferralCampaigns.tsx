@@ -16,7 +16,8 @@ export function ReferralCampaigns() {
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
   // Convex Queries
-  const campaigns = useQuery(api.referrals.listCampaigns, tenantId ? { tenant_id: tenantId } : "skip");
+  const campaignsData = useQuery(api.referrals.listCampaigns, tenantId ? { tenant_id: tenantId } : {});
+  const campaigns = Array.isArray(campaignsData) ? campaignsData : [];
   
   // Convex Mutations
   const createCampaign = useMutation(api.referrals.createCampaign);
@@ -131,7 +132,7 @@ export function ReferralCampaigns() {
     }
   };
 
-  if (campaigns === undefined) return <LoadingSpinner fullScreen />;
+  if (campaignsData === undefined) return <LoadingSpinner fullScreen />;
 
   return (
     <div className="space-y-6">

@@ -102,7 +102,56 @@ router.get('/announcements', async (req, res) => {
 router.get('/support-tickets', async (req, res) => {
   try {
     const { tenant_id } = req.query;
-    let sql = 'SELECT * FROM support_tickets';
+    let sql = `
+      SELECT st.*, 
+        p.full_name as profile_full_name, p.email as profile_email,
+        t.name as tenant_name
+      FROM support_tickets st
+      LEFT JOIN profiles p ON st.created_by = p.id
+      LEFT JOIN tenants t ON st.tenant_id = t.id
+    `;
+    const params = [];
+    if (tenant_id) {
+      params.push(tenant_id);
+      sql += ' WHERE st.tenant_id = $1';
+    }
+    sql += ' ORDER BY st.created_at DESC';
+    const result = await query(sql, params);
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+      profiles: {
+        full_name: r.profile_full_name || 'Admin',
+        email: r.profile_email || ''
+      },
+      tenants: {
+        name: r.tenant_name || 'Platform'
+      }
+    })));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/support-tickets/:id', async (req, res) => {
+  try {
+    const { status, resolution_notes } = req.body;
+    await query(
+      'UPDATE support_tickets SET status = COALESCE($1, status), resolution_notes = COALESCE($2, resolution_notes), updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [status || 'resolved', resolution_notes || null, req.params.id]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Referral Campaigns
+router.get('/referrals/campaigns', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    let sql = 'SELECT * FROM referral_campaigns';
     const params = [];
     if (tenant_id) {
       params.push(tenant_id);
@@ -110,13 +159,29 @@ router.get('/support-tickets', async (req, res) => {
     }
     sql += ' ORDER BY created_at DESC';
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now()
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// Referral Campaigns
+router.get('/referrals/analytics', async (req, res) => {
+  try {
+    return res.json({
+      totalReferrals: 0,
+      totalCommissions: 0,
+      pendingCommissions: 0,
+      ledger: []
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/referrals/campaign', async (req, res) => {
   try {
     const { userId, code } = req.query;
@@ -129,7 +194,11 @@ router.get('/referrals/campaign', async (req, res) => {
       result = await query('SELECT * FROM referral_campaigns ORDER BY created_at DESC');
     }
     if (result.rows.length === 0) return res.json(null);
-    return res.json({ ...result.rows[0], _id: result.rows[0].id });
+    return res.json({
+      ...result.rows[0],
+      _id: result.rows[0].id,
+      _creationTime: result.rows[0].created_at ? new Date(result.rows[0].created_at).getTime() : Date.now()
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

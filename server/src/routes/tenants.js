@@ -12,7 +12,16 @@ router.get('/', async (req, res) => {
         (SELECT COUNT(*) FROM leads WHERE tenant_id = t.id) as leads_count
        FROM tenants t ORDER BY created_at DESC`
     );
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+      stats: {
+        activeUsers: parseInt(r.users_count || 0),
+        leadsCount: parseInt(r.leads_count || 0),
+        salesCount: 0
+      }
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

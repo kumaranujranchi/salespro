@@ -22,8 +22,8 @@ export function ProtectedRoute({ children, allowedRoles, permissionKey, required
     return <Navigate to="/login" replace />;
   }
 
-  // 0. Master Bypass - Super Admin always has access to everything
-  if (profile?.role === 'super_admin') {
+  // 0. Master Bypass - Super Admin & Platform Admin always have access
+  if (profile?.role === 'super_admin' || profile?.role === 'platform_admin') {
     return <>{children}</>;
   }
 
