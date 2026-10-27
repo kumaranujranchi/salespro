@@ -43,7 +43,7 @@ jobs:
             git reset --hard origin/main
             
             # Restart backend with PM2
-            pm2 restart salespro-api --update-env || pm2 start server/src/index.js --name "salespro-api"
+            pm2 restart salespro-api --update-env || (cd server && pm2 start src/index.js --name "salespro-api")
             
             # Reload Nginx
             sudo systemctl reload nginx || sudo nginx -s reload
