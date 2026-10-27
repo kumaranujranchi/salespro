@@ -1,0 +1,51 @@
+name: Deploy to AWS Lightsail
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Lightsail Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify GitHub Secrets Configuration
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.LIGHTSAIL_HOST }}" ] && [ -n "${{ secrets.LIGHTSAIL_SSH_KEY }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+            echo "✅ Found LIGHTSAIL_HOST and LIGHTSAIL_SSH_KEY secrets."
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "⚠️ LIGHTSAIL_HOST or LIGHTSAIL_SSH_KEY is not set in GitHub Secrets."
+            echo "Please configure repository secrets: LIGHTSAIL_HOST, LIGHTSAIL_SSH_KEY, LIGHTSAIL_USERNAME (default: ubuntu)."
+          fi
+
+      - name: Deploy via SSH to Lightsail
+        if: steps.check_secrets.outputs.has_secrets == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME || 'ubuntu' }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: ${{ secrets.LIGHTSAIL_PORT || 22 }}
+          script: |
+            set -e
+            echo "🚀 Deploying updates to /var/www/salespro..."
+            cd /var/www/salespro
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Restart backend with PM2
+            pm2 restart salespro-api --update-env || pm2 start server/src/index.js --name "salespro-api"
+            
+            # Reload Nginx
+            sudo systemctl reload nginx || sudo nginx -s reload
+            
+            echo "✅ Deployment finished successfully!"
