@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
-import tenantRoutes from './routes/tenants.js';
+import tenantRoutes, { registerTenantHandler } from './routes/tenants.js';
 import profileRoutes from './routes/profiles.js';
 import leadRoutes from './routes/leads.js';
 import saleRoutes from './routes/sales.js';
@@ -59,6 +59,9 @@ app.use('/api', webhookRoutes);
 // Login / forgot-password / reset-password stay public; the router guards
 // the rest (/profile, /promote) itself.
 app.use('/api/auth', authRoutes);
+
+// Public company registration (creates tenant and admin profile)
+app.post('/api/tenants/register', registerTenantHandler);
 
 // Everything below requires a valid session token, and tenant-scoped
 // requests are pinned to the caller's own tenant.

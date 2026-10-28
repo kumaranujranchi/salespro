@@ -125,6 +125,12 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('tenants.update')) {
     return await tenantsService.update(args?.id, args);
   }
+  if (key.includes('tenants.register')) {
+    return await tenantsService.register(args);
+  }
+  if (key.includes('tenants.remove')) {
+    return await tenantsService.remove(args?.id || args?._id);
+  }
 
   // LEADS
   if (key.includes('leads.list') || key.includes('leads.listLeads')) {

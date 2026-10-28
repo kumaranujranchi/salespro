@@ -559,6 +559,11 @@ export function TenantsPage() {
                       </div>
 
                       <div className="space-y-2 text-xs">
+                        {tenant.admin_name && (
+                          <div className="flex items-center gap-2 font-medium text-slate-800 dark:text-slate-200">
+                            <User className="w-3.5 h-3.5 text-indigo-500" /> {tenant.admin_name}
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                           <Mail className="w-3.5 h-3.5" /> {tenant.contact_email || 'N/A'}
                         </div>
@@ -630,13 +635,19 @@ export function TenantsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-1">
+                            {tenant.admin_name && (
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                <User className="h-3 w-3 text-indigo-500 shrink-0" />
+                                <span>{tenant.admin_name}</span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                              <Mail className="h-3 w-3" />
-                              {tenant.contact_email || 'No email'}
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span>{tenant.contact_email || 'No email'}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                              <Phone className="h-3 w-3" />
-                              {tenant.contact_phone || 'No phone'}
+                              <Phone className="h-3 w-3 shrink-0" />
+                              <span>{tenant.contact_phone || 'No phone'}</span>
                             </div>
                           </div>
                         </td>
