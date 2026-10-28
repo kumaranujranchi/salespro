@@ -45,6 +45,7 @@ import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 import { ServerHealthPage } from './pages/admin/ServerHealthPage';
+import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -58,6 +59,7 @@ function App() {
         <ToastProvider>
           <DialogProvider>
             <TutorialProvider>
+              <AdminRoleSwitcherBar />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />

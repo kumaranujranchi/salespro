@@ -10,7 +10,8 @@
     "build": "vite build --config config/vite.config.ts",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --config config/vite.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test:smoke": "node scripts/smoke-test.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",

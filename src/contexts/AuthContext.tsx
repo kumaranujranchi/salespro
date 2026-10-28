@@ -3,7 +3,7 @@ import { useQuery, useMutation, useBackend } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
 import { getAuthToken, getStoredSessionUser, setAuthToken, setStoredSessionUser } from '../lib/auth-token';
-import { Profile, Tenant, ReferralCampaign } from '../types/database';
+import { Profile, Tenant, ReferralCampaign, UserRole } from '../types/database';
 
 interface AuthContextType {
   user: { id: string; email?: string } | null;
@@ -16,6 +16,9 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   refreshTenant: () => Promise<void>;
   setSessionUser: (user: { id: string; email?: string } | null) => void;
+  isActualPlatformAdmin: boolean;
+  activeRoleOverride: UserRole | null;
+  setActiveRoleOverride: (role: UserRole | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +61,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null);
+
+  // Determine if current logged in user is genuine SaaS/Platform Admin
+  // (Strict check based on underlying database profile/session email)
+  const isActualPlatformAdmin = Boolean(
+    (profileData && (profileData.role === 'platform_admin' || profileData.email === 'admin@realsalepro.com')) ||
+    (profile && (profile.email === 'admin@realsalepro.com' || (profile as any)._actual_role === 'platform_admin')) ||
+    (sessionUser && (sessionUser.email === 'admin@realsalepro.com' || sessionUser.email === 'admin@salespro.com'))
+  );
+
+  // In-memory / session-stored role override for SaaS Admin QA testing
+  const [activeRoleOverride, setActiveRoleOverrideState] = useState<UserRole | null>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = sessionStorage.getItem('realsalepro_qa_role_override');
+        return saved ? (saved as UserRole) : null;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  const setActiveRoleOverride = (role: UserRole | null) => {
+    if (!isActualPlatformAdmin) return;
+    setActiveRoleOverrideState(role);
+    try {
+      if (typeof window !== 'undefined') {
+        if (role) {
+          sessionStorage.setItem('realsalepro_qa_role_override', role);
+        } else {
+          sessionStorage.removeItem('realsalepro_qa_role_override');
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Ensure role override is completely cleared if user is not platform admin
+  useEffect(() => {
+    if (sessionUser && !isActualPlatformAdmin && activeRoleOverride) {
+      setActiveRoleOverrideState(null);
+      try {
+        sessionStorage.removeItem('realsalepro_qa_role_override');
+      } catch {}
+    }
+  }, [sessionUser, isActualPlatformAdmin, activeRoleOverride]);
+
+  // Derived effective profile (applies role override for QA testing while preserving real admin profile)
+  const effectiveProfile: Profile | null = (profile && isActualPlatformAdmin && activeRoleOverride)
+    ? ({ ...profile, role: activeRoleOverride, _actual_role: 'platform_admin' } as Profile)
+    : profile;
 
   // Derived loading state to prevent race conditions during query fetching
   const isProfileLoading = sessionUser !== null && profileData === undefined;
@@ -147,6 +202,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     promotedEmailRef.current = null;
+    setActiveRoleOverrideState(null);
+    try {
+      sessionStorage.removeItem('realsalepro_qa_role_override');
+    } catch {}
     setAuthToken(null);
     setSessionUser(null);
     setProfile(null);
@@ -165,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user: sessionUser, 
-      profile, 
+      profile: effectiveProfile, 
       affiliate, 
       tenant, 
       loading, 
@@ -173,7 +232,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut, 
       refreshProfile, 
       refreshTenant,
-      setSessionUser
+      setSessionUser,
+      isActualPlatformAdmin,
+      activeRoleOverride: isActualPlatformAdmin ? activeRoleOverride : null,
+      setActiveRoleOverride
     }}>
       {children}
     </AuthContext.Provider>
