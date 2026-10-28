@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -52,15 +52,13 @@ import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
-  const location = useLocation();
-
   return (
     <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
           <DialogProvider>
             <TutorialProvider>
-              <Routes location={location} key={location.pathname}>
+              <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />

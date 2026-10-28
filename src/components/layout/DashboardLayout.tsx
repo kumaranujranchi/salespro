@@ -267,10 +267,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleModuleToggle = (isCRM: boolean) => {
     if (isCRM && isCRMEnabled) {
       setActiveModule('crm');
-      window.location.href = '/crm';
+      navigate('/crm');
     } else {
       setActiveModule('sales');
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     }
   };
 
@@ -386,8 +386,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
     e.preventDefault();
     if (sidebarOpen) setSidebarOpen(false);
-    if (window.location.pathname !== path) {
-      window.location.href = path;
+    if (location.pathname !== path) {
+      navigate(path);
     }
   };
 
