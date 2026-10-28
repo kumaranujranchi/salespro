@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileModal } from '../profile/ProfileModal';
 import { Tooltip } from '../ui/Tooltip';
@@ -564,56 +564,65 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                     {(!isGroupCollapsed || isCollapsed) && groupItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path;
 
-                      return (
-                        <Tooltip key={item.path} content={isCollapsed ? item.label : ''} position="right" className="w-full">
-                          <button
-                            onClick={() => {
-                              navigate(item.path);
-                              setSidebarOpen(false);
-                            }}
-                            className={`
-                              w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left
-                              transition-all duration-300 group relative overflow-hidden
-                              ${isActive
-                                ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
-                                : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
-                              }
-                              ${isCollapsed ? 'justify-center px-2' : ''}
-                            `}
-                          >
-                            {!isActive && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                            )}
+                      const navElement = (
+                        <NavLink
+                          to={item.path}
+                          onClick={() => setSidebarOpen(false)}
+                          className={({ isActive }) => `
+                            w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left
+                            transition-all duration-300 group relative overflow-hidden
+                            ${isActive
+                              ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
+                              : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
+                            }
+                            ${isCollapsed ? 'justify-center px-2' : ''}
+                          `}
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {!isActive && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                              )}
 
-                            <Icon size={isCollapsed ? 22 : 18} className={`
-                              relative z-10 transition-transform duration-300 group-hover:scale-110
-                              ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
-                            `} />
+                              <Icon size={isCollapsed ? 22 : 18} className={`
+                                relative z-10 transition-transform duration-300 group-hover:scale-110
+                                ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
+                              `} />
 
-                             {!isCollapsed && (
-                              <span className="relative z-10 font-semibold text-[13px] tracking-wide flex items-center justify-between w-full">
-                                <span>{item.label}</span>
-                                {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
-                                  <span className={`
-                                    ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
-                                    ${isActive 
-                                      ? 'bg-rose-600 text-white' 
-                                      : 'bg-red-500 text-white'
-                                    }
-                                  `}>
-                                    Pro
-                                  </span>
-                                )}
-                              </span>
-                            )}
+                              {!isCollapsed && (
+                                <span className="relative z-10 font-semibold text-[13px] tracking-wide flex items-center justify-between w-full">
+                                  <span>{item.label}</span>
+                                  {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
+                                    <span className={`
+                                      ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
+                                      ${isActive 
+                                        ? 'bg-rose-600 text-white' 
+                                        : 'bg-red-500 text-white'
+                                      }
+                                    `}>
+                                      Pro
+                                    </span>
+                                  )}
+                                </span>
+                              )}
 
-                            {!isCollapsed && isActive && (
-                              <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
-                            )}
-                          </button>
+                              {!isCollapsed && isActive && (
+                                <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      );
+
+                      return isCollapsed ? (
+                        <Tooltip key={item.path} content={item.label} position="right" className="w-full">
+                          {navElement}
                         </Tooltip>
+                      ) : (
+                        <div key={item.path} className="w-full">
+                          {navElement}
+                        </div>
                       );
                     })}
                   </div>
@@ -623,56 +632,65 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               // CRM Module - Original flat navigation
               filteredNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
 
-                return (
-                  <Tooltip key={item.path} content={isCollapsed ? item.label : ''} position="right" className="w-full">
-                    <button
-                      onClick={() => {
-                        navigate(item.path);
-                        setSidebarOpen(false);
-                      }}
-                      className={`
-                        w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
-                        transition-all duration-300 group relative overflow-hidden
-                        ${isActive
-                          ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
-                          : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
-                        }
-                        ${isCollapsed ? 'justify-center px-2' : ''}
-                      `}
-                    >
-                      {!isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                      )}
+                const navElement = (
+                  <NavLink
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) => `
+                      w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
+                      transition-all duration-300 group relative overflow-hidden
+                      ${isActive
+                        ? 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] shadow-lg shadow-green-200/50 dark:shadow-none font-bold'
+                        : 'text-slate-500 dark:text-white hover:bg-white dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white hover:shadow-sm'
+                      }
+                      ${isCollapsed ? 'justify-center px-2' : ''}
+                    `}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {!isActive && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-white/5 dark:to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                        )}
 
-                      <Icon size={isCollapsed ? 22 : 20} className={`
-                        relative z-10 transition-transform duration-300 group-hover:scale-110
-                        ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
-                      `} />
+                        <Icon size={isCollapsed ? 22 : 20} className={`
+                          relative z-10 transition-transform duration-300 group-hover:scale-110
+                          ${isActive ? 'text-[#0A1C37]' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-primary'}
+                        `} />
 
-                      {!isCollapsed && (
-                        <span className="relative z-10 font-semibold text-[13.5px] tracking-wide flex items-center justify-between w-full">
-                          <span>{item.label}</span>
-                          {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
-                            <span className={`
-                              ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
-                              ${isActive 
-                                ? 'bg-rose-600 text-white' 
-                                : 'bg-red-500 text-white'
-                              }
-                            `}>
-                              Pro
-                            </span>
-                          )}
-                        </span>
-                      )}
+                        {!isCollapsed && (
+                          <span className="relative z-10 font-semibold text-[13.5px] tracking-wide flex items-center justify-between w-full">
+                            <span>{item.label}</span>
+                            {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
+                              <span className={`
+                                ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
+                                ${isActive 
+                                  ? 'bg-rose-600 text-white' 
+                                  : 'bg-red-500 text-white'
+                                }
+                              `}>
+                                Pro
+                              </span>
+                            )}
+                          </span>
+                        )}
 
-                      {!isCollapsed && isActive && (
-                        <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
-                      )}
-                    </button>
+                        {!isCollapsed && isActive && (
+                          <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+
+                return isCollapsed ? (
+                  <Tooltip key={item.path} content={item.label} position="right" className="w-full">
+                    {navElement}
                   </Tooltip>
+                ) : (
+                  <div key={item.path} className="w-full">
+                    {navElement}
+                  </div>
                 );
               })
             )}
@@ -712,7 +730,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ${isCollapsed ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-72'}
         `}
       >
-        <div className="max-w-[1600px] space-y-6 animate-fadeIn">
+        <div key={location.pathname} className="max-w-[1600px] space-y-6 animate-fadeIn">
           {children}
         </div>
       </main>

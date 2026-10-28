@@ -81,7 +81,7 @@ function App() {
                   </ProtectedRoute>
                 } />
 
-                <Route path="accountant-dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
+                <Route path="/accountant-dashboard" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
             
             {/* Platform Admin Routes */}
             <Route path="/referral-management" element={

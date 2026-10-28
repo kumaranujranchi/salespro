@@ -113,7 +113,7 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
             </div>
 
             {/* Main Content */}
-            <main className="pt-[calc(4rem+env(safe-area-inset-top))] px-4 animate-fadeIn">
+            <main key={location.pathname} className="pt-[calc(4rem+env(safe-area-inset-top))] px-4 animate-fadeIn">
                 {children}
             </main>
 
