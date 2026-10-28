@@ -12,6 +12,7 @@ import targetRoutes from './routes/targets.js';
 import miscRoutes from './routes/misc.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import webhookRoutes from './routes/webhooks.js';
+import systemRoutes from './routes/system.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -76,6 +77,7 @@ app.use('/api/site-visits', siteVisitRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api/misc', miscRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/system', systemRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

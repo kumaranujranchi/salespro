@@ -107,3 +107,72 @@ export const miscService = {
   getReferralAnalytics: (tenantId?: string) =>
     api.get<any>('/misc/referrals/analytics', { tenant_id: tenantId }),
 };
+
+export interface SystemMetrics {
+  timestamp: number;
+  server: {
+    platform: string;
+    arch: string;
+    nodeVersion: string;
+    uptimeSeconds: number;
+    systemUptimeSeconds: number;
+    hostname: string;
+  };
+  cpu: {
+    model: string;
+    cores: number;
+    usagePercent: number;
+    loadAvg: number[];
+  };
+  memory: {
+    totalGb: string;
+    usedGb: string;
+    freeGb: string;
+    usagePercent: number;
+    processHeapUsedMb: number;
+    processRssMb: number;
+  };
+  storage: {
+    totalGb: string;
+    usedGb: string;
+    freeGb: string;
+    percentUsed: number;
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+  };
+  liveUsers: {
+    activeCount: number;
+    activeLast15mCount: number;
+    estimatedMaxCapacity: number;
+    capacityUsagePercent: number;
+    list: Array<{
+      id: string;
+      email: string;
+      role: string;
+      tenant_id?: string;
+      tenant_name?: string;
+      ip?: string;
+      userAgent?: string;
+      lastActive: number;
+    }>;
+  };
+  database: {
+    activeConnections: number;
+    databaseSize: string;
+    totalTenants: number;
+    totalProfiles: number;
+    totalLeads: number;
+  };
+  recommendation: {
+    level: 'healthy' | 'warning' | 'critical';
+    title: string;
+    message: string;
+    upgradeNeeded: boolean;
+    suggestedTier: string;
+  };
+}
+
+export const systemService = {
+  getMetrics: () => api.get<SystemMetrics>('/system/metrics'),
+};

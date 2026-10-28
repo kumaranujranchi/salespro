@@ -59,6 +59,7 @@ export function requireAuth(req, res, next) {
       tenant_id: payload.tenant_id ? String(payload.tenant_id) : null,
       userId: payload.userId,
     };
+    recordUserActivity(req.user, req.ip, req.headers['user-agent']);
     return next();
   } catch (err) {
     const expired = err?.name === 'TokenExpiredError';
@@ -78,6 +79,36 @@ export function requireRole(...roles) {
   };
 }
 
+// In-memory live users tracker for real-time monitoring
+const liveUsersMap = new Map();
+
+export function recordUserActivity(user, ip, userAgent) {
+  if (!user || !user.email) return;
+  const key = String(user.email).toLowerCase();
+  liveUsersMap.set(key, {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    tenant_id: user.tenant_id,
+    ip: ip || 'client-ip',
+    userAgent: userAgent ? String(userAgent).substring(0, 80) : undefined,
+    lastActive: Date.now(),
+  });
+}
+
+export function getLiveUsersList(windowMinutes = 15) {
+  const cutoff = Date.now() - (windowMinutes * 60 * 1000);
+  const active = [];
+  for (const [key, data] of liveUsersMap.entries()) {
+    if (data.lastActive >= cutoff) {
+      active.push(data);
+    } else {
+      liveUsersMap.delete(key);
+    }
+  }
+  return active.sort((a, b) => b.lastActive - a.lastActive);
+}
+
 // Only the SaaS owner (platform admin) may cross tenant boundaries freely.
 export function requirePlatformAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
@@ -93,6 +124,7 @@ export function requireTenantAccess(req, res, next) {
 
   const tenantId = req.params.tenantId || req.params.id || req.body?.tenant_id || req.query?.tenant_id;
   if (!tenantId || isPlatformRole(req.user) || String(tenantId) === String(req.user.tenant_id)) {
+    recordUserActivity(req.user, req.ip, req.headers['user-agent']);
     return next();
   }
   return res.status(403).json({ error: 'You cannot access another organisation’s data' });

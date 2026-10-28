@@ -44,6 +44,7 @@ import { AffiliateDashboardPage } from './pages/affiliates/AffiliateDashboardPag
 import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
+import { ServerHealthPage } from './pages/admin/ServerHealthPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -142,6 +143,18 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
+                <Route
+                  path="/platform/server-health"
+                  element={
+                    <ProtectedRoute allowedRoles={['platform_admin']}>
+                      <DashboardLayout>
+                        <ServerHealthPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/platform/aws" element={<Navigate to="/platform/server-health" replace />} />
 
                 <Route
                   path="/performance"
