@@ -38,7 +38,8 @@ class ApiClient {
       headers,
     });
 
-    if (response.status === 401 && token) {
+    const isLoginEndpoint = endpoint.includes('/auth/login');
+    if (response.status === 401 && !isLoginEndpoint) {
       handleSessionExpired();
     }
 

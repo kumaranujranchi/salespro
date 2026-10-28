@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loading } from './ui/Loading';
@@ -13,12 +13,24 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles, permissionKey, requiredFeature }: ProtectedRouteProps) {
   const { user, profile, affiliate, tenant, loading } = useAuth();
+  const [timedOut, setTimedOut] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+      setTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTimedOut(true);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  if (loading && !timedOut) {
     return <Loading />;
   }
 
-  if (!user || (!profile && !affiliate)) {
+  if (!user || (!profile && !affiliate) || timedOut) {
     return <Navigate to="/login" replace />;
   }
 

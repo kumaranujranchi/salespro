@@ -48,5 +48,5 @@ export function handleSessionExpired() {
   if (window.location.pathname.startsWith('/login')) return;
 
   redirectingToLogin = true;
-  window.location.href = '/login';
+  window.location.replace('/login');
 }

@@ -138,7 +138,7 @@ router.get('/profile', requireAuth, async (req, res) => {
         `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
          FROM profiles p
          LEFT JOIN tenants t ON p.tenant_id = t.id
-         WHERE (LOWER(p.user_id) = $1 OR LOWER(p.email) = $1 OR LOWER(p.user_id) = $2 OR LOWER(p.email) = $2)
+         WHERE (p.id = $1 OR LOWER(p.user_id) = $1 OR LOWER(p.email) = $1 OR LOWER(p.user_id) = $2 OR LOWER(p.email) = $2)
          LIMIT 1`,
         [cleanUserId, lookupUserId]
       );

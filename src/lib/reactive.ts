@@ -3,6 +3,7 @@ import {
   authService, tenantsService, profilesService, leadsService,
   salesService, projectsService, siteVisitsService, targetsService, miscService
 } from './services';
+import { handleSessionExpired } from './auth-token';
 
 // Global cache and listeners for fast reactive updates across components
 const queryListeners = new Map<string, Set<() => void>>();
@@ -248,6 +249,11 @@ export function useQuery(fn: any, args?: any): any {
         })
         .catch((err) => {
           console.error('Bridge query error:', err);
+          if (isMounted) setData(null);
+          const msg = String(err?.message || '');
+          if (msg.includes('Authentication required') || msg.includes('401') || msg.includes('Session expired')) {
+            handleSessionExpired();
+          }
         });
     };
 

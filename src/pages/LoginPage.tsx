@@ -207,29 +207,18 @@ export function LoginPage() {
     }
   };
 
-  // Handle redirection reactively when profile/affiliate data becomes available
+  // If already authenticated and not submitting, redirect to dashboard
   useEffect(() => {
-    if (success && !authLoading) {
-      if (profile) {
-        const timer = setTimeout(() => {
-          let dest = '/dashboard';
-          if (profile.role === 'affiliate' || affiliate) {
-            dest = '/affiliate/dashboard';
-          } else if (profile.role === 'platform_admin') {
-            dest = '/platform/dashboard';
-          }
-          window.location.href = dest;
-        }, 400);
-        return () => clearTimeout(timer);
-      } else if (user && profile === null) {
-        // User attempted login but profile doesn't exist in database
-        setError('No account found with this email. Please check your spelling.');
-        setSuccess('');
-        setLoading(false);
-        signOut(); // Clear the bad session
+    if (user && profile && !loading && !success) {
+      let dest = '/dashboard';
+      if (profile.role === 'affiliate' || affiliate) {
+        dest = '/affiliate/dashboard';
+      } else if (profile.role === 'platform_admin') {
+        dest = '/platform/dashboard';
       }
+      navigate(dest, { replace: true });
     }
-  }, [success, profile, user, affiliate, navigate, authLoading, signOut]);
+  }, [user, profile, affiliate, loading, success, navigate]);
 
   return (
     <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">

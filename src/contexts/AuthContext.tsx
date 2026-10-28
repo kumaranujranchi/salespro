@@ -102,14 +102,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [affiliateData]);
 
+  // Clean up stale session if profile cannot be authorized
+  useEffect(() => {
+    if (sessionUser && profileData === null) {
+      handleSessionExpired();
+    }
+  }, [sessionUser, profileData]);
+
   const signIn = async (email: string, password?: string) => {
     setIsSigningIn(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const lookupEmail = cleanEmail === 'admin@salespro.com' ? 'admin@realsalepro.com' : cleanEmail;
-      const isSuperAdmin = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com' || cleanEmail === 'kumaranujranchi@gmail.com');
 
-      // 1. Primary: Use backend REST API /api/auth/login
+      // Primary: Use backend REST API /api/auth/login
       try {
         const loginRes = await authService.login({ email: cleanEmail, password });
         if (loginRes?.profile) {
@@ -125,43 +130,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           return { error: null, profile: userProfile };
         }
+        return { error: new Error('Invalid email or password. Please try again.') };
       } catch (loginErr: any) {
         const msg = loginErr?.message || '';
-        // If it was an explicit rejection for standard user (not super admin), propagate error
-        if (msg.includes('Invalid email or password') && !isSuperAdmin) {
+        if (msg.includes('Invalid email or password') || msg.includes('401')) {
           return { error: new Error('Invalid email or password. Please try again.') };
         }
+        return { error: loginErr instanceof Error ? loginErr : new Error(msg || 'Sign in failed') };
       }
-
-      // 2. Resilient fallback for legacy records. Profile lookups require a
-      // session, so a failure here just means the credentials were wrong.
-      let profile = null;
-      try {
-        profile = await backend.query(api.profiles.getByEmail, { email: cleanEmail });
-        if (!profile && lookupEmail !== cleanEmail) {
-          profile = await backend.query(api.profiles.getByEmail, { email: lookupEmail });
-        }
-        if (!profile) {
-          // Legacy case-sensitive records (e.g., VIVALAND9@GMAIL.COM)
-          profile = await backend.query(api.profiles.getByEmail, { email: email.trim() });
-        }
-      } catch {
-        return { error: new Error('Invalid email or password. Please try again.') };
-      }
-
-      if (!profile) {
-        return { error: new Error('Invalid email or password. Please try again.') };
-      }
-
-      // For non-superadmin users with real custom passwords, verify matching password
-      if (!isSuperAdmin && profile.password && profile.password !== 'Admin@123' && profile.password !== password) {
-        return { error: new Error('Invalid email or password. Please try again.') };
-      }
-
-      const userProfile = { ...profile, id: (profile._id || profile.id) as string } as Profile;
-      setProfile(userProfile);
-      setSessionUser({ id: profile.userId, email: profile.email });
-      return { error: null, profile: userProfile };
     } catch (err: any) {
       return { error: err };
     } finally {
