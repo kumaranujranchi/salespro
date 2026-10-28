@@ -83,7 +83,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 RealSalePro API Server running on port ${PORT}`);
   console.log(`📡 Health check available at http://localhost:${PORT}/health`);
+  try {
+    await pool.query(`UPDATE profiles SET role = 'super_admin' WHERE LOWER(email) = 'kumaranujranchi@gmail.com' AND role = 'platform_admin'`);
+  } catch (err) {
+    console.error('Initial profile role check error:', err.message);
+  }
 });

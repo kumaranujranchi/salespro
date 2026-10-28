@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
     const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
-    const isSuperAdminEmail = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com' || cleanEmail === 'kumaranujranchi@gmail.com');
+    const isSuperAdminEmail = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com');
 
     let result = await query(
       `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
@@ -101,10 +101,16 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    // Auto promote designated admin
-    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com' || user.email === 'kumaranujranchi@gmail.com') && user.role !== 'platform_admin') {
+    // Auto promote designated platform admin
+    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {
       await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
       user.role = 'platform_admin';
+    }
+
+    // Ensure tenant user kumaranujranchi@gmail.com stays tenant super_admin, not platform_admin
+    if (user.email === 'kumaranujranchi@gmail.com' && user.role === 'platform_admin') {
+      await query(`UPDATE profiles SET role = 'super_admin' WHERE id = $1`, [user.id]);
+      user.role = 'super_admin';
     }
 
     // Map fields for client compatibility
@@ -157,7 +163,7 @@ router.get('/profile', requireAuth, async (req, res) => {
 
     if (result.rows.length === 0) {
       const targetEmail = (email || userId || '').trim().toLowerCase();
-      const isSuperAdminEmail = (targetEmail === 'admin@realsalepro.com' || targetEmail === 'admin@salespro.com' || targetEmail === 'kumaranujranchi@gmail.com');
+      const isSuperAdminEmail = (targetEmail === 'admin@realsalepro.com' || targetEmail === 'admin@salespro.com');
       if (isSuperAdminEmail && isPlatformRole(req.user)) {
         let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
         let tenantId = tenantRes.rows[0]?.id;
@@ -195,10 +201,16 @@ router.get('/profile', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'You can only read your own profile' });
     }
 
-    // Auto promote designated admin
-    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com' || user.email === 'kumaranujranchi@gmail.com') && user.role !== 'platform_admin') {
+    // Auto promote designated platform admin
+    if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {
       await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
       user.role = 'platform_admin';
+    }
+
+    // Ensure tenant user kumaranujranchi@gmail.com stays tenant super_admin, not platform_admin
+    if (user.email === 'kumaranujranchi@gmail.com' && user.role === 'platform_admin') {
+      await query(`UPDATE profiles SET role = 'super_admin' WHERE id = $1`, [user.id]);
+      user.role = 'super_admin';
     }
 
     return res.json({
@@ -217,7 +229,6 @@ router.get('/profile', requireAuth, async (req, res) => {
 const DESIGNATED_ADMIN_EMAILS = [
   'admin@realsalepro.com',
   'admin@salespro.com',
-  'kumaranujranchi@gmail.com',
 ];
 
 router.post('/promote', requireAuth, async (req, res) => {
