@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id, Doc } from '../../../convex/_generated/dataModel';
+import { useQuery } from '../../lib/reactive';
+import { api, Id, Doc } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
@@ -55,7 +54,7 @@ export function AdminDashboard() {
   };
   const salesView = permissions.sales_view || 'overall';
 
-  // Convex Queries
+  // Backend queries
   const projects = useQuery(api.projects.listAllProjects, tenantId ? { tenant_id: tenantId } : "skip");
   const users = useQuery(api.profiles.listUsersByTenant, tenantId ? { tenant_id: tenantId } : "skip");
   const depts = useQuery(api.departments.list, tenantId ? { tenant_id: tenantId } : "skip");

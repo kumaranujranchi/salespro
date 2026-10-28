@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Doc, Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Doc, Id } from '../../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Gift, Heart, Briefcase } from 'lucide-react'; 
 import { format, parseISO, getYear, setYear, differenceInDays, isValid, addYears, startOfDay } from 'date-fns';
@@ -19,7 +18,7 @@ export function CelebrationCards() {
     const { profile } = useAuth();
     const tenantId = profile?.tenant_id as Id<"tenants">;
     
-    // Convex Query
+    // Backend query
     const profiles = useQuery(api.profiles.listUsersByTenant, 
         tenantId ? { tenant_id: tenantId, is_active: true } : "skip"
     );

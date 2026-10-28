@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useToast } from '../contexts/ToastContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';

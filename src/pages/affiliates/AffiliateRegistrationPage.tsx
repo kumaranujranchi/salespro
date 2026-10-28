@@ -4,8 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ArrowRight, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
-import { useMutation, useAction } from "convex/react";
-import { api } from '../../../convex/_generated/api';
+import { useMutation, useAction } from "../../lib/reactive";
+import { api } from '../../lib/api-endpoints';
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();
@@ -78,8 +78,8 @@ export function AffiliateRegistrationPage() {
     setError(null);
 
     try {
-      // 1. Register with Convex (simulating auth with email as userId for now)
-      // In a real app, you'd use Clerk/Convex Auth first.
+      // 1. Register with the backend (simulating auth with email as userId for now)
+      // In a real app, you'd use a full auth provider first.
       const userId = user?.id || formData.email;
 
       await registerAffiliate({

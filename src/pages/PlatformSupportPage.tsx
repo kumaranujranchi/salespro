@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation, useAction } from '../lib/reactive';
+import { api, Id } from '../lib/api-endpoints';
 import { CheckCircle2, XCircle, X, LifeBuoy, Building2, ChevronDown, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
 
 interface Ticket {
@@ -53,13 +52,13 @@ export function PlatformSupportPage() {
     if (!selectedTicket || !resolutionNote) return;
 
     try {
-      // 1. Update Convex
+      // 1. Update the ticket
       await resolveTicket({
         id: selectedTicket._id as Id<"support_tickets">,
         resolution_notes: resolutionNote
       });
 
-      // 2. Send Email Notification via Convex Action
+      // 2. Send email notification
       try {
         if (selectedTicket.profiles?.email) {
           await sendEmailAction({

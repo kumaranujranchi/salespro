@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
       // Super admin is always allowed to log in; automatically save whatever password they type!
       isPasswordValid = true;
     } else if (!user.password && !user.password_hash) {
-      // User created without password (legacy Convex or initial migration)
+      // User created without password (legacy record or initial migration)
       isPasswordValid = true;
     } else if (user.password === 'Admin@123' && password) {
       // Migrated user who received default fallback password 'Admin@123'

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { useMutation, useAction } from "convex/react";
-import { api } from '../../../convex/_generated/api';
+import { useMutation, useAction } from "../../lib/reactive";
+import { api } from '../../lib/api-endpoints';
+import { getApiBaseUrl } from '../../lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
@@ -561,35 +562,20 @@ export function AdminIntegrationsPage() {
     );
   }
 
-  // Derive Convex HTTP site URL dynamically
-  const convexUrl = import.meta.env.VITE_CONVEX_URL || '';
-  const googleWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/google-webhook?tenantId=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/google-webhook?tenantId=tenant_id';
+  // Public webhook base for lead-capture integrations, served by the AWS API.
+  const apiBase = getApiBaseUrl().replace(/\/+$/, '');
+  const publicApiBase = apiBase.startsWith('http') ? apiBase : `${window.location.origin}${apiBase}`;
+  const tenantToken = (tenant?._id as string) || 'tenant_id';
+  const buildWebhookUrl = (portal: string) =>
+    `${publicApiBase}/v1/inbound-leads?portal=${portal}&token=${tenantToken}`;
 
-  const housingWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=housing&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=housing&token=tenant_id';
-
-  const nineNineWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=99acres&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=99acres&token=tenant_id';
-
-  const magicbricksWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=magicbricks&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=magicbricks&token=tenant_id';
-
-  const whatsappWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=whatsapp&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=whatsapp&token=tenant_id';
-
-  const googleFormWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=google_form&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=google_form&token=tenant_id';
-
-  const googleSheetWebhookUrl = tenant?._id && convexUrl
-    ? `${convexUrl.replace('.convex.cloud', '.convex.site')}/api/v1/inbound-leads?portal=google_sheet&token=${tenant._id}`
-    : 'https://<your-convex-deployment>.convex.site/api/v1/inbound-leads?portal=google_sheet&token=tenant_id';
+  const googleWebhookUrl = buildWebhookUrl('google_ads');
+  const housingWebhookUrl = buildWebhookUrl('housing');
+  const nineNineWebhookUrl = buildWebhookUrl('99acres');
+  const magicbricksWebhookUrl = buildWebhookUrl('magicbricks');
+  const whatsappWebhookUrl = buildWebhookUrl('whatsapp');
+  const googleFormWebhookUrl = buildWebhookUrl('google_form');
+  const googleSheetWebhookUrl = buildWebhookUrl('google_sheet');
 
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;

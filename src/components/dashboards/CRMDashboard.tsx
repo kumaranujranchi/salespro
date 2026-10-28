@@ -1,6 +1,5 @@
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
@@ -36,7 +35,7 @@ export function CRMDashboard() {
 
     const tenantId = profile?.tenant_id as Id<"tenants">;
 
-    // Convex Queries
+    // Backend queries
     const projects = useQuery(api.projects.listAllProjects, tenantId ? { tenant_id: tenantId } : "skip");
     const profiles = useQuery(api.profiles.listUsersByTenant, tenantId ? { tenant_id: tenantId } : "skip");
     const departments = useQuery(api.departments.list, tenantId ? { tenant_id: tenantId } : "skip");

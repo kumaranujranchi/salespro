@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { KPICard } from '../components/ui/KPICard';

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id, Doc } from '../../../convex/_generated/dataModel';
+import { useQuery } from '../../lib/reactive';
+import { api, Id, Doc } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
@@ -31,7 +30,7 @@ export function SalesOverview() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const profileId = profile?._id as Id<"profiles">;
 
-    // Convex Queries
+    // Backend queries
     const overviewData = useQuery(api.sales.getSalesOverview, 
         (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: salesView } : "skip"
     );

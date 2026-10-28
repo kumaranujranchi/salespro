@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
-import { useMutation, usePaginatedQuery } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useMutation, usePaginatedQuery } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -36,7 +35,7 @@ export function SiteVisitsPage() {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
-  // Convex Queries
+  // Backend queries
   const { results: visits, status, loadMore } = usePaginatedQuery(
     api.site_visits.listSiteVisits, 
     profile?.id ? {
@@ -48,7 +47,7 @@ export function SiteVisitsPage() {
     { initialNumItems: 15 }
   );
 
-  // Convex Mutations
+  // Backend mutations
   const deleteVisitMutation = useMutation(api.site_visits.deleteSiteVisit);
 
   const toggleExpand = (id: string, e?: React.MouseEvent) => {

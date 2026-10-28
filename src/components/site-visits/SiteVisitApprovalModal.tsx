@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
@@ -26,10 +25,10 @@ export function SiteVisitApprovalModal({ isOpen, onClose, onSuccess, visit }: Si
     const [driverId, setDriverId] = useState('');
     const [note, setNote] = useState('');
 
-    // Convex Queries
+    // Backend queries
     const drivers = useQuery(api.profiles.listDrivers, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-    // Convex Mutations
+    // Backend mutations
     const updateSiteVisit = useMutation(api.site_visits.updateSiteVisit);
 
     const handleSubmit = async () => {

@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
-import { useQuery, useMutation, usePaginatedQuery, useAction } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation, usePaginatedQuery, useAction } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
@@ -35,7 +34,7 @@ export function LeadsPage() {
   const dialog = useDialog();
   const toast = useToast();
 
-  // Convex Mutations
+  // Backend mutations
   const deleteLeadMutation = useMutation(api.leads.deleteLead);
   const bulkDeleteLeadsMutation = useMutation(api.leads.bulkDeleteLeads);
   const addFollowupMutation = useMutation(api.followups.addFollowup);

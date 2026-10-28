@@ -7,14 +7,6 @@ import {
 // Global cache and listeners for fast reactive updates across components
 const queryListeners = new Map<string, Set<() => void>>();
 
-export function ConvexProvider({ children }: { children: any; client?: any }) {
-  return children;
-}
-
-export class ConvexReactClient {
-  constructor(public address: string) {}
-}
-
 export function invalidateQuery(tag?: string) {
   queryListeners.forEach((listeners, key) => {
     if (!tag || key.includes(tag)) {
@@ -99,6 +91,15 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
   if (key.includes('profiles.listUsersByTenant')) {
     return await profilesService.listByTenant(args?.tenant_id, args);
+  }
+  if (key.includes('profiles.listActiveStaff')) {
+    return await profilesService.listByTenant(args?.tenant_id, { is_active: true });
+  }
+  if (key.includes('profiles.listExecutives')) {
+    return await profilesService.listByTenant(args?.tenant_id, { role: 'sales_executive', is_active: true });
+  }
+  if (key.includes('profiles.listDrivers')) {
+    return await profilesService.listByTenant(args?.tenant_id, { role: 'driver', is_active: true });
   }
   if (key.includes('profiles.promoteToPlatformAdmin')) {
     return await authService.promote(args?.email);
@@ -293,8 +294,8 @@ export function usePaginatedQuery(fn: any, args: any, options: any) {
   }), [data]);
 }
 
-// Compatible useConvex hook
-export function useConvex() {
+// Direct access to the REST backend (no hooks)
+export function useBackend() {
   return useMemo(() => ({
     query: (fn: any, args: any) => resolveApiCall(fn, args),
     mutation: (fn: any, args: any) => {
@@ -306,7 +307,7 @@ export function useConvex() {
   }), []);
 }
 
-export const convex = {
+export const backend = {
   query: (fn: any, args: any) => resolveApiCall(fn, args),
   mutation: async (fn: any, args: any) => {
     const p = await resolveApiCall(fn, args);

@@ -100,8 +100,8 @@ export interface RolePermissions {
 
 export interface TenantRole {
   id: string; // Legacy UUID support
-  _id: string; // Convex ID
-  _creationTime: number; // Convex creation time
+  _id: string; // Internal database id
+  _creationTime: number; // Record creation timestamp
   name: string;
   description: string | null;
   permissions: RolePermissions;
@@ -193,8 +193,8 @@ export interface ReferralCampaign {
 
 export interface Profile {
   id: string; // Map to _id for frontend compatibility
-  _id: string; // Convex Internal ID
-  userId: string; // Link to Auth ID (Clerk/Convex Auth)
+  _id: string; // Internal database id
+  userId: string; // Link to the auth user id
   _creationTime: number;
   employee_id: string;
   full_name: string;
@@ -227,8 +227,8 @@ export interface Profile {
 
 export interface Department {
   id: string; // Legacy UUID support
-  _id: string; // Convex ID
-  _creationTime: number; // Convex creation time
+  _id: string; // Internal database id
+  _creationTime: number; // Record creation timestamp
   name: string;
   description: string | null;
   is_active: boolean;

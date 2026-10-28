@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loader2, Copy, CheckCircle, ExternalLink, IndianRupee, Users, TrendingUp, LogOut } from 'lucide-react';
 
@@ -11,7 +10,7 @@ export function AffiliateDashboardPage() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
-  // Convex Queries
+  // Backend queries
   const statsData = useQuery(api.referrals.getCampaignStats, 
     affiliate ? { campaign_id: affiliate._id as Id<"referral_campaigns"> } : "skip"
   );
@@ -19,7 +18,7 @@ export function AffiliateDashboardPage() {
   const stats = useMemo(() => ({
     totalReferrals: statsData?.totalSignups || 0,
     totalEarnings: statsData?.totalEarnings || 0,
-    pendingPayouts: 0 // Logic for pending can be added to Convex
+    pendingPayouts: 0 // Logic for pending payouts can be added later
   }), [statsData]);
 
   const referrals = statsData?.ledger || [];

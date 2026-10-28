@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { useQuery, useMutation, useConvex } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation, useBackend } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -22,11 +21,11 @@ interface SalesFormModalProps {
 export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: SalesFormModalProps) {
     const { profile } = useAuth();
     const dialog = useDialog();
-    const convex = useConvex();
+    const backend = useBackend();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState<'booking' | 'customer' | 'address' | 'coapplicant'>('booking');
 
-    // Convex Queries
+    // Backend queries
     const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
     const executives = useQuery(api.profiles.listExecutives, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
@@ -269,7 +268,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 });
             } else {
                 // If creating, find lead by mobile or create it
-                const existingLead = await convex.query(api.leads.getLeadByMobile, { 
+                const existingLead = await backend.query(api.leads.getLeadByMobile, { 
                     tenant_id: profile.tenant_id as Id<"tenants">, 
                     mobile: formData.customerPhone 
                 });
@@ -362,8 +361,8 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
             onClose();
         } catch (err: any) {
             let errorMessage = err.message || "Failed to save sale";
-            if (errorMessage.includes('ConvexError:')) {
-                errorMessage = errorMessage.split('ConvexError:')[1].trim();
+            if (errorMessage.startsWith('Error: ')) {
+                errorMessage = errorMessage.slice('Error: '.length);
             }
             toast.error(errorMessage);
         } finally {

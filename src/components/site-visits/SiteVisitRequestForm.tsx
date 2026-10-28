@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';
@@ -50,7 +49,7 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
         } : "skip"
     );
 
-    // Convex Mutations
+    // Backend mutations
     const createSiteVisit = useMutation(api.site_visits.createSiteVisit);
     const updateSiteVisit = useMutation(api.site_visits.updateSiteVisit);
 

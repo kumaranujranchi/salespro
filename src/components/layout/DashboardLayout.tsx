@@ -37,8 +37,8 @@ import {
   Minimize2
 } from 'lucide-react';
 
-import { useAction } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { useAction } from '../../lib/reactive';
+import { api } from '../../lib/api-endpoints';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -195,7 +195,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setChatLoading(true);
 
     try {
-      // Call Convex action with the messages list and current profile/tenant IDs
+      // Call the AI action with the messages list and current profile/tenant IDs
       const response = await chatAction({
         messages: updatedMessages,
         tenant_id: profile?.tenant_id,

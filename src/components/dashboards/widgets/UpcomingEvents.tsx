@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useQuery } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { useQuery } from '../../../lib/reactive';
+import { api, Id } from '../../../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import { Calendar, Gift, Heart, Briefcase, ChevronDown, ChevronUp } from 'lucide-react';
 import {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useConvex } from 'convex/react';
+import { useBackend } from '../lib/reactive';
 import { api } from '../lib/api-endpoints';
 import { Input } from '../components/ui/Input';
 import { authService } from '../lib/services';
@@ -32,7 +32,7 @@ export function LoginPage() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const { signIn, signOut, user, profile, affiliate, loading: authLoading, setSessionUser } = useAuth();
-  const convex = useConvex();
+  const backend = useBackend();
   const navigate = useNavigate();
 
   // Forgot Password / Security Code Modal State
@@ -129,27 +129,27 @@ export function LoginPage() {
       setResetUserInfo(res);
       setResetStep(2);
     } catch (apiErr: any) {
-      // 2. Fallback to Convex query if REST API is unreachable
+      // 2. Fallback to a direct profile lookup if the REST API is unreachable
       try {
-        const convexProfile = await convex.query(api.profiles.getByEmail, { email: clean });
-        if (!convexProfile) {
+        const fallbackProfile = await backend.query(api.profiles.getByEmail, { email: clean });
+        if (!fallbackProfile) {
           throw new Error('No account found with this email. Please check your spelling.');
         }
-        const rawPhone = convexProfile.phone ? String(convexProfile.phone).trim() : null;
+        const rawPhone = fallbackProfile.phone ? String(fallbackProfile.phone).trim() : null;
         const phoneDigits = rawPhone ? rawPhone.replace(/\D/g, '') : '';
         const maskedPhone = phoneDigits.length >= 4 ? `******${phoneDigits.slice(-4)}` : (rawPhone ? 'Registered Phone' : null);
 
         setResetUserInfo({
-          fullName: convexProfile.full_name,
-          hasPhone: Boolean(convexProfile.phone),
+          fullName: fallbackProfile.full_name,
+          hasPhone: Boolean(fallbackProfile.phone),
           maskedPhone,
-          hasEmployeeId: Boolean(convexProfile.employee_id),
-          maskedEmployeeId: convexProfile.employee_id ? `***${convexProfile.employee_id.slice(-3)}` : null,
+          hasEmployeeId: Boolean(fallbackProfile.employee_id),
+          maskedEmployeeId: fallbackProfile.employee_id ? `***${fallbackProfile.employee_id.slice(-3)}` : null,
           emailSent: false,
         });
         setResetStep(2);
-      } catch (convexErr: any) {
-        setResetError(apiErr.message || convexErr.message || 'Account not found. Please verify your email.');
+      } catch (fallbackErr: any) {
+        setResetError(apiErr.message || fallbackErr.message || 'Account not found. Please verify your email.');
       }
     } finally {
       setResetLoading(false);

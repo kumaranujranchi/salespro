@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
@@ -19,7 +18,7 @@ export function ReceptionistDashboard() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const profileId = profile?.id as Id<"profiles">;
 
-    // Convex Queries
+    // Backend queries
     const overview = useQuery(api.sales.getSalesOverview, 
         (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: 'overall' } : "skip"
     );

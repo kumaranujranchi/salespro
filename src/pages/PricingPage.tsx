@@ -3,12 +3,12 @@ import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useConvex, useAction, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
+import { useBackend, useAction, useMutation } from "../lib/reactive";
+import { api } from '../lib/api-endpoints';
 
 export function PricingPage() {
   const { user, tenant, profile } = useAuth();
-  const convex = useConvex();
+  const backend = useBackend();
   const sendEmailAction = useAction(api.emails.sendEmail);
   const updateTenant = useMutation(api.tenants.update);
   const toast = useToast();
@@ -45,7 +45,7 @@ export function PricingPage() {
     if (!code) return;
     setValidatingReferral(true);
     try {
-      const data = await convex.query(api.referrals.validateCode, { code });
+      const data = await backend.query(api.referrals.validateCode, { code });
       
       if (data && (data as any).is_valid) {
         setReferralData({

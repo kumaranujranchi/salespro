@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useAction } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { useQuery, useMutation, useAction } from '../lib/reactive';
+import { api } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -56,7 +56,7 @@ export function SupportPage() {
     setSubmitting(true);
 
     try {
-      // 1. Insert Ticket / Feedback using Convex Mutation
+      // 1. Insert ticket / feedback
       const ticketId = await createTicket({
         subject,
         description,
@@ -66,7 +66,7 @@ export function SupportPage() {
         status: requestType === 'feedback' ? 'feedback' : 'open'
       });
 
-      // 2. Send Confirmation Email via Convex Action
+      // 2. Send confirmation email
       try {
         await sendEmailAction({
           type: 'TICKET_CREATED',
@@ -80,7 +80,7 @@ export function SupportPage() {
         console.warn('Failed to send confirmation email, but ticket was created.', e);
       }
 
-      // 3. Reset & Refresh (Convex handles refresh automatically)
+      // 3. Reset & refresh (queries refresh automatically)
       setSubject('');
       setDescription('');
       setShowForm(false);

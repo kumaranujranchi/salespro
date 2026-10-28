@@ -1,7 +1,6 @@
 import React from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { Users, Wallet, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,7 +10,7 @@ export function ReferralAnalytics() {
   const { profile } = useAuth();
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  // Convex Query
+  // Backend query
   const analyticsData = useQuery(api.referrals.getReferralAnalytics, tenantId ? { tenant_id: tenantId } : {});
   const analytics = analyticsData || { totalReferrals: 0, totalCommissions: 0, pendingCommissions: 0, ledger: [] };
 

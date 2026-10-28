@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id, Doc } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Id, Doc } from '../../lib/api-endpoints';
 import { DriverTripModal } from '../site-visits/DriverTripModal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -18,7 +17,7 @@ export function DriverDashboard() {
     const [selectedVisit, setSelectedVisit] = useState<Doc<"site_visits"> | null>(null);
     const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
-    // Convex Query
+    // Backend query
     const visitsData = useQuery(api.site_visits.listSiteVisits, 
         tenantId ? { tenant_id: tenantId, userId: userId, role: userRole } : "skip"
     );

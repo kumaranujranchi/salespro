@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,11 +56,11 @@ export function BulkUploadModal({ isOpen, onClose, onSuccess }: BulkUploadModalP
   const [errors, setErrors] = useState<string[]>([]);
   const [uploadResult, setUploadResult] = useState<{ success: number; failed: number; errors: { row: number; error: string; mobile?: string }[] } | null>(null);
 
-  // Convex Queries
+  // Backend queries
   const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
   const staff = useQuery(api.profiles.listActiveStaff, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-  // Convex Mutations
+  // Backend mutations
   const bulkInsertLeads = useMutation(api.leads.bulkInsertLeads);
 
   // Reset state when modal opens/closes

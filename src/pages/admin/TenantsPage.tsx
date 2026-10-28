@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useAction } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation, useAction } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { useToast } from '../../contexts/ToastContext';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -95,7 +94,7 @@ export function TenantsPage() {
   const [deleteSlugInput, setDeleteSlugInput] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Billing History via Convex Query
+  // Billing history via backend query
   const billingHistory = useQuery(api.tenants.listBillingHistory, 
     currentTenant?._id ? { tenant_id: currentTenant._id as Id<"tenants"> } : "skip"
   );

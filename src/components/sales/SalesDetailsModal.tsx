@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '../../utils/format';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { format, parseISO } from 'date-fns';
 import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock } from 'lucide-react';
@@ -33,7 +32,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
         }
     }, [isOpen]);
     
-    // Convex Queries
+    // Backend queries
     const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
         tenant_id: profile.tenant_id as Id<"tenants">,
         sale_id: sale?._id as Id<"sales">

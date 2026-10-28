@@ -1,5 +1,5 @@
 // Universal API endpoint proxy for RealSalePro (AWS Lightsail Node.js + PostgreSQL)
-// Replaces deprecated Convex generated references seamlessly
+// Single entry point for every backend query, mutation and action reference
 
 const createProxy = (path = ''): any => {
   return new Proxy(() => path, {

@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -16,7 +15,7 @@ export function SiteVisitManager() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const userId = profile?._id as Id<"profiles">;
 
-    // Convex Queries
+    // Backend queries
     const visits = useQuery(api.site_visits.listSiteVisits, 
         tenantId && profile ? { 
             tenant_id: tenantId, 
@@ -25,7 +24,7 @@ export function SiteVisitManager() {
         } : "skip"
     );
 
-    // Convex Mutations
+    // Backend mutations
     const createSiteVisit = useMutation(api.site_visits.createSiteVisit);
 
     const [showForm, setShowForm] = useState(false);

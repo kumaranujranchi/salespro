@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Modal } from '../ui/Modal';
@@ -14,11 +13,11 @@ export function IncentiveManagement() {
   const { tenant, profile } = useAuth();
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  // Convex Queries
+  // Backend queries
   const calculationData = useQuery(api.incentives.getIncentiveCalculationData, tenantId ? { tenant_id: tenantId } : "skip");
   const incentives = useQuery(api.incentives.listIncentives, tenantId ? { tenant_id: tenantId } : "skip");
 
-  // Convex Mutations
+  // Backend mutations
   const createIncentive = useMutation(api.incentives.createIncentive);
   const updateIncentiveMutation = useMutation(api.incentives.updateIncentive);
   const deleteIncentiveMutation = useMutation(api.incentives.deleteIncentive);

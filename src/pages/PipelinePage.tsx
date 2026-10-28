@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery } from '../lib/reactive';
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -25,7 +24,7 @@ export function PipelinePage() {
   const navigate = useNavigate();
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  // Convex Query
+  // Backend query
   const leads = useQuery(
     api.leads.listAllLeadsForTenant,
     tenantId ? { tenant_id: tenantId, profileId: profile?.id } : "skip"

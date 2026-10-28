@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -36,10 +35,10 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
     const showUnits = targetModel === 'units' || targetModel === 'hybrid';
     const showAmount = targetModel === 'revenue' || targetModel === 'hybrid';
 
-    // Convex Queries
+    // Backend queries
     const staff = useQuery(api.profiles.listActiveStaff, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-    // Convex Mutations
+    // Backend mutations
     const createTarget = useMutation(api.targets.createTarget);
     const updateTarget = useMutation(api.targets.updateTarget);
 
@@ -67,7 +66,6 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!process.env.VITE_CONVEX_URL) return; // Basic guard
         setLoading(true);
 
         try {

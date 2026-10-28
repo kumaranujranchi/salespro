@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
-import { useQuery, useMutation, useConvex } from "convex/react";
+import { useQuery, useMutation, useBackend } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const convex = useConvex();
+  const backend = useBackend();
 
   // Persist sessionUser to localStorage on every change
   const setSessionUser = (u: { id: string; email?: string } | null) => {
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Fetch profile via Convex query
+  // Fetch profile from the backend
   const profileData = useQuery(api.profiles.getByUserId, 
     sessionUser ? { userId: sessionUser.id } : "skip" as any
   ) as Profile | null | undefined;
@@ -54,12 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const promoteMutation = useMutation(api.profiles.promoteToPlatformAdmin);
   const promotedEmailRef = useRef<string | null>(null);
 
-  // Fetch affiliate campaign via Convex query
+  // Fetch affiliate campaign from the backend
   const affiliateData = useQuery(api.referrals.getCampaignByCreator,
     sessionUser ? { userId: sessionUser.id } : "skip"
   );
 
-  // Fetch tenant via Convex query
+  // Fetch tenant from the backend
   const tenantData = useQuery(api.tenants.getById,
     profileData?.tenant_id ? { id: profileData.tenant_id as Id<"tenants"> } : "skip"
   ) as Tenant | null | undefined;
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (profileData !== undefined) {
-      // profileData resolved from Convex (either a profile or null)
+      // profileData resolved from the backend (either a profile or null)
       const p = profileData;
       
       // Auto-promote if this is the designated admin account.
@@ -141,14 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 2. Resilient Fallback: Query profile directly via Convex bridge
-      let profile = await convex.query(api.profiles.getByEmail, { email: cleanEmail });
+      // 2. Resilient fallback: query the profile directly through the API bridge
+      let profile = await backend.query(api.profiles.getByEmail, { email: cleanEmail });
       if (!profile && lookupEmail !== cleanEmail) {
-        profile = await convex.query(api.profiles.getByEmail, { email: lookupEmail });
+        profile = await backend.query(api.profiles.getByEmail, { email: lookupEmail });
       }
       if (!profile) {
         // Fallback for legacy case-sensitive records (e.g., VIVALAND9@GMAIL.COM)
-        profile = await convex.query(api.profiles.getByEmail, { email: email.trim() });
+        profile = await backend.query(api.profiles.getByEmail, { email: email.trim() });
       }
 
       if (!profile) {
@@ -180,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    // Queries in Convex auto-refresh, so this might not be needed
+    // Queries refresh reactively, so this might not be needed
   };
 
   const refreshTenant = async () => {

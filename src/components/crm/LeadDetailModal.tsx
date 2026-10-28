@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -29,11 +28,11 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
   const [loading, setLoading] = useState(false);
   const [showFollowupForm, setShowFollowupForm] = useState(false);
 
-  // Convex Queries
+  // Backend queries
   const followupsData = useQuery(api.followups.listByLead, lead ? { leadId: lead.id as Id<"leads"> } : "skip");
   const followups = (followupsData || []) as LeadFollowup[];
 
-  // Convex Mutations
+  // Backend mutations
   const addFollowupMutation = useMutation(api.followups.addFollowup);
   const updateLeadMutation = useMutation(api.leads.updateLead);
 
@@ -111,7 +110,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
 
     setLoading(true);
     try {
-      // Add follow-up via Convex mutation
+      // Add follow-up via backend mutation
       await addFollowupMutation({
         tenant_id: profile.tenant_id as Id<"tenants">,
         lead_id: lead.id as Id<"leads">,
@@ -530,7 +529,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               {followups.map((followup) => {
                 const Icon = getFollowupIcon(followup.followup_type);
                 const ResponseIcon = getResponseIcon(followup.customer_response!);
-                const isEditable = true; // Convex business logic handles actual locking
+                const isEditable = true; // Backend business logic handles actual locking
 
                 return (
                   <div

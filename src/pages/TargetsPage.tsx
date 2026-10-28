@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -29,7 +28,7 @@ export function TargetsPage() {
   const isExecutive = normalizedRole === 'sales_executive';
   const canManage = ['super_admin', 'admin', 'director', 'team_leader'].includes(normalizedRole);
 
-  // Convex Queries
+  // Backend queries
   const targets = useQuery(api.targets.listTargets, profile?.tenant_id ? { 
     tenant_id: profile.tenant_id as Id<"tenants">,
     user_id: selectedUserId ? selectedUserId as Id<"profiles"> : undefined,

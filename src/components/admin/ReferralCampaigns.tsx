@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from '../../lib/reactive';
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';
@@ -15,11 +14,11 @@ export function ReferralCampaigns() {
   const { profile } = useAuth();
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  // Convex Queries
+  // Backend queries
   const campaignsData = useQuery(api.referrals.listCampaigns, tenantId ? { tenant_id: tenantId } : {});
   const campaigns = Array.isArray(campaignsData) ? campaignsData : [];
   
-  // Convex Mutations
+  // Backend mutations
   const createCampaign = useMutation(api.referrals.createCampaign);
   const updateCampaignMutation = useMutation(api.referrals.updateCampaign);
   const toggleStatusMutation = useMutation(api.referrals.toggleCampaignStatus);
@@ -40,7 +39,7 @@ export function ReferralCampaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
 
   // Since we can't easily fetch stats in a hook and pass it around inside a map
-  // we'll use a manual fetch with ctx.db.get if we had a sub-query, but in Convex 
+  // we'd need a manual fetch with ctx.db.get if we had a sub-query, but currently 
   // it's better to use another query hook with a skip condition for the selected campaign.
   const campaignStats = useQuery(api.referrals.getCampaignStats, 
     selectedCampaign ? { campaign_id: selectedCampaign._id } : "skip"

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
 import { Project } from '../types/database';
@@ -45,10 +44,10 @@ export function ProjectsPage() {
     status: 'Running'
   });
 
-  // Convex Queries
+  // Backend queries
   const projects = useQuery(api.projects.listAllProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
-  // Convex Mutations
+  // Backend mutations
   const createProjectMutation = useMutation(api.projects.createProject);
   const updateProjectMutation = useMutation(api.projects.updateProject);
   const deleteProjectMutation = useMutation(api.projects.deleteProject);
@@ -85,9 +84,9 @@ export function ProjectsPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // For now, keeping a placeholder for image upload as Convex storage integration
+    // For now, keeping a placeholder for image upload
     // requires more setup. We'll implement this properly in a future step.
-    toast.info("Image upload to Convex storage will be implemented soon.");
+    toast.info("Image upload will be implemented soon.");
   };
 
   const handleSaveProject = async (e: React.FormEvent) => {

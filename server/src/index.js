@@ -11,6 +11,7 @@ import siteVisitRoutes from './routes/site_visits.js';
 import targetRoutes from './routes/targets.js';
 import miscRoutes from './routes/misc.js';
 import subscriptionRoutes from './routes/subscriptions.js';
+import webhookRoutes from './routes/webhooks.js';
 import { pool } from './db/index.js';
 
 import path from 'path';
@@ -56,6 +57,8 @@ app.use('/api/site-visits', siteVisitRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api/misc', miscRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+// Public lead-capture webhooks (no auth: portals cannot send bearer tokens)
+app.use('/api', webhookRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

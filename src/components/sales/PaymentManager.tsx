@@ -2,9 +2,8 @@ import { useState, useMemo } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -37,7 +36,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
         transactionReference: ''
     });
 
-    // Convex Queries
+    // Backend queries
     const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
         tenant_id: profile.tenant_id as Id<"tenants">,
         sale_id: sale?._id as Id<"sales">

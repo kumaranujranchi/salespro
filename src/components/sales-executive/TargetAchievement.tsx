@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Doc, Id } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Doc, Id } from '../../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
@@ -12,7 +11,7 @@ export function TargetAchievement() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const userId = profile?._id as Id<"profiles">;
 
-    // Convex Queries
+    // Backend queries
     const targetsData = useQuery(api.targets.listTargets, 
         tenantId ? { tenant_id: tenantId } : "skip"
     );

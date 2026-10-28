@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';
@@ -21,7 +20,7 @@ export function DriverTripModal({ isOpen, onClose, onSuccess, visit }: DriverTri
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [odometer, setOdometer] = useState('');
 
-    // Convex Mutations
+    // Backend mutations
     const updateSiteVisit = useMutation(api.site_visits.updateSiteVisit);
 
     useEffect(() => {

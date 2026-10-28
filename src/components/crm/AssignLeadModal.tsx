@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,7 +21,7 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
   const [selectedExecutive, setSelectedExecutive] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Convex Queries
+  // Backend queries
   const executives = useQuery(
     api.profiles.listActiveStaff,
     profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
@@ -34,7 +33,7 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
     profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
   );
 
-  // Convex Mutations
+  // Backend mutations
   const bulkAssignLeads = useMutation(api.leads.bulkAssignLeads);
 
   const handleAssign = async () => {

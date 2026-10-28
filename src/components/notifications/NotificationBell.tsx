@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Bell, Info, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 
 export function NotificationBell() {
     const { profile } = useAuth();

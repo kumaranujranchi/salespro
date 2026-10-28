@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
+import { useMutation } from "../lib/reactive";
+import { api } from '../lib/api-endpoints';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';

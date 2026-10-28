@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id, Doc } from '../../../convex/_generated/dataModel';
+import { useQuery } from "../../lib/reactive";
+import { api, Id, Doc } from '../../lib/api-endpoints';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { CheckCircle, Clock, Lock, ChevronDown, Info } from 'lucide-react';
 import { IncentivePlanSummary } from '../IncentivePlanSummary';
@@ -15,7 +14,7 @@ export function IncentiveCenter() {
     
     const [expandedRecord, setExpandedRecord] = useState<string | null>(null);
 
-    // Convex Queries
+    // Backend queries
     const incentivesData = useQuery(api.incentives.listIncentives, 
         tenantId ? { tenant_id: tenantId, executive_id: userId } : "skip"
     );

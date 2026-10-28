@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Profile, TenantRole, Department } from '../types/database';
@@ -46,7 +45,7 @@ export function UsersPage() {
 
   const [error, setError] = useState('');
 
-  // Convex Queries
+  // Backend queries
   const users = useQuery(api.profiles.listUsersByTenant, 
     tenant?._id ? { 
       tenant_id: tenant._id as any,
@@ -57,7 +56,7 @@ export function UsersPage() {
   const departments = useQuery(api.departments.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
   const roles = useQuery(api.roles.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
 
-  // Convex Mutations
+  // Backend mutations
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
   const updateProfileMutation = useMutation(api.profiles.updateProfile);
   const toggleProfileStatusMutation = useMutation(api.profiles.toggleProfileStatus);
@@ -129,7 +128,7 @@ export function UsersPage() {
         if (formData.password !== formData.confirmPassword) throw new Error('Passwords do not match');
         
         // This is where we would create Auth User in a real app.
-        // For simulation, we just create the Profile in Convex.
+        // For simulation, we just create the Profile in the backend.
         await createUserProfileMutation({
           userId: formData.email, // Use email as Simulated Auth ID
           tenant_id: profile.tenant_id as Id<"tenants">,

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
-import { useMutation } from "convex/react";
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { useMutation } from "../../lib/reactive";
+import { api, Id } from '../../lib/api-endpoints';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -21,7 +20,7 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
     const dialog = useDialog();
     const [activeTab, setActiveTab] = useState<'details' | 'security'>('details');
 
-    // Convex Mutations
+    // Backend mutations
     const updateProfile = useMutation(api.profiles.updateProfile);
     const generateUploadUrl = useMutation(api.files.generateUploadUrl);
     const createLog = useMutation(api.activity_logs.createLog);
@@ -146,14 +145,14 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
             });
             const { storageId } = await result.json();
 
-            // Note: Since Convex storage returns a storageId, and our profile schema
+            // Note: storage uploads return a storage id, and our profile schema
             // might still expect a public URL or we might want to store the storageId
             // but for simplicity we'll assume the profile.image_url is the storageId or we fetch URL
             // and we update the profile. Since the profile schema has image_url: v.union(v.string(), v.null()),
             // we'll store the storageId and handle the rendering in AuthContext or here.
             
             // Actually, we'll need the public URL.
-            // But Convex reactive queries for images often use a separate query or helper.
+            // Reactive queries for images usually use a separate query or helper.
             // For now, let's just store the storageId as the image_url.
             
             await updateProfile({

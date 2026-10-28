@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from '../lib/reactive';
+import { api, Id } from '../lib/api-endpoints';
 import {
   Check,
   Zap,
@@ -54,7 +53,7 @@ export function SubscriptionPage() {
   const navigate = useNavigate();
   const toast = useToast();
   
-  // Convex Queries
+  // Backend queries
   const billingHistory = useQuery(api.tenants.listBillingHistory, 
     tenant?._id ? { tenant_id: tenant._id as Id<"tenants"> } : "skip"
   ) || [];
@@ -72,7 +71,7 @@ export function SubscriptionPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const initialLoadDone = useRef(false);
 
-  // Convex Mutations
+  // Backend mutations
   const updateTenant = useMutation(api.tenants.update);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 
@@ -131,10 +130,10 @@ export function SubscriptionPage() {
     setIsUploadingLogo(true);
     
     try {
-      // 1. Generate Upload URL from Convex
+      // 1. Generate upload URL
       const postUrl = await generateUploadUrl();
 
-      // 2. Post file to Convex Storage
+      // 2. Post file to storage
       const result = await fetch(postUrl, {
         method: "POST",
         headers: { "Content-Type": croppedBlob.type },

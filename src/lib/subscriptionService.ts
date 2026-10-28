@@ -1,4 +1,4 @@
-import { convex } from './convex-bridge';
+import { backend } from './reactive';
 import { api, Id } from './api-endpoints';
 import apiClient from './api';
 import { Subscription, BillingHistory } from '../types/database';
@@ -28,8 +28,8 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
       planType: params.billingCycle,
     });
 
-    // Save the created subscription to Convex
-    await convex.mutation(api.subscriptions.upsert, {
+    // Save the created subscription
+    await backend.mutation(api.subscriptions.upsert, {
       tenant_id: params.tenantId as Id<"tenants">,
       razorpay_subscription_id: data.subscriptionId,
       plan_id: data.planId,
@@ -38,15 +38,15 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
       current_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
 
-    // Update tenant with subscription details and customer ID in Convex
-    await convex.mutation(api.tenants.update, {
+    // Update tenant with subscription details and customer ID
+    await backend.mutation(api.tenants.update, {
       id: params.tenantId as Id<"tenants">,
       subscription_status: 'created',
       razorpay_customer_id: data.customerId,
     });
 
     // Fetch the updated subscription for the return value
-    const subscription = await convex.query(api.subscriptions.getByRazorpayId, {
+    const subscription = await backend.query(api.subscriptions.getByRazorpayId, {
       razorpay_subscription_id: data.subscriptionId
     });
         
@@ -64,20 +64,20 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
 
 export async function cancelSubscription(subscriptionId: string, cancelAtCycleEnd: boolean = true): Promise<void> {
   try {
-    const subscription = await convex.query(api.subscriptions.getByRazorpayId, { 
+    const subscription = await backend.query(api.subscriptions.getByRazorpayId, { 
       razorpay_subscription_id: subscriptionId 
     });
 
     if (!subscription) throw new Error('Subscription not found');
 
-    await convex.mutation(api.subscriptions.updateStatus, {
+    await backend.mutation(api.subscriptions.updateStatus, {
       id: subscription._id,
       status: cancelAtCycleEnd ? 'active' : 'cancelled',
       ended_at: cancelAtCycleEnd ? subscription.current_end : new Date().toISOString(),
     });
 
     if (!cancelAtCycleEnd) {
-      await convex.mutation(api.tenants.update, {
+      await backend.mutation(api.tenants.update, {
         id: subscription.tenant_id,
         subscription_status: 'cancelled',
         is_active: false,
@@ -91,12 +91,12 @@ export async function cancelSubscription(subscriptionId: string, cancelAtCycleEn
 
 export async function pauseSubscription(subscriptionId: string): Promise<void> {
   try {
-    const subscription = await convex.query(api.subscriptions.getByRazorpayId, { 
+    const subscription = await backend.query(api.subscriptions.getByRazorpayId, { 
       razorpay_subscription_id: subscriptionId 
     });
     if (!subscription) throw new Error('Subscription not found');
 
-    await convex.mutation(api.subscriptions.updateStatus, {
+    await backend.mutation(api.subscriptions.updateStatus, {
       id: subscription._id,
       status: 'paused'
     });
@@ -108,12 +108,12 @@ export async function pauseSubscription(subscriptionId: string): Promise<void> {
 
 export async function resumeSubscription(subscriptionId: string): Promise<void> {
   try {
-    const subscription = await convex.query(api.subscriptions.getByRazorpayId, { 
+    const subscription = await backend.query(api.subscriptions.getByRazorpayId, { 
       razorpay_subscription_id: subscriptionId 
     });
     if (!subscription) throw new Error('Subscription not found');
 
-    await convex.mutation(api.subscriptions.updateStatus, {
+    await backend.mutation(api.subscriptions.updateStatus, {
       id: subscription._id,
       status: 'active'
     });
@@ -125,7 +125,7 @@ export async function resumeSubscription(subscriptionId: string): Promise<void> 
 
 export async function getSubscription(tenantId: string): Promise<Subscription | null> {
   try {
-    const data = await convex.query(api.subscriptions.getByTenant, { 
+    const data = await backend.query(api.subscriptions.getByTenant, { 
       tenant_id: tenantId as Id<"tenants"> 
     });
     return data as unknown as Subscription;
@@ -137,7 +137,7 @@ export async function getSubscription(tenantId: string): Promise<Subscription | 
 
 export async function getBillingHistory(tenantId: string): Promise<BillingHistory[]> {
   try {
-    const data = await convex.query(api.tenants.listBillingHistory, { 
+    const data = await backend.query(api.tenants.listBillingHistory, { 
       tenant_id: tenantId as Id<"tenants"> 
     });
     return (data as unknown as BillingHistory[]) || [];
@@ -149,7 +149,7 @@ export async function getBillingHistory(tenantId: string): Promise<BillingHistor
 
 export async function recordPayment(payment: any): Promise<void> {
   try {
-    await convex.mutation(api.subscriptions.createBillingHistory, {
+    await backend.mutation(api.subscriptions.createBillingHistory, {
       tenant_id: payment.tenant_id,
       amount: payment.amount,
       status: payment.status,

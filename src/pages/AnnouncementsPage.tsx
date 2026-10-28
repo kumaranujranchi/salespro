@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useQuery, useMutation } from "../lib/reactive";
+import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialog } from '../contexts/DialogContext';
 import { Card, CardContent } from '../components/ui/Card';
@@ -15,12 +14,12 @@ export function AnnouncementsPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
 
-  // Convex Queries
+  // Backend queries
   const announcements = useQuery(api.announcements.listAll, 
     profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
   );
   
-  // Convex Mutations
+  // Backend mutations
   const createAnnouncement = useMutation(api.announcements.createAnnouncement);
   const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
   const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
