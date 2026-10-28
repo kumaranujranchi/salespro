@@ -91,6 +91,7 @@ function App() {
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/platform/referrals" element={<Navigate to="/referral-management" replace />} />
 
                 <Route path="/contact" element={<ContactUsPage />} />
                 <Route path="/integration" element={<IntegrationsPage />} />

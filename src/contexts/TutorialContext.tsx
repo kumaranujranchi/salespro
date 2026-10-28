@@ -32,13 +32,9 @@ export const TutorialProvider: React.FC<TutorialProviderProps> = ({ children }) 
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
+  // Tutorial only runs when explicitly triggered via startTutorial()
   useEffect(() => {
-    // Auto-launch if not seen
-    const hasSeen = localStorage.getItem('tutorial_completed');
-    if (!hasSeen) {
-      // Slight delay to ensure UI is ready
-      setTimeout(() => setRun(true), 1500);
-    }
+    // No automatic overlay hijacking
   }, []);
 
   const startTutorial = () => {

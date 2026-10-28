@@ -89,14 +89,14 @@ export function LoginPage() {
       setSuccess('Login successful! Redirecting...');
       const role = loggedProfile?.role || 'admin';
       setTimeout(() => {
+        let dest = '/dashboard';
         if (role === 'affiliate') {
-          navigate('/affiliate/dashboard');
+          dest = '/affiliate/dashboard';
         } else if (role === 'platform_admin') {
-          navigate('/platform/dashboard');
-        } else {
-          navigate('/dashboard');
+          dest = '/platform/dashboard';
         }
-      }, 400);
+        window.location.href = dest;
+      }, 300);
     }
   };
 
@@ -212,14 +212,14 @@ export function LoginPage() {
     if (success && !authLoading) {
       if (profile) {
         const timer = setTimeout(() => {
+          let dest = '/dashboard';
           if (profile.role === 'affiliate' || affiliate) {
-            navigate('/affiliate/dashboard');
+            dest = '/affiliate/dashboard';
           } else if (profile.role === 'platform_admin') {
-            navigate('/platform/dashboard');
-          } else {
-            navigate('/dashboard');
+            dest = '/platform/dashboard';
           }
-        }, 500);
+          window.location.href = dest;
+        }, 400);
         return () => clearTimeout(timer);
       } else if (user && profile === null) {
         // User attempted login but profile doesn't exist in database
