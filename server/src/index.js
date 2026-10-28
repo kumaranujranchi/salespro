@@ -27,6 +27,10 @@ dotenv.config({ path: path.resolve(process.cwd(), 'server/.env') });
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Behind nginx (Lightsail), so req.ip must come from X-Forwarded-For for
+// per-client rate limiting to work.
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(cors({
   origin: '*', // Allow frontend domain (CloudFront / S3 / localhost)

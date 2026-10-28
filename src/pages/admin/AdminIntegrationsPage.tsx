@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useMutation, useAction } from "../../lib/reactive";
 import { api } from '../../lib/api-endpoints';
 import { getApiBaseUrl } from '../../lib/api';
+import { tenantsService } from '../../lib/services';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
@@ -100,11 +101,30 @@ export function AdminIntegrationsPage() {
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
 
+  const [webhookSecret, setWebhookSecret] = useState<string | null>(null);
+
   // Pages selection modal state
   const [pagesList, setPagesList] = useState<any[]>([]);
   const [showPagesModal, setShowPagesModal] = useState(false);
   const [fetchingPages, setFetchingPages] = useState(false);
   const [connectingPageId, setConnectingPageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tenantId = tenant?._id as string | undefined;
+    if (!tenantId) return;
+    let cancelled = false;
+
+    tenantsService
+      .getWebhookSecret(tenantId)
+      .then((res) => {
+        if (!cancelled && res?.secret) setWebhookSecret(res.secret);
+      })
+      .catch((err) => console.error('Failed to load webhook token:', err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant?._id]);
 
   useEffect(() => {
     if (tenant?.settings?.integrations?.meta) {
@@ -565,9 +585,9 @@ export function AdminIntegrationsPage() {
   // Public webhook base for lead-capture integrations, served by the AWS API.
   const apiBase = getApiBaseUrl().replace(/\/+$/, '');
   const publicApiBase = apiBase.startsWith('http') ? apiBase : `${window.location.origin}${apiBase}`;
-  const tenantToken = (tenant?._id as string) || 'tenant_id';
+  const webhookToken = webhookSecret || '<webhook_token>';
   const buildWebhookUrl = (portal: string) =>
-    `${publicApiBase}/v1/inbound-leads?portal=${portal}&token=${tenantToken}`;
+    `${publicApiBase}/v1/inbound-leads?portal=${portal}&token=${webhookToken}`;
 
   const googleWebhookUrl = buildWebhookUrl('google_ads');
   const housingWebhookUrl = buildWebhookUrl('housing');
@@ -595,6 +615,16 @@ export function AdminIntegrationsPage() {
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">Connect external advertising platforms to import leads directly into your CRM.</p>
       </div>
+
+      {!webhookSecret && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+          <Info size={14} className="mt-0.5 shrink-0" />
+          <span>
+            Preparing your webhook token… wait a moment before copying any webhook URL below.
+            If this message stays, refresh the page.
+          </span>
+        </div>
+      )}
 
       {/* Grid of integrations cards */}
       <div className="space-y-8 pt-4">

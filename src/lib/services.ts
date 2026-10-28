@@ -33,6 +33,7 @@ export const tenantsService = {
   getById: (id: string) => api.get<Tenant | null>(`/tenants/${id}`),
   update: (id: string, data: Partial<Tenant>) => api.patch<{ success: boolean }>(`/tenants/${id}`, data),
   getBillingHistory: (id: string) => api.get<any[]>(`/tenants/${id}/billing-history`),
+  getWebhookSecret: (id: string) => api.get<{ secret: string }>(`/tenants/${id}/webhook-secret`),
 };
 
 export const profilesService = {

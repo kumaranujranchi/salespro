@@ -31,6 +31,28 @@ const FIELD_KEYS = {
   notes: ['message', 'remarks', 'comments', 'comment', 'notes', 'query', 'description', 'details', 'text', 'enquiry'],
 };
 
+// Simple in-memory sliding-window limiter (single process, no extra deps).
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMITS = { ip: 60, token: 120 };
+const rateBuckets = new Map();
+
+function isRateLimited(bucketKey, max) {
+  const now = Date.now();
+  const hits = (rateBuckets.get(bucketKey) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  hits.push(now);
+  rateBuckets.set(bucketKey, hits);
+  return hits.length > max;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, hits] of rateBuckets) {
+    const recent = hits.filter((t) => now - t < RATE_WINDOW_MS);
+    if (recent.length === 0) rateBuckets.delete(key);
+    else rateBuckets.set(key, recent);
+  }
+}, RATE_WINDOW_MS).unref();
+
 function compactKey(key) {
   return String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -126,19 +148,36 @@ async function handleInboundLead(req, res) {
   try {
     const portalParam = String(req.query.portal || req.query.source || 'direct').toLowerCase();
     const portal = PORTALS[portalParam] || { integrationKey: null, leadSource: req.query.portal || 'Direct' };
-    const tenantId = req.query.token || req.query.tenantId || req.query.tenant_id || req.body?.tenant_id;
+    const token = req.query.token || req.query.tenantId || req.query.tenant_id || req.body?.token;
 
-    if (!tenantId) {
+    if (!token) {
       return res.status(400).json({
-        error: 'Missing tenant token. Use /api/v1/inbound-leads?portal=<portal>&token=<tenant_id>',
+        error: 'Missing webhook token. Use /api/v1/inbound-leads?portal=<portal>&token=<webhook_token>',
       });
     }
 
-    const tenantResult = await query('SELECT id, name, settings FROM tenants WHERE id = $1', [tenantId]);
-    if (tenantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Unknown tenant token' });
+    const clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
+    if (isRateLimited(`ip:${clientIp}`, RATE_LIMITS.ip)) {
+      res.set('Retry-After', '60');
+      return res.status(429).json({ error: 'Too many requests from this address' });
+    }
+    if (isRateLimited(`token:${token}`, RATE_LIMITS.token)) {
+      res.set('Retry-After', '60');
+      return res.status(429).json({ error: 'Too many requests for this webhook token' });
     }
 
+    const tenantResult = await query(
+      `SELECT id, name, settings FROM tenants
+        WHERE settings->'integrations'->>'webhookSecret' = $1
+          AND COALESCE(is_active, true) = true
+        LIMIT 1`,
+      [token]
+    );
+    if (tenantResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Unknown webhook token' });
+    }
+
+    const tenantId = tenantResult.rows[0].id;
     const settings = tenantResult.rows[0].settings || {};
     const integration = portal.integrationKey ? settings.integrations?.[portal.integrationKey] : null;
 
@@ -179,12 +218,22 @@ async function handleInboundLead(req, res) {
       : null;
 
     const leadId = `LEAD-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
+    let rawPayload = payload;
+    try {
+      const serialized = JSON.stringify(payload);
+      if (serialized && serialized.length > 4000) {
+        rawPayload = { truncated: true, preview: serialized.slice(0, 4000) };
+      }
+    } catch {
+      rawPayload = { truncated: true };
+    }
+
     const metadata = {
       source: 'webhook',
       portal: portalParam,
       external_id: lead.externalId,
       received_at: new Date().toISOString(),
-      raw: payload,
+      raw: rawPayload,
     };
 
     const inserted = await query(
@@ -220,10 +269,9 @@ async function handleInboundLead(req, res) {
   }
 }
 
-// Google Ads can also be pointed at the /api/google-webhook?tenantId=<id> URL.
+// Google Ads can also be pointed at the shorter /api/google-webhook?token=<webhook_token> URL.
 function handleGoogleWebhook(req, res) {
   req.query.portal = 'google_ads';
-  if (!req.query.token) req.query.token = req.query.tenantId || req.query.tenant_id;
   return handleInboundLead(req, res);
 }
 
@@ -233,7 +281,8 @@ router.post('/google-webhook', handleGoogleWebhook);
 // Opening the URL in a browser should explain how to use it instead of 404-ing.
 const usage = (_req, res) => res.json({
   endpoint: 'POST /api/v1/inbound-leads',
-  example: '/api/v1/inbound-leads?portal=meta&token=<tenant_id>',
+  example: '/api/v1/inbound-leads?portal=meta&token=<webhook_token>',
+  token: 'Copy the webhook token from Settings > Integrations',
   portals: Object.keys(PORTALS),
 });
 

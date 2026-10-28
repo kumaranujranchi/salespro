@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import { query } from '../db/index.js';
 
 const router = Router();
@@ -62,6 +63,46 @@ router.patch('/:id', async (req, res) => {
 
     await query(`UPDATE tenants SET ${fields.join(', ')} WHERE id = $${idx}`, values);
     return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Get (or lazily create) the per-tenant token used by lead-capture webhooks.
+// Keeping it separate from the tenant id means URLs cannot be guessed from an id.
+router.get('/:id/webhook-secret', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await query('SELECT settings FROM tenants WHERE id = $1', [id]);
+    if (existing.rows.length === 0) return res.status(404).json({ error: 'Tenant not found' });
+
+    const current = existing.rows[0].settings?.integrations?.webhookSecret;
+    if (current) return res.json({ secret: current });
+
+    // Create it atomically so two admins opening the page never end up with
+    // two different tokens.
+    const secret = `whsec_${crypto.randomBytes(24).toString('hex')}`;
+    const created = await query(
+      `UPDATE tenants
+          SET settings = jsonb_set(
+                jsonb_set(COALESCE(settings, '{}'::jsonb), '{integrations}',
+                          COALESCE(settings->'integrations', '{}'::jsonb), true),
+                '{integrations,webhookSecret}', to_jsonb($2::text), true),
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+          AND COALESCE(settings->'integrations'->>'webhookSecret', '') = ''
+        RETURNING settings->'integrations'->>'webhookSecret' AS secret`,
+      [id, secret]
+    );
+
+    if (created.rows.length > 0) return res.json({ secret: created.rows[0].secret });
+
+    // Someone else created one between our read and write.
+    const again = await query(
+      `SELECT settings->'integrations'->>'webhookSecret' AS secret FROM tenants WHERE id = $1`,
+      [id]
+    );
+    return res.json({ secret: again.rows[0]?.secret || secret });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
