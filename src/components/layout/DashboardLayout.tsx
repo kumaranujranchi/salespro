@@ -582,6 +582,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <NavLink
                           key={item.path}
                           to={item.path}
+                          end
                           onClick={(e) => handleNavClick(item.path, e)}
                           className={({ isActive }) => `
                             w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left
@@ -649,6 +650,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <NavLink
                     key={item.path}
                     to={item.path}
+                    end
                     onClick={(e) => handleNavClick(item.path, e)}
                     className={({ isActive }) => `
                       w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
