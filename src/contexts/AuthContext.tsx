@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { useQuery, useMutation, useBackend } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
+import { getAuthToken, getStoredSessionUser, setAuthToken, setStoredSessionUser } from '../lib/auth-token';
 import { Profile, Tenant, ReferralCampaign } from '../types/database';
 
 interface AuthContextType {
@@ -22,12 +23,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Restore session from localStorage so refresh doesn't log user out
   const [sessionUser, setSessionUserState] = useState<{ id: string; email?: string } | null>(() => {
-    try {
-      const saved = localStorage.getItem('crm_session_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+    // A stored user without a token means the session was cleared/expired.
+    if (!getAuthToken()) return null;
+    return getStoredSessionUser<{ id: string; email?: string }>();
   });
   const [isSigningIn, setIsSigningIn] = useState(false);
   const backend = useBackend();
@@ -35,15 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Persist sessionUser to localStorage on every change
   const setSessionUser = (u: { id: string; email?: string } | null) => {
     setSessionUserState(u);
-    try {
-      if (u) {
-        localStorage.setItem('crm_session_user', JSON.stringify(u));
-      } else {
-        localStorage.removeItem('crm_session_user');
-      }
-    } catch {
-      // ignore storage errors
-    }
+    setStoredSessionUser(u);
+    if (!u) setAuthToken(null);
   };
 
   // Fetch profile from the backend
@@ -122,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const loginRes = await authService.login({ email: cleanEmail, password });
         if (loginRes?.profile) {
+          setAuthToken(loginRes.token || null);
           const userProfile = {
             ...loginRes.profile,
             id: (loginRes.profile._id || loginRes.profile.id) as string,
@@ -141,14 +133,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 2. Resilient fallback: query the profile directly through the API bridge
-      let profile = await backend.query(api.profiles.getByEmail, { email: cleanEmail });
-      if (!profile && lookupEmail !== cleanEmail) {
-        profile = await backend.query(api.profiles.getByEmail, { email: lookupEmail });
-      }
-      if (!profile) {
-        // Fallback for legacy case-sensitive records (e.g., VIVALAND9@GMAIL.COM)
-        profile = await backend.query(api.profiles.getByEmail, { email: email.trim() });
+      // 2. Resilient fallback for legacy records. Profile lookups require a
+      // session, so a failure here just means the credentials were wrong.
+      let profile = null;
+      try {
+        profile = await backend.query(api.profiles.getByEmail, { email: cleanEmail });
+        if (!profile && lookupEmail !== cleanEmail) {
+          profile = await backend.query(api.profiles.getByEmail, { email: lookupEmail });
+        }
+        if (!profile) {
+          // Legacy case-sensitive records (e.g., VIVALAND9@GMAIL.COM)
+          profile = await backend.query(api.profiles.getByEmail, { email: email.trim() });
+        }
+      } catch {
+        return { error: new Error('Invalid email or password. Please try again.') };
       }
 
       if (!profile) {
@@ -173,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     promotedEmailRef.current = null;
+    setAuthToken(null);
     setSessionUser(null);
     setProfile(null);
     setTenant(null);

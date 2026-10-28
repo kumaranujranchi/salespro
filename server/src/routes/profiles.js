@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import bcrypt from 'bcryptjs';
+import { isPlatformRole, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create User / Profile
-router.post('/', async (req, res) => {
+router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, res) => {
   try {
     const {
       tenant_id, email, full_name, employee_id, phone, role,
@@ -67,11 +68,28 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update Profile
+// Update Profile (own profile, or any profile for admins)
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, phone, role, department_id, reporting_manager_id, is_active } = req.body;
+    const canManageUsers =
+      isPlatformRole(req.user) || ['super_admin', 'admin', 'director'].includes(req.user?.role);
+    const isSelf = String(req.user?.id) === String(id);
+
+    if (!canManageUsers && !isSelf) {
+      return res.status(403).json({ error: 'You can only update your own profile' });
+    }
+
+    let { full_name, phone, role, department_id, reporting_manager_id, is_active } = req.body;
+
+    // A non-admin editing their own record must not be able to change
+    // privileged fields.
+    if (!canManageUsers) {
+      role = undefined;
+      department_id = undefined;
+      reporting_manager_id = undefined;
+      is_active = undefined;
+    }
 
     const fields = [];
     const values = [];

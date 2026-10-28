@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { query } from '../db/index.js';
+import { requirePlatformAdmin, requireRole, requireTenantAccess } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get all tenants (for platform admin)
-router.get('/', async (req, res) => {
+router.get('/', requirePlatformAdmin, async (req, res) => {
   try {
     const result = await query(
       `SELECT t.*, 
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get Tenant by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireTenantAccess, async (req, res) => {
   try {
     const result = await query('SELECT * FROM tenants WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) return res.json(null);
@@ -41,7 +42,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update Tenant
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireTenantAccess, requireRole('super_admin', 'admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, settings, subscription_status, plan_tier, is_active } = req.body;
@@ -70,7 +71,7 @@ router.patch('/:id', async (req, res) => {
 
 // Get (or lazily create) the per-tenant token used by lead-capture webhooks.
 // Keeping it separate from the tenant id means URLs cannot be guessed from an id.
-router.get('/:id/webhook-secret', async (req, res) => {
+router.get('/:id/webhook-secret', requireTenantAccess, requireRole('super_admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await query('SELECT settings FROM tenants WHERE id = $1', [id]);
@@ -109,7 +110,7 @@ router.get('/:id/webhook-secret', async (req, res) => {
 });
 
 // List Billing History
-router.get('/:id/billing-history', async (req, res) => {
+router.get('/:id/billing-history', requireTenantAccess, async (req, res) => {
   try {
     const result = await query(
       'SELECT * FROM billing_history WHERE tenant_id = $1 ORDER BY created_at DESC',

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import bcrypt from 'bcryptjs';
+import { isPlatformRole, requireAuth, signAuthToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -114,15 +115,15 @@ router.post('/login', async (req, res) => {
       password: user.password,
     };
 
-    return res.json({ profile });
+    return res.json({ profile, token: signAuthToken(profile) });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// 2. Get Profile by userId or email
-router.get('/profile', async (req, res) => {
+// 2. Get Profile by userId or email (own profile, or any profile for admins)
+router.get('/profile', requireAuth, async (req, res) => {
   try {
     const { userId, email } = req.query;
     if (!userId && !email) {
@@ -157,7 +158,7 @@ router.get('/profile', async (req, res) => {
     if (result.rows.length === 0) {
       const targetEmail = (email || userId || '').trim().toLowerCase();
       const isSuperAdminEmail = (targetEmail === 'admin@realsalepro.com' || targetEmail === 'admin@salespro.com' || targetEmail === 'kumaranujranchi@gmail.com');
-      if (isSuperAdminEmail) {
+      if (isSuperAdminEmail && isPlatformRole(req.user)) {
         let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
         let tenantId = tenantRes.rows[0]?.id;
         if (!tenantId) {
@@ -190,6 +191,10 @@ router.get('/profile', async (req, res) => {
 
     const user = result.rows[0];
 
+    if (!isPlatformRole(req.user) && String(req.user.id) !== String(user.id)) {
+      return res.status(403).json({ error: 'You can only read your own profile' });
+    }
+
     // Auto promote designated admin
     if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com' || user.email === 'kumaranujranchi@gmail.com') && user.role !== 'platform_admin') {
       await query(`UPDATE profiles SET role = 'platform_admin' WHERE id = $1`, [user.id]);
@@ -209,10 +214,25 @@ router.get('/profile', async (req, res) => {
 });
 
 // 3. Promote to Platform Admin
-router.post('/promote', async (req, res) => {
+const DESIGNATED_ADMIN_EMAILS = [
+  'admin@realsalepro.com',
+  'admin@salespro.com',
+  'kumaranujranchi@gmail.com',
+];
+
+router.post('/promote', requireAuth, async (req, res) => {
   try {
-    const { email } = req.body;
-    await query(`UPDATE profiles SET role = 'platform_admin' WHERE LOWER(email) = LOWER($1)`, [email]);
+    const target = String(req.body?.email || '').trim().toLowerCase();
+    const isSelf = String(req.user.email || '').toLowerCase() === target;
+
+    if (!DESIGNATED_ADMIN_EMAILS.includes(target)) {
+      return res.status(403).json({ error: 'This account cannot be auto-promoted' });
+    }
+    if (!isSelf && !isPlatformRole(req.user)) {
+      return res.status(403).json({ error: 'You do not have permission to promote this account' });
+    }
+
+    await query(`UPDATE profiles SET role = 'platform_admin' WHERE LOWER(email) = LOWER($1)`, [target]);
     return res.json({ success: true });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to promote user' });

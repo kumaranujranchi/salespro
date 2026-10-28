@@ -3,7 +3,7 @@ import { Profile, Tenant } from '../types/database';
 
 export const authService = {
   login: (credentials: { email: string; password?: string }) =>
-    api.post<{ profile: Profile }>('/auth/login', credentials),
+    api.post<{ profile: Profile; token?: string }>('/auth/login', credentials),
   getProfile: (params: { userId?: string; email?: string }) =>
     api.get<Profile | null>('/auth/profile', params),
   promote: (email: string) =>

@@ -12,6 +12,7 @@ import targetRoutes from './routes/targets.js';
 import miscRoutes from './routes/misc.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import webhookRoutes from './routes/webhooks.js';
+import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
 import path from 'path';
@@ -51,7 +52,18 @@ app.get('/health', async (req, res) => {
 });
 
 // API Routes
+
+// Public lead-capture webhooks (ported portals cannot send bearer tokens)
+app.use('/api', webhookRoutes);
+
+// Login / forgot-password / reset-password stay public; the router guards
+// the rest (/profile, /promote) itself.
 app.use('/api/auth', authRoutes);
+
+// Everything below requires a valid session token, and tenant-scoped
+// requests are pinned to the caller's own tenant.
+app.use('/api', requireAuth, enforceTenantScope);
+
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/leads', leadRoutes);
@@ -61,8 +73,6 @@ app.use('/api/site-visits', siteVisitRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api/misc', miscRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-// Public lead-capture webhooks (no auth: portals cannot send bearer tokens)
-app.use('/api', webhookRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

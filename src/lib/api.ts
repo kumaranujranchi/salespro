@@ -1,5 +1,7 @@
 // RealSalePro REST API Client for Node.js + PostgreSQL Backend
 
+import { getAuthToken, handleSessionExpired } from './auth-token';
+
 export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
@@ -24,8 +26,10 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const base = this.getBaseUrl();
     const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    const token = getAuthToken();
     const headers = {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     };
 
@@ -33,6 +37,10 @@ class ApiClient {
       ...options,
       headers,
     });
+
+    if (response.status === 401 && token) {
+      handleSessionExpired();
+    }
 
     if (!response.ok) {
       let errorMessage = `HTTP error ${response.status}`;
