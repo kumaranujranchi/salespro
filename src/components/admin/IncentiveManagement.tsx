@@ -125,7 +125,9 @@ export function IncentiveManagement() {
 
   if (loading || !calculationData || !incentives) return <LoadingSpinner fullScreen />;
 
-  const { sales, payments, profiles } = calculationData;
+  const sales = calculationData?.sales || [];
+  const payments = calculationData?.payments || [];
+  const profiles = calculationData?.profiles || [];
 
   // Filter Logic
   const filteredIncentives = (incentives || []).filter((inc: any) => {

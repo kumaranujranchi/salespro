@@ -236,6 +236,15 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('incentives.getIncentiveCalculationData') || key.includes('incentives.getCalculationData')) {
     return await miscService.getIncentiveCalculationData(args?.tenant_id, args);
   }
+  if (key.includes('incentives.createIncentive') || key.includes('incentives.create')) {
+    return await miscService.createIncentive(args);
+  }
+  if (key.includes('incentives.updateIncentive') || key.includes('incentives.update')) {
+    return await miscService.updateIncentive(args?.id || args?._id, args);
+  }
+  if (key.includes('incentives.deleteIncentive') || key.includes('incentives.delete')) {
+    return await miscService.deleteIncentive(args?.id || args?._id);
+  }
   if (key.includes('support.resolve')) {
     return await miscService.resolveSupportTicket(args?.id || args?._id, args?.resolution_notes);
   }

@@ -153,19 +153,30 @@ router.get('/incentives', async (req, res) => {
   try {
     const { tenant_id, executive_id, year } = req.query;
     if (!tenant_id) return res.json([]);
-    let sql = 'SELECT * FROM incentives WHERE tenant_id = $1';
+    let sql = `
+      SELECT inc.*, p.full_name as executive_name
+      FROM incentives inc
+      LEFT JOIN profiles p ON inc.sales_executive_id = p.id
+      WHERE inc.tenant_id = $1
+    `;
     const params = [tenant_id];
     if (executive_id) {
       params.push(executive_id);
-      sql += ` AND sales_executive_id = $${params.length}`;
+      sql += ` AND inc.sales_executive_id = $${params.length}`;
     }
     if (year) {
       params.push(parseInt(year));
-      sql += ` AND calculation_year = $${params.length}`;
+      sql += ` AND inc.calculation_year = $${params.length}`;
     }
-    sql += ' ORDER BY created_at DESC';
+    sql += ' ORDER BY inc.created_at DESC';
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      profiles: {
+        full_name: r.executive_name || 'Executive',
+      }
+    })));
   } catch (err) {
     return res.json([]);
   }
@@ -173,16 +184,72 @@ router.get('/incentives', async (req, res) => {
 
 router.get('/incentives/calculation-data', async (req, res) => {
   try {
-    const { tenant_id, executive_id } = req.query;
+    const { tenant_id } = req.query;
+    if (!tenant_id) return res.json({ sales: [], payments: [], profiles: [] });
+
+    const [salesRes, paymentsRes, profilesRes] = await Promise.all([
+      query('SELECT * FROM sales WHERE tenant_id = $1', [tenant_id]).catch(() => ({ rows: [] })),
+      query('SELECT * FROM payments WHERE tenant_id = $1', [tenant_id]).catch(() => ({ rows: [] })),
+      query('SELECT id, full_name, email, role, is_active FROM profiles WHERE tenant_id = $1', [tenant_id]).catch(() => ({ rows: [] })),
+    ]);
+
     return res.json({
-      totalIncentives: 0,
-      pendingIncentives: 0,
-      approvedIncentives: 0,
-      paidIncentives: 0,
-      slabs: [],
+      sales: salesRes.rows.map(r => ({ ...r, _id: r.id })),
+      payments: paymentsRes.rows.map(r => ({ ...r, _id: r.id })),
+      profiles: profilesRes.rows.map(r => ({ ...r, _id: r.id })),
     });
   } catch (err) {
-    return res.json({ totalIncentives: 0, pendingIncentives: 0, approvedIncentives: 0, paidIncentives: 0, slabs: [] });
+    return res.json({ sales: [], payments: [], profiles: [] });
+  }
+});
+
+router.post('/incentives', async (req, res) => {
+  try {
+    const {
+      tenant_id, sales_executive_id, calculation_month, calculation_year,
+      total_incentive_amount, status = 'paid', details = {}
+    } = req.body;
+
+    const result = await query(
+      `INSERT INTO incentives 
+        (tenant_id, sales_executive_id, calculation_month, calculation_year, total_incentive_amount, status, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [tenant_id, sales_executive_id, calculation_month, calculation_year, total_incentive_amount, status, JSON.stringify(details)]
+    );
+
+    const item = result.rows[0];
+    return res.status(201).json({ ...item, _id: item.id });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch('/incentives/:id', async (req, res) => {
+  try {
+    const { sales_executive_id, calculation_month, calculation_year, total_incentive_amount, status } = req.body;
+    await query(
+      `UPDATE incentives SET
+        sales_executive_id = COALESCE($1, sales_executive_id),
+        calculation_month = COALESCE($2, calculation_month),
+        calculation_year = COALESCE($3, calculation_year),
+        total_incentive_amount = COALESCE($4, total_incentive_amount),
+        status = COALESCE($5, status)
+       WHERE id = $6`,
+      [sales_executive_id || null, calculation_month || null, calculation_year || null, total_incentive_amount || null, status || null, req.params.id]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/incentives/:id', async (req, res) => {
+  try {
+    await query('DELETE FROM incentives WHERE id = $1', [req.params.id]);
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 

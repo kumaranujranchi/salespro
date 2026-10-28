@@ -113,6 +113,9 @@ export const miscService = {
     api.get<any[]>('/misc/incentives', { tenant_id: tenantId, ...params }),
   getIncentiveCalculationData: (tenantId: string, params?: any) =>
     api.get<any>('/misc/incentives/calculation-data', { tenant_id: tenantId, ...params }),
+  createIncentive: (data: any) => api.post<any>('/misc/incentives', data),
+  updateIncentive: (id: string, data: any) => api.patch<{ success: boolean }>(`/misc/incentives/${id}`, data),
+  deleteIncentive: (id: string) => api.delete<{ success: boolean }>(`/misc/incentives/${id}`),
   listSupportTickets: (tenantId?: string) => api.get<any[]>('/misc/support-tickets', { tenant_id: tenantId }),
   resolveSupportTicket: (id: string, notes?: string) =>
     api.patch<{ success: boolean }>(`/misc/support-tickets/${id}`, { status: 'resolved', resolution_notes: notes }),
