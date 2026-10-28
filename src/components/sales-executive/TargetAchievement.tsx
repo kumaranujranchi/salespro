@@ -32,24 +32,24 @@ export function TargetAchievement() {
             const monthTargets = (targetsData || []).filter((t: Doc<"sales_targets">) => 
                 isSameMonth(parseISO(t.start_date), monthDate)
             );
-            const totalTarget = monthTargets.reduce((sum: number, t: Doc<"sales_targets">) => sum + t.target_amount, 0);
+            const totalTarget = monthTargets.reduce((sum: number, t: any) => sum + (Number(t.target_amount) || 0), 0);
 
             const monthSales = (salesData || []).filter((s: Doc<"sales">) => 
                 isSameMonth(parseISO(s.sale_date), monthDate)
             );
-            const totalSales = monthSales.reduce((sum: number, s: Doc<"sales">) => sum + s.total_revenue, 0);
+            const totalSales = monthSales.reduce((sum: number, s: any) => sum + (Number(s.total_revenue) || 0), 0);
 
             return {
                 name: monthStr,
-                target: totalTarget,
-                achievement: totalSales
+                target: Number(totalTarget) || 0,
+                achievement: Number(totalSales) || 0
             };
         });
     }, [targetsData, salesData]);
 
     const summary = useMemo(() => {
-        const totalTarget = chartData.reduce((sum, d) => sum + d.target, 0);
-        const totalAchieved = chartData.reduce((sum, d) => sum + d.achievement, 0);
+        const totalTarget = chartData.reduce((sum, d) => sum + (Number(d.target) || 0), 0);
+        const totalAchieved = chartData.reduce((sum, d) => sum + (Number(d.achievement) || 0), 0);
         const diff = totalAchieved - totalTarget;
         const percent = totalTarget > 0 ? (totalAchieved / totalTarget) * 100 : 0;
 

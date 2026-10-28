@@ -73,15 +73,34 @@ export function TargetsPage() {
       const target = targets.find(t => mMatch(t.start_date));
       const monthSales = sales.filter(s => mMatch(s.sale_date));
 
+      const rawTarget = target ? (
+        activeMetric === 'revenue' 
+          ? Number(target.target_amount || 0) 
+          : activeMetric === 'units' 
+          ? Number(target.target_units || 0) 
+          : Number(target.target_sqft || 0)
+      ) : 0;
+
+      const rawAchievement = activeMetric === 'revenue' 
+        ? monthSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0)
+        : activeMetric === 'units' 
+        ? monthSales.length 
+        : monthSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0);
+
       return {
         month: mStr,
-        target: target ? (activeMetric === 'revenue' ? target.target_amount : activeMetric === 'units' ? target.target_units : target.target_sqft) : 0,
-        achievement: activeMetric === 'revenue' 
-          ? monthSales.reduce((sum, s) => sum + s.total_revenue, 0)
-          : activeMetric === 'units' ? monthSales.length : monthSales.reduce((sum, s) => sum + s.area_sqft, 0)
+        target: Number(rawTarget) || 0,
+        achievement: Number(rawAchievement) || 0
       };
     });
   }, [targets, sales, activeMetric, selectedYear]);
+
+  const annualSummary = useMemo(() => {
+    const totalTarget = chartData.reduce((s, c) => s + (Number(c.target) || 0), 0);
+    const totalAchieved = chartData.reduce((s, c) => s + (Number(c.achievement) || 0), 0);
+    const achievementPercent = totalTarget > 0 ? ((totalAchieved / totalTarget) * 100).toFixed(1) : '0.0';
+    return { totalTarget, totalAchieved, achievementPercent };
+  }, [chartData]);
 
   return (
     <div className="space-y-6">
@@ -94,23 +113,61 @@ export function TargetsPage() {
       </div>
 
       <Card>
-        <CardContent className="py-4 flex gap-4">
-           {!isExecutive ? (
-             <Select
-               label="Member"
-               value={selectedUserId}
-               onChange={e => setSelectedUserId(e.target.value)}
-               options={staff?.map(s => ({ label: s.full_name, value: s._id })) || []}
-               className="w-64"
-             />
-           ) : <div className="p-2 bg-gray-50 rounded border text-sm">Viewing Your Targets</div>}
-           <Select
-             label="Year"
-             value={selectedYear}
-             onChange={e => setSelectedYear(e.target.value)}
-             options={[2024, 2025, 2026].map(y => ({ label: y.toString(), value: y.toString() }))}
-             className="w-32"
-           />
+        <CardContent className="py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {!isExecutive ? (
+              <Select
+                label="Member"
+                value={selectedUserId}
+                onChange={e => setSelectedUserId(e.target.value)}
+                options={[{ label: 'All Team Members', value: '' }, ...(staff?.map(s => ({ label: s.full_name, value: s._id })) || [])]}
+                className="w-64"
+              />
+            ) : <div className="p-2 bg-gray-50 dark:bg-white/5 rounded border text-sm font-medium">Viewing Your Targets</div>}
+            <Select
+              label="Year"
+              value={selectedYear}
+              onChange={e => setSelectedYear(e.target.value)}
+              options={[2024, 2025, 2026, 2027].map(y => ({ label: y.toString(), value: y.toString() }))}
+              className="w-32"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => setActiveMetric('revenue')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeMetric === 'revenue'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Revenue (₹)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMetric('area')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeMetric === 'area'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Area (Sq Ft)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMetric('units')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeMetric === 'units'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Units (Count)
+            </button>
+          </div>
         </CardContent>
       </Card>
 
@@ -123,8 +180,24 @@ export function TargetsPage() {
                     <BarChart data={chartData}>
                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
                        <XAxis dataKey="month" />
-                       <YAxis />
-                       <Tooltip />
+                       <YAxis
+                         tickFormatter={(v: number) => {
+                           if (activeMetric === 'revenue') {
+                             if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)}Cr`;
+                             if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+                             if (v >= 1000) return `₹${(v / 1000).toFixed(0)}k`;
+                             return `₹${v}`;
+                           }
+                           if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+                           return String(v);
+                         }}
+                       />
+                       <Tooltip
+                         formatter={(value: any, name: string) => [
+                           `${activeMetric === 'revenue' ? '₹' : ''}${Number(value || 0).toLocaleString('en-IN')}${activeMetric === 'area' ? ' Sq Ft' : activeMetric === 'units' ? ' Units' : ''}`,
+                           name
+                         ]}
+                       />
                        <Legend />
                        <Bar dataKey="target" name="Target" fill="#94a3b8" />
                        <Bar dataKey="achievement" name="Achieved" fill="#00E576" />
@@ -136,13 +209,28 @@ export function TargetsPage() {
          <Card>
             <CardHeader><CardTitle>Annual Summary</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-                <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
-                    <p className="text-sm text-gray-500">Total Target</p>
-                    <p className="text-2xl font-bold">{chartData.reduce((s, c) => s + c.target, 0).toLocaleString()}</p>
+                <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                      Total Target {activeMetric === 'area' ? '(Sq Ft)' : activeMetric === 'units' ? '(Units)' : '(Revenue)'}
+                    </p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {activeMetric === 'revenue' ? '₹' : ''}
+                      {annualSummary.totalTarget.toLocaleString('en-IN')}
+                      {activeMetric === 'area' ? ' Sq Ft' : activeMetric === 'units' ? ' Units' : ''}
+                    </p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
-                    <p className="text-sm text-gray-500">Total Achieved</p>
-                    <p className="text-2xl font-bold">{chartData.reduce((s, c) => s + c.achievement, 0).toLocaleString()}</p>
+                <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1">
+                      Total Achieved {activeMetric === 'area' ? '(Sq Ft)' : activeMetric === 'units' ? '(Units)' : '(Revenue)'}
+                    </p>
+                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                      {activeMetric === 'revenue' ? '₹' : ''}
+                      {annualSummary.totalAchieved.toLocaleString('en-IN')}
+                      {activeMetric === 'area' ? ' Sq Ft' : activeMetric === 'units' ? ' Units' : ''}
+                    </p>
+                    <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1 font-medium">
+                      Achievement Rate: <strong className="font-bold">{annualSummary.achievementPercent}%</strong>
+                    </p>
                 </div>
             </CardContent>
          </Card>
