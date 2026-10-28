@@ -25,7 +25,9 @@ import {
   MapPin,
   Activity,
   Calendar,
-  Users
+  Users,
+  ArrowLeft,
+  CheckCircle2
 } from 'lucide-react';
 
 const formatDate = (dateVal: any) => {
@@ -270,6 +272,627 @@ export function TenantsPage() {
     if (filter === 'all') return true;
     return t.subscription_status === filter;
   });
+
+  if (selectedTenant && currentTenant) {
+    return (
+      <div className="space-y-8 animate-fadeIn pb-12">
+        {/* Navigation & Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedTenant(null)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              Back to All Tenants
+            </button>
+            <span className="text-slate-400">/</span>
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-300 truncate max-w-xs sm:max-w-md">
+              {currentTenant.name}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => openResetPasswordModal(currentTenant)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shadow-sm"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-indigo-500" />
+              Reset Password
+            </button>
+            <button
+              onClick={() => toggleTenantStatus(currentTenant)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl text-white transition-colors shadow-sm ${
+                currentTenant.is_active !== false ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {currentTenant.is_active !== false ? 'Suspend Tenant' : 'Activate Tenant'}
+            </button>
+            <button
+              onClick={handleDeleteTenant}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Tenant
+            </button>
+          </div>
+        </div>
+
+        {/* Tenant Profile Banner */}
+        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-2xl sm:text-3xl text-white shadow-inner shrink-0 border border-white/20">
+                {currentTenant.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{currentTenant.name}</h1>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    currentTenant.is_active !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                  }`}>
+                    {currentTenant.is_active !== false ? 'Active' : 'Suspended'}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                    {currentTenant.plan_tier === 'pro' ? 'Pro Plan' : (currentTenant.plan_tier === 'enterprise' ? 'Enterprise' : 'Free Forever')}
+                  </span>
+                </div>
+                <p className="text-indigo-200 text-sm flex items-center gap-2 font-mono">
+                  <span>subdomain: <strong>{currentTenant.slug}</strong>.realsalepro.com</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Contact details */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 text-xs bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/15">
+              <div>
+                <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Admin Name</span>
+                <span className="font-semibold text-white truncate block">{currentTenant.adminName || 'Admin'}</span>
+              </div>
+              <div>
+                <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Contact Email</span>
+                <span className="font-semibold text-white truncate block">{currentTenant.contact_email || currentTenant.owner_id || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Contact Phone</span>
+                <span className="font-semibold text-white truncate block">{currentTenant.contact_phone || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Joined Date</span>
+                <span className="font-semibold text-white truncate block">{formatDate(currentTenant._creationTime || currentTenant.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Usage & System Activity (6 Spacious KPI Cards) */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-indigo-500" />
+              Usage & System Activity
+            </h2>
+            <span className="text-xs text-slate-400">Live statistics and database records for this tenant</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Active Users</span>
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  {currentTenant.stats?.activeUsers || 0}
+                </span>
+                <span className="text-xs text-slate-400 font-normal ml-1">/ {currentTenant.stats?.totalUsers || 0}</span>
+              </div>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Total Leads</span>
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Building2 className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  {currentTenant.stats?.leadsCount || 0}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Site Visits</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <MapPin className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  {currentTenant.stats?.visitsCount || 0}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Closed Sales</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <Award className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  {currentTenant.stats?.salesCount || 0}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Total Revenue</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                  ₹{(currentTenant.stats?.totalRevenue || 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold">Last Activity</span>
+                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  {currentTenant.stats?.lastActive ? formatDate(currentTenant.stats.lastActive) : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pro Upgrade Recommendation Banner */}
+        {currentTenant.plan_tier !== 'pro' && currentTenant.plan_tier !== 'enterprise' && isUpgradeCandidate(currentTenant) && (
+          <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-200 dark:border-amber-900/30 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm animate-fadeIn">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-500/20 text-amber-600 rounded-xl shrink-0 mt-0.5">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                  High Conversion Potential Target
+                </h4>
+                <p className="text-xs text-amber-800 dark:text-amber-400">
+                  This tenant is actively using the system on free tier ({currentTenant.stats?.activeUsers || 0} users, {currentTenant.stats?.leadsCount || 0} leads, {currentTenant.stats?.salesCount || 0} sales).
+                  Pitch the Pro Plan upgrade to unlock advanced features.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await sendEmailAction({
+                    type: 'PRO_UPGRADE_PITCH',
+                    email: currentTenant.contact_email || currentTenant.owner_id,
+                    name: currentTenant.adminName || 'Sales Leader',
+                    data: {
+                      tenantName: currentTenant.name,
+                      activeUsers: currentTenant.stats?.activeUsers || 0,
+                      leadsCount: currentTenant.stats?.leadsCount || 0,
+                      salesCount: currentTenant.stats?.salesCount || 0,
+                    }
+                  });
+                  toast.success(`Upgrade pitch email sent to ${currentTenant.contact_email || currentTenant.owner_id}!`);
+                } catch (e: any) {
+                  toast.error(`Failed to send pitch: ${e.message || e}`);
+                }
+              }}
+              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm flex items-center justify-center gap-2 shrink-0"
+            >
+              <Mail className="w-4 h-4" />
+              Send Pro Upgrade Pitch Email
+            </button>
+          </div>
+        )}
+
+        {/* 2-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column (Features, Plan, Incentives) */}
+          <div className="lg:col-span-7 space-y-8">
+            {/* Feature Access Control */}
+            <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500" />
+                  Feature Access Control
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Enable or disable specific modules for this tenant organization.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {['crm', 'inventory', 'reports', 'site_visits', 'incentives'].map((feature) => {
+                  const isEnabled = currentTenant.settings?.features?.[feature] !== false;
+                  return (
+                    <div
+                      key={feature}
+                      className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white capitalize">
+                          {feature.replace('_', ' ')}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {isEnabled ? 'Enabled for tenant' : 'Disabled'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const newFeatures = { 
+                            ...(currentTenant.settings?.features || {}), 
+                            [feature]: !isEnabled 
+                          };
+                          const newSettings = { ...currentTenant.settings, features: newFeatures };
+                          try {
+                            await updateTenantMutation({
+                              id: currentTenant._id,
+                              settings: newSettings
+                            });
+                            toast.success(`${feature.replace('_', ' ')} ${!isEnabled ? 'enabled' : 'disabled'}`);
+                          } catch (e) {
+                            toast.error('Failed to update features');
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          isEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            isEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Plan Tier Control */}
+            <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-indigo-500" />
+                    Subscription Plan Tier
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Manage client's billing tier and resource limits
+                  </p>
+                </div>
+                <select
+                  value={currentTenant.plan_tier || 'free'}
+                  onChange={async (e) => {
+                    const newPlan = e.target.value;
+                    try {
+                      await updateTenantMutation({
+                        id: currentTenant._id,
+                        plan_tier: newPlan,
+                        subscription_status: 'active'
+                      });
+                      toast.success(`Plan updated to ${newPlan.toUpperCase()}`);
+                    } catch {
+                      toast.error('Failed to update plan tier');
+                    }
+                  }}
+                  className="text-xs px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl font-bold text-indigo-700 dark:text-indigo-300 outline-none"
+                >
+                  <option value="free">Free Forever Plan</option>
+                  <option value="pro">Pro Plan (Full Access)</option>
+                  <option value="enterprise">Enterprise Plan</option>
+                </select>
+              </div>
+
+              {currentTenant.plan_tier !== 'pro' && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-900/30">
+                  <span className="text-xs text-indigo-900 dark:text-indigo-200">
+                    Upgrade this organization to <strong>Pro Plan</strong> instantly to grant full unlimited access.
+                  </span>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await updateTenantMutation({
+                          id: currentTenant._id,
+                          plan_tier: 'pro',
+                          subscription_status: 'active'
+                        });
+                        toast.success('Successfully upgraded tenant to PRO plan!');
+                      } catch {
+                        toast.error('Failed to upgrade to PRO plan');
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors whitespace-nowrap shadow-sm"
+                  >
+                    UPGRADE TO PRO
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Incentive Configuration */}
+            <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-amber-500" />
+                    Incentive Configuration
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Choose between Manual calculations and Automated tier-based rules
+                  </p>
+                </div>
+                <select
+                  value={currentTenant.settings?.incentive_plan?.type || 'manual'}
+                  onChange={async (e) => {
+                    const newType = e.target.value;
+                    const newSettings = {
+                      ...(currentTenant.settings || {}),
+                      incentive_plan: {
+                        ...(currentTenant.settings?.incentive_plan || {}),
+                        type: newType
+                      }
+                    };
+                    try {
+                      await updateTenantMutation({
+                        id: currentTenant._id,
+                        settings: newSettings
+                      });
+                      toast.success(`Incentive mode changed to ${newType}`);
+                    } catch (e) {
+                      toast.error('Failed to update incentive mode');
+                    }
+                  }}
+                  className="text-xs px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl font-bold"
+                >
+                  <option value="manual">Manual Entry</option>
+                  <option value="custom">Automated Rules</option>
+                </select>
+              </div>
+
+              {currentTenant.settings?.incentive_plan?.type === 'custom' && (
+                <div className="space-y-4 pt-2 animate-fadeIn">
+                  <textarea
+                    value={incentiveRuleStr}
+                    onChange={(e) => setIncentiveRuleStr(e.target.value)}
+                    rows={8}
+                    className="w-full font-mono text-xs p-3 bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl outline-none"
+                    placeholder='{ "tiers": [...] }'
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const rules = JSON.parse(incentiveRuleStr);
+                          const newSettings = {
+                            ...(currentTenant.settings || {}),
+                            incentive_plan: {
+                              ...(currentTenant.settings?.incentive_plan || {}),
+                              rules
+                            }
+                          };
+                          await updateTenantMutation({
+                            id: currentTenant._id,
+                            settings: newSettings
+                          });
+                          toast.success('Incentive rules updated successfully');
+                        } catch (e) {
+                          toast.error('Invalid JSON format');
+                        }
+                      }}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm"
+                    >
+                      Save Rules
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column (Billing History & Danger Zone) */}
+          <div className="lg:col-span-5 space-y-8">
+            {/* Billing History Section */}
+            <div className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-indigo-500" />
+                  Payment & Billing History
+                </h3>
+              </div>
+              <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold text-slate-500">Date</th>
+                      <th className="px-4 py-3 font-semibold text-slate-500">Amount</th>
+                      <th className="px-4 py-3 font-semibold text-slate-500">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {billingHistory === undefined ? (
+                      <tr><td colSpan={3} className="p-4 text-center text-slate-400">Loading payments...</td></tr>
+                    ) : billingHistory.length === 0 ? (
+                      <tr><td colSpan={3} className="p-4 text-center text-slate-400">No payment records yet</td></tr>
+                    ) : (
+                      billingHistory.map((history: any) => (
+                        <tr key={history._id}>
+                          <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{formatDate(history.date)}</td>
+                          <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">₹{history.amount.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 text-[10px] font-bold uppercase">
+                              Success
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white dark:bg-surface-dark rounded-2xl border border-red-200 dark:border-red-900/30 p-6 shadow-sm space-y-4">
+              <h4 className="text-base font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                Danger Zone
+              </h4>
+
+              <div className="space-y-3">
+                <div className="p-4 bg-red-50/50 dark:bg-red-950/10 border border-red-100 dark:border-red-900/20 rounded-xl flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">Account Status</p>
+                    <p className="text-[11px] text-slate-500">
+                      {currentTenant.is_active !== false ? 'Currently Active' : 'Suspended'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => toggleTenantStatus(currentTenant)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      currentTenant.is_active !== false ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                  >
+                    {currentTenant.is_active !== false ? 'SUSPEND' : 'ACTIVATE'}
+                  </button>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">Admin Credentials</p>
+                    <p className="text-[11px] text-slate-500">Reset password for owner</p>
+                  </div>
+                  <button
+                    onClick={() => openResetPasswordModal(currentTenant)}
+                    className="px-3 py-1.5 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 rounded-lg text-xs font-bold transition-colors"
+                  >
+                    RESET PASSWORD
+                  </button>
+                </div>
+
+                <div className="p-4 bg-red-100/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-xl flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-red-700 dark:text-red-400">Irreversible Action</p>
+                    <p className="text-[11px] text-red-600 dark:text-red-400">Permanently delete tenant data</p>
+                  </div>
+                  <button
+                    onClick={handleDeleteTenant}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                  >
+                    DELETE TENANT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Password Reset Modal */}
+        {resetModalOpen && selectedTenant && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="bg-indigo-600 p-6 text-white text-center">
+                <Lock className="w-12 h-12 mx-auto mb-2 opacity-80" />
+                <h3 className="text-xl font-bold">Reset Admin Password</h3>
+                <p className="text-indigo-100 text-sm">Action for {selectedTenant.name}</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="relative">
+                  <input
+                    ref={passwordInputRef}
+                    type={showPassword ? "text" : "password"}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border dark:border-slate-600 dark:bg-slate-800"
+                    placeholder="New Secure Password"
+                    minLength={6}
+                  />
+                  <button 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-3 top-3.5 text-slate-400"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setResetModalOpen(false)} className="flex-1 py-2.5 font-bold rounded-lg bg-slate-100 dark:bg-slate-800">Cancel</button>
+                  <button 
+                    onClick={confirmResetPassword}
+                    disabled={resetLoading || resetPassword.length < 6}
+                    className="flex-1 py-2.5 font-bold rounded-lg bg-indigo-600 text-white disabled:opacity-50"
+                  >
+                    {resetLoading ? 'Resetting...' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Modal */}
+        {deleteModalOpen && selectedTenant && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl shadow-2xl w-full max-w-md border-2 border-red-500/50 overflow-hidden">
+              <div className="bg-red-600 p-6 text-white text-center">
+                <Trash2 className="w-12 h-12 mx-auto mb-2 opacity-80" />
+                <h3 className="text-xl font-bold">CRITICAL: Delete Tenant</h3>
+                <p className="text-red-100 text-sm italic">This action cannot be undone.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Type <strong className="text-slate-900 dark:text-white">{selectedTenant.slug}</strong> to confirm deletion:
+                </p>
+                <input
+                  type="text"
+                  value={deleteSlugInput}
+                  onChange={(e) => setDeleteSlugInput(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border-2 border-red-100 dark:bg-slate-800 dark:border-red-900/30"
+                  placeholder="Enter slug"
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setDeleteModalOpen(false)} className="flex-1 py-2.5 font-bold rounded-lg bg-slate-100 dark:bg-slate-800">Cancel</button>
+                  <button 
+                    onClick={confirmDeleteTenant}
+                    disabled={deleteSlugInput !== selectedTenant.slug || addTenantLoading}
+                    className="flex-1 py-2.5 font-bold rounded-lg bg-red-600 text-white disabled:opacity-50"
+                  >
+                    {addTenantLoading ? 'Deleting...' : 'DELETE FOREVER'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -736,407 +1359,6 @@ export function TenantsPage() {
           </div>
         </div>
 
-        {/* Manage Tenant Detail Overlay */}
-        {selectedTenant && currentTenant && (
-          <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white dark:bg-[#1e1e2d] w-full max-w-2xl h-full flex flex-col shadow-2xl animate-slideIn">
-              <div className="p-6 bg-indigo-600 text-white flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-xl">
-                    {currentTenant.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{currentTenant.name}</h2>
-                    <p className="text-indigo-100 text-sm opacity-80">{currentTenant.slug}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setSelectedTenant(null)} 
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                {/* Usage & Activity Dashboard */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-indigo-500" />
-                    Usage & System Activity
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
-                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-indigo-500" /> Active Users
-                      </span>
-                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                        {currentTenant.stats?.activeUsers || 0} <span className="text-xs font-normal text-slate-400">/ {currentTenant.stats?.totalUsers || 0}</span>
-                      </span>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
-                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-blue-500" /> Total Leads
-                      </span>
-                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                        {currentTenant.stats?.leadsCount || 0}
-                      </span>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
-                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-amber-500" /> Site Visits
-                      </span>
-                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                        {currentTenant.stats?.visitsCount || 0}
-                      </span>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between">
-                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                        <Award className="w-3.5 h-3.5 text-emerald-500" /> Closed Sales
-                      </span>
-                      <span className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                        {currentTenant.stats?.salesCount || 0}
-                      </span>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex flex-col justify-between col-span-2 sm:col-span-2">
-                      <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> Total Revenue Closed
-                      </span>
-                      <span className="text-2xl font-bold mt-2 text-emerald-600 dark:text-emerald-400">
-                        ₹{(currentTenant.stats?.totalRevenue || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" /> Last Activity Recorded
-                    </span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {currentTenant.stats?.lastActive ? formatDate(currentTenant.stats.lastActive) : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Pro Upgrade Recommendation Banner */}
-                {currentTenant.plan_tier !== 'pro' && currentTenant.plan_tier !== 'enterprise' && isUpgradeCandidate(currentTenant) && (
-                  <div className="p-5 bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl flex items-start gap-4 animate-fadeIn">
-                    <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1 flex-1">
-                      <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                        💡 High Conversion Potential Target
-                      </h4>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">
-                        This tenant shows strong system usage on the free tier:
-                      </p>
-                      <ul className="list-disc pl-4 text-xs text-amber-700 dark:text-amber-400 space-y-1 mt-1">
-                        {currentTenant.stats?.activeUsers > 3 && (
-                          <li>Team size is <strong>{currentTenant.stats.activeUsers} active users</strong> (optimal size for collaboration features)</li>
-                        )}
-                        {currentTenant.stats?.leadsCount > 15 && (
-                          <li>Managing a base of <strong>{currentTenant.stats.leadsCount} leads</strong></li>
-                        )}
-                        {currentTenant.stats?.salesCount > 0 && (
-                          <li>Closed <strong>{currentTenant.stats.salesCount} sale(s)</strong> with tracked revenue of <strong>₹{currentTenant.stats.totalRevenue?.toLocaleString()}</strong></li>
-                        )}
-                      </ul>
-                      <p className="text-xs text-amber-800 dark:text-amber-300 font-semibold mt-2 pt-1 border-t border-amber-200/50 dark:border-amber-900/10">
-                        Recommendation: Upgrade this client to the Pro Plan to support their team size, unlock automatic site visit tracking, and expand databases.
-                      </p>
-                      
-                      <div className="pt-3 border-t border-amber-200/50 dark:border-amber-950/20 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await sendEmailAction({
-                                type: 'PRO_UPGRADE_PITCH',
-                                email: currentTenant.contact_email || currentTenant.owner_id,
-                                name: currentTenant.adminName || 'Sales Leader',
-                                data: {
-                                  tenantName: currentTenant.name,
-                                  activeUsers: currentTenant.stats?.activeUsers || 0,
-                                  leadsCount: currentTenant.stats?.leadsCount || 0,
-                                  salesCount: currentTenant.stats?.salesCount || 0,
-                                }
-                              });
-                              toast.success(`Upgrade pitch email sent to ${currentTenant.contact_email || currentTenant.owner_id}!`);
-                            } catch (e: any) {
-                              toast.error(`Failed to send pitch: ${e.message || e}`);
-                            }
-                          }}
-                          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm flex items-center gap-1.5"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          Send Pro Upgrade Pitch Email
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Feature Controls */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-500" />
-                    Feature Access Control
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {['crm', 'inventory', 'reports', 'site_visits', 'incentives'].map((feature) => {
-                      const isEnabled = selectedTenant.settings?.features?.[feature] !== false;
-                      return (
-                        <div key={feature} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white capitalize">{feature.replace('_', ' ')}</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              const newFeatures = { 
-                                ...(selectedTenant.settings?.features || {}), 
-                                [feature]: !isEnabled 
-                              };
-                              const newSettings = { ...selectedTenant.settings, features: newFeatures };
-                              try {
-                                await updateTenantMutation({
-                                  id: selectedTenant._id,
-                                  settings: newSettings
-                                });
-                                toast.success(`${feature} ${!isEnabled ? 'enabled' : 'disabled'}`);
-                              } catch (e) {
-                                toast.error('Failed to update features');
-                              }
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEnabled ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}
-                          >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Plan Tier Control */}
-                <div className="space-y-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200/50 dark:border-white/10 rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-200 uppercase flex items-center gap-2">
-                        <Award className="w-5 h-5" />
-                        Subscription Plan Tier
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1">Manage billing tier and limits for this company</p>
-                    </div>
-                    <select
-                      value={selectedTenant.plan_tier || 'free'}
-                      onChange={async (e) => {
-                        const newPlan = e.target.value;
-                        try {
-                          await updateTenantMutation({
-                            id: selectedTenant._id,
-                            plan_tier: newPlan,
-                            subscription_status: 'active'
-                          });
-                          toast.success(`Plan updated to ${newPlan.toUpperCase()}`);
-                        } catch {
-                          toast.error('Failed to update plan tier');
-                        }
-                      }}
-                      className="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border rounded-md font-semibold text-indigo-700 dark:text-indigo-300 outline-none"
-                    >
-                      <option value="free">Free Forever Plan</option>
-                      <option value="pro">Pro Plan (Full Access)</option>
-                    </select>
-                  </div>
-                  
-                  {selectedTenant.plan_tier !== 'pro' && (
-                    <div className="mt-3 flex items-center justify-between bg-indigo-100/50 dark:bg-indigo-950/20 p-3 rounded-xl border border-indigo-200/30">
-                      <span className="text-xs text-indigo-800 dark:text-indigo-300">Convert this tenant to the premium <strong>Pro Plan</strong> immediately.</span>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await updateTenantMutation({
-                              id: selectedTenant._id,
-                              plan_tier: 'pro',
-                              subscription_status: 'active'
-                            });
-                            toast.success('Successfully upgraded tenant to PRO plan!');
-                          } catch {
-                            toast.error('Failed to upgrade to PRO plan');
-                          }
-                        }}
-                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors"
-                      >
-                        UPGRADE TO PRO
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Billing History Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Receipt className="w-5 h-5 text-indigo-500" />
-                    Payment History
-                  </h3>
-                  <div className="bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-100 dark:bg-white/5">
-                        <tr>
-                          <th className="px-4 py-3 text-slate-500">Date</th>
-                          <th className="px-4 py-3 text-slate-500">Amount</th>
-                          <th className="px-4 py-3 text-slate-500">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-white/10">
-                        {billingHistory === undefined ? (
-                          <tr><td colSpan={3} className="p-4 text-center">Loading...</td></tr>
-                        ) : billingHistory.length === 0 ? (
-                          <tr><td colSpan={3} className="p-4 text-center opacity-50">No payments found</td></tr>
-                        ) : (
-                          billingHistory.map((history: any) => (
-                            <tr key={history._id}>
-                              <td className="px-4 py-3">{formatDate(history.date)}</td>
-                              <td className="px-4 py-3 font-bold">₹{history.amount.toLocaleString()}</td>
-                              <td className="px-4 py-3">
-                                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase">Success</span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Incentive Configuration Section */}
-                <div className="space-y-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-white/10 rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-200 uppercase flex items-center gap-2">
-                      <Award className="w-5 h-5" />
-                      Incentive Configuration
-                    </h3>
-                    <select
-                      value={selectedTenant.settings?.incentive_plan?.type || 'manual'}
-                      onChange={async (e) => {
-                        const newType = e.target.value;
-                        const newSettings = {
-                          ...(selectedTenant.settings || {}),
-                          incentive_plan: {
-                            ...(selectedTenant.settings?.incentive_plan || {}),
-                            type: newType
-                          }
-                        };
-                        try {
-                          await updateTenantMutation({
-                            id: selectedTenant._id,
-                            settings: newSettings
-                          });
-                          toast.success(`Incentive mode changed to ${newType}`);
-                        } catch (e) {
-                          toast.error('Failed to update incentive mode');
-                        }
-                      }}
-                      className="text-xs px-2 py-1 bg-white dark:bg-slate-800 border rounded-md"
-                    >
-                      <option value="manual">Manual Entry</option>
-                      <option value="custom">Automated Rules</option>
-                    </select>
-                  </div>
-
-                  {selectedTenant.settings?.incentive_plan?.type === 'custom' && (
-                    <div className="space-y-4 animate-fadeIn">
-                       <textarea
-                         value={incentiveRuleStr}
-                         onChange={(e) => setIncentiveRuleStr(e.target.value)}
-                         rows={8}
-                         className="w-full font-mono text-xs p-3 bg-white dark:bg-black/40 border border-amber-200 dark:border-white/10 rounded-lg outline-none"
-                         placeholder='{ "tiers": [...] }'
-                       />
-                       <div className="flex justify-end gap-2">
-                         <button
-                           onClick={async () => {
-                             try {
-                               const rules = JSON.parse(incentiveRuleStr);
-                               const newSettings = {
-                                 ...(selectedTenant.settings || {}),
-                                 incentive_plan: {
-                                   ...(selectedTenant.settings?.incentive_plan || {}),
-                                   rules
-                                 }
-                               };
-                               await updateTenantMutation({
-                                 id: selectedTenant._id,
-                                 settings: newSettings
-                               });
-                               toast.success('Incentive rules updated');
-                             } catch (e) {
-                               toast.error('Invalid JSON format');
-                             }
-                           }}
-                           className="px-4 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-md hover:bg-amber-700"
-                         >
-                           Save Rules
-                         </button>
-                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Danger Zone */}
-                <div className="pt-8 border-t border-slate-200 dark:border-white/10 space-y-4">
-                  <h4 className="text-sm font-bold text-red-600 flex items-center gap-2 uppercase">
-                    <AlertTriangle className="w-4 h-4" />
-                    Danger Zone
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Account Status</p>
-                        <p className="text-xs text-slate-500">{selectedTenant.is_active !== false ? 'Currently Active' : 'Suspended'}</p>
-                      </div>
-                      <button
-                        onClick={() => toggleTenantStatus(selectedTenant)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold ${selectedTenant.is_active !== false ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}
-                      >
-                        {selectedTenant.is_active !== false ? 'SUSPEND' : 'ACTIVATE'}
-                      </button>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">Admin Credentials</p>
-                        <p className="text-xs text-slate-500">Reset password for platform owner</p>
-                      </div>
-                      <button
-                        onClick={() => openResetPasswordModal(selectedTenant)}
-                        className="px-4 py-2 bg-slate-200 dark:bg-white/10 rounded-lg text-xs font-bold"
-                      >
-                        RESET PASSWORD
-                      </button>
-                    </div>
-
-                    <div className="p-4 bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-bold text-red-700 dark:text-red-400">Irreversible Action</p>
-                        <p className="text-xs text-red-600">Delete all tenant data</p>
-                      </div>
-                      <button
-                        onClick={handleDeleteTenant}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
-                      >
-                        DELETE TENANT
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Password Reset Modal */}
         {resetModalOpen && selectedTenant && (
