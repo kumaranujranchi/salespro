@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   authService, tenantsService, profilesService, leadsService,
   salesService, projectsService, siteVisitsService, targetsService, miscService
@@ -31,6 +31,22 @@ function registerListener(key: string, listener: () => void) {
   return () => {
     queryListeners.get(key)?.delete(listener);
   };
+}
+
+// `api.*` is a Proxy that returns a brand new object on every property access,
+// so function identity is never stable across renders. Derive a stable string
+// key instead of comparing references.
+function functionKeyOf(fn: unknown): string {
+  if (!fn) return '';
+  try {
+    if (typeof fn === 'function') {
+      const name = (fn as { _name?: unknown })._name;
+      if (typeof name === 'string' && name) return name;
+    }
+    return String(fn);
+  } catch {
+    return '';
+  }
 }
 
 // Map function names to REST API service calls
@@ -214,7 +230,7 @@ async function resolveApiCall(functionKey: any, args: any) {
 // Compatible useQuery hook connected to REST API
 export function useQuery(fn: any, args?: any): any {
   const isSkip = args === 'skip' || !fn;
-  const queryKey = isSkip ? '' : JSON.stringify({ fn: String(fn), args });
+  const queryKey = isSkip ? '' : JSON.stringify({ fn: functionKeyOf(fn), args });
   const [data, setData] = useState<any>(undefined);
 
   useEffect(() => {
@@ -248,12 +264,17 @@ export function useQuery(fn: any, args?: any): any {
 
 // Compatible useMutation hook connected to REST API
 export function useMutation(fn: any): (args: any) => Promise<any> {
+  // Keep the latest fn in a ref so the returned callback stays referentially
+  // stable (the Proxy-based `api` object is recreated on every access).
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+
   return useCallback(async (args: any) => {
-    const result = await resolveApiCall(fn, args);
+    const result = await resolveApiCall(fnRef.current, args);
     // Invalidate queries so that UI refreshes instantly
     invalidateQuery();
     return result;
-  }, [fn]);
+  }, []);
 }
 
 // Compatible useAction hook connected to REST API
@@ -264,17 +285,17 @@ export function useAction(fn: any): (args: any) => Promise<any> {
 // Compatible usePaginatedQuery hook
 export function usePaginatedQuery(fn: any, args: any, options: any) {
   const data = useQuery(fn, args);
-  return {
+  return useMemo(() => ({
     results: Array.isArray(data) ? data : [],
     status: data === undefined ? 'LoadingFirstPage' : 'CanLoadMore',
     loadMore: () => {},
     isLoading: data === undefined,
-  };
+  }), [data]);
 }
 
 // Compatible useConvex hook
 export function useConvex() {
-  return {
+  return useMemo(() => ({
     query: (fn: any, args: any) => resolveApiCall(fn, args),
     mutation: (fn: any, args: any) => {
       const p = resolveApiCall(fn, args);
@@ -282,7 +303,7 @@ export function useConvex() {
       return p;
     },
     action: (fn: any, args: any) => resolveApiCall(fn, args),
-  };
+  }), []);
 }
 
 export const convex = {

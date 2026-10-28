@@ -20,8 +20,10 @@ export function LoadingSpinner({
         xl: 'scale-150'
     };
 
+    // Full-screen overlays must never swallow clicks on the app chrome
+    // (sidebar, header) while a page's data is still loading.
     const containerClasses = fullScreen
-        ? `fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-sm ${className}`
+        ? `fixed inset-0 z-[100] pointer-events-none flex flex-col items-center justify-center bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-sm ${className}`
         : `flex flex-col items-center justify-center p-4 ${className}`;
 
     return (

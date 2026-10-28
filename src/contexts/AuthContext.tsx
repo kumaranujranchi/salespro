@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { useQuery, useMutation, useConvex } from "convex/react";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) as Profile | null | undefined;
 
   const promoteMutation = useMutation(api.profiles.promoteToPlatformAdmin);
+  const promotedEmailRef = useRef<string | null>(null);
 
   // Fetch affiliate campaign via Convex query
   const affiliateData = useQuery(api.referrals.getCampaignByCreator,
@@ -77,8 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // profileData resolved from Convex (either a profile or null)
       const p = profileData;
       
-      // Auto-promote if this is the designated admin account
-      if (p && p.email === 'admin@realsalepro.com' && p.role !== 'platform_admin') {
+      // Auto-promote if this is the designated admin account.
+      // Guarded by a ref so a refetch never re-triggers the promote call
+      // (promote invalidates queries, which would refetch and loop forever).
+      if (
+        p &&
+        p.email === 'admin@realsalepro.com' &&
+        p.role !== 'platform_admin' &&
+        promotedEmailRef.current !== p.email
+      ) {
+        promotedEmailRef.current = p.email;
         const adminProfile = { ...p, id: p._id as string } as Profile;
         setProfile(adminProfile);
         promoteMutation({ email: p.email }).catch(console.error);
@@ -163,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    promotedEmailRef.current = null;
     setSessionUser(null);
     setProfile(null);
     setTenant(null);
