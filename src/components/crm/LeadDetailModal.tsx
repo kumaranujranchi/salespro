@@ -12,8 +12,9 @@ import { Badge } from '../ui/Badge';
 import {
   Phone, Mail, MapPin, Calendar, User,
   MessageSquare, Video, Send, AlertCircle, CheckCircle, XCircle,
-  Clock
+  Clock, Lock
 } from 'lucide-react';
+import { isLeadPhoneMasked, maskPhoneNumber } from '../../utils/phoneMasking';
 
 interface LeadDetailModalProps {
   isOpen: boolean;
@@ -22,8 +23,9 @@ interface LeadDetailModalProps {
 }
 
 export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps) {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const dialog = useDialog();
+  const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
 
   const [loading, setLoading] = useState(false);
   const [showFollowupForm, setShowFollowupForm] = useState(false);
@@ -225,9 +227,23 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
 
             {/* Middle Row: Contact & Meta */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <a href={`tel:${lead.mobile}`} className="flex items-center gap-1.5 text-blue-600 hover:underline">
-                <Phone size={14} /> {lead.mobile}
-              </a>
+              <div className="flex items-center gap-1.5">
+                <a
+                  href={`tel:${lead.mobile}`}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-600 hover:text-white transition-colors"
+                  title="Call Lead (Opens Phone Dialer)"
+                >
+                  <Phone size={12} className="fill-current" />
+                </a>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile}
+                </span>
+                {isPhoneMasked && (
+                  <span title="Phone Number Protected" className="text-slate-400">
+                    <Lock size={12} className="inline text-emerald-600 dark:text-emerald-400" />
+                  </span>
+                )}
+              </div>
               {lead.city && (
                 <div className="flex items-center gap-1.5">
                   <MapPin size={14} /> {lead.city}
@@ -253,11 +269,11 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               <Button
                 variant="outline"
                 size="sm"
-                className="justify-center"
+                className="justify-center text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
                 onClick={() => window.open(`tel:${lead.mobile}`, '_self')}
               >
-                <Phone size={16} className="mr-2" />
-                Call
+                <Phone size={16} className="mr-2 fill-current" />
+                Call Lead (Dialer)
               </Button>
               <Button
                 variant="outline"

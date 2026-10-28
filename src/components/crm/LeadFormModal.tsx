@@ -10,6 +10,7 @@ import {
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { isLeadPhoneMasked, maskPhoneNumber } from '../../utils/phoneMasking';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
   const { profile, tenant } = useAuth();
   const isFreePlan = tenant?.plan_tier === 'free';
   const isEditing = !!lead;
+  const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
   const dialog = useDialog();
 
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       return false;
     }
 
-    if (!/^[0-9]{10}$/.test(formData.mobile)) {
+    if (!(isEditing && isPhoneMasked) && !/^[0-9]{10}$/.test(formData.mobile)) {
       dialog.alert('Please enter a valid 10-digit mobile number', { variant: 'danger', title: 'Validation Error' });
       return false;
     }
@@ -135,7 +137,7 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           project_id: (formData.project_id as Id<"projects">) || null,
           sales_executive_id: formData.sales_executive_id as Id<"profiles">,
           customer_name: formData.customer_name,
-          mobile: formData.mobile,
+          mobile: (isEditing && isPhoneMasked) ? lead.mobile : formData.mobile,
           email: formData.email || null,
           city: formData.city || null,
           budget_range: formData.budget_range,
@@ -156,7 +158,7 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           project_id: (formData.project_id as Id<"projects">) || null,
           sales_executive_id: formData.sales_executive_id as Id<"profiles">,
           customer_name: formData.customer_name,
-          mobile: formData.mobile,
+          mobile: (isEditing && isPhoneMasked) ? lead.mobile : formData.mobile,
           email: formData.email || null,
           city: formData.city || null,
           budget_range: formData.budget_range,
@@ -362,12 +364,18 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
             />
 
             <Input
-              label={isFreePlan && isEditing ? "Mobile Number (Locked - Pro Feature)" : "Mobile Number"}
-              type="tel"
-              value={formData.mobile}
+              label={
+                isPhoneMasked && isEditing
+                  ? "Mobile Number (Protected - Admin Only)"
+                  : isFreePlan && isEditing
+                  ? "Mobile Number (Locked - Pro Feature)"
+                  : "Mobile Number"
+              }
+              type={isPhoneMasked && isEditing ? "text" : "tel"}
+              value={isPhoneMasked && isEditing && lead ? maskPhoneNumber(lead.mobile) : formData.mobile}
               onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
-              required
-              disabled={isFreePlan && isEditing}
+              required={!isEditing || !isPhoneMasked}
+              disabled={(isFreePlan && isEditing) || (isPhoneMasked && isEditing)}
               placeholder="10-digit mobile number"
               maxLength={10}
             />

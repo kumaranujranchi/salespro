@@ -11,9 +11,11 @@ import {
   FileText, Download, Filter, Calendar as CalendarIcon, 
   TrendingUp, Users, Award, MapPin, PhoneCall 
 } from 'lucide-react';
+import { isLeadPhoneMasked, maskPhoneNumber } from '../utils/phoneMasking';
 
 export function ReportsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
+  const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
   
   // Default date range: current month to today
   const defaultDates = useMemo(() => {
@@ -54,7 +56,7 @@ export function ReportsPage() {
     if (activeTab === 'leads') {
       headers = ['Lead ID', 'Customer Name', 'Mobile', 'Source', 'Status', 'Date', 'Project', 'Assigned Executive'];
       dataToExport = (reportData.leadsReport?.detailedRegister || []).map(l => [
-        l.leadId, l.customerName, l.mobile, l.source, l.status, l.date, l.projectName, l.executiveName
+        l.leadId, l.customerName, isPhoneMasked ? maskPhoneNumber(l.mobile) : l.mobile, l.source, l.status, l.date, l.projectName, l.executiveName
       ]);
     } else if (activeTab === 'sales') {
       headers = ['Customer Name', 'Project', 'Unit Number', 'Area (SqFt)', 'Total Revenue', 'Booking Amount', 'Date', 'Executive'];
@@ -64,7 +66,7 @@ export function ReportsPage() {
     } else if (activeTab === 'visits') {
       headers = ['Customer Name', 'Mobile', 'Project', 'Executive', 'Visit Date', 'Status'];
       dataToExport = (reportData.siteVisitsReport?.detailedRegister || []).map(v => [
-        v.customerName, v.mobile, v.projectName, v.executiveName, v.visitDate, v.status
+        v.customerName, isPhoneMasked ? maskPhoneNumber(v.mobile) : v.mobile, v.projectName, v.executiveName, v.visitDate, v.status
       ]);
     } else if (activeTab === 'executives') {
       headers = ['Executive Name', 'Role', 'Total Assigned', 'Converted', 'Conversion %', 'Site Visits Done', 'Total Revenue'];
@@ -272,7 +274,20 @@ export function ReportsPage() {
                         <TableRow key={lead.id}>
                           <TableCell className="font-mono text-xs pl-6">{lead.leadId}</TableCell>
                           <TableCell className="font-semibold text-slate-800 dark:text-slate-200">{lead.customerName}</TableCell>
-                          <TableCell>{lead.mobile}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={`tel:${lead.mobile}`}
+                                className="inline-flex items-center justify-center w-6 h-6 rounded bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white border border-emerald-200 dark:border-emerald-800/60 shadow-sm transition-all shrink-0"
+                                title="Direct Call (Open Phone Dialer)"
+                              >
+                                <PhoneCall size={12} />
+                              </a>
+                              <span className="font-medium text-xs text-slate-800 dark:text-slate-200">
+                                {isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile}
+                              </span>
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-slate-50 dark:bg-slate-700/30">{lead.source}</Badge>
                           </TableCell>

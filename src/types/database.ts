@@ -14,6 +14,9 @@ export interface TenantSettings {
     primary_color: string;
     logo_url: string | null;
   };
+  security?: {
+    mask_lead_phone?: boolean;
+  };
   general?: {
     target_model?: 'units' | 'area' | 'revenue' | 'hybrid';
   };

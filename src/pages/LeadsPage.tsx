@@ -22,15 +22,18 @@ import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, Search, Download, Upload,
   UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy,
-  Calendar, Clock, Lock, Sparkles
+  Calendar, Clock, Lock, Sparkles, ShieldCheck
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
+import { isLeadPhoneMasked, maskPhoneNumber } from '../utils/phoneMasking';
 
 export function LeadsPage() {
   const { profile, tenant } = useAuth();
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   const isFreePlan = tenant?.plan_tier === 'free';
+  const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
+  const isAdminUser = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin';
   const dialog = useDialog();
   const toast = useToast();
 
@@ -356,7 +359,7 @@ export function LeadsPage() {
       'Lead ID': lead.lead_id,
       'Date': new Date(lead.lead_date).toLocaleDateString(),
       'Customer Name': lead.customer_name,
-      'Mobile': lead.mobile,
+      'Mobile': isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile,
       'Email': lead.email || '',
       'City': lead.city || '',
       'Project': lead.project?.name || '',
@@ -555,9 +558,17 @@ export function LeadsPage() {
       {/* Header with Toggle */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">
-            CRM - Lead Management
-          </h1>
+          <div className="flex flex-wrap items-center gap-3 mb-1 md:mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+              CRM - Lead Management
+            </h1>
+            {tenant?.settings?.security?.mask_lead_phone && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
+                <ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400" />
+                {isAdminUser ? 'Phone Masking Active (Team Protected)' : 'Lead Numbers Protected (Direct Call Only)'}
+              </span>
+            )}
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
             Manage customer relationships and track leads
           </p>
@@ -930,18 +941,34 @@ export function LeadsPage() {
                           {/* Contact */}
                           <TableCell>
                             <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-1 group">
-                                <a href={`tel:${lead.mobile}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline font-medium">
-                                  <Phone size={12} />
-                                  {lead.mobile}
-                                </a>
-                                <button
-                                  onClick={() => handleCopy(lead.mobile)}
-                                  className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
-                                  title="Copy Mobile"
+                              <div className="flex items-center gap-1.5 group">
+                                {/* Click-to-call direct dialer button */}
+                                <a
+                                  href={`tel:${lead.mobile}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-600 dark:hover:text-white border border-emerald-200 dark:border-emerald-800/60 shadow-sm transition-all duration-150 shrink-0"
+                                  title="Direct Call (Open Phone Dialer)"
                                 >
-                                  <Copy size={13} />
-                                </button>
+                                  <Phone size={12} className="fill-current" />
+                                </a>
+
+                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
+                                  {isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile}
+                                </span>
+
+                                {isPhoneMasked ? (
+                                  <span title="Phone Number Protected" className="text-slate-400 ml-0.5">
+                                    <Lock size={11} className="inline text-emerald-600 dark:text-emerald-400" />
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleCopy(lead.mobile)}
+                                    className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                                    title="Copy Mobile"
+                                  >
+                                    <Copy size={13} />
+                                  </button>
+                                )}
                               </div>
                               {lead.email && (
                                 <a href={`mailto:${lead.email}`} className="text-xs flex items-center gap-1 text-blue-600 hover:underline">

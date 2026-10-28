@@ -573,6 +573,53 @@ export function TenantsPage() {
                     </div>
                   );
                 })}
+
+                {/* Anti-Theft Lead Phone Masking Toggle for Platform Admin */}
+                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all sm:col-span-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                        Lead Phone Masking (Anti-Theft)
+                      </p>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        currentTenant.settings?.security?.mask_lead_phone ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                        {currentTenant.settings?.security?.mask_lead_phone ? 'Masked' : 'Unmasked'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Team members cannot see or copy full lead phone numbers. Direct calling via dialer only.
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const currentMask = !!currentTenant.settings?.security?.mask_lead_phone;
+                      const newSecurity = {
+                        ...(currentTenant.settings?.security || {}),
+                        mask_lead_phone: !currentMask
+                      };
+                      const newSettings = { ...currentTenant.settings, security: newSecurity };
+                      try {
+                        await updateTenantMutation({
+                          id: currentTenant._id,
+                          settings: newSettings
+                        });
+                        toast.success(`Lead Phone Masking ${!currentMask ? 'enabled' : 'disabled'}`);
+                      } catch (e) {
+                        toast.error('Failed to update masking setting');
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      currentTenant.settings?.security?.mask_lead_phone ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        currentTenant.settings?.security?.mask_lead_phone ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
