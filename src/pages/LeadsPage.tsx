@@ -22,7 +22,7 @@ import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, Search, Download, Upload,
   UserPlus, RefreshCw, Trash2, Building, Eye, Edit, Copy,
-  Calendar, Clock, Lock, Sparkles, ShieldCheck
+  Calendar, Clock, Lock, Sparkles, ShieldCheck, MessageSquare
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
@@ -1361,6 +1361,117 @@ export function LeadsPage() {
                 </Table>
               </div>
 
+              {/* Mobile Card View (optimized for mobile screens) */}
+              <div className="md:hidden space-y-3">
+                {leads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    onClick={() => handleViewDetails(lead)}
+                    className={`p-4 bg-white dark:bg-slate-800 rounded-2xl border transition-all shadow-sm active:scale-[0.99] cursor-pointer ${
+                      lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified'
+                        ? 'border-red-200 dark:border-red-900/40 bg-red-50/20 dark:bg-red-950/10'
+                        : lead.overdue_followup
+                        ? 'border-amber-200 dark:border-amber-900/40'
+                        : 'border-slate-200 dark:border-white/10 hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Header: Customer Name & Status */}
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 dark:text-white text-base truncate">
+                            {lead.customer_name}
+                          </h4>
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            lead.lead_score === 'Hot' ? 'bg-red-500' : lead.lead_score === 'Warm' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`} />
+                        </div>
+                        {lead.city && (
+                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                            <MapPin size={11} /> {lead.city}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant={
+                        lead.lead_status === 'Converted' ? 'success' :
+                        lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'danger' :
+                        lead.lead_status === 'Qualified' ? 'warning' : 'info'
+                      } className="shrink-0 text-[10px] uppercase font-bold tracking-wider">
+                        {lead.lead_status}
+                      </Badge>
+                    </div>
+
+                    {/* Middle: Project & Executive Info */}
+                    <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 text-xs mb-3">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">Project</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200 truncate block">
+                          {lead.project?.name || 'Not Assigned'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">Assigned To</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200 truncate block">
+                          {lead.sales_executive?.full_name || 'Unassigned'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Contact & Direct Calling Bar */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/10" onClick={(e) => e.stopPropagation()}>
+                      {/* Click-to-call direct dialer button & phone */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <a
+                          href={`tel:${lead.mobile}`}
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all shrink-0"
+                          title="Direct Call (Open Phone Dialer)"
+                        >
+                          <Phone size={14} className="fill-current" />
+                        </a>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">
+                            {isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile}
+                          </span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                            Tap phone to call
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action buttons: WhatsApp, Edit & Details */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <a
+                          href={`https://wa.me/${lead.mobile?.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/50 hover:bg-green-600 hover:text-white transition-all"
+                          title="WhatsApp"
+                        >
+                          <MessageSquare size={14} />
+                        </a>
+                        {lead.lead_status !== 'Converted' && (
+                          <button
+                            type="button"
+                            onClick={() => handleEditLead(lead)}
+                            className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-indigo-300 transition-all"
+                            title="Edit Lead"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleViewDetails(lead)}
+                          className="px-2.5 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/50 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"
+                        >
+                          Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {/* Load More */}
               {status === "CanLoadMore" && (
                 <div className="flex justify-center mt-6">
@@ -1529,6 +1640,18 @@ export function LeadsPage() {
             </div>
           )}
         </Modal>
+      )}
+
+      {/* Floating Action Button for Mobile Users */}
+      {canCreateLead && (
+        <button
+          onClick={handleCreateLead}
+          className="md:hidden fixed bottom-20 right-4 w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-emerald-700 active:scale-95 transition-all z-40"
+          aria-label="Create new lead"
+          title="Create New Lead"
+        >
+          <Plus size={22} strokeWidth={2.5} />
+        </button>
       )}
     </div>
   );
