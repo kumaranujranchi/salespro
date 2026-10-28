@@ -126,7 +126,11 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                         return (
                             <button
                                 key={item.path}
-                                onClick={() => navigate(item.path)}
+                                onClick={() => {
+                                    if (window.location.pathname !== item.path) {
+                                        window.location.href = item.path;
+                                    }
+                                }}
                                 className={`${isCrowded ? 'flex-none min-w-[64px]' : 'flex-1'} flex flex-col items-center justify-center py-2 rounded-xl transition-all ${isActive ? 'text-blue-600 dark:text-primary bg-blue-50 dark:bg-white/5' : 'text-slate-400 dark:text-text-muted hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-white'
                                     }`}
                             >
@@ -138,7 +142,7 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                         )
                     })}
                     <button
-                        onClick={async () => { await signOut(); navigate('/login'); }}
+                        onClick={async () => { await signOut(); window.location.href = '/login'; }}
                         className={`${isCrowded ? 'flex-none min-w-[64px]' : 'flex-1'} flex flex-col items-center justify-center py-2 rounded-xl text-slate-400 dark:text-text-muted hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 transition-all`}
                     >
                         <LogOut size={20} className="mb-1 opacity-70" />

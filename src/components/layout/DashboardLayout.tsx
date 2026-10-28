@@ -265,10 +265,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleModuleToggle = (isCRM: boolean) => {
     if (isCRM && isCRMEnabled) {
       setActiveModule('crm');
-      navigate('/crm');
+      window.location.href = '/crm';
     } else {
       setActiveModule('sales');
-      navigate('/dashboard');
+      window.location.href = '/dashboard';
     }
   };
 
@@ -375,7 +375,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     sessionStorage.removeItem('hasSeenNotificationPopup');
     
     await signOut();
-    navigate('/login');
+    window.location.href = '/login';
+  };
+
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
+      return;
+    }
+    e.preventDefault();
+    if (sidebarOpen) setSidebarOpen(false);
+    if (window.location.pathname !== path) {
+      window.location.href = path;
+    }
   };
 
   const filteredNavItems = currentNavItems.filter(canAccessNavItem);
@@ -569,9 +580,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <NavLink
                           key={item.path}
                           to={item.path}
-                          onClick={() => {
-                            if (sidebarOpen) setSidebarOpen(false);
-                          }}
+                          onClick={(e) => handleNavClick(item.path, e)}
                           className={({ isActive }) => `
                             w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left
                             transition-all duration-300 group relative overflow-hidden
@@ -638,9 +647,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    onClick={() => {
-                      if (sidebarOpen) setSidebarOpen(false);
-                    }}
+                    onClick={(e) => handleNavClick(item.path, e)}
                     className={({ isActive }) => `
                       w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left
                       transition-all duration-300 group relative overflow-hidden
