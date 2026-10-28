@@ -78,21 +78,36 @@ export function AdminDashboard() {
     (tenantId && profileId) ? { tenant_id: tenantId, callerProfileId: profileId } : "skip"
   );
 
-  const loading = !salesOverview || !salesAnalytics || !projects || !users;
+  const isDataLoading = salesOverview === undefined || salesAnalytics === undefined || projects === undefined || users === undefined;
 
-  if (loading) {
+  if (isDataLoading) {
     return <LoadingSpinner size="lg" fullScreen />;
   }
+
+  const overview = salesOverview || {
+    mySales: 0,
+    monthlyRevenue: 0,
+    myTarget: 0,
+    achievementPercent: 0,
+    totalIncentives: 0,
+    ytdSalesCount: 0,
+    ytdTotalArea: 0,
+    ytdRevenue: 0,
+    projectStats: [],
+    salesTrend: [],
+    teamTargets: [],
+    siteVisits: { total: 0, avgPerExec: 0, conversionRate: 0 }
+  };
 
   const stats = {
     totalProjects: projects?.filter((p: any) => p.is_active).length || 0,
     totalTeamMembers: users?.filter((u: any) => u.is_active).length || 0,
     totalDepartments: depts?.length || 0,
-    monthlySales: salesOverview.mySales,
-    monthlyRevenue: salesOverview.monthlyRevenue,
-    ytdSales: salesOverview.ytdSalesCount,
-    ytdRevenue: salesOverview.ytdRevenue,
-    projectStats: salesOverview.projectStats as any[]
+    monthlySales: overview.mySales || 0,
+    monthlyRevenue: overview.monthlyRevenue || 0,
+    ytdSales: overview.ytdSalesCount || 0,
+    ytdRevenue: overview.ytdRevenue || 0,
+    projectStats: (overview.projectStats || []) as any[]
   };
 
   return (

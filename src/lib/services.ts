@@ -61,6 +61,12 @@ export const leadsService = {
 export const salesService = {
   list: (tenantId: string, filters?: any) =>
     api.get<any[]>('/sales', { tenant_id: tenantId, ...filters }),
+  getOverview: (params: { tenant_id: string; executive_id?: string; view?: string }) =>
+    api.get<any>('/sales/overview', params),
+  getAnalytics: (params: { tenant_id: string; executive_id?: string; year?: number }) =>
+    api.get<any[]>('/sales/analytics', params),
+  getLeaderboard: (params: { tenant_id: string; timeFilter?: string; roleFilter?: string }) =>
+    api.get<any[]>('/sales/leaderboard', params),
   create: (data: any) => api.post<any>('/sales', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/sales/${id}`, data),
   listPayments: (tenantId: string, saleId?: string) =>
@@ -81,6 +87,8 @@ export const projectsService = {
 export const siteVisitsService = {
   list: (tenantId: string, filters?: any) =>
     api.get<any[]>('/site-visits', { tenant_id: tenantId, ...filters }),
+  countPending: (tenantId: string) =>
+    api.get<number>('/site-visits/count-pending', { tenant_id: tenantId }),
   request: (data: any) => api.post<any>('/site-visits', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/site-visits/${id}`, data),
 };
@@ -97,6 +105,14 @@ export const miscService = {
   listNotifications: (userId: string) => api.get<any[]>('/misc/notifications', { user_id: userId }),
   markNotificationRead: (id: string) => api.patch<{ success: boolean }>(`/misc/notifications/${id}/read`),
   listAnnouncements: (tenantId: string) => api.get<any[]>('/misc/announcements', { tenant_id: tenantId }),
+  listPublishedAnnouncements: (tenantId: string, limit?: number) =>
+    api.get<any[]>('/misc/announcements/published', { tenant_id: tenantId, limit }),
+  listActivityLogs: (tenantId: string, limit?: number) =>
+    api.get<any[]>('/misc/activity-logs', { tenant_id: tenantId, limit }),
+  listIncentives: (tenantId: string, params?: any) =>
+    api.get<any[]>('/misc/incentives', { tenant_id: tenantId, ...params }),
+  getIncentiveCalculationData: (tenantId: string, params?: any) =>
+    api.get<any>('/misc/incentives/calculation-data', { tenant_id: tenantId, ...params }),
   listSupportTickets: (tenantId?: string) => api.get<any[]>('/misc/support-tickets', { tenant_id: tenantId }),
   resolveSupportTicket: (id: string, notes?: string) =>
     api.patch<{ success: boolean }>(`/misc/support-tickets/${id}`, { status: 'resolved', resolution_notes: notes }),

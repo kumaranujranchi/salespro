@@ -31,14 +31,14 @@ export function SalesOverview() {
     const profileId = profile?._id as Id<"profiles">;
 
     // Backend queries
-    const overviewData = useQuery(api.sales.getSalesOverview, 
+    const rawOverview = useQuery(api.sales.getSalesOverview, 
         (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: salesView } : "skip"
     );
     const activityLogs = useQuery(api.activity_logs.listRecent, 
         tenantId ? { tenant_id: tenantId, limit: 10 } : "skip"
     );
 
-    const loading = !overviewData;
+    const loading = rawOverview === undefined;
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -46,6 +46,19 @@ export function SalesOverview() {
     }, []);
 
     if (loading) return <LoadingSpinner size="lg" fullScreen />;
+
+    const overviewData = rawOverview || {
+        mySales: 0,
+        monthlyRevenue: 0,
+        myTarget: 0,
+        ytdSalesCount: 0,
+        ytdTotalArea: 0,
+        ytdRevenue: 0,
+        achievementPercent: 0,
+        totalIncentives: 0,
+        projectStats: [],
+        salesTrend: [],
+    };
 
     return (
         <div className="space-y-6 pb-12">

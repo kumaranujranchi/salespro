@@ -150,6 +150,15 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
 
   // SALES & PAYMENTS
+  if (key.includes('sales.getSalesOverview') || key.includes('sales.getOverview')) {
+    return await salesService.getOverview(args);
+  }
+  if (key.includes('sales.getSalesAnalytics') || key.includes('sales.getAnalytics')) {
+    return await salesService.getAnalytics(args);
+  }
+  if (key.includes('sales.getLeaderboard')) {
+    return await salesService.getLeaderboard(args);
+  }
   if (key.includes('sales.listSales') || key.includes('sales.list')) {
     return await salesService.list(args?.tenant_id, args);
   }
@@ -178,6 +187,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
 
   // SITE VISITS
+  if (key.includes('site_visits.countPendingVisits') || key.includes('site_visits.countPending')) {
+    return await siteVisitsService.countPending(args?.tenant_id);
+  }
   if (key.includes('site_visits.list') || key.includes('site_visits.listVisits')) {
     return await siteVisitsService.list(args?.tenant_id, args);
   }
@@ -209,8 +221,20 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('notifications.markRead')) {
     return await miscService.markNotificationRead(args?.id || args?._id);
   }
+  if (key.includes('announcements.listPublished')) {
+    return await miscService.listPublishedAnnouncements(args?.tenant_id, args?.limit);
+  }
   if (key.includes('announcements.listAll') || key.includes('announcements.list')) {
     return await miscService.listAnnouncements(args?.tenant_id);
+  }
+  if (key.includes('activity_logs.listRecent') || key.includes('activity_logs.list')) {
+    return await miscService.listActivityLogs(args?.tenant_id, args?.limit);
+  }
+  if (key.includes('incentives.listIncentives') || key.includes('incentives.list')) {
+    return await miscService.listIncentives(args?.tenant_id, args);
+  }
+  if (key.includes('incentives.getIncentiveCalculationData') || key.includes('incentives.getCalculationData')) {
+    return await miscService.getIncentiveCalculationData(args?.tenant_id, args);
   }
   if (key.includes('support.resolve')) {
     return await miscService.resolveSupportTicket(args?.id || args?._id, args?.resolution_notes);

@@ -98,6 +98,94 @@ router.get('/announcements', async (req, res) => {
   }
 });
 
+router.get('/announcements/published', async (req, res) => {
+  try {
+    const { tenant_id, limit = 10 } = req.query;
+    if (!tenant_id) return res.json([]);
+    const result = await query(
+      `SELECT * FROM announcements 
+       WHERE tenant_id = $1 AND (is_published = true OR is_published IS NULL)
+       ORDER BY created_at DESC 
+       LIMIT $2`,
+      [tenant_id, parseInt(limit)]
+    );
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+    })));
+  } catch (err) {
+    return res.json([]);
+  }
+});
+
+// Activity Logs
+router.get('/activity-logs', async (req, res) => {
+  try {
+    const { tenant_id, limit = 50 } = req.query;
+    if (!tenant_id) return res.json([]);
+    const result = await query(
+      `SELECT al.*, p.full_name as user_name, p.image_url as user_image
+       FROM activity_logs al
+       LEFT JOIN profiles p ON al.user_id = p.id
+       WHERE al.tenant_id = $1
+       ORDER BY al.created_at DESC
+       LIMIT $2`,
+      [tenant_id, parseInt(limit)]
+    );
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+      userName: r.user_name || 'System',
+      user: {
+        full_name: r.user_name || 'System',
+        image_url: r.user_image || null,
+      }
+    })));
+  } catch (err) {
+    return res.json([]);
+  }
+});
+
+// Incentives
+router.get('/incentives', async (req, res) => {
+  try {
+    const { tenant_id, executive_id, year } = req.query;
+    if (!tenant_id) return res.json([]);
+    let sql = 'SELECT * FROM incentives WHERE tenant_id = $1';
+    const params = [tenant_id];
+    if (executive_id) {
+      params.push(executive_id);
+      sql += ` AND sales_executive_id = $${params.length}`;
+    }
+    if (year) {
+      params.push(parseInt(year));
+      sql += ` AND calculation_year = $${params.length}`;
+    }
+    sql += ' ORDER BY created_at DESC';
+    const result = await query(sql, params);
+    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+  } catch (err) {
+    return res.json([]);
+  }
+});
+
+router.get('/incentives/calculation-data', async (req, res) => {
+  try {
+    const { tenant_id, executive_id } = req.query;
+    return res.json({
+      totalIncentives: 0,
+      pendingIncentives: 0,
+      approvedIncentives: 0,
+      paidIncentives: 0,
+      slabs: [],
+    });
+  } catch (err) {
+    return res.json({ totalIncentives: 0, pendingIncentives: 0, approvedIncentives: 0, paidIncentives: 0, slabs: [] });
+  }
+});
+
 // Support Tickets
 router.get('/support-tickets', async (req, res) => {
   try {

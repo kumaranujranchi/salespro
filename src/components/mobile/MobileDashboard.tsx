@@ -49,20 +49,29 @@ export function MobileDashboard() {
         tenantId ? { tenant_id: tenantId } : "skip"
     ) || [];
 
-    if (!overview || !leaderboard) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div></div>;
+    if (overview === undefined || leaderboard === undefined) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div></div>;
 
-    const stats = {
-        monthlySales: overview.mySales,
-        monthlyRevenue: overview.monthlyRevenue,
-        ytdSales: overview.ytdSalesCount,
-        ytdRevenue: overview.ytdRevenue,
-        totalProjects: overview.projectStats.length,
-        totalTeamMembers: staff.length,
-        totalDepartments: departments.length,
-        projectStats: overview.projectStats
+    const safeOverview = overview || {
+        mySales: 0,
+        monthlyRevenue: 0,
+        ytdSalesCount: 0,
+        ytdRevenue: 0,
+        projectStats: [],
+        salesTrend: [],
     };
 
-    const salesChartData = overview.salesTrend;
+    const stats = {
+        monthlySales: safeOverview.mySales,
+        monthlyRevenue: safeOverview.monthlyRevenue,
+        ytdSales: safeOverview.ytdSalesCount,
+        ytdRevenue: safeOverview.ytdRevenue,
+        totalProjects: (safeOverview.projectStats || []).length,
+        totalTeamMembers: staff.length,
+        totalDepartments: departments.length,
+        projectStats: safeOverview.projectStats || []
+    };
+
+    const salesChartData = safeOverview.salesTrend || [];
     const topPerformers = leaderboard.map(l => ({
         id: l.id,
         name: l.name,

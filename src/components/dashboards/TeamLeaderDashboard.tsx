@@ -78,7 +78,7 @@ export function TeamLeaderDashboard() {
   const salesView = permissions.sales_view || 'team';
 
   // Backend queries
-  const overview = useQuery(api.sales.getSalesOverview, 
+  const rawOverview = useQuery(api.sales.getSalesOverview, 
     (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: salesView } : "skip"
   );
   
@@ -90,11 +90,22 @@ export function TeamLeaderDashboard() {
     tenantId ? { tenant_id: tenantId, timeFilter: 'this_year', roleFilter: 'all' } : "skip"
   );
 
-  const loading = !overview;
+  const loading = rawOverview === undefined;
 
   if (loading) {
     return <LoadingSpinner size="lg" fullScreen />;
   }
+
+  const overview = rawOverview || {
+    mySales: 0,
+    monthlyRevenue: 0,
+    ytdSalesCount: 0,
+    ytdRevenue: 0,
+    salesTrend: [],
+    teamTargets: [],
+    projectStats: [],
+    siteVisits: { total: 0, avgPerExec: 0, conversionRate: 0 }
+  };
 
   return (
     <div className="space-y-6 pb-12">

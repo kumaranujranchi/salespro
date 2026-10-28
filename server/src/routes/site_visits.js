@@ -41,6 +41,21 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Count Pending Visits
+router.get('/count-pending', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    if (!tenant_id) return res.json(0);
+    const result = await query(
+      "SELECT count(*) FROM site_visits WHERE tenant_id = $1 AND status = 'pending'",
+      [tenant_id]
+    );
+    return res.json(parseInt(result.rows[0]?.count || 0));
+  } catch (err) {
+    return res.json(0);
+  }
+});
+
 // Request / Create Site Visit
 router.post('/', async (req, res) => {
   try {

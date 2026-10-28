@@ -46,7 +46,7 @@ export function CRMDashboard() {
     const announcements = useQuery(api.announcements.listPublished, tenantId ? { tenant_id: tenantId, limit: 3 } : "skip");
     const recentSales = useQuery(api.sales.listSales, tenantId ? { tenant_id: tenantId } : "skip");
 
-    const loading = !crmStats || !salesAnalytics || !projects || !profiles;
+    const loading = crmStats === undefined || salesAnalytics === undefined || projects === undefined || profiles === undefined;
 
     const permissions = profile?.role_details?.permissions?.dashboard || {
         sales_view: 'overall',

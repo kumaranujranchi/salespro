@@ -19,7 +19,7 @@ export function ReceptionistDashboard() {
     const profileId = profile?.id as Id<"profiles">;
 
     // Backend queries
-    const overview = useQuery(api.sales.getSalesOverview, 
+    const rawOverview = useQuery(api.sales.getSalesOverview, 
         (tenantId && profileId) ? { tenant_id: tenantId, executive_id: profileId, view: 'overall' } : "skip"
     );
 
@@ -52,7 +52,18 @@ export function ReceptionistDashboard() {
         return () => clearInterval(timer);
     }, []);
 
-    if (!overview) return <LoadingSpinner fullScreen />;
+    if (rawOverview === undefined) return <LoadingSpinner fullScreen />;
+
+    const overview = rawOverview || {
+        mySales: 0,
+        monthlyRevenue: 0,
+        ytdSalesCount: 0,
+        ytdRevenue: 0,
+        salesTrend: [],
+        teamTargets: [],
+        projectStats: [],
+        siteVisits: { total: 0, avgPerExec: 0, conversionRate: 0 }
+    };
 
     const projectColors = [
         { bg: 'bg-emerald-50', text: 'text-emerald-600' },
