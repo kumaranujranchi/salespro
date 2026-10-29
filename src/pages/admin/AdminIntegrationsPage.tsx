@@ -8,7 +8,7 @@ import { tenantsService, capiService } from '../../lib/services';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw } from 'lucide-react';
+import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy } from 'lucide-react';
 
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
@@ -22,10 +22,14 @@ export function AdminIntegrationsPage() {
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [savingGoogleForm, setSavingGoogleForm] = useState(false);
   const [savingGoogleSheet, setSavingGoogleSheet] = useState(false);
+  const [savingWebsite, setSavingWebsite] = useState(false);
   const [savingMetaCapi, setSavingMetaCapi] = useState(false);
   const [savingGoogleConversion, setSavingGoogleConversion] = useState(false);
   const [isTestingCapi, setIsTestingCapi] = useState(false);
   const [capiTestResult, setCapiTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [isTestingWebsiteLead, setIsTestingWebsiteLead] = useState(false);
+  const [websiteTestResult, setWebsiteTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [websiteActiveTab, setWebsiteActiveTab] = useState<'elementor' | 'html' | 'php' | 'zapier'>('elementor');
   const [showMetaCapiToken, setShowMetaCapiToken] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   
@@ -34,7 +38,7 @@ export function AdminIntegrationsPage() {
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
 
   // Modal display states
-  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | 'metaCapi' | 'googleConversion' | null>(null);
+  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | 'website' | 'metaCapi' | 'googleConversion' | null>(null);
   const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
   const [showNineNineHelp, setShowNineNineHelp] = useState(false);
@@ -43,8 +47,15 @@ export function AdminIntegrationsPage() {
   const [showWhatsappHelp, setShowWhatsappHelp] = useState(false);
   const [showGoogleFormHelp, setShowGoogleFormHelp] = useState(false);
   const [showGoogleSheetHelp, setShowGoogleSheetHelp] = useState(false);
+  const [showWebsiteHelp, setShowWebsiteHelp] = useState(false);
   const [showMetaCapiHelp, setShowMetaCapiHelp] = useState(false);
   const [showGoogleConversionHelp, setShowGoogleConversionHelp] = useState(false);
+
+  // Website Webhook State
+  const [websiteSettings, setWebsiteSettings] = useState({
+    enabled: true,
+    assignmentRule: 'manual' as 'manual' | 'round_robin'
+  });
 
   // Meta Conversions API (CAPI) State
   const [metaCapiSettings, setMetaCapiSettings] = useState({
@@ -215,6 +226,13 @@ export function AdminIntegrationsPage() {
         assignmentRule: ((tenant?.settings?.integrations as any).googleSheet.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
+    if ((tenant?.settings?.integrations as any)?.website) {
+      const ws = (tenant.settings.integrations as any).website;
+      setWebsiteSettings({
+        enabled: ws.enabled ?? true,
+        assignmentRule: (ws.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+      });
+    }
     if ((tenant?.settings?.integrations as any)?.meta_capi) {
       const mc = (tenant.settings.integrations as any).meta_capi;
       setMetaCapiSettings({
@@ -250,9 +268,11 @@ export function AdminIntegrationsPage() {
     setShowWhatsappHelp(false);
     setShowGoogleFormHelp(false);
     setShowGoogleSheetHelp(false);
+    setShowWebsiteHelp(false);
     setShowMetaCapiHelp(false);
     setShowGoogleConversionHelp(false);
     setCapiTestResult(null);
+    setWebsiteTestResult(null);
   }, [activeModal]);
 
   // Handle Facebook Redirect OAuth Code
@@ -627,6 +647,78 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleSaveWebsiteSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingWebsite(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          website: {
+            enabled: websiteSettings.enabled,
+            assignmentRule: websiteSettings.assignmentRule,
+          }
+        }
+      };
+      await updateTenantMutation({ id: tenant._id as any, settings: updatedSettings });
+      await refreshTenant();
+      toast.success('Website webhook integration settings saved!');
+      setActiveModal(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Website webhook settings.');
+    } finally {
+      setSavingWebsite(false);
+    }
+  };
+
+  const handleSendTestWebsiteLead = async () => {
+    if (!webhookSecret) {
+      toast.error('Webhook token not ready yet. Please wait a moment.');
+      return;
+    }
+    setIsTestingWebsiteLead(true);
+    setWebsiteTestResult(null);
+    try {
+      const testUrl = `${publicApiBase}/v1/inbound-leads?portal=website&token=${webhookToken}`;
+      const res = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Rahul Sharma (Website Test)',
+          phone: '9876543210',
+          email: 'rahul.test@example.com',
+          city: 'Mumbai',
+          budget: '75 Lakhs',
+          requirement: '3 BHK Luxury Apartment',
+          message: 'Website test inquiry: I am interested in your project.'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWebsiteTestResult({
+          success: true,
+          message: `Test lead successfully created in CRM! Lead ID: ${data.lead_id || data.id}`
+        });
+        toast.success('Test lead successfully received by CRM! Check Leads page.');
+      } else {
+        setWebsiteTestResult({
+          success: false,
+          message: data.error || 'Server rejected test lead'
+        });
+        toast.error(data.error || 'Failed to submit test lead');
+      }
+    } catch (err: any) {
+      setWebsiteTestResult({
+        success: false,
+        message: err.message || 'Network error while sending test lead'
+      });
+      toast.error(err.message || 'Failed to test website webhook');
+    } finally {
+      setIsTestingWebsiteLead(false);
+    }
+  };
+
   const handleSaveMetaCapiSettings = async () => {
     if (!tenant?._id) return;
     setSavingMetaCapi(true);
@@ -748,6 +840,7 @@ export function AdminIntegrationsPage() {
   const whatsappWebhookUrl = buildWebhookUrl('whatsapp');
   const googleFormWebhookUrl = buildWebhookUrl('google_form');
   const googleSheetWebhookUrl = buildWebhookUrl('google_sheet');
+  const websiteWebhookUrl = buildWebhookUrl('website');
 
   const isMetaConnected = !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
@@ -758,6 +851,7 @@ export function AdminIntegrationsPage() {
   const isWhatsappActive = whatsappSettings.enabled;
   const isGoogleFormActive = googleFormSettings.enabled;
   const isGoogleSheetActive = googleSheetSettings.enabled;
+  const isWebsiteActive = websiteSettings.enabled;
   const isMetaCapiConfigured = !!(metaCapiSettings.pixelId && metaCapiSettings.accessToken);
   const isMetaCapiActive = metaCapiSettings.enabled && isMetaCapiConfigured;
   const isGoogleConversionActive = googleConversionSettings.enabled && !!googleConversionSettings.conversionActionId;
@@ -1024,6 +1118,54 @@ export function AdminIntegrationsPage() {
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Housing.com
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Website & Custom Forms Webhooks */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                Website & Custom Webhooks
+              </h2>
+              <span className="text-[11px] bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                Universal Inbound
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Capture inquiries from WordPress, Elementor forms, custom landing pages, Webflow, or HTML forms directly into your CRM.
+          </p>
+
+          <div className="flex flex-wrap gap-6 mt-4">
+            {/* Website Webhook Card */}
+            <div 
+              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('website')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isWebsiteActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isWebsiteActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
+              <div className="w-16 h-16 bg-gradient-to-tr from-sky-50 to-blue-100 dark:from-sky-950/40 dark:to-blue-900/30 rounded-2xl flex items-center justify-center overflow-hidden border border-blue-100 dark:border-blue-900/40">
+                <Globe className="w-9 h-9 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-3 leading-tight">
+                Website Form Webhook
+              </span>
+              <span className={`text-[10px] font-semibold mt-1 ${isWebsiteActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                {isWebsiteActive ? 'Active & Ready' : 'Disabled'}
               </span>
             </div>
           </div>
@@ -2430,6 +2572,314 @@ function onSheetEdit(e) {
                 className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
                 {savingGoogleSheet ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Website & Landing Page Webhook Modal */}
+      {activeModal === 'website' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center border border-blue-100 dark:border-blue-900/40">
+                  <Globe className="text-blue-600 dark:text-blue-400" size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Website & Landing Page Webhook
+                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                      Direct Inbound
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500">Capture leads from WordPress, Elementor, Webflow, or custom forms</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowWebsiteHelp(!showWebsiteHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showWebsiteHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button 
+                  onClick={() => setActiveModal(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {showWebsiteHelp ? (
+                <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+                      <Code size={16} className="text-blue-600" /> Choose Integration Method:
+                    </span>
+                    <div className="flex gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteActiveTab('elementor')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'elementor' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                      >
+                        Elementor / WP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteActiveTab('html')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'html' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                      >
+                        HTML / JS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteActiveTab('php')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'php' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                      >
+                        PHP
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteActiveTab('zapier')}
+                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'zapier' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                      >
+                        Zapier / Make
+                      </button>
+                    </div>
+                  </div>
+
+                  {websiteActiveTab === 'elementor' && (
+                    <div className="space-y-3 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">🚀 How to Connect Elementor Form in 3 Steps:</h4>
+                      <ol className="list-decimal list-inside space-y-1.5 leading-normal">
+                        <li>Open your WordPress page in the <strong>Elementor Editor</strong>.</li>
+                        <li>Click on your <strong>Form widget</strong> to edit its settings in the left panel.</li>
+                        <li>In the <strong>Content</strong> tab, expand <strong>"Actions After Submit"</strong> and add <strong>"Webhook"</strong>.</li>
+                        <li>An extra <strong>"Webhook"</strong> section will appear below. Paste your Webhook URL into the <strong>Webhook URL</strong> field.</li>
+                        <li>Under your Form Fields, ensure your input names / IDs match: <code>name</code>, <code>phone</code> (or <code>mobile</code>), <code>email</code>, <code>city</code>.</li>
+                        <li>Click <strong>Update / Publish</strong>. Your website form is now directly piped into RealSalePro!</li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {websiteActiveTab === 'html' && (
+                    <div className="space-y-2 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">💻 JavaScript (Fetch / AJAX) Snippet:</h4>
+                      <p>Add this inside your custom landing page form submission handler:</p>
+                      <pre className="p-3 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px] overflow-x-auto leading-relaxed">{`fetch("${websiteWebhookUrl}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value,
+    city: document.getElementById("city").value,
+    budget: document.getElementById("budget").value,
+    message: document.getElementById("message").value
+  })
+})
+.then(res => res.json())
+.then(data => console.log("Lead sent to RealSalePro:", data));`}</pre>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = `fetch("${websiteWebhookUrl}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value,
+    city: document.getElementById("city").value,
+    budget: document.getElementById("budget").value,
+    message: document.getElementById("message").value
+  })
+})
+.then(res => res.json())
+.then(data => console.log("Lead sent to RealSalePro:", data));`;
+                          navigator.clipboard.writeText(code);
+                          toast.success('JavaScript code copied!');
+                        }}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+                      >
+                        <Copy size={13} /> Copy JavaScript Code
+                      </button>
+                    </div>
+                  )}
+
+                  {websiteActiveTab === 'php' && (
+                    <div className="space-y-2 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">🐘 PHP / Contact Form 7 Snippet:</h4>
+                      <p>Use in WordPress <code>functions.php</code> or standalone PHP handler:</p>
+                      <pre className="p-3 bg-slate-900 text-emerald-400 rounded-lg font-mono text-[11px] overflow-x-auto leading-relaxed">{`$lead_data = [
+    'name'    => $_POST['name'] ?? '',
+    'phone'   => $_POST['phone'] ?? '',
+    'email'   => $_POST['email'] ?? '',
+    'city'    => $_POST['city'] ?? '',
+    'message' => $_POST['message'] ?? ''
+];
+
+wp_remote_post('${websiteWebhookUrl}', [
+    'headers' => ['Content-Type' => 'application/json'],
+    'body'    => json_encode($lead_data),
+    'timeout' => 10
+]);`}</pre>
+                    </div>
+                  )}
+
+                  {websiteActiveTab === 'zapier' && (
+                    <div className="space-y-2 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">⚡ Zapier / Make.com / Pabbly:</h4>
+                      <ol className="list-decimal list-inside space-y-1.5 leading-normal">
+                        <li>Trigger: Choose your form app (e.g. Typeform, Wix, Webflow, Jotform).</li>
+                        <li>Action: Select <strong>"Webhooks by Zapier"</strong> &gt; Action Event: <strong>POST</strong>.</li>
+                        <li>In <strong>URL</strong>, paste: <code>{websiteWebhookUrl}</code></li>
+                        <li>Payload Type: <strong>JSON</strong>.</li>
+                        <li>Map Data fields: <code>name</code>, <code>phone</code>, <code>email</code>, <code>city</code>, <code>message</code>.</li>
+                        <li>Test &amp; Turn on Zap!</li>
+                      </ol>
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowWebsiteHelp(false)}
+                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      Back to Configuration
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Webhook Endpoint Display */}
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/10 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Your Inbound Webhook Endpoint URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(websiteWebhookUrl);
+                          toast.success('Website Webhook URL copied to clipboard!');
+                        }}
+                        className="text-xs px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 shadow-sm"
+                      >
+                        <Copy size={12} /> Copy URL
+                      </button>
+                    </div>
+                    <code className="block p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-mono text-blue-600 dark:text-blue-400 break-all select-all">
+                      {websiteWebhookUrl}
+                    </code>
+                    <p className="text-[11px] text-slate-500">
+                      Send HTTP <code>POST</code> requests with JSON or Form Data to this URL whenever a client submits a form on your website.
+                    </p>
+                  </div>
+
+                  {/* Enable Switch */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Website Webhook</h4>
+                      <p className="text-xs text-gray-500">Allow incoming leads from website and landing page forms.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={websiteSettings.enabled}
+                      onChange={(e) => setWebsiteSettings({ ...websiteSettings, enabled: e.target.checked })}
+                      className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Assignment Rule */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Lead Assignment Rule</h4>
+                    <p className="text-xs text-gray-500">How should incoming website leads be assigned?</p>
+                    <select
+                      value={websiteSettings.assignmentRule}
+                      onChange={(e) => setWebsiteSettings({ ...websiteSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                      className="w-full p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="manual">Manual Assignment (Admin assigns)</option>
+                      <option value="round_robin">Round Robin (Auto-distribute equally to sales executives)</option>
+                    </select>
+                  </div>
+
+                  {/* Live Test Tool */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Activity size={15} className="text-blue-500" /> Test Your Webhook Live
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          Send a sample test lead right now to verify that CRM captures it correctly.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendTestWebsiteLead}
+                        disabled={isTestingWebsiteLead || !webhookSecret}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                      >
+                        {isTestingWebsiteLead ? (
+                          <>
+                            <RefreshCw size={13} className="animate-spin" /> Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Activity size={13} /> Send Test Lead
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {websiteTestResult && (
+                      <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${websiteTestResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300' : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-300'}`}>
+                        {websiteTestResult.success ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" /> : <AlertCircle size={16} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />}
+                        <span className="font-semibold">{websiteTestResult.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Supported Field Names Cheat Sheet */}
+                  <div className="bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-white/5 rounded-xl p-3.5 space-y-2">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      💡 Supported Form Field Names (Auto-Mapped):
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                      <div>• <strong>Name:</strong> <code>name</code>, <code>full_name</code>, <code>customer_name</code></div>
+                      <div>• <strong>Phone:</strong> <code>phone</code>, <code>mobile</code>, <code>contact_number</code></div>
+                      <div>• <strong>Email:</strong> <code>email</code>, <code>email_address</code></div>
+                      <div>• <strong>City:</strong> <code>city</code>, <code>location</code></div>
+                      <div>• <strong>Budget:</strong> <code>budget</code>, <code>budget_range</code></div>
+                      <div>• <strong>Message:</strong> <code>message</code>, <code>notes</code>, <code>query</code></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-3 flex-shrink-0">
+              <button 
+                onClick={() => setActiveModal(null)} 
+                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveWebsiteSettings}
+                disabled={savingWebsite}
+                className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {savingWebsite ? 'Saving...' : 'Save Settings'}
               </button>
             </div>
           </div>

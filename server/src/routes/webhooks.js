@@ -16,6 +16,12 @@ const PORTALS = {
   whatsapp: { integrationKey: 'whatsapp', leadSource: 'WhatsApp' },
   google_form: { integrationKey: 'googleForm', leadSource: 'Google Form' },
   google_sheet: { integrationKey: 'googleSheet', leadSource: 'Google Sheet' },
+  website: { integrationKey: 'website', leadSource: 'Website' },
+  custom: { integrationKey: 'website', leadSource: 'Website' },
+  webhook: { integrationKey: 'website', leadSource: 'Website' },
+  wordpress: { integrationKey: 'website', leadSource: 'WordPress' },
+  elementor: { integrationKey: 'website', leadSource: 'Elementor' },
+  landing_page: { integrationKey: 'website', leadSource: 'Landing Page' },
 };
 
 const FIELD_KEYS = {
