@@ -145,6 +145,12 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('leads.update') || key.includes('leads.updateLead')) {
     return await leadsService.update(args?.id || args?._id, args);
   }
+  if (key.includes('leads.convertLead') || key.includes('leads.convert')) {
+    return await leadsService.convert(args?.id || args?._id, args);
+  }
+  if (key.includes('leads.bulkUpdateLeadStatus') || key.includes('leads.bulkUpdateStatus')) {
+    return await leadsService.bulkUpdateStatus(args?.ids || [], args?.lead_status);
+  }
   if (key.includes('leads.assignLead') || key.includes('leads.assign')) {
     return await leadsService.assign(args?.id || args?._id, args?.sales_executive_id);
   }

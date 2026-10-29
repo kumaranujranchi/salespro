@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
+import { createSaleFromLead } from '../services/leadToSale.js';
 
 const router = Router();
 
@@ -54,6 +55,18 @@ router.post('/followups', async (req, res) => {
        WHERE id = $5`,
       [new_status, followup_date, call_status || new_status, next_followup_date || null, lead_id]
     );
+
+    // If new followup status is Converted, create or link Sale record
+    if (new_status && String(new_status).toLowerCase() === 'converted') {
+      try {
+        const leadRes = await query('SELECT * FROM leads WHERE id = $1', [lead_id]);
+        if (leadRes.rows.length > 0) {
+          await createSaleFromLead(leadRes.rows[0], created_by || req.user?.id);
+        }
+      } catch (saleErr) {
+        console.error('Error creating sale from converted followup:', saleErr);
+      }
+    }
 
     return res.status(201).json({ ...result.rows[0], _id: result.rows[0].id });
   } catch (err) {

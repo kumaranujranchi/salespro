@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,7 +13,7 @@ import { Badge } from '../ui/Badge';
 import {
   Phone, Mail, MapPin, Calendar, User,
   MessageSquare, Video, Send, AlertCircle, CheckCircle, XCircle,
-  Clock, Lock
+  Clock, Lock, TrendingUp
 } from 'lucide-react';
 import { isLeadPhoneMasked, maskPhoneNumber } from '../../utils/phoneMasking';
 
@@ -25,6 +26,7 @@ interface LeadDetailModalProps {
 export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps) {
   const { profile, tenant } = useAuth();
   const dialog = useDialog();
+  const navigate = useNavigate();
   const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
 
   const [loading, setLoading] = useState(false);
@@ -92,15 +94,6 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
       return;
     }
 
-    // Require Project for Conversion
-    if (followupData.new_status === 'Converted' && !lead.project_id) {
-      await dialog.alert('Cannot convert to sale without a selected Project. Please edit lead details to assign a project first.', {
-        variant: 'danger',
-        title: 'Validation Error'
-      });
-      return;
-    }
-
     // Require Lost Reason
     if (followupData.new_status === 'Lost' && !followupData.lost_reason) {
       await dialog.alert('Please select a reason for marking the lead as Lost', {
@@ -137,12 +130,24 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
       // Update local state
       setCurrentStatus(followupData.new_status);
 
-      await dialog.alert(
-        followupData.new_status === 'Converted'
-          ? 'Lead Converted! Sale record creation will be handled in the next step.'
-          : 'Follow-up added successfully!',
-        { variant: 'success', title: 'Success' }
-      );
+      if (followupData.new_status === 'Converted') {
+        const goToSales = await dialog.confirm(
+          'Lead has been converted successfully and moved to Sales! Would you like to open the Sales panel now to update unit and booking details?',
+          {
+            title: 'Lead Converted to Sale',
+            variant: 'success',
+            confirmText: 'Open Sales Panel',
+            cancelText: 'Stay on CRM'
+          }
+        );
+        if (goToSales) {
+          onClose();
+          navigate('/sales');
+          return;
+        }
+      } else {
+        await dialog.alert('Follow-up added successfully!', { variant: 'success', title: 'Success' });
+      }
 
       // Reset form
       setFollowupData({
@@ -312,8 +317,16 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
                   Follow-up
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" disabled className="justify-center">
-                  <CheckCircle size={16} className="mr-2" /> Converted
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="justify-center bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => {
+                    onClose();
+                    navigate('/sales');
+                  }}
+                >
+                  <TrendingUp size={16} className="mr-2" /> View in Sales
                 </Button>
               )}
             </div>

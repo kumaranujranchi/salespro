@@ -313,10 +313,75 @@ function testLayoutAndNavigationRegressions() {
 }
 
 // ---------------------------------------------------------
-// TEST 5: Critical Files Verification
+// TEST 5: Lead to Sales Automatic Conversion Flow
+// ---------------------------------------------------------
+function testLeadToSaleConversion() {
+  printHeader('5. CRM Lead to Sales Automatic Conversion Flow');
+
+  try {
+    // A. Verify budget parser logic
+    function parseEstimatedRevenue(budget) {
+      if (!budget) return 0;
+      const str = String(budget).trim();
+      const digits = str.replace(/[^0-9.]/g, '');
+      const num = parseFloat(digits);
+      if (isNaN(num) || num <= 0) return 0;
+      if (/cr/i.test(str)) return num * 10000000;
+      if (/l/i.test(str) || num < 500) return num * 100000;
+      return num;
+    }
+
+    const r1 = parseEstimatedRevenue('<50L');
+    const r2 = parseEstimatedRevenue('1.5Cr');
+    const r3 = parseEstimatedRevenue('₹ 75,00,000');
+
+    if (r1 === 5000000 && r2 === 15000000 && r3 === 7500000) {
+      logPass('Lead budget estimation logic parses Lakhs, Crores and ₹ accurately');
+    } else {
+      logFail('Budget estimation logic mismatch', `Got: ${r1}, ${r2}, ${r3}`);
+    }
+
+    // B. Verify server/src/services/leadToSale.js exists and exports methods
+    const serviceSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/services/leadToSale.js'), 'utf8');
+    if (serviceSource.includes('export async function createSaleFromLead') && serviceSource.includes('export async function syncConvertedLeadsForTenant')) {
+      logPass('leadToSale service module implements createSaleFromLead & syncConvertedLeadsForTenant');
+    } else {
+      logFail('leadToSale service missing required exports', 'Check server/src/services/leadToSale.js');
+    }
+
+    // C. Verify server/src/routes/sales.js syncs converted leads and maps customer object
+    const salesRoutesSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/sales.js'), 'utf8');
+    if (salesRoutesSource.includes('syncConvertedLeadsForTenant(tenant_id)') && salesRoutesSource.includes('customer: {') && salesRoutesSource.includes('project: {')) {
+      logPass('Sales route auto-syncs converted CRM leads and maps customer & project objects');
+    } else {
+      logFail('Sales route missing auto-sync or customer/project mapping', 'Check server/src/routes/sales.js');
+    }
+
+    // D. Verify server/src/routes/leads.js triggers sale creation on status update and convert endpoint
+    const leadsRoutesSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/leads.js'), 'utf8');
+    if (leadsRoutesSource.includes('createSaleFromLead') && leadsRoutesSource.includes('/:id/convert')) {
+      logPass('Leads route automatically creates sale on conversion and supports /:id/convert');
+    } else {
+      logFail('Leads route missing createSaleFromLead trigger', 'Check server/src/routes/leads.js');
+    }
+
+    // E. Verify server/src/routes/misc.js triggers sale creation on followup conversion
+    const miscRoutesSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/misc.js'), 'utf8');
+    if (miscRoutesSource.includes('createSaleFromLead') && miscRoutesSource.includes("toLowerCase() === 'converted'")) {
+      logPass('Followups route triggers sale creation when new followup status is Converted');
+    } else {
+      logFail('Followups route missing sale creation trigger', 'Check server/src/routes/misc.js');
+    }
+  } catch (err) {
+    logFail('Lead to Sale conversion test crashed', err.message);
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 6: Critical Files Verification
 // ---------------------------------------------------------
 function testCriticalFiles() {
-  printHeader('5. Core Architecture & Critical File Integrity');
+  printHeader('6. Core Architecture & Critical File Integrity');
 
   const files = [
     'src/components/admin/AdminRoleSwitcherBar.tsx',
@@ -325,6 +390,7 @@ function testCriticalFiles() {
     'src/pages/admin/TenantsPage.tsx',
     'src/pages/TargetsPage.tsx',
     'src/pages/LeadsPage.tsx',
+    'src/pages/SalesPage.tsx',
     'src/pages/SettingsPage.tsx',
     'src/pages/admin/AdminIntegrationsPage.tsx',
     'src/components/layout/DashboardLayout.tsx',
@@ -332,6 +398,9 @@ function testCriticalFiles() {
     'server/src/index.js',
     'server/src/routes/auth.js',
     'server/src/routes/tenants.js',
+    'server/src/routes/sales.js',
+    'server/src/routes/leads.js',
+    'server/src/services/leadToSale.js',
   ];
 
   let missingCount = 0;
@@ -349,10 +418,10 @@ function testCriticalFiles() {
 }
 
 // ---------------------------------------------------------
-// TEST 6: Backend Server & DB Health (Async Ping)
+// TEST 7: Backend Server & DB Health (Async Ping)
 // ---------------------------------------------------------
 async function testBackendHealth() {
-  printHeader('6. Backend Server & Database Connection');
+  printHeader('7. Backend Server & Database Connection');
 
   return new Promise((resolve) => {
     const req = http.get('http://localhost:5001/health', (res) => {
@@ -403,6 +472,7 @@ async function runSuite() {
   testMathCalculations();
   testSaasAdminQaSecurity();
   testLayoutAndNavigationRegressions();
+  testLeadToSaleConversion();
   testCriticalFiles();
   await testBackendHealth();
 

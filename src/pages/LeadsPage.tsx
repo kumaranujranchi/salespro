@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, usePaginatedQuery, useAction } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +37,7 @@ export function LeadsPage() {
   const isAdminUser = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin';
   const dialog = useDialog();
   const toast = useToast();
+  const navigate = useNavigate();
 
   // Backend mutations
   const deleteLeadMutation = useMutation(api.leads.deleteLead);
@@ -183,12 +185,6 @@ export function LeadsPage() {
       return;
     }
 
-    // Require Project for Conversion
-    if (quickFollowupData.new_status === 'Converted' && !lead.project_id) {
-      toast.error('Cannot convert to sale without a selected Project. Edit lead details to assign a project first.');
-      return;
-    }
-
     setSubmitLoading(true);
     try {
       const previousStatus = lead.lead_status;
@@ -218,7 +214,16 @@ export function LeadsPage() {
         lead_status: quickFollowupData.new_status,
       });
 
-      toast.success('Follow-up and status updated successfully');
+      if (quickFollowupData.new_status === 'Converted') {
+        toast.success('Lead marked as Converted and moved to Sales! You can now update unit & booking details in Sales.', {
+          action: {
+            label: 'View in Sales',
+            onClick: () => navigate('/sales')
+          }
+        });
+      } else {
+        toast.success('Follow-up and status updated successfully');
+      }
 
       // Trigger AI lead scoring in the background
       try {
@@ -1058,6 +1063,11 @@ export function LeadsPage() {
                                     icon: Eye,
                                     onClick: () => handleViewDetails(lead)
                                   },
+                                  ...(lead.lead_status === 'Converted' ? [{
+                                    label: 'View in Sales',
+                                    icon: TrendingUp,
+                                    onClick: () => navigate('/sales')
+                                  }] : []),
                                    ...((lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified') ? [{
                                      label: 'Reopen',
                                      icon: RefreshCw,
@@ -1167,13 +1177,22 @@ export function LeadsPage() {
                                     {/* Quick Update Section */}
                                     {((['admin', 'super_admin', 'director', 'team_leader'].includes(normalizedRole)) || lead.sales_executive_id === profile?.id) && (
                                       lead.lead_status === 'Converted' ? (
-                                        <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-900/50 text-center space-y-2">
-                                          <div className="text-green-700 dark:text-green-400 font-semibold text-sm">
+                                        <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-900/50 text-center space-y-2">
+                                          <div className="text-emerald-700 dark:text-emerald-400 font-semibold text-sm">
                                             This lead has been Converted.
                                           </div>
                                           <p className="text-xs text-gray-600 dark:text-gray-400">
-                                            Any further changes should be managed from the Sales / Inventory module.
+                                            Sale record has been created. Manage unit bookings, agreement, and payment collections from the Sales module.
                                           </p>
+                                          <Button
+                                            type="button"
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => navigate('/sales')}
+                                            className="mt-2 inline-flex items-center gap-1.5"
+                                          >
+                                            <TrendingUp size={14} /> Open Sales Section
+                                          </Button>
                                         </div>
                                       ) : lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? (
                                         <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900/50 text-center space-y-3">
@@ -1449,7 +1468,7 @@ export function LeadsPage() {
                         >
                           <MessageSquare size={14} />
                         </a>
-                        {lead.lead_status !== 'Converted' && (
+                        {lead.lead_status !== 'Converted' ? (
                           <button
                             type="button"
                             onClick={() => handleEditLead(lead)}
@@ -1457,6 +1476,15 @@ export function LeadsPage() {
                             title="Edit Lead"
                           >
                             <Edit size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => navigate('/sales')}
+                            className="px-2 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-1"
+                            title="Open in Sales"
+                          >
+                            <TrendingUp size={12} /> Sales
                           </button>
                         )}
                         <button

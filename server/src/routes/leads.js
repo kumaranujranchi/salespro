@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
+import { createSaleFromLead } from '../services/leadToSale.js';
 
 const router = Router();
 
@@ -106,6 +107,16 @@ router.post('/', async (req, res) => {
     );
 
     const lead = result.rows[0];
+
+    // If lead is created directly as Converted, create corresponding Sale record
+    if (lead_status && String(lead_status).toLowerCase() === 'converted') {
+      try {
+        await createSaleFromLead(lead, req.user?.id);
+      } catch (saleErr) {
+        console.error('Error creating sale from converted lead on creation:', saleErr);
+      }
+    }
+
     return res.status(201).json({ ...lead, _id: lead.id });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -141,7 +152,72 @@ router.patch('/:id', async (req, res) => {
     values.push(id);
 
     await query(`UPDATE leads SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+
+    // If status updated to Converted, automatically create/link Sale record
+    if (body.lead_status && String(body.lead_status).toLowerCase() === 'converted') {
+      try {
+        const leadRes = await query('SELECT * FROM leads WHERE id = $1', [id]);
+        if (leadRes.rows.length > 0) {
+          const saleId = await createSaleFromLead(leadRes.rows[0], req.user?.id);
+          return res.json({ success: true, sale_id: saleId });
+        }
+      } catch (saleErr) {
+        console.error('Error creating sale on lead status update:', saleErr);
+      }
+    }
+
     return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4a. Explicit Convert Lead to Sale Endpoint
+router.post('/:id/convert', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const overrides = req.body || {};
+
+    await query(
+      `UPDATE leads SET lead_status = 'Converted', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id]
+    );
+
+    const leadRes = await query('SELECT * FROM leads WHERE id = $1', [id]);
+    if (leadRes.rows.length === 0) return res.status(404).json({ error: 'Lead not found' });
+
+    const saleId = await createSaleFromLead(leadRes.rows[0], req.user?.id, overrides);
+    return res.json({ success: true, lead_id: id, sale_id: saleId });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4b. Bulk Update Status
+router.post('/bulk-status', async (req, res) => {
+  try {
+    const { ids, lead_status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+
+    await query(
+      `UPDATE leads SET lead_status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)`,
+      [lead_status, ids]
+    );
+
+    if (lead_status && String(lead_status).toLowerCase() === 'converted') {
+      try {
+        const leadsRes = await query(`SELECT * FROM leads WHERE id = ANY($1)`, [ids]);
+        for (const l of leadsRes.rows) {
+          await createSaleFromLead(l, req.user?.id);
+        }
+      } catch (saleErr) {
+        console.error('Bulk conversion sale creation warning:', saleErr);
+      }
+    }
+
+    return res.json({ success: true, count: ids.length });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

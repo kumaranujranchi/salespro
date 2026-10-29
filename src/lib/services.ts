@@ -54,6 +54,10 @@ export const leadsService = {
     api.get<any>('/leads/stats', { tenant_id: tenantId, executive_id: executiveId }),
   create: (data: any) => api.post<any>('/leads', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/leads/${id}`, data),
+  convert: (id: string, overrides?: any) =>
+    api.post<{ success: boolean; sale_id?: string }>(`/leads/${id}/convert`, overrides || {}),
+  bulkUpdateStatus: (ids: string[], lead_status: string) =>
+    api.post<{ success: boolean; count: number }>('/leads/bulk-status', { ids, lead_status }),
   assign: (id: string, executiveId: string) =>
     api.post<{ success: boolean }>(`/leads/${id}/assign`, { sales_executive_id: executiveId }),
 };

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
+import { syncConvertedLeadsForTenant } from '../services/leadToSale.js';
 
 const router = Router();
 
@@ -9,11 +10,23 @@ router.get('/', async (req, res) => {
     const { tenant_id, executive_id, project_id, status } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
 
+    // Self-healing: automatically ensure every converted CRM lead has a Sale record
+    try {
+      await syncConvertedLeadsForTenant(tenant_id);
+    } catch (syncErr) {
+      console.warn('Auto-sync converted leads warning:', syncErr.message);
+    }
+
     let sql = `
       SELECT s.*, 
-        l.customer_name as lead_customer_name, l.mobile as lead_mobile,
+        l.customer_name as lead_customer_name, 
+        l.mobile as lead_mobile,
+        l.email as lead_email,
+        l.lead_id as lead_code,
+        l.city as lead_city,
         p.name as project_name,
-        pr.full_name as executive_name
+        pr.full_name as executive_name,
+        pr.email as executive_email
       FROM sales s
       LEFT JOIN leads l ON s.customer_id = l.id
       LEFT JOIN projects p ON s.project_id = p.id
@@ -35,10 +48,45 @@ router.get('/', async (req, res) => {
       sql += ` AND s.status = $${params.length}`;
     }
 
-    sql += ` ORDER BY s.sale_date DESC`;
+    sql += ` ORDER BY s.sale_date DESC, s.created_at DESC`;
 
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+
+    return res.json(result.rows.map(r => {
+      const custName = r.lead_customer_name || r.co_applicant_name || 'Customer';
+      const custPhone = r.lead_mobile || r.alternate_mobile || '';
+      const custEmail = r.lead_email || '';
+      const projName = r.project_name || 'General Project';
+      const execName = r.executive_name || 'Assigned Executive';
+
+      return {
+        ...r,
+        _id: r.id,
+        // Nested structure required by SalesPage, SalesDetailsModal & SalesFormModal
+        customer: {
+          name: custName,
+          phone: custPhone,
+          email: custEmail,
+          lead_id: r.lead_code || '',
+          city: r.lead_city || r.address_city || '',
+        },
+        project: {
+          name: projName,
+          id: r.project_id,
+        },
+        sales_executive: {
+          name: execName,
+          email: r.executive_email || '',
+          id: r.sales_executive_id,
+        },
+        // Flat convenience fields
+        customer_name: custName,
+        customer_phone: custPhone,
+        customer_email: custEmail,
+        project_name: projName,
+        executive_name: execName,
+      };
+    }));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { KPICard } from '../components/ui/KPICard';
-import { TrendingUp, Plus, Wallet, Search, Filter, Calendar, DollarSign, Layers, PieChart, Eye, ChevronDown, ChevronUp, RotateCcw, ArrowUp, ArrowDown, Ban, CreditCard } from 'lucide-react';
+import { TrendingUp, Plus, Wallet, Search, Filter, Calendar, DollarSign, Layers, PieChart, Eye, Edit, ChevronDown, ChevronUp, RotateCcw, ArrowUp, ArrowDown, Ban, CreditCard } from 'lucide-react';
 import { SalesFormModal } from '../components/sales/SalesFormModal';
 import { PaymentManager } from '../components/sales/PaymentManager';
 import { SalesDetailsModal } from '../components/sales/SalesDetailsModal';
@@ -196,6 +196,9 @@ export function SalesPage() {
                           </td>
                            <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
+                                 {canEdit && (
+                                    <Button variant="ghost" size="sm" onClick={() => handleEdit(sale)} title="Edit & Update Sale" className="text-emerald-600 dark:text-emerald-400"><Edit size={16}/></Button>
+                                 )}
                                  <Button variant="ghost" size="sm" onClick={() => { setSelectedSale(sale); setIsDetailOpen(true); }} title="View Details"><Eye size={16}/></Button>
                                  <Button variant="ghost" size="sm" onClick={() => { setSelectedSale(sale); setIsPaymentOpen(true); }} title="Manage Payments" className="text-blue-600 dark:text-blue-400"><CreditCard size={16}/></Button>
                               </div>
