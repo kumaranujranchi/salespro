@@ -1257,23 +1257,23 @@ export function AdminIntegrationsPage() {
       {activeModal === 'meta' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <Facebook className="text-blue-600 dark:text-blue-400" size={24} />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Meta Lead Ads Configuration</h2>
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <Facebook className="text-blue-600 dark:text-blue-400 shrink-0" size={24} />
+                <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">Meta Lead Ads Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowMetaHelp(!showMetaHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showMetaHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showMetaHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
                 <button 
                   onClick={() => setActiveModal(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -1443,28 +1443,28 @@ export function AdminIntegrationsPage() {
       {activeModal === 'google' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <svg className="w-6 h-6 text-red-500 fill-current" viewBox="0 0 24 24">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <svg className="w-6 h-6 text-red-500 fill-current shrink-0" viewBox="0 0 24 24">
                   <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.113-5.111 4.113-3.41 0-6.19-2.779-6.19-6.19s2.78-6.19 6.19-6.19c1.483 0 2.825.524 3.878 1.547l3.123-3.124C19.046 2.372 15.824 1 12.24 1 5.756 1 .5 6.256.5 12.74s5.256 11.74 11.74 11.74c7.17 0 11.24-5.02 11.24-11.44 0-.771-.06-1.5-.2-2.19H12.24z"/>
                 </svg>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Google Ads Webhook Configuration</h2>
+                <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">Google Ads Webhook Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowGoogleHelp(!showGoogleHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showGoogleHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showGoogleHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
                 <button 
                   onClick={() => {
                     setActiveModal(null);
                     setShowGoogleHelp(false);
                   }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -1625,23 +1625,23 @@ export function AdminIntegrationsPage() {
       {activeModal === 'nineNineAcres' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   <img src="/images/99acres.webp" alt="99acres" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">99acres Webhook Configuration</h2>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">99acres Webhook Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowNineNineHelp(!showNineNineHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showNineNineHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showNineNineHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0">
                   <X size={20} />
                 </button>
               </div>
@@ -1772,23 +1772,23 @@ export function AdminIntegrationsPage() {
       {activeModal === 'magicbricks' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   <img src="/images/magicbricks.webp" alt="Magicbricks" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Magicbricks Webhook Configuration</h2>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Magicbricks Webhook Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowMagicbricksHelp(!showMagicbricksHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showMagicbricksHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showMagicbricksHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0">
                   <X size={20} />
                 </button>
               </div>
@@ -1919,23 +1919,23 @@ export function AdminIntegrationsPage() {
       {activeModal === 'housing' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   <img src="/images/hosing.webp" alt="Housing.com" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Housing.com Webhook Configuration</h2>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Housing.com Webhook Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowHousingHelp(!showHousingHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showHousingHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showHousingHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0">
                   <X size={20} />
                 </button>
               </div>
@@ -2066,23 +2066,23 @@ export function AdminIntegrationsPage() {
       {activeModal === 'whatsapp' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   <img src="/images/whatsApp.webp" alt="WhatsApp" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Webhook Configuration</h2>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">WhatsApp Webhook Configuration</h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowWhatsappHelp(!showWhatsappHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showWhatsappHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showWhatsappHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={() => setActiveModal(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0">
                   <X size={20} />
                 </button>
               </div>
@@ -2266,21 +2266,22 @@ export function AdminIntegrationsPage() {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <img src="/images/google_form.webp" alt="Google Forms" className="w-7 h-7 object-contain" />
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Forms Webhook Integration</h2>
+            <div className="flex items-center justify-between gap-4 p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <img src="/images/google_form.webp" alt="Google Forms" className="w-7 h-7 object-contain shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Google Forms Webhook Integration</h2>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button
+                  type="button"
                   onClick={() => setShowGoogleFormHelp(!showGoogleFormHelp)}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-1"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 whitespace-nowrap shrink-0 transition-colors flex items-center gap-1.5"
                 >
-                  <span>📋</span>
-                  {showGoogleFormHelp ? "Hide Help" : "Setup Help Guide"}
+                  <span className="shrink-0">📋</span>
+                  <span className="whitespace-nowrap">{showGoogleFormHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg shrink-0">
+                  <X size={20} />
                 </button>
               </div>
             </div>
@@ -2420,21 +2421,22 @@ function onFormSubmit(e) {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <img src="/images/Googlesheet.webp" alt="Google Sheets" className="w-7 h-7 object-contain" />
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Google Sheets Webhook Integration</h2>
+            <div className="flex items-center justify-between gap-4 p-5 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <img src="/images/Googlesheet.webp" alt="Google Sheets" className="w-7 h-7 object-contain shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Google Sheets Webhook Integration</h2>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button
+                  type="button"
                   onClick={() => setShowGoogleSheetHelp(!showGoogleSheetHelp)}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 whitespace-nowrap shrink-0 transition-colors flex items-center gap-1.5"
                 >
-                  <span>📋</span>
-                  {showGoogleSheetHelp ? "Hide Help" : "Setup Help Guide"}
+                  <span className="shrink-0">📋</span>
+                  <span className="whitespace-nowrap">{showGoogleSheetHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
-                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={() => setActiveModal(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg shrink-0">
+                  <X size={20} />
                 </button>
               </div>
             </div>
@@ -2582,33 +2584,35 @@ function onSheetEdit(e) {
       {activeModal === 'website' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center border border-blue-100 dark:border-blue-900/40">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 shrink-0">
                   <Globe className="text-blue-600 dark:text-blue-400" size={22} />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    Website & Landing Page Webhook
-                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                      Website & Landing Page Webhook
+                    </h2>
+                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                       Direct Inbound
                     </span>
-                  </h2>
-                  <p className="text-xs text-slate-500">Capture leads from WordPress, Elementor, Webflow, or custom forms</p>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">Capture leads from WordPress, Elementor, Webflow, or custom forms</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowWebsiteHelp(!showWebsiteHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showWebsiteHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showWebsiteHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
                 <button 
                   onClick={() => setActiveModal(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -2618,36 +2622,36 @@ function onSheetEdit(e) {
             <div className="p-6 space-y-5 overflow-y-auto flex-1">
               {showWebsiteHelp ? (
                 <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
-                      <Code size={16} className="text-blue-600" /> Choose Integration Method:
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5 whitespace-nowrap">
+                      <Code size={16} className="text-blue-600 shrink-0" /> Choose Integration Method:
                     </span>
-                    <div className="flex gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-lg">
+                    <div className="flex gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-lg flex-wrap sm:flex-nowrap shrink-0">
                       <button
                         type="button"
                         onClick={() => setWebsiteActiveTab('elementor')}
-                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'elementor' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                        className={`px-2.5 py-1 rounded-md font-semibold text-xs whitespace-nowrap transition-colors ${websiteActiveTab === 'elementor' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
                       >
                         Elementor / WP
                       </button>
                       <button
                         type="button"
                         onClick={() => setWebsiteActiveTab('html')}
-                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'html' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                        className={`px-2.5 py-1 rounded-md font-semibold text-xs whitespace-nowrap transition-colors ${websiteActiveTab === 'html' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
                       >
                         HTML / JS
                       </button>
                       <button
                         type="button"
                         onClick={() => setWebsiteActiveTab('php')}
-                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'php' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                        className={`px-2.5 py-1 rounded-md font-semibold text-xs whitespace-nowrap transition-colors ${websiteActiveTab === 'php' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
                       >
                         PHP
                       </button>
                       <button
                         type="button"
                         onClick={() => setWebsiteActiveTab('zapier')}
-                        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${websiteActiveTab === 'zapier' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                        className={`px-2.5 py-1 rounded-md font-semibold text-xs whitespace-nowrap transition-colors ${websiteActiveTab === 'zapier' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
                       >
                         Zapier / Make
                       </button>
@@ -2771,9 +2775,9 @@ wp_remote_post('${websiteWebhookUrl}', [
                           navigator.clipboard.writeText(websiteWebhookUrl);
                           toast.success('Website Webhook URL copied to clipboard!');
                         }}
-                        className="text-xs px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 shadow-sm"
+                        className="text-xs px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold whitespace-nowrap shrink-0 transition-colors flex items-center gap-1 shadow-sm"
                       >
-                        <Copy size={12} /> Copy URL
+                        <Copy size={12} className="shrink-0" /> Copy URL
                       </button>
                     </div>
                     <code className="block p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-mono text-blue-600 dark:text-blue-400 break-all select-all">
@@ -2814,12 +2818,12 @@ wp_remote_post('${websiteWebhookUrl}', [
 
                   {/* Live Test Tool */}
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <Activity size={15} className="text-blue-500" /> Test Your Webhook Live
+                          <Activity size={15} className="text-blue-500 shrink-0" /> Test Your Webhook Live
                         </h4>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Send a sample test lead right now to verify that CRM captures it correctly.
                         </p>
                       </div>
@@ -2827,15 +2831,15 @@ wp_remote_post('${websiteWebhookUrl}', [
                         type="button"
                         onClick={handleSendTestWebsiteLead}
                         disabled={isTestingWebsiteLead || !webhookSecret}
-                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                        className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 self-start sm:self-auto"
                       >
                         {isTestingWebsiteLead ? (
                           <>
-                            <RefreshCw size={13} className="animate-spin" /> Sending...
+                            <RefreshCw size={13} className="animate-spin shrink-0" /> Sending...
                           </>
                         ) : (
                           <>
-                            <Activity size={13} /> Send Test Lead
+                            <Activity size={13} className="shrink-0" /> Send Test Lead
                           </>
                         )}
                       </button>
@@ -2890,33 +2894,35 @@ wp_remote_post('${websiteWebhookUrl}', [
       {activeModal === 'metaCapi' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#ECF2FF] flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-[#ECF2FF] flex items-center justify-center border border-blue-100 dark:border-blue-900/30 shrink-0">
                   <Facebook className="text-[#1877F2]" size={22} />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    Meta Conversions API (CAPI)
-                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                      Meta Conversions API (CAPI)
+                    </h2>
+                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
                       Server-Side
                     </span>
-                  </h2>
-                  <p className="text-xs text-slate-500">Send qualified milestones and purchases directly to Meta Events Manager</p>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">Send qualified milestones and purchases directly to Meta Events Manager</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowMetaCapiHelp(!showMetaCapiHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showMetaCapiHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showMetaCapiHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
                 <button 
                   onClick={() => setActiveModal(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -3043,7 +3049,7 @@ wp_remote_post('${websiteWebhookUrl}', [
                       <span>Test Event Code (Optional)</span>
                       <span className="text-[11px] text-slate-400 font-normal">Found in Events Manager &gt; Test Events</span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={metaCapiSettings.testEventCode}
@@ -3055,15 +3061,15 @@ wp_remote_post('${websiteWebhookUrl}', [
                         type="button"
                         onClick={handleTestMetaCapi}
                         disabled={isTestingCapi || !metaCapiSettings.pixelId || !metaCapiSettings.accessToken}
-                        className="px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                        className="px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0"
                       >
                         {isTestingCapi ? (
                           <>
-                            <RefreshCw size={13} className="animate-spin" /> Testing...
+                            <RefreshCw size={13} className="animate-spin shrink-0" /> Testing...
                           </>
                         ) : (
                           <>
-                            <Activity size={13} /> Send Test Event to Meta
+                            <Activity size={13} className="shrink-0" /> Send Test Event to Meta
                           </>
                         )}
                       </button>
@@ -3189,30 +3195,30 @@ wp_remote_post('${websiteWebhookUrl}', [
       {activeModal === 'googleConversion' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-white/10">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-white/10 shrink-0">
                   <img src="/images/google_ads.webp" alt="Google Ads" className="w-6 h-6 object-contain" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                     Google Ads Offline Conversions
                   </h2>
-                  <p className="text-xs text-slate-500">Track won sales and qualified leads tied to Google Click IDs (GCLID)</p>
+                  <p className="text-xs text-slate-500 truncate">Track won sales and qualified leads tied to Google Click IDs (GCLID)</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowGoogleConversionHelp(!showGoogleConversionHelp)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors"
                 >
-                  <Info size={14} />
-                  {showGoogleConversionHelp ? "Hide Help" : "Setup Help Guide"}
+                  <Info size={14} className="shrink-0" />
+                  <span className="whitespace-nowrap">{showGoogleConversionHelp ? "Hide Help" : "Setup Help Guide"}</span>
                 </button>
                 <button 
                   onClick={() => setActiveModal(null)}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg shrink-0"
                 >
                   <X size={20} />
                 </button>
