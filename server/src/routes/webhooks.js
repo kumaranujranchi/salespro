@@ -206,7 +206,30 @@ async function handleInboundLead(req, res) {
     }
 
     const payload = req.body && Object.keys(req.body).length ? req.body : req.query;
-    const lead = normalizeLead(payload);
+    let lead = normalizeLead(payload);
+
+    // If Meta leadgen event without inline customer fields, fetch from Facebook Graph API
+    if (!lead.mobile && !lead.email && lead.leadgen_id) {
+      const pageAccessToken = integration?.accessToken;
+      if (pageAccessToken) {
+        try {
+          const fbRes = await fetch(`https://graph.facebook.com/v19.0/${lead.leadgen_id}?access_token=${pageAccessToken}`);
+          if (fbRes.ok) {
+            const fbData = await fbRes.json();
+            const fetchedLead = normalizeLead(fbData);
+            lead = {
+              ...fetchedLead,
+              leadgen_id: lead.leadgen_id,
+              fbp: lead.fbp || fetchedLead.fbp,
+              fbc: lead.fbc || fetchedLead.fbc,
+              externalId: lead.externalId || lead.leadgen_id,
+            };
+          }
+        } catch {
+          // Non-blocking fallback
+        }
+      }
+    }
 
     if (!lead.mobile && !lead.email) {
       return res.status(400).json({
@@ -294,18 +317,26 @@ function handleGoogleWebhook(req, res) {
   return handleInboundLead(req, res);
 }
 
+// Meta webhooks require returning the plain-text hub.challenge on subscription verification
+function handleWebhookVerification(req, res) {
+  const mode = req.query['hub.mode'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && challenge) {
+    return res.status(200).send(challenge);
+  }
+
+  return usage(req, res);
+}
+
+// Support both versioned (/v1/inbound-leads) and unversioned (/inbound-leads) paths
 router.post('/v1/inbound-leads', handleInboundLead);
+router.get('/v1/inbound-leads', handleWebhookVerification);
+
+router.post('/inbound-leads', handleInboundLead);
+router.get('/inbound-leads', handleWebhookVerification);
+
 router.post('/google-webhook', handleGoogleWebhook);
-
-// Opening the URL in a browser should explain how to use it instead of 404-ing.
-const usage = (_req, res) => res.json({
-  endpoint: 'POST /api/v1/inbound-leads',
-  example: '/api/v1/inbound-leads?portal=meta&token=<webhook_token>',
-  token: 'Copy the webhook token from Settings > Integrations',
-  portals: Object.keys(PORTALS),
-});
-
-router.get('/v1/inbound-leads', usage);
-router.get('/google-webhook', usage);
+router.get('/google-webhook', handleWebhookVerification);
 
 export default router;

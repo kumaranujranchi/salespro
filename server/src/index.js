@@ -14,6 +14,7 @@ import subscriptionRoutes from './routes/subscriptions.js';
 import webhookRoutes from './routes/webhooks.js';
 import systemRoutes from './routes/system.js';
 import capiRoutes from './routes/capi.js';
+import metaRoutes from './routes/meta.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -56,7 +57,9 @@ app.get('/health', async (req, res) => {
 // API Routes
 
 // Public lead-capture webhooks (ported portals cannot send bearer tokens)
+// Mounted at both /api and / so external portals calling /api/v1/... or /v1/... both succeed
 app.use('/api', webhookRoutes);
+app.use('/', webhookRoutes);
 
 // Login / forgot-password / reset-password stay public; the router guards
 // the rest (/profile, /promote) itself.
@@ -80,6 +83,7 @@ app.use('/api/misc', miscRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/capi', capiRoutes);
+app.use('/api/meta', metaRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

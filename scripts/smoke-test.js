@@ -490,6 +490,8 @@ function testCriticalFiles() {
     'server/src/routes/sales.js',
     'server/src/routes/leads.js',
     'server/src/routes/capi.js',
+    'server/src/routes/meta.js',
+    'server/src/routes/webhooks.js',
     'server/src/services/capiService.js',
     'server/src/services/leadToSale.js',
   ];

@@ -206,3 +206,12 @@ export const capiService = {
   getLogs: (tenantId: string) =>
     api.get<any[]>('/capi/logs', { tenant_id: tenantId }),
 };
+
+export const metaService = {
+  exchangeCodeAndGetPages: async (data: { code: string; redirectUri: string }) => {
+    const res = await api.post<{ success: boolean; pages: any[] }>('/meta/exchange-code', data);
+    return res.pages || [];
+  },
+  subscribePageToWebhook: (data: { pageId: string; pageAccessToken: string }) =>
+    api.post<{ success: boolean }>('/meta/subscribe-page', data),
+};

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   authService, tenantsService, profilesService, leadsService,
-  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService
+  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService, metaService
 } from './services';
 import { handleSessionExpired } from './auth-token';
 
@@ -277,6 +277,12 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
   if (key.includes('capi.getLogs') || key.includes('capi.listLogs')) {
     return await capiService.getLogs(args?.tenant_id);
+  }
+  if (key.includes('meta:exchangeCodeAndGetPages') || key.includes('meta.exchangeCodeAndGetPages')) {
+    return await metaService.exchangeCodeAndGetPages(args);
+  }
+  if (key.includes('meta:subscribePageToWebhook') || key.includes('meta.subscribePageToWebhook')) {
+    return await metaService.subscribePageToWebhook(args);
   }
 
   // Fallback
