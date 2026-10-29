@@ -4,11 +4,11 @@ import { useToast } from '../../contexts/ToastContext';
 import { useMutation, useAction } from "../../lib/reactive";
 import { api } from '../../lib/api-endpoints';
 import { getApiBaseUrl } from '../../lib/api';
-import { tenantsService } from '../../lib/services';
+import { tenantsService, capiService } from '../../lib/services';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock } from 'lucide-react';
+import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw } from 'lucide-react';
 
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
@@ -22,6 +22,11 @@ export function AdminIntegrationsPage() {
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   const [savingGoogleForm, setSavingGoogleForm] = useState(false);
   const [savingGoogleSheet, setSavingGoogleSheet] = useState(false);
+  const [savingMetaCapi, setSavingMetaCapi] = useState(false);
+  const [savingGoogleConversion, setSavingGoogleConversion] = useState(false);
+  const [isTestingCapi, setIsTestingCapi] = useState(false);
+  const [capiTestResult, setCapiTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [showMetaCapiToken, setShowMetaCapiToken] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   
   // Facebook OAuth Actions
@@ -29,7 +34,7 @@ export function AdminIntegrationsPage() {
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
 
   // Modal display states
-  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | null>(null);
+  const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | 'metaCapi' | 'googleConversion' | null>(null);
   const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
   const [showNineNineHelp, setShowNineNineHelp] = useState(false);
@@ -38,6 +43,29 @@ export function AdminIntegrationsPage() {
   const [showWhatsappHelp, setShowWhatsappHelp] = useState(false);
   const [showGoogleFormHelp, setShowGoogleFormHelp] = useState(false);
   const [showGoogleSheetHelp, setShowGoogleSheetHelp] = useState(false);
+  const [showMetaCapiHelp, setShowMetaCapiHelp] = useState(false);
+  const [showGoogleConversionHelp, setShowGoogleConversionHelp] = useState(false);
+
+  // Meta Conversions API (CAPI) State
+  const [metaCapiSettings, setMetaCapiSettings] = useState({
+    enabled: false,
+    pixelId: '',
+    accessToken: '',
+    testEventCode: '',
+    sendQualified: true,
+    sendSiteVisit: true,
+    sendSale: true,
+    siteVisitValue: 1000
+  });
+
+  // Google Offline Conversions State
+  const [googleConversionSettings, setGoogleConversionSettings] = useState({
+    enabled: false,
+    conversionActionId: '',
+    customerId: '',
+    sendQualified: true,
+    sendSale: true
+  });
 
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
@@ -187,6 +215,29 @@ export function AdminIntegrationsPage() {
         assignmentRule: ((tenant?.settings?.integrations as any).googleSheet.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
     }
+    if ((tenant?.settings?.integrations as any)?.meta_capi) {
+      const mc = (tenant.settings.integrations as any).meta_capi;
+      setMetaCapiSettings({
+        enabled: mc.enabled ?? false,
+        pixelId: mc.pixelId ?? '',
+        accessToken: mc.accessToken ?? '',
+        testEventCode: mc.testEventCode ?? '',
+        sendQualified: mc.sendQualified ?? true,
+        sendSiteVisit: mc.sendSiteVisit ?? true,
+        sendSale: mc.sendSale ?? true,
+        siteVisitValue: mc.siteVisitValue ?? 1000
+      });
+    }
+    if ((tenant?.settings?.integrations as any)?.google_conversion) {
+      const gc = (tenant.settings.integrations as any).google_conversion;
+      setGoogleConversionSettings({
+        enabled: gc.enabled ?? false,
+        conversionActionId: gc.conversionActionId ?? '',
+        customerId: gc.customerId ?? '',
+        sendQualified: gc.sendQualified ?? true,
+        sendSale: gc.sendSale ?? true
+      });
+    }
   }, [tenant]);
 
   // Reset help states when active modal changes
@@ -199,6 +250,9 @@ export function AdminIntegrationsPage() {
     setShowWhatsappHelp(false);
     setShowGoogleFormHelp(false);
     setShowGoogleSheetHelp(false);
+    setShowMetaCapiHelp(false);
+    setShowGoogleConversionHelp(false);
+    setCapiTestResult(null);
   }, [activeModal]);
 
   // Handle Facebook Redirect OAuth Code
@@ -573,6 +627,104 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleSaveMetaCapiSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingMetaCapi(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta_capi: {
+            enabled: metaCapiSettings.enabled,
+            pixelId: metaCapiSettings.pixelId.trim(),
+            accessToken: metaCapiSettings.accessToken.trim(),
+            testEventCode: metaCapiSettings.testEventCode.trim(),
+            sendQualified: metaCapiSettings.sendQualified,
+            sendSiteVisit: metaCapiSettings.sendSiteVisit,
+            sendSale: metaCapiSettings.sendSale,
+            siteVisitValue: Number(metaCapiSettings.siteVisitValue) || 1000,
+          }
+        }
+      };
+      await updateTenantMutation({ id: tenant._id as any, settings: updatedSettings });
+      await refreshTenant();
+      toast.success('Meta Conversions API (CAPI) settings saved successfully!');
+      setActiveModal(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Meta CAPI settings.');
+    } finally {
+      setSavingMetaCapi(false);
+    }
+  };
+
+  const handleTestMetaCapi = async () => {
+    if (!metaCapiSettings.pixelId || !metaCapiSettings.accessToken) {
+      toast.error('Please enter both Pixel ID and Access Token to test.');
+      return;
+    }
+    setIsTestingCapi(true);
+    setCapiTestResult(null);
+    try {
+      const res = await capiService.test({
+        pixelId: metaCapiSettings.pixelId.trim(),
+        accessToken: metaCapiSettings.accessToken.trim(),
+        testEventCode: metaCapiSettings.testEventCode.trim() || undefined,
+        eventName: 'Test_Lead'
+      });
+      if (res.success) {
+        setCapiTestResult({
+          success: true,
+          message: res.message || 'Meta CAPI event received successfully by Meta Graph API!',
+          data: res.metaResponse
+        });
+        toast.success('Test event accepted by Meta Graph API! Check your Meta Events Manager Test Events tab.');
+      } else {
+        setCapiTestResult({
+          success: false,
+          message: res.error || 'Meta rejected test event.'
+        });
+        toast.error(res.error || 'Test event failed.');
+      }
+    } catch (err: any) {
+      setCapiTestResult({
+        success: false,
+        message: err.message || 'Network error while contacting Meta CAPI endpoint.'
+      });
+      toast.error(err.message || 'Failed to trigger test event.');
+    } finally {
+      setIsTestingCapi(false);
+    }
+  };
+
+  const handleSaveGoogleConversionSettings = async () => {
+    if (!tenant?._id) return;
+    setSavingGoogleConversion(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          google_conversion: {
+            enabled: googleConversionSettings.enabled,
+            conversionActionId: googleConversionSettings.conversionActionId.trim(),
+            customerId: googleConversionSettings.customerId.trim(),
+            sendQualified: googleConversionSettings.sendQualified,
+            sendSale: googleConversionSettings.sendSale
+          }
+        }
+      };
+      await updateTenantMutation({ id: tenant._id as any, settings: updatedSettings });
+      await refreshTenant();
+      toast.success('Google Ads offline conversion settings saved!');
+      setActiveModal(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Google conversion settings.');
+    } finally {
+      setSavingGoogleConversion(false);
+    }
+  };
+
   if (profile?.role !== 'super_admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -606,6 +758,9 @@ export function AdminIntegrationsPage() {
   const isWhatsappActive = whatsappSettings.enabled;
   const isGoogleFormActive = googleFormSettings.enabled;
   const isGoogleSheetActive = googleSheetSettings.enabled;
+  const isMetaCapiConfigured = !!(metaCapiSettings.pixelId && metaCapiSettings.accessToken);
+  const isMetaCapiActive = metaCapiSettings.enabled && isMetaCapiConfigured;
+  const isGoogleConversionActive = googleConversionSettings.enabled && !!googleConversionSettings.conversionActionId;
 
   return (
     <div className="space-y-6">
@@ -869,6 +1024,87 @@ export function AdminIntegrationsPage() {
               </div>
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
                 Housing.com
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ad Optimization & Conversion Tracking (CAPI) */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">
+                Conversion Tracking & Optimization (CAPI)
+              </h2>
+              <span className="text-[11px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Sparkles size={11} /> High ROI
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Send offline lead milestones (Qualified Leads, Site Visits, Won Deals with Revenue) back to Meta & Google Ads so AI algorithms find more buyers and reduce ad spend.
+          </p>
+
+          <div className="flex flex-wrap gap-6 mt-4">
+            {/* Meta CAPI Card */}
+            <div 
+              onClick={isFreePlan ? () => toast.info("Conversion API tracking is a Pro feature. Please upgrade your plan.") : () => setActiveModal('metaCapi')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMetaCapiActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isMetaCapiActive ? 'bg-emerald-500' : isMetaCapiConfigured ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
+              <div className="w-16 h-16 bg-[#ECF2FF] rounded-2xl flex items-center justify-center overflow-hidden border border-blue-100 dark:border-blue-900/30">
+                <Facebook className="w-10 h-10 text-[#1877F2]" />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-3 leading-tight">
+                Meta Conversions API (CAPI)
+              </span>
+              <span className={`text-[10px] font-semibold mt-1 ${isMetaCapiActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                {isMetaCapiActive ? 'Active & Firing' : 'Server Events'}
+              </span>
+            </div>
+
+            {/* Google Enhanced Conversions Card */}
+            <div 
+              onClick={isFreePlan ? () => toast.info("Conversion tracking is a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleConversion')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isGoogleConversionActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${isGoogleConversionActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              {/* Lock Badge */}
+              {isFreePlan && (
+                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
+                  <Lock size={12} />
+                </div>
+              )}
+
+              <div className="w-16 h-16 bg-[#F8FAFC] dark:bg-slate-800 border border-slate-100 dark:border-white/5 rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/google_ads.webp" 
+                  alt="Google Enhanced Conversions" 
+                  className="w-11 h-11 object-contain"
+                />
+              </div>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-3 leading-tight">
+                Google Enhanced Conversions
+              </span>
+              <span className={`text-[10px] font-semibold mt-1 ${isGoogleConversionActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                {isGoogleConversionActive ? 'Active & Firing' : 'GCLID Offline'}
               </span>
             </div>
           </div>
@@ -2194,6 +2430,456 @@ function onSheetEdit(e) {
                 className="px-5 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               >
                 {savingGoogleSheet ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meta Conversions API (CAPI) Modal */}
+      {activeModal === 'metaCapi' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ECF2FF] flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
+                  <Facebook className="text-[#1877F2]" size={22} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Meta Conversions API (CAPI)
+                    <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                      Server-Side
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500">Send qualified milestones and purchases directly to Meta Events Manager</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowMetaCapiHelp(!showMetaCapiHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showMetaCapiHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button 
+                  onClick={() => setActiveModal(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {showMetaCapiHelp ? (
+                <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-sm">
+                    <Sparkles size={16} /> Meta CAPI Step-by-Step Setup Guide
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white">Why CAPI is Critical for Real Estate & High-Ticket Ads:</h4>
+                      <p className="mt-1">
+                        Browser ad-blockers and iOS 14.5+ block traditional web pixel tracking. With Meta CAPI, your CRM server directly transmits events (like when a lead is <em>Qualified</em>, a <em>Site Visit</em> is conducted, or a <em>Unit is Sold</em>) to Meta's AI with hashed customer details (phone, email, city). This trains Meta to show your ads to people who actually buy, not just casual clickers.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-blue-100 dark:border-blue-900/40 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">Step 1: Get your Pixel ID / Dataset ID</h4>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Go to <a href="https://business.facebook.com/events_manager2" target="_blank" rel="noreferrer" className="text-blue-600 underline font-semibold">Meta Events Manager</a>.</li>
+                        <li>Click on your <strong>Data Sources</strong> (Pixel or Dataset) on the left sidebar.</li>
+                        <li>Under the Dataset name, copy the numeric <strong>Dataset ID / Pixel ID</strong> (e.g. <code>123456789012345</code>) and paste it into the Pixel ID field.</li>
+                      </ol>
+                    </div>
+
+                    <div className="border-t border-blue-100 dark:border-blue-900/40 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">Step 2: Generate Conversions API Access Token</h4>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>In Events Manager, click the <strong>Settings</strong> tab of your Pixel/Dataset.</li>
+                        <li>Scroll down to the <strong>Conversions API</strong> section.</li>
+                        <li>Find <em>"Set up direct integration"</em> and click <strong>"Generate access token"</strong>.</li>
+                        <li>Copy the generated token string (starts with <code>EAAB...</code>) and paste it into the Access Token field.</li>
+                      </ol>
+                    </div>
+
+                    <div className="border-t border-blue-100 dark:border-blue-900/40 pt-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white">Step 3: Test Real-Time Event Delivery</h4>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Click the <strong>Test Events</strong> tab in your Meta Events Manager.</li>
+                        <li>Under <em>"Confirm your server events are set up correctly"</em>, copy the <strong>Test Code</strong> (e.g. <code>TEST12345</code>).</li>
+                        <li>Paste it into the <strong>Test Event Code</strong> input below and click <strong>"Send Test Event to Meta"</strong>.</li>
+                        <li>Switch back to your Meta Events Manager screen - you will see the test event arrive instantly!</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowMetaCapiHelp(false)}
+                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      Back to Configuration
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Enable Switch */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Meta Conversions API</h4>
+                      <p className="text-xs text-gray-500">Automatically stream conversion stages to your Meta Pixel.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={metaCapiSettings.enabled}
+                      onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, enabled: e.target.checked })}
+                      className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Pixel ID */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Meta Pixel / Dataset ID <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={metaCapiSettings.pixelId}
+                      onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, pixelId: e.target.value })}
+                      placeholder="e.g. 123456789012345"
+                      className="w-full p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Access Token */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        CAPI Access Token <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowMetaCapiToken(!showMetaCapiToken)}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                      >
+                        {showMetaCapiToken ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {showMetaCapiToken ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showMetaCapiToken ? "text" : "password"}
+                        value={metaCapiSettings.accessToken}
+                        onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, accessToken: e.target.value })}
+                        placeholder="EAAB... (Paste System User or Direct Integration Token)"
+                        className="w-full p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Encrypted and kept strictly private to your tenant organization.
+                    </p>
+                  </div>
+
+                  {/* Test Event Code */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                      <span>Test Event Code (Optional)</span>
+                      <span className="text-[11px] text-slate-400 font-normal">Found in Events Manager &gt; Test Events</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={metaCapiSettings.testEventCode}
+                        onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, testEventCode: e.target.value.toUpperCase() })}
+                        placeholder="e.g. TEST12345"
+                        className="flex-1 p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestMetaCapi}
+                        disabled={isTestingCapi || !metaCapiSettings.pixelId || !metaCapiSettings.accessToken}
+                        className="px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 disabled:opacity-50 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                      >
+                        {isTestingCapi ? (
+                          <>
+                            <RefreshCw size={13} className="animate-spin" /> Testing...
+                          </>
+                        ) : (
+                          <>
+                            <Activity size={13} /> Send Test Event to Meta
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Test Result Banner */}
+                  {capiTestResult && (
+                    <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${capiTestResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300' : 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-300'}`}>
+                      {capiTestResult.success ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" /> : <AlertCircle size={16} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />}
+                      <div className="space-y-1">
+                        <p className="font-semibold">{capiTestResult.message}</p>
+                        {capiTestResult.data && (
+                          <p className="font-mono text-[11px] opacity-80">
+                            Events Received: {capiTestResult.data.events_received || 1} | Trace ID: {capiTestResult.data.fbtrace_id}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event Milestone Triggers */}
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Automatic Conversion Triggers
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Choose which pipeline milestones trigger server events to Meta:
+                    </p>
+
+                    <div className="space-y-2.5 pt-1">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={metaCapiSettings.sendQualified}
+                          onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, sendQualified: e.target.checked })}
+                          className="w-4 h-4 accent-blue-600 rounded"
+                        />
+                        <div>
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            Qualified Leads (<code className="text-[11px] bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">Qualified_Lead</code>)
+                          </span>
+                          <p className="text-[11px] text-slate-500">Fires when lead status moves to Qualified.</p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={metaCapiSettings.sendSiteVisit}
+                          onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, sendSiteVisit: e.target.checked })}
+                          className="w-4 h-4 accent-blue-600 rounded"
+                        />
+                        <div className="flex-1">
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            Site Visit Done (<code className="text-[11px] bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">Site_Visit_Done</code>)
+                          </span>
+                          <p className="text-[11px] text-slate-500">Fires when a client visits the property site.</p>
+                        </div>
+                        {metaCapiSettings.sendSiteVisit && (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-slate-400">Value (₹):</span>
+                            <input
+                              type="number"
+                              value={metaCapiSettings.siteVisitValue}
+                              onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, siteVisitValue: Number(e.target.value) })}
+                              className="w-20 p-1 text-xs border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-right"
+                            />
+                          </div>
+                        )}
+                      </label>
+
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={metaCapiSettings.sendSale}
+                          onChange={(e) => setMetaCapiSettings({ ...metaCapiSettings, sendSale: e.target.checked })}
+                          className="w-4 h-4 accent-blue-600 rounded"
+                        />
+                        <div>
+                          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            Won Sale / Purchase (<code className="text-[11px] bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">Purchase</code>)
+                          </span>
+                          <p className="text-[11px] text-slate-500">
+                            Fires with actual booking value (e.g. ₹75,00,000) when converted to a Sale.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Security & Hashing Note */}
+                  <div className="bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-white/5 rounded-xl p-3 flex items-start gap-2 text-xs text-slate-500">
+                    <Info size={14} className="mt-0.5 shrink-0 text-blue-500" />
+                    <span>
+                      Customer phone numbers and emails are normalized and SHA-256 hashed before transmission in compliance with Meta's Privacy & GDPR standards.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-3 flex-shrink-0">
+              <button 
+                onClick={() => setActiveModal(null)} 
+                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveMetaCapiSettings}
+                disabled={savingMetaCapi}
+                className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {savingMetaCapi ? 'Saving...' : 'Save CAPI Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Ads Offline Conversions Modal */}
+      {activeModal === 'googleConversion' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 p-5 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-white/10">
+                  <img src="/images/google_ads.webp" alt="Google Ads" className="w-6 h-6 object-contain" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Google Ads Offline Conversions
+                  </h2>
+                  <p className="text-xs text-slate-500">Track won sales and qualified leads tied to Google Click IDs (GCLID)</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleConversionHelp(!showGoogleConversionHelp)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  <Info size={14} />
+                  {showGoogleConversionHelp ? "Hide Help" : "Setup Help Guide"}
+                </button>
+                <button 
+                  onClick={() => setActiveModal(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {showGoogleConversionHelp ? (
+                <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">🎯 Google Ads Offline Tracking Guide</h3>
+                  <p>
+                    When buyers click your Google Ads, Google appends a <code>gclid</code> parameter to the landing page. RealSalePro automatically captures and stores this <code>gclid</code> with the inbound lead.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">How to configure:</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Go to <strong>Google Ads &gt; Goals &gt; Conversions &gt; Summary</strong>.</li>
+                      <li>Click <strong>+ New Conversion Action</strong> &gt; Select <strong>Import</strong> &gt; <strong>CRMs, files or other data sources</strong>.</li>
+                      <li>Select <strong>Track conversions from clicks</strong>.</li>
+                      <li>Copy the <strong>Conversion Action Name / ID</strong> and paste it below.</li>
+                    </ol>
+                  </div>
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowGoogleConversionHelp(false)}
+                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      Back to Configuration
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable Google Offline Tracking</h4>
+                      <p className="text-xs text-gray-500">Record conversions against stored Google Click IDs (GCLID).</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={googleConversionSettings.enabled}
+                      onChange={(e) => setGoogleConversionSettings({ ...googleConversionSettings, enabled: e.target.checked })}
+                      className="w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Google Ads Customer ID
+                    </label>
+                    <input
+                      type="text"
+                      value={googleConversionSettings.customerId}
+                      onChange={(e) => setGoogleConversionSettings({ ...googleConversionSettings, customerId: e.target.value })}
+                      placeholder="e.g. 123-456-7890"
+                      className="w-full p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Conversion Action ID / Name
+                    </label>
+                    <input
+                      type="text"
+                      value={googleConversionSettings.conversionActionId}
+                      onChange={(e) => setGoogleConversionSettings({ ...googleConversionSettings, conversionActionId: e.target.value })}
+                      placeholder="e.g. qualified_lead_import"
+                      className="w-full p-2.5 text-sm border border-slate-200 dark:border-white/10 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Milestones to Sync
+                    </h4>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={googleConversionSettings.sendQualified}
+                        onChange={(e) => setGoogleConversionSettings({ ...googleConversionSettings, sendQualified: e.target.checked })}
+                        className="w-4 h-4 accent-blue-600 rounded"
+                      />
+                      <span className="text-xs text-slate-800 dark:text-slate-200">
+                        Upload when Lead is marked <strong>Qualified</strong>
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={googleConversionSettings.sendSale}
+                        onChange={(e) => setGoogleConversionSettings({ ...googleConversionSettings, sendSale: e.target.checked })}
+                        className="w-4 h-4 accent-blue-600 rounded"
+                      />
+                      <span className="text-xs text-slate-800 dark:text-slate-200">
+                        Upload when Lead is marked <strong>Converted to Sale</strong>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-3 flex-shrink-0">
+              <button 
+                onClick={() => setActiveModal(null)} 
+                className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveGoogleConversionSettings}
+                disabled={savingGoogleConversion}
+                className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {savingGoogleConversion ? 'Saving...' : 'Save Settings'}
               </button>
             </div>
           </div>

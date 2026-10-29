@@ -207,3 +207,4 @@ export async function syncConvertedLeadsForTenant(tenantId) {
     return 0;
   }
 }
+

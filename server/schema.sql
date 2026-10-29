@@ -473,3 +473,21 @@ CREATE TABLE IF NOT EXISTS ai_chat_limits (
     count INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 22. CAPI & CONVERSION EVENTS LOG TABLE
+CREATE TABLE IF NOT EXISTS capi_events_log (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    tenant_id VARCHAR(255) NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id VARCHAR(255) REFERENCES leads(id) ON DELETE SET NULL,
+    platform VARCHAR(50) NOT NULL DEFAULT 'meta',
+    event_name VARCHAR(100) NOT NULL,
+    event_id VARCHAR(255),
+    event_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'success',
+    payload JSONB DEFAULT '{}'::jsonb,
+    response JSONB DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_capi_events_tenant ON capi_events_log(tenant_id, created_at DESC);

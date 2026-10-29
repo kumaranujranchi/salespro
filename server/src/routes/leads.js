@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import { createSaleFromLead } from '../services/leadToSale.js';
+import { dispatchCrmConversionEvent } from '../services/capiService.js';
 
 const router = Router();
 
@@ -153,16 +154,24 @@ router.patch('/:id', async (req, res) => {
 
     await query(`UPDATE leads SET ${fields.join(', ')} WHERE id = $${idx}`, values);
 
-    // If status updated to Converted, automatically create/link Sale record
-    if (body.lead_status && String(body.lead_status).toLowerCase() === 'converted') {
+    // If status updated, fetch lead and handle side effects (CAPI & Sale creation)
+    if (body.lead_status) {
       try {
         const leadRes = await query('SELECT * FROM leads WHERE id = $1', [id]);
         if (leadRes.rows.length > 0) {
-          const saleId = await createSaleFromLead(leadRes.rows[0], req.user?.id);
-          return res.json({ success: true, sale_id: saleId });
+          const updatedLead = leadRes.rows[0];
+
+          // 1. Dispatch CAPI conversion event in background
+          dispatchCrmConversionEvent(updatedLead, body.lead_status, updatedLead.tenant_id).catch(() => {});
+
+          // 2. If status updated to Converted, automatically create/link Sale record
+          if (String(body.lead_status).toLowerCase() === 'converted') {
+            const saleId = await createSaleFromLead(updatedLead, req.user?.id);
+            return res.json({ success: true, sale_id: saleId });
+          }
         }
-      } catch (saleErr) {
-        console.error('Error creating sale on lead status update:', saleErr);
+      } catch (err) {
+        console.error('Error handling lead status update side effects:', err);
       }
     }
 
@@ -187,6 +196,12 @@ router.post('/:id/convert', async (req, res) => {
     if (leadRes.rows.length === 0) return res.status(404).json({ error: 'Lead not found' });
 
     const saleId = await createSaleFromLead(leadRes.rows[0], req.user?.id, overrides);
+
+    // Dispatch CAPI Purchase / Converted event in background
+    dispatchCrmConversionEvent(leadRes.rows[0], 'Converted', leadRes.rows[0].tenant_id, {
+      total_revenue: overrides.total_revenue
+    }).catch(() => {});
+
     return res.json({ success: true, lead_id: id, sale_id: saleId });
   } catch (err) {
     return res.status(500).json({ error: err.message });

@@ -199,3 +199,10 @@ export interface SystemMetrics {
 export const systemService = {
   getMetrics: () => api.get<SystemMetrics>('/system/metrics'),
 };
+
+export const capiService = {
+  test: (data: { pixelId: string; accessToken: string; testEventCode?: string; tenantId?: string }) =>
+    api.post<{ success: boolean; message: string; meta_response?: any }>('/capi/test', data),
+  getLogs: (tenantId: string) =>
+    api.get<any[]>('/capi/logs', { tenant_id: tenantId }),
+};

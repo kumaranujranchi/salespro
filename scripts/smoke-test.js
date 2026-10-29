@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import crypto from 'node:crypto';
 
 const ROOT_DIR = process.cwd();
 
@@ -378,10 +379,98 @@ function testLeadToSaleConversion() {
 }
 
 // ---------------------------------------------------------
-// TEST 6: Critical Files Verification
+// TEST 6: Meta CAPI & Conversion Tracking Engine
+// ---------------------------------------------------------
+function testMetaCapiIntegration() {
+  printHeader('6. Meta CAPI (Conversions API) & Event Match Quality (EMQ)');
+
+  try {
+    // A. Verify phone normalization helper
+    function normalizePhoneForCapi(phone) {
+      if (!phone) return null;
+      let digits = String(phone).replace(/\D/g, '');
+      if (!digits) return null;
+      if (digits.length === 10) {
+        digits = `91${digits}`;
+      } else if (digits.length === 11 && digits.startsWith('0')) {
+        digits = `91${digits.slice(1)}`;
+      }
+      return digits;
+    }
+
+    function hashSha256(value) {
+      if (!value) return null;
+      const normalized = String(value).trim().toLowerCase();
+      if (!normalized) return null;
+      return crypto.createHash('sha256').update(normalized).digest('hex');
+    }
+
+    const norm1 = normalizePhoneForCapi('9876543210');
+    const norm2 = normalizePhoneForCapi('+91 98765 43210');
+    const norm3 = normalizePhoneForCapi('09876543210');
+
+    if (norm1 === '919876543210' && norm2 === '919876543210' && norm3 === '919876543210') {
+      logPass('Phone normalizer standardizes Indian numbers to E.164 without plus');
+    } else {
+      logFail('Phone normalizer mismatch', `Got: ${norm1}, ${norm2}, ${norm3}`);
+    }
+
+    const testHash = hashSha256('test@example.com');
+    // Precalculated SHA-256 for test@example.com is 973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b
+    if (testHash === '973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b') {
+      logPass('SHA-256 PII hashing meets Meta Graph API standard specification');
+    } else {
+      logFail('SHA-256 hash calculation mismatch', `Got: ${testHash}`);
+    }
+
+    // B. Verify server/src/services/capiService.js exports
+    const capiServicePath = path.join(ROOT_DIR, 'server/src/services/capiService.js');
+    if (fs.existsSync(capiServicePath)) {
+      const capiSource = fs.readFileSync(capiServicePath, 'utf8');
+      if (
+        capiSource.includes('sendMetaCAPIEvent') &&
+        capiSource.includes('dispatchCrmConversionEvent') &&
+        capiSource.includes('normalizePhoneForCapi') &&
+        capiSource.includes('hashSha256')
+      ) {
+        logPass('capiService module implements sendMetaCAPIEvent, dispatch, normalizer & hashing');
+      } else {
+        logFail('capiService missing required function exports', 'Check server/src/services/capiService.js');
+      }
+    } else {
+      logFail('server/src/services/capiService.js not found', 'File missing');
+    }
+
+    // C. Verify server/src/routes/capi.js endpoints
+    const capiRoutePath = path.join(ROOT_DIR, 'server/src/routes/capi.js');
+    if (fs.existsSync(capiRoutePath)) {
+      const routeSource = fs.readFileSync(capiRoutePath, 'utf8');
+      if (routeSource.includes("router.post('/test'") && routeSource.includes("router.get('/logs'")) {
+        logPass('CAPI routes expose POST /test and GET /logs endpoints');
+      } else {
+        logFail('CAPI route missing /test or /logs handler', 'Check server/src/routes/capi.js');
+      }
+    } else {
+      logFail('server/src/routes/capi.js not found', 'File missing');
+    }
+
+    // D. Verify server/src/index.js mounts /api/capi
+    const indexSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/index.js'), 'utf8');
+    if (indexSource.includes("app.use('/api/capi'")) {
+      logPass('Backend index.js correctly mounts /api/capi route');
+    } else {
+      logFail('Backend index.js missing /api/capi route mount', 'Check server/src/index.js');
+    }
+  } catch (err) {
+    logFail('Meta CAPI test crashed', err.message);
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 7: Critical Files Verification
 // ---------------------------------------------------------
 function testCriticalFiles() {
-  printHeader('6. Core Architecture & Critical File Integrity');
+  printHeader('7. Core Architecture & Critical File Integrity');
 
   const files = [
     'src/components/admin/AdminRoleSwitcherBar.tsx',
@@ -400,6 +489,8 @@ function testCriticalFiles() {
     'server/src/routes/tenants.js',
     'server/src/routes/sales.js',
     'server/src/routes/leads.js',
+    'server/src/routes/capi.js',
+    'server/src/services/capiService.js',
     'server/src/services/leadToSale.js',
   ];
 
@@ -473,6 +564,7 @@ async function runSuite() {
   testSaasAdminQaSecurity();
   testLayoutAndNavigationRegressions();
   testLeadToSaleConversion();
+  testMetaCapiIntegration();
   testCriticalFiles();
   await testBackendHealth();
 

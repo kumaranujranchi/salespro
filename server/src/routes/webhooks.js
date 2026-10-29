@@ -121,7 +121,13 @@ export function normalizeLead(payload) {
     budget_range: pick(fields, FIELD_KEYS.budget),
     purpose: pick(fields, FIELD_KEYS.purpose),
     notes: pick(fields, FIELD_KEYS.notes),
-    externalId: pick(fields, ['lead_id', 'entry_id']),
+    externalId: pick(fields, ['lead_id', 'entry_id', 'id']),
+    fbp: pick(fields, ['fbp', '_fbp', 'fb_browser_id']),
+    fbc: pick(fields, ['fbc', '_fbc', 'fbclid', 'fb_click_id']),
+    gclid: pick(fields, ['gclid', 'google_click_id', 'wbraid', 'gbraid']),
+    leadgen_id: pick(fields, ['leadgen_id', 'meta_lead_id']),
+    client_ip: pick(fields, ['client_ip', 'ip', 'ip_address', 'user_ip']),
+    user_agent: pick(fields, ['user_agent', 'useragent']),
     recognizedKeys: Object.keys(fields).length,
   };
 }
@@ -232,6 +238,13 @@ async function handleInboundLead(req, res) {
       source: 'webhook',
       portal: portalParam,
       external_id: lead.externalId,
+      fbp: lead.fbp || undefined,
+      fbc: lead.fbc || undefined,
+      fbclid: lead.fbc || undefined,
+      gclid: lead.gclid || undefined,
+      leadgen_id: lead.leadgen_id || undefined,
+      client_ip: lead.client_ip || req.ip || undefined,
+      user_agent: lead.user_agent || req.headers['user-agent'] || undefined,
       received_at: new Date().toISOString(),
       raw: rawPayload,
     };

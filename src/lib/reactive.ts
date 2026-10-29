@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   authService, tenantsService, profilesService, leadsService,
-  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService
+  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService
 } from './services';
 import { handleSessionExpired } from './auth-token';
 
@@ -271,6 +271,12 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
   if (key.includes('system.getMetrics')) {
     return await systemService.getMetrics();
+  }
+  if (key.includes('capi.test') || key.includes('capi.sendTestEvent')) {
+    return await capiService.test(args);
+  }
+  if (key.includes('capi.getLogs') || key.includes('capi.listLogs')) {
+    return await capiService.getLogs(args?.tenant_id);
   }
 
   // Fallback
