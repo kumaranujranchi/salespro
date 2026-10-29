@@ -4,11 +4,11 @@ import { useToast } from '../../contexts/ToastContext';
 import { useMutation, useAction } from "../../lib/reactive";
 import { api } from '../../lib/api-endpoints';
 import { getApiBaseUrl } from '../../lib/api';
-import { tenantsService, capiService } from '../../lib/services';
+import { tenantsService, capiService, metaService } from '../../lib/services';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy } from 'lucide-react';
+import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy, Send, Smartphone, Check } from 'lucide-react';
 
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
@@ -124,9 +124,27 @@ export function AdminIntegrationsPage() {
   // WhatsApp State
   const [whatsappSettings, setWhatsappSettings] = useState({
     enabled: false,
-    provider: 'wati' as 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom',
-    assignmentRule: 'manual' as 'manual' | 'round_robin'
+    provider: 'meta_cloud' as 'meta_cloud' | 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom',
+    assignmentRule: 'manual' as 'manual' | 'round_robin',
+    phoneNumberId: '',
+    wabaId: '',
+    accessToken: '',
+    bspApiKey: '',
+    bspEndpoint: '',
+    autoWelcomeEnabled: false,
+    welcomeTemplateName: 'realsalepro_lead_welcome',
+    templateLanguage: 'en',
+    customGreeting: 'Namaste',
+    companyDisplayName: '',
+    representativeName: 'Our Property Specialist',
+    brochureUrl: '',
+    customMessageBody: '',
   });
+  const [whatsappActiveTab, setWhatsappActiveTab] = useState<'api_setup' | 'auto_welcome' | 'test'>('api_setup');
+  const [showWhatsAppToken, setShowWhatsAppToken] = useState(false);
+  const [testWhatsAppPhone, setTestWhatsAppPhone] = useState('');
+  const [isTestingWhatsApp, setIsTestingWhatsApp] = useState(false);
+  const [whatsAppTestResult, setWhatsAppTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Google Form State
   const [googleFormSettings, setGoogleFormSettings] = useState({
@@ -208,10 +226,24 @@ export function AdminIntegrationsPage() {
       });
     }
     if (tenant?.settings?.integrations?.whatsapp) {
+      const wa = tenant.settings.integrations.whatsapp as any;
       setWhatsappSettings({
-        enabled: tenant.settings.integrations.whatsapp.enabled ?? false,
-        provider: (tenant.settings.integrations.whatsapp.provider as any) ?? 'wati',
-        assignmentRule: (tenant.settings.integrations.whatsapp.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+        enabled: wa.enabled ?? false,
+        provider: wa.provider ?? 'meta_cloud',
+        assignmentRule: wa.assignmentRule ?? 'manual',
+        phoneNumberId: wa.phoneNumberId ?? '',
+        wabaId: wa.wabaId ?? '',
+        accessToken: wa.accessToken ?? '',
+        bspApiKey: wa.bspApiKey ?? '',
+        bspEndpoint: wa.bspEndpoint ?? '',
+        autoWelcomeEnabled: wa.autoWelcomeEnabled ?? false,
+        welcomeTemplateName: wa.welcomeTemplateName ?? 'realsalepro_lead_welcome',
+        templateLanguage: wa.templateLanguage ?? 'en',
+        customGreeting: wa.customGreeting ?? 'Namaste',
+        companyDisplayName: wa.companyDisplayName ?? tenant.name ?? '',
+        representativeName: wa.representativeName ?? 'Our Property Specialist',
+        brochureUrl: wa.brochureUrl ?? '',
+        customMessageBody: wa.customMessageBody ?? '',
       });
     }
     if ((tenant?.settings?.integrations as any)?.googleForm) {
@@ -577,6 +609,19 @@ export function AdminIntegrationsPage() {
             enabled: whatsappSettings.enabled,
             provider: whatsappSettings.provider,
             assignmentRule: whatsappSettings.assignmentRule,
+            phoneNumberId: whatsappSettings.phoneNumberId,
+            wabaId: whatsappSettings.wabaId,
+            accessToken: whatsappSettings.accessToken,
+            bspApiKey: whatsappSettings.bspApiKey,
+            bspEndpoint: whatsappSettings.bspEndpoint,
+            autoWelcomeEnabled: whatsappSettings.autoWelcomeEnabled,
+            welcomeTemplateName: whatsappSettings.welcomeTemplateName,
+            templateLanguage: whatsappSettings.templateLanguage,
+            customGreeting: whatsappSettings.customGreeting,
+            companyDisplayName: whatsappSettings.companyDisplayName,
+            representativeName: whatsappSettings.representativeName,
+            brochureUrl: whatsappSettings.brochureUrl,
+            customMessageBody: whatsappSettings.customMessageBody,
           }
         }
       };
@@ -587,13 +632,49 @@ export function AdminIntegrationsPage() {
       });
 
       await refreshTenant();
-      toast.success('WhatsApp integration settings updated successfully!');
+      toast.success('WhatsApp API & automated messaging settings updated successfully!');
       setActiveModal(null);
     } catch (error: any) {
       console.error('Error saving WhatsApp settings:', error);
       toast.error(error.message || 'Failed to save WhatsApp settings.');
     } finally {
       setSavingWhatsapp(false);
+    }
+  };
+
+  const handleTestWhatsApp = async () => {
+    if (!testWhatsAppPhone.trim()) {
+      toast.error('Please enter a mobile number with country code (e.g. 919876543210)');
+      return;
+    }
+    setIsTestingWhatsApp(true);
+    setWhatsAppTestResult(null);
+    try {
+      const res = await metaService.testWhatsAppMessage({
+        provider: whatsappSettings.provider,
+        phoneNumberId: whatsappSettings.phoneNumberId,
+        accessToken: whatsappSettings.accessToken,
+        bspEndpoint: whatsappSettings.bspEndpoint,
+        bspApiKey: whatsappSettings.bspApiKey,
+        toPhone: testWhatsAppPhone,
+        templateName: whatsappSettings.welcomeTemplateName || 'realsalepro_lead_welcome',
+        languageCode: whatsappSettings.templateLanguage || 'en',
+        bodyParams: [
+          'Test Lead',
+          whatsappSettings.companyDisplayName || tenant?.name || 'Company',
+          'Premium Residential Suite',
+          whatsappSettings.representativeName || 'Property Consultant',
+          whatsappSettings.brochureUrl || 'https://realsalepro.in',
+        ],
+      });
+      setWhatsAppTestResult({ success: true, message: `Delivered successfully! Message ID: ${res.messageId || 'OK'}` });
+      toast.success('Test WhatsApp message delivered!');
+    } catch (err: any) {
+      const errMsg = err.message || 'Failed to dispatch WhatsApp message.';
+      setWhatsAppTestResult({ success: false, message: errMsg });
+      toast.error('WhatsApp test failed: ' + errMsg);
+    } finally {
+      setIsTestingWhatsApp(false);
     }
   };
 
@@ -937,9 +1018,14 @@ export function AdminIntegrationsPage() {
                 />
               </div>
               
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
-                WhatsApp Webhook
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-3 leading-tight">
+                WhatsApp API & Auto Messaging
               </span>
+              {whatsappSettings.autoWelcomeEnabled && (
+                <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-1.5 py-0.5 rounded-full mt-1">
+                  Auto Welcome ON
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -2065,13 +2151,25 @@ export function AdminIntegrationsPage() {
       {/* WhatsApp Modal Overlay */}
       {activeModal === 'whatsapp' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-8 h-8 bg-white border border-slate-100 dark:border-white/5 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-9 h-9 bg-[#E8F8F0] dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/30 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
                   <img src="/images/whatsApp.webp" alt="WhatsApp" className="w-6 h-6 object-contain" />
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">WhatsApp Webhook Configuration</h2>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                      WhatsApp Business API & Auto Messaging
+                    </h2>
+                    <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+                      Cloud API & Automated Welcome
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">
+                    Connect WhatsApp API to automatically welcome new leads from Ads, Website & Portals
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                 <button
@@ -2088,111 +2186,485 @@ export function AdminIntegrationsPage() {
               </div>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            {/* Tab navigation */}
+            <div className="flex items-center gap-1 px-6 pt-3 pb-1 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/30 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setWhatsappActiveTab('api_setup')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  whatsappActiveTab === 'api_setup'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                1. API Connection
+              </button>
+              <button
+                type="button"
+                onClick={() => setWhatsappActiveTab('auto_welcome')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                  whatsappActiveTab === 'auto_welcome'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>2. Auto Messaging (मैसेज ड्राफ्टर)</span>
+                {whatsappSettings.autoWelcomeEnabled && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setWhatsappActiveTab('test')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  whatsappActiveTab === 'test'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                3. Test Dispatch
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {showWhatsappHelp ? (
                 <div className="space-y-4 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                   <div className="flex items-center gap-2 mb-2">
                     <Info className="text-blue-500" size={18} />
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">WhatsApp Integration Help Guide</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">WhatsApp Business API Setup Guide</h3>
                   </div>
-                  <p>
-                    WhatsApp BSPs send lead events to your CRM Webhook endpoint in real time. Please paste the webhook URL in your BSP developer portal or email it to your provider account manager.
-                  </p>
                   
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Request Type:</span> POST
+                  <div className="space-y-3">
+                    <div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl space-y-2">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-xs">🚀 How to Connect Meta WhatsApp Cloud API (Free & Official):</h4>
+                      <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                        <li>Visit <strong>developers.facebook.com</strong> and open or create your Business App.</li>
+                        <li>Under products, add <strong>WhatsApp</strong> and open <strong>API Setup</strong>.</li>
+                        <li>Copy the <strong>Phone number ID</strong> and <strong>WhatsApp Business Account ID</strong> into the fields below.</li>
+                        <li>Generate a <strong>System User Permanent Access Token</strong> in Meta Business Settings with <code>whatsapp_business_messaging</code> permission.</li>
+                        <li>Paste your token below and click <strong>"Send Test Verification WhatsApp"</strong> to confirm!</li>
+                      </ol>
                     </div>
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Content-Type:</span> application/json
-                    </div>
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">Webhook URL:</span>
-                      <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{whatsappWebhookUrl}</code>
-                    </div>
-                  </div>
 
-                  <div className="pt-2 border-t border-gray-200 dark:border-white/5">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">📋 Email Template to Provider Support:</h4>
-                    <p className="mb-2 text-[10px]">Select your BSP provider on the settings page first, then copy this text:</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const emailText = `Subject: Webhook Endpoint Setup Request for WhatsApp Lead Push API\n\nHi Partner Support,\n\nI want to integrate my WhatsApp leads with my Real Estate CRM via Webhook lead push.\n\nPlease configure my webhook settings with the following details:\n\n- Webhook URL: ${whatsappWebhookUrl}\n- Request Type: HTTP POST\n- Content-Type: application/json\n- Events: Inbound Message / New Lead Inquiry\n\nKindly activate this mapping on my active number and let me know once verified.\n\nThanks!`;
-                        navigator.clipboard.writeText(emailText);
-                        toast.success("WhatsApp support email template copied!");
-                      }}
-                      className="w-full text-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-bold transition-all"
-                    >
-                      Copy Webhook Request Email
-                    </button>
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 space-y-1.5 font-mono text-[10px]">
+                      <div>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">Inbound Webhook URL (For Inbound Chat Inquiries):</span>
+                        <code className="block p-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-850 break-all select-all text-blue-500 mt-1">{whatsappWebhookUrl}</code>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+                  <div className="pt-2 border-t border-gray-100 dark:border-white/10 flex justify-end">
                     <Button variant="neutral" onClick={() => setShowWhatsappHelp(false)}>
-                      Back to Settings
+                      Back to Configuration
                     </Button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable WhatsApp Integration</h4>
-                      <p className="text-xs text-gray-500">Temporarily stop or start importing leads from WhatsApp webhooks.</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={whatsappSettings.enabled}
-                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
+                  {/* TAB 1: API Connection Setup */}
+                  {whatsappActiveTab === 'api_setup' && (
+                    <div className="space-y-4">
+                      {/* Enable Switch */}
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Enable WhatsApp Integration</h4>
+                          <p className="text-xs text-gray-500">Master switch for WhatsApp lead capture and automated messaging.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={whatsappSettings.enabled}
+                            onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Select WhatsApp Business Provider (BSP)
-                      </label>
-                      <Select
-                        value={whatsappSettings.provider}
-                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, provider: e.target.value as any })}
-                        options={[
-                          { label: 'Wati.io', value: 'wati' },
-                          { label: 'Aisensy', value: 'aisensy' },
-                          { label: 'Interakt', value: 'interakt' },
-                          { label: 'DoubleTick', value: 'doubletick' },
-                          { label: 'Custom / Other Provider', value: 'custom' }
-                        ]}
-                      />
-                    </div>
+                      {/* Provider Selection */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Select WhatsApp Provider
+                        </label>
+                        <Select
+                          value={whatsappSettings.provider}
+                          onChange={(e) => setWhatsappSettings({ ...whatsappSettings, provider: e.target.value as any })}
+                          options={[
+                            { label: 'Meta WhatsApp Cloud API (Official Direct - Recommended)', value: 'meta_cloud' },
+                            { label: 'WATI.io (WhatsApp Team Inbox)', value: 'wati' },
+                            { label: 'AiSensy', value: 'aisensy' },
+                            { label: 'Interakt / DoubleTick', value: 'interakt' },
+                            { label: 'Inbound Webhook Only (Custom)', value: 'custom' }
+                          ]}
+                        />
+                      </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                        Lead Assignment Rule
-                      </label>
-                      <Select
-                        value={whatsappSettings.assignmentRule}
-                        onChange={(e) => setWhatsappSettings({ ...whatsappSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                        options={[
-                          { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                          { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                        ]}
-                      />
+                      {/* Meta Cloud API Fields */}
+                      {whatsappSettings.provider === 'meta_cloud' && (
+                        <div className="space-y-3 p-4 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                            <Sparkles size={14} /> Meta WhatsApp Cloud API Credentials
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Phone Number ID *
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. 102948291029381"
+                                value={whatsappSettings.phoneNumberId}
+                                onChange={(e) => setWhatsappSettings({ ...whatsappSettings, phoneNumberId: e.target.value.trim() })}
+                                className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                WhatsApp Business Account ID (WABA ID)
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="e.g. 293840192847192"
+                                value={whatsappSettings.wabaId}
+                                onChange={(e) => setWhatsappSettings({ ...whatsappSettings, wabaId: e.target.value.trim() })}
+                                className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                System User Permanent Access Token *
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setShowWhatsAppToken(!showWhatsAppToken)}
+                                className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                              >
+                                {showWhatsAppToken ? <EyeOff size={12} /> : <Eye size={12} />}
+                                {showWhatsAppToken ? 'Hide Token' : 'Show Token'}
+                              </button>
+                            </div>
+                            <input
+                              type={showWhatsAppToken ? 'text' : 'password'}
+                              placeholder="EAAG..."
+                              value={whatsappSettings.accessToken}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, accessToken: e.target.value.trim() })}
+                              className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-emerald-500 font-mono"
+                            />
+                            <p className="text-[10px] text-gray-500 mt-1">
+                              Generate a permanent system user token in Meta Business Settings with <code>whatsapp_business_messaging</code>.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* WATI / AiSensy Fields */}
+                      {(whatsappSettings.provider === 'wati' || whatsappSettings.provider === 'aisensy') && (
+                        <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              API Endpoint URL *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. https://live-mt-server.wati.io/XXXXX"
+                              value={whatsappSettings.bspEndpoint}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, bspEndpoint: e.target.value.trim() })}
+                              className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              API Access Key / Secret *
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="Enter your BSP API Key"
+                              value={whatsappSettings.bspApiKey}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, bspApiKey: e.target.value.trim() })}
+                              className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Lead Assignment Rule */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Inbound Lead Assignment Rule
+                        </label>
+                        <Select
+                          value={whatsappSettings.assignmentRule}
+                          onChange={(e) => setWhatsappSettings({ ...whatsappSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                          options={[
+                            { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                            { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                          ]}
+                        />
+                      </div>
+
+                      {/* Inbound Webhook Box */}
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-white/10 text-xs space-y-1.5">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 block">
+                          Inbound Lead Push Webhook:
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 p-1.5 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 break-all select-all text-emerald-600 text-[11px]">
+                            {whatsappWebhookUrl}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(whatsappWebhookUrl);
+                              toast.success('Inbound WhatsApp Webhook URL copied!');
+                            }}
+                            className="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 flex items-center gap-1"
+                          >
+                            <Copy size={12} /> Copy
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* TAB 2: Auto-Welcome Messaging & Drafter */}
+                  {whatsappActiveTab === 'auto_welcome' && (
+                    <div className="space-y-4">
+                      {/* Auto-Welcome Master Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <Sparkles size={16} className="text-emerald-600" />
+                            Enable Auto-Welcome WhatsApp on New Lead
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                            Automatically sends personalized WhatsApp greeting as soon as a lead enters CRM (from Meta Ads, Google Ads, Website Forms, or Portals).
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={whatsappSettings.autoWelcomeEnabled}
+                            onChange={(e) => setWhatsappSettings({ ...whatsappSettings, autoWelcomeEnabled: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none dark:bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
+                        </label>
+                      </div>
+
+                      {/* Template Chooser */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Meta Approved Template Structure
+                        </label>
+                        <Select
+                          value={whatsappSettings.welcomeTemplateName}
+                          onChange={(e) => setWhatsappSettings({ ...whatsappSettings, welcomeTemplateName: e.target.value })}
+                          options={[
+                            { label: 'RealSalePro Standard Real Estate Greeting (Default Meta Approved)', value: 'realsalepro_lead_welcome' },
+                            { label: 'Brochure & Project Catalog Share Template', value: 'realsalepro_brochure_share' },
+                            { label: 'Custom Meta Template (Your Own Approved Template)', value: 'custom_template' },
+                          ]}
+                        />
+                      </div>
+
+                      {whatsappSettings.welcomeTemplateName === 'custom_template' && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                            Your Custom Template Name (from Meta WhatsApp Manager)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. custom_lead_ack"
+                            value={whatsappSettings.welcomeTemplateName === 'custom_template' ? '' : whatsappSettings.welcomeTemplateName}
+                            onChange={(e) => setWhatsappSettings({ ...whatsappSettings, welcomeTemplateName: e.target.value.trim() })}
+                            className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono"
+                          />
+                        </div>
+                      )}
+
+                      {/* Message Variable Drafter */}
+                      <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-white/10">
+                        <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          ✍️ Customize Message Variables & Content:
+                        </h5>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Salutation / Greeting
+                            </label>
+                            <input
+                              type="text"
+                              value={whatsappSettings.customGreeting}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, customGreeting: e.target.value })}
+                              placeholder="e.g. Namaste / Hello"
+                              className="w-full text-xs p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Company Display Name
+                            </label>
+                            <input
+                              type="text"
+                              value={whatsappSettings.companyDisplayName || tenant?.name || ''}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, companyDisplayName: e.target.value })}
+                              placeholder="e.g. Anuj Corp"
+                              className="w-full text-xs p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Property Consultant / Representative Title
+                            </label>
+                            <input
+                              type="text"
+                              value={whatsappSettings.representativeName}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, representativeName: e.target.value })}
+                              placeholder="e.g. Our Senior Property Consultant"
+                              className="w-full text-xs p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                              Brochure / Website Link (Sent to Customer)
+                            </label>
+                            <input
+                              type="text"
+                              value={whatsappSettings.brochureUrl}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, brochureUrl: e.target.value })}
+                              placeholder="e.g. https://yourcompany.com/brochure.pdf"
+                              className="w-full text-xs p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Live WhatsApp Mobile Chat Preview */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Smartphone size={14} className="text-emerald-600" />
+                          Live WhatsApp Chat Preview (Customer Mobile View)
+                        </label>
+
+                        <div className="bg-[#EFEAE2] dark:bg-slate-950 p-4 rounded-2xl border border-slate-300 dark:border-slate-800 max-w-md mx-auto shadow-inner">
+                          {/* Chat Bubble */}
+                          <div className="bg-white dark:bg-[#1F2C34] text-slate-800 dark:text-slate-100 p-3.5 rounded-2xl rounded-tl-xs shadow-md text-xs space-y-2 leading-relaxed">
+                            <div className="font-bold text-emerald-700 dark:text-emerald-400 text-[11px] border-b pb-1 border-slate-100 dark:border-white/5">
+                              {whatsappSettings.companyDisplayName || tenant?.name || 'Company Name'}
+                            </div>
+
+                            <p>
+                              {whatsappSettings.customGreeting || 'Namaste'} <strong>Saurav Verma</strong>!
+                            </p>
+                            <p>
+                              Thank you for inquiring regarding <strong>Sunrise Sky Villas</strong> with <strong>{whatsappSettings.companyDisplayName || tenant?.name || 'our team'}</strong>.
+                            </p>
+                            <p>
+                              Our property specialist (<em>{whatsappSettings.representativeName || 'Our Property Consultant'}</em>) will connect with you shortly to share floor plans, pricing & schedule your site visit.
+                            </p>
+
+                            {whatsappSettings.brochureUrl && (
+                              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-lg text-[11px]">
+                                <span className="font-semibold block text-emerald-800 dark:text-emerald-300">📄 Download Project Brochure:</span>
+                                <span className="text-blue-600 dark:text-blue-400 break-all underline text-[10px]">
+                                  {whatsappSettings.brochureUrl}
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-end gap-1 text-[10px] text-slate-400 pt-1">
+                              <span>10:45 AM</span>
+                              <span className="text-blue-500 font-bold">✓✓</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: Test Dispatch Tool */}
+                  {whatsappActiveTab === 'test' && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/30 text-xs space-y-2">
+                        <div className="font-bold text-emerald-900 dark:text-emerald-200 text-sm flex items-center gap-1.5">
+                          <Send size={16} className="text-emerald-600" /> Send Test WhatsApp Message
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          Test your WhatsApp API connection right now. Enter your personal mobile number (with country code e.g. <code>919876543210</code>) to verify that messages are delivering smoothly before activating live auto-welcome.
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-white/10 space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Your Test Mobile Number (with Country Code) *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 919876543210 or 9876543210"
+                            value={testWhatsAppPhone}
+                            onChange={(e) => setTestWhatsAppPhone(e.target.value.trim())}
+                            className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleTestWhatsApp}
+                            disabled={isTestingWhatsApp || !testWhatsAppPhone}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                          >
+                            <Send size={13} className={isTestingWhatsApp ? "animate-spin" : ""} />
+                            {isTestingWhatsApp ? "Sending Verification Message..." : "Send Test WhatsApp Message"}
+                          </button>
+                        </div>
+
+                        {/* Test Result Feedback */}
+                        {whatsAppTestResult && (
+                          <div className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+                            whatsAppTestResult.success
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                              : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                          }`}>
+                            {whatsAppTestResult.success ? (
+                              <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertCircle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                            )}
+                            <div>
+                              <div className="font-bold">
+                                {whatsAppTestResult.success ? "Verification Successful!" : "Delivery Failed"}
+                              </div>
+                              <p className="text-[11px] mt-0.5">{whatsAppTestResult.message}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end gap-2 flex-shrink-0">
               <Button variant="neutral" onClick={() => setActiveModal(null)}>Cancel</Button>
               {!showWhatsappHelp && (
-                <Button onClick={handleSaveWhatsappSettings} isLoading={savingWhatsapp} className="gap-2">
-                  <Save size={16} /> Save Settings
+                <Button onClick={handleSaveWhatsappSettings} isLoading={savingWhatsapp} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Save size={16} /> Save WhatsApp Configuration
                 </Button>
               )}
             </div>

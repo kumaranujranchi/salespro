@@ -215,4 +215,16 @@ export const metaService = {
   },
   subscribePageToWebhook: (data: { pageId: string; pageAccessToken: string }) =>
     api.post<{ success: boolean }>('/meta/subscribe-page', data),
+  testWhatsAppMessage: (data: {
+    provider: string;
+    phoneNumberId?: string;
+    accessToken?: string;
+    bspEndpoint?: string;
+    bspApiKey?: string;
+    toPhone: string;
+    templateName?: string;
+    languageCode?: string;
+    bodyParams?: string[];
+    fallbackText?: string;
+  }) => api.post<{ success: boolean; messageId?: string }>('/meta/whatsapp-test', data),
 };

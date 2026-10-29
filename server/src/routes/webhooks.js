@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
+import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
 
 const router = Router();
 
@@ -299,6 +300,19 @@ async function handleInboundLead(req, res) {
         JSON.stringify(metadata),
       ]
     );
+
+    // Asynchronously trigger automated WhatsApp welcome if enabled
+    sendLeadWelcomeWhatsApp({
+      tenantId,
+      lead: {
+        ...lead,
+        id: inserted.rows[0].id,
+        lead_id: inserted.rows[0].lead_id,
+        lead_source: portal.leadSource,
+      },
+    }).catch(waErr => {
+      console.warn('[Webhooks] WhatsApp auto-welcome async warning:', waErr.message);
+    });
 
     return res.status(201).json({
       success: true,

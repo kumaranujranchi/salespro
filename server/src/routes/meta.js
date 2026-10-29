@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { sendMetaCloudMessage, sendWatiMessage } from '../services/whatsappService.js';
 
 const router = Router();
 
@@ -83,6 +84,67 @@ router.post('/subscribe-page', requireAuth, async (req, res) => {
     return res.json({ success: true, data: subData });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+/**
+ * Send Test WhatsApp Message to verify API credentials
+ * POST /api/meta/whatsapp-test
+ */
+router.post('/whatsapp-test', requireAuth, async (req, res) => {
+  try {
+    const {
+      provider = 'meta_cloud',
+      phoneNumberId,
+      accessToken,
+      bspEndpoint,
+      bspApiKey,
+      toPhone,
+      templateName,
+      languageCode = 'en',
+      bodyParams = [],
+      fallbackText,
+    } = req.body;
+
+    if (!toPhone) {
+      return res.status(400).json({ error: 'Recipient toPhone is required to send test message' });
+    }
+
+    if (provider === 'meta_cloud') {
+      if (!phoneNumberId || !accessToken) {
+        return res.status(400).json({ error: 'Phone Number ID and Access Token are required for Meta Cloud API' });
+      }
+
+      const result = await sendMetaCloudMessage({
+        phoneNumberId,
+        accessToken,
+        toPhone,
+        templateName: templateName || undefined,
+        languageCode,
+        bodyParams,
+        fallbackText: fallbackText || `Hello! This is a verification test message from RealSalePro WhatsApp Automation. Your WhatsApp Cloud API is connected successfully!`,
+      });
+
+      return res.json({ success: true, ...result });
+    } else if (provider === 'wati') {
+      if (!bspEndpoint || !bspApiKey) {
+        return res.status(400).json({ error: 'Endpoint and API Key are required for WATI' });
+      }
+
+      const result = await sendWatiMessage({
+        endpoint: bspEndpoint,
+        apiKey: bspApiKey,
+        toPhone,
+        templateName: templateName || 'test',
+        parameters: bodyParams.map((v, i) => ({ name: String(i + 1), value: String(v) })),
+      });
+
+      return res.json({ success: true, ...result });
+    }
+
+    return res.status(400).json({ error: `Unsupported provider: ${provider}` });
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'WhatsApp Test dispatch failed' });
   }
 });
 

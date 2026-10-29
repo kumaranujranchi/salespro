@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query } from '../db/index.js';
 import { createSaleFromLead } from '../services/leadToSale.js';
 import { dispatchCrmConversionEvent } from '../services/capiService.js';
+import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
 
 const router = Router();
 
@@ -117,6 +118,14 @@ router.post('/', async (req, res) => {
         console.error('Error creating sale from converted lead on creation:', saleErr);
       }
     }
+
+    // Asynchronously trigger automated WhatsApp welcome if enabled
+    sendLeadWelcomeWhatsApp({
+      tenantId: tenant_id,
+      lead,
+    }).catch(waErr => {
+      console.warn('[Leads] WhatsApp auto-welcome async warning:', waErr.message);
+    });
 
     return res.status(201).json({ ...lead, _id: lead.id });
   } catch (err) {

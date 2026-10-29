@@ -71,9 +71,25 @@ export interface TenantSettings {
     };
     whatsapp?: {
       enabled: boolean;
-      provider?: 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom';
+      provider?: 'meta_cloud' | 'wati' | 'aisensy' | 'interakt' | 'doubletick' | 'custom';
       assignmentRule: 'manual' | 'round_robin';
       lastAssignedExecutiveId?: string;
+      // Meta WhatsApp Cloud API credentials
+      phoneNumberId?: string;
+      wabaId?: string;
+      accessToken?: string;
+      // BSP credentials
+      bspApiKey?: string;
+      bspEndpoint?: string;
+      // Automated Lead Messaging
+      autoWelcomeEnabled?: boolean;
+      welcomeTemplateName?: string;
+      templateLanguage?: string;
+      customGreeting?: string;
+      companyDisplayName?: string;
+      representativeName?: string;
+      brochureUrl?: string;
+      customMessageBody?: string;
     };
     googleForm?: {
       enabled: boolean;

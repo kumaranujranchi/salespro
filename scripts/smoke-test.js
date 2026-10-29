@@ -496,6 +496,7 @@ function testCriticalFiles() {
     'server/src/routes/webhooks.js',
     'server/src/services/capiService.js',
     'server/src/services/leadToSale.js',
+    'server/src/services/whatsappService.js',
   ];
 
   let missingCount = 0;
