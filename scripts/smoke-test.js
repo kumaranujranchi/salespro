@@ -477,6 +477,8 @@ function testCriticalFiles() {
     'src/contexts/AuthContext.tsx',
     'src/utils/phoneMasking.ts',
     'src/pages/admin/TenantsPage.tsx',
+    'src/pages/AccountsPage.tsx',
+    'src/pages/RolesPage.tsx',
     'src/pages/TargetsPage.tsx',
     'src/pages/LeadsPage.tsx',
     'src/pages/SalesPage.tsx',

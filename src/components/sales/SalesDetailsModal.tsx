@@ -4,11 +4,11 @@ import { useQuery } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { format, parseISO } from 'date-fns';
-import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock } from 'lucide-react';
+import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock, MessageSquare } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger } from '../../utils/export';
+import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger, sharePaymentReceiptWhatsApp } from '../../utils/export';
 
 interface SalesDetailsModalProps {
     isOpen: boolean;
@@ -240,6 +240,18 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                             {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Share2 size={14} className="mr-1.5" />}
                             Share {isFreePlan && "(Pro)"}
                         </Button>
+                        {payments && payments.length > 0 && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => sharePaymentReceiptWhatsApp(payments[payments.length - 1], sale, tenant)}
+                                className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                title="Share Latest Payment Receipt on WhatsApp"
+                            >
+                                <MessageSquare size={14} className="mr-1.5" />
+                                WhatsApp Receipt
+                            </Button>
+                        )}
                     </div>
                 </div>
 

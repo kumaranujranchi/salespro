@@ -180,6 +180,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('payments.addPayment') || key.includes('payments.add')) {
     return await salesService.addPayment(args);
   }
+  if (key.includes('payments.deletePayment') || key.includes('payments.delete') || key.includes('payments.remove')) {
+    return await salesService.deletePayment(args?.id || args?._id);
+  }
 
   // PROJECTS & INVENTORY
   if (key.includes('projects.listAllProjects') || key.includes('projects.listRunningProjects') || key.includes('projects.list')) {

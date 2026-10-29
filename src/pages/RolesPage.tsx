@@ -29,7 +29,8 @@ import {
   HelpCircle,
   AlertCircle,
   LayoutGrid,
-  List
+  List,
+  CreditCard
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -37,6 +38,7 @@ import { Input } from '../components/ui/Input';
 
 const MENU_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'accounts', label: 'Accounts & Payments', icon: CreditCard },
   { id: 'sales', label: 'Sales & Trends', icon: TrendingUp },
   { id: 'crm', label: 'CRM / Leads', icon: UsersIcon },
   { id: 'inventory', label: 'Inventory / Projects', icon: Building },

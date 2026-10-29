@@ -496,4 +496,15 @@ router.post('/payments', async (req, res) => {
   }
 });
 
+// Delete Payment
+router.delete('/payments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await query('DELETE FROM payments WHERE id = $1', [id]);
+    return res.json({ success: true, message: 'Payment deleted' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

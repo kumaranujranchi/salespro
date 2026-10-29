@@ -8,10 +8,10 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet, Lock, FileText } from 'lucide-react';
+import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet, Lock, FileText, MessageSquare, Receipt } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
-import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger } from '../../utils/export';
+import { exportPaymentLedgerPDF, exportPaymentLedgerExcel, sharePaymentLedger, exportPaymentReceiptPDF, sharePaymentReceiptWhatsApp } from '../../utils/export';
 
 interface PaymentManagerProps {
     isOpen: boolean;
@@ -173,7 +173,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                                 <th className="px-4 py-2 text-left">Date</th>
                                 <th className="px-4 py-2 text-left">Type</th>
                                 <th className="px-4 py-2 text-right">Amount</th>
-                                {canEdit && <th className="px-4 py-2 text-right">Actions</th>}
+                                <th className="px-4 py-2 text-right">Receipt & Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -182,22 +182,40 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                                     <td className="px-4 py-2">{p.payment_date}</td>
                                     <td className="px-4 py-2 capitalize">{p.payment_type}</td>
                                     <td className="px-4 py-2 text-right font-bold">{formatCurrency(p.amount)}</td>
-                                    {canEdit && (
-                                        <td className="px-4 py-2 text-right">
-                                            <button 
-                                                onClick={async () => {
-                                                    if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
-                                                        await deletePayment({ id: p._id });
-                                                        toast.success("Payment record deleted successfully");
-                                                    }
-                                                }} 
-                                                className="text-red-500 hover:text-red-700 ml-2"
-                                                title="Delete Payment"
+                                    <td className="px-4 py-2 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => exportPaymentReceiptPDF(p, sale, tenant)}
+                                                className="p-1 rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                                title="Download Payment Receipt (PDF)"
                                             >
-                                                <X size={14}/>
+                                                <Receipt size={15} />
                                             </button>
-                                        </td>
-                                    )}
+                                            <button
+                                                type="button"
+                                                onClick={() => sharePaymentReceiptWhatsApp(p, sale, tenant)}
+                                                className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                                title="Share Receipt on WhatsApp"
+                                            >
+                                                <MessageSquare size={15} />
+                                            </button>
+                                            {canEdit && (
+                                                <button 
+                                                    onClick={async () => {
+                                                        if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
+                                                            await deletePayment({ id: p._id });
+                                                            toast.success("Payment record deleted successfully");
+                                                        }
+                                                    }} 
+                                                    className="text-red-500 hover:text-red-700 ml-1 p-1 rounded hover:bg-red-50"
+                                                    title="Delete Payment"
+                                                >
+                                                    <X size={14}/>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

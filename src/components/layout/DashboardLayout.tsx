@@ -13,6 +13,7 @@ import {
   Target,
   Calendar,
   TrendingUp,
+  CreditCard,
   Award,
   Shield,
   FileText,
@@ -68,6 +69,12 @@ const navGroups: NavGroup[] = [
       { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
       { label: 'My Performance', path: '/performance', icon: BarChart2, roles: ['admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'sales_manager'] },
+    ]
+  },
+  {
+    label: 'Accounts',
+    items: [
+      { label: 'Accounts & Collections', path: '/accounts', icon: CreditCard, roles: ['super_admin', 'admin', 'director', 'accountant'] },
     ]
   },
   {
@@ -309,6 +316,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       let permKey: string | null = null;
       
       if (item.path === '/dashboard') permKey = 'dashboard';
+      if (item.path === '/accounts' || item.path === '/payments') permKey = 'accounts';
       if (item.path === '/sales' || item.path === '/performance') permKey = 'sales';
       if (item.path === '/crm' || item.path === '/leads' || item.path === '/crm/pipeline') permKey = 'crm';
       if (item.path === '/projects' || item.path === '/inventory') permKey = 'inventory';

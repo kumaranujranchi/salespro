@@ -76,6 +76,7 @@ export const salesService = {
   listPayments: (tenantId: string, saleId?: string) =>
     api.get<any[]>('/sales/payments', { tenant_id: tenantId, sale_id: saleId }),
   addPayment: (data: any) => api.post<any>('/sales/payments', data),
+  deletePayment: (id: string) => api.delete<{ success: boolean }>(`/sales/payments/${id}`),
 };
 
 export const projectsService = {

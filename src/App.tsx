@@ -36,6 +36,7 @@ import { ContactUsPage } from './pages/ContactUsPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
 import { ReferralManagementPage } from './pages/admin/ReferralManagementPage';
 import { RolesPage } from './pages/RolesPage';
+import { AccountsPage } from './pages/AccountsPage';
 import { AccountantDashboard } from './components/dashboards/AccountantDashboard';
 import { ReferralProgramPage } from './pages/ReferralProgramPage';
 import { TenantsPage } from './pages/admin/TenantsPage';
@@ -264,6 +265,18 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
+                <Route
+                  path="/accounts"
+                  element={
+                    <ProtectedRoute permissionKey="accounts" allowedRoles={['super_admin', 'admin', 'director', 'accountant']}>
+                      <DashboardLayout>
+                        <AccountsPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/payments" element={<Navigate to="/accounts" replace />} />
 
                 <Route
                   path="/sales"
