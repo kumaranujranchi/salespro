@@ -190,13 +190,44 @@ async function resolveApiCall(functionKey: any, args: any) {
 
   // PROJECTS & INVENTORY
   if (key.includes('projects.listAllProjects') || key.includes('projects.listRunningProjects') || key.includes('projects.list')) {
-    return await projectsService.list(args?.tenant_id, args?.is_active);
+    const isActive = key.includes('projects.listRunningProjects') ? true : args?.is_active;
+    return await projectsService.list(args?.tenant_id, isActive);
+  }
+  if (key.includes('projects.createProject') || key.includes('projects.create')) {
+    const res = await projectsService.create(args);
+    invalidateQuery('projects');
+    return res;
+  }
+  if (key.includes('projects.updateProject') || key.includes('projects.update')) {
+    const id = args?.id || args?._id;
+    const res = await projectsService.update(id, args);
+    invalidateQuery('projects');
+    return res;
+  }
+  if (key.includes('projects.deleteProject') || key.includes('projects.delete') || key.includes('projects.remove')) {
+    const id = args?.id || args?._id;
+    const res = await projectsService.delete(id);
+    invalidateQuery('projects');
+    return res;
   }
   if (key.includes('projects.listUnits')) {
     return await projectsService.listUnits(args?.project_id, args?.status);
   }
+  if (key.includes('projects.createOrUpdateUnit') || key.includes('projects.addUnit') || key.includes('projects.updateUnit')) {
+    const res = await projectsService.createOrUpdateUnit(args);
+    invalidateQuery('projects');
+    return res;
+  }
+  if (key.includes('projects.deleteUnit') || key.includes('projects.removeUnit')) {
+    const id = args?.id || args?._id;
+    const res = await projectsService.deleteUnit(id);
+    invalidateQuery('projects');
+    return res;
+  }
   if (key.includes('projects.bulkAddUnits')) {
-    return await projectsService.bulkAddUnits(args?.tenant_id, args?.project_id, args?.units);
+    const res = await projectsService.bulkAddUnits(args?.tenant_id, args?.project_id, args?.units);
+    invalidateQuery('projects');
+    return res;
   }
 
   // SITE VISITS

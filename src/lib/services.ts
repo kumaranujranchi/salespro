@@ -97,8 +97,12 @@ export const projectsService = {
   list: (tenantId: string, isActive?: boolean) =>
     api.get<any[]>('/projects', { tenant_id: tenantId, is_active: isActive }),
   create: (data: any) => api.post<any>('/projects', data),
+  update: (id: string, data: any) => api.patch<any>(`/projects/${id}`, data),
+  delete: (id: string) => api.delete<{ success: boolean; id: string }>(`/projects/${id}`),
   listUnits: (projectId: string, status?: string) =>
     api.get<any[]>('/projects/units', { project_id: projectId, status }),
+  createOrUpdateUnit: (data: any) => api.post<any>('/projects/units', data),
+  deleteUnit: (id: string) => api.delete<{ success: boolean; id: string }>(`/projects/units/${id}`),
   bulkAddUnits: (tenantId: string, projectId: string, units: any[]) =>
     api.post<{ success: boolean }>('/projects/units/bulk', { tenant_id: tenantId, project_id: projectId, units }),
 };

@@ -33,7 +33,8 @@ interface CustomField {
 }
 
 export function InventoryPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
+  const currentTenantId = profile?.tenant_id || tenant?.id || tenant?._id;
   const toast = useToast();
   const dialog = useDialog();
 
@@ -44,7 +45,7 @@ export function InventoryPage() {
   const [activeTab, setActiveTab] = useState<'units' | 'fields'>('units');
 
   // Queries
-  const projects = useQuery(api.projects.listAllProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
+  const projects = useQuery(api.projects.listAllProjects, currentTenantId ? { tenant_id: currentTenantId as Id<"tenants"> } : "skip");
   
   // Resolve active project reactively from query results
   const selectedProject = projects?.find(p => p._id === selectedProjectId);

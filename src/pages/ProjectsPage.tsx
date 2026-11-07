@@ -15,7 +15,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { ActionMenu } from '../components/ui/ActionMenu';
 
 export function ProjectsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
+  const currentTenantId = profile?.tenant_id || tenant?.id || tenant?._id;
   const dialog = useDialog();
   const toast = useToast();
   
@@ -45,7 +46,7 @@ export function ProjectsPage() {
   });
 
   // Backend queries
-  const projects = useQuery(api.projects.listAllProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
+  const projects = useQuery(api.projects.listAllProjects, currentTenantId ? { tenant_id: currentTenantId as Id<"tenants"> } : "skip");
 
   // Backend mutations
   const createProjectMutation = useMutation(api.projects.createProject);
@@ -91,7 +92,11 @@ export function ProjectsPage() {
 
   const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnly || !profile?.tenant_id) return;
+    const targetTenantId = profile?.tenant_id || tenant?.id || tenant?._id;
+    if (isReadOnly || !targetTenantId) {
+      toast.error('Unable to save project: Missing tenant identification.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const projectData = {
@@ -112,16 +117,16 @@ export function ProjectsPage() {
         toast.success('Project updated successfully!');
       } else {
         await createProjectMutation({
-          tenant_id: profile.tenant_id as Id<"tenants">,
+          tenant_id: targetTenantId as Id<"tenants">,
           ...projectData
         });
         toast.success('Project added successfully!');
       }
 
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving project:', error);
-      toast.error('Failed to save project');
+      toast.error(error?.message || 'Failed to save project');
     } finally {
       setIsSubmitting(false);
     }
@@ -183,67 +188,80 @@ export function ProjectsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#1673FF] border-t-transparent"></div>
         </div>
       ) : viewType === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project: any) => (
-            <Card key={project._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col">
-              {project.image_url ? (
-                <div className="h-48 w-full overflow-hidden relative">
-                  <img src={project.image_url} alt={project.name} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
-                  <div className="absolute top-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1 rounded-full shadow-md">
-                    {!isReadOnly && (
-                      <ActionMenu actions={[
-                        { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
-                        { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
-                      ]} />
-                    )}
+        projects.length === 0 ? (
+          <div className="p-12 text-center border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-slate-800">
+            <Building size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+            <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200">No projects added yet</h3>
+            <p className="text-xs text-gray-400 mt-1 mb-4">Create your first property project to start managing listings and inventory.</p>
+            {!isReadOnly && (
+              <Button variant="primary" size="sm" onClick={() => { resetForm(); setIsModalOpen(true); }}>
+                <Plus size={16} className="mr-1" /> Add Project
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project: any) => (
+              <Card key={project._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col">
+                {project.image_url ? (
+                  <div className="h-48 w-full overflow-hidden relative">
+                    <img src={project.image_url} alt={project.name} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                    <div className="absolute top-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-1 rounded-full shadow-md">
+                      {!isReadOnly && (
+                        <ActionMenu actions={[
+                          { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                          { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                        ]} />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-48 w-full bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center relative">
-                  <Building size={48} className="text-blue-500/40" />
-                  <div className="absolute top-4 right-4 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md p-1 rounded-full shadow-md">
-                    {!isReadOnly && (
-                      <ActionMenu actions={[
-                        { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
-                        { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
-                      ]} />
-                    )}
-                  </div>
-                </div>
-              )}
-              <CardHeader className="border-b-0 pb-2 flex-grow">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge variant="outline">{project.project_type || 'Other'}</Badge>
-                  <Badge variant={
-                    project.status === 'Running' ? 'success' :
-                      project.status === 'Closed' ? 'secondary' : 'warning'
-                  }>
-                    {project.status || 'Running'}
-                  </Badge>
-                </div>
-                <CardTitle className="text-xl font-bold mt-3 leading-tight truncate">{project.name}</CardTitle>
-                <CardDescription className="line-clamp-2 text-xs">{project.address || 'No Address'}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2 pb-6 flex items-center justify-between border-t border-gray-100/80 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-                {project.google_maps_url ? (
-                  <a
-                    href={project.google_maps_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#1673FF] hover:underline flex items-center gap-1 text-sm font-semibold"
-                  >
-                    View Map <ExternalLink size={14} />
-                  </a>
                 ) : (
-                  <span className="text-gray-400 text-xs font-medium">No Map Link</span>
+                  <div className="h-48 w-full bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center relative">
+                    <Building size={48} className="text-blue-500/40" />
+                    <div className="absolute top-4 right-4 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md p-1 rounded-full shadow-md">
+                      {!isReadOnly && (
+                        <ActionMenu actions={[
+                          { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                          { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                        ]} />
+                      )}
+                    </div>
+                  </div>
                 )}
-                <Button variant="outline" size="sm" onClick={() => setSelectedProjectForInventory(project)}>
-                  View Inventory <ExternalLink size={14} className="ml-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <CardHeader className="border-b-0 pb-2 flex-grow">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline">{project.project_type || 'Other'}</Badge>
+                    <Badge variant={
+                      project.status === 'Running' ? 'success' :
+                        project.status === 'Closed' ? 'secondary' : 'warning'
+                    }>
+                      {project.status || 'Running'}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-xl font-bold mt-3 leading-tight truncate">{project.name}</CardTitle>
+                  <CardDescription className="line-clamp-2 text-xs">{project.address || 'No Address'}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-2 pb-6 flex items-center justify-between border-t border-gray-100/80 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                  {project.google_maps_url ? (
+                    <a
+                      href={project.google_maps_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#1673FF] hover:underline flex items-center gap-1 text-sm font-semibold"
+                    >
+                      View Map <ExternalLink size={14} />
+                    </a>
+                  ) : (
+                    <span className="text-gray-400 text-xs font-medium">No Map Link</span>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setSelectedProjectForInventory(project)}>
+                    View Inventory <ExternalLink size={14} className="ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       ) : (
         <Card>
           <CardHeader>
@@ -265,53 +283,65 @@ export function ProjectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projects.map((project: any) => (
-                  <TableRow key={project._id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{project.name}</div>
-                        <div className="text-xs text-gray-500">{project.address || 'No Address'}</div>
+                {projects.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={isReadOnly ? 5 : 6} className="text-center py-12 text-gray-400">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Building size={36} className="text-gray-300 dark:text-gray-600 mb-1" />
+                        <p className="font-medium text-gray-600 dark:text-gray-300">No projects found</p>
+                        <p className="text-xs text-gray-400">Click &quot;+ Add Project&quot; above to create your first property project.</p>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{project.project_type || 'Other'}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        project.status === 'Running' ? 'success' :
-                          project.status === 'Closed' ? 'secondary' : 'warning'
-                      }>
-                        {project.status || 'Running'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {project.google_maps_url ? (
-                        <a
-                          href={project.google_maps_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#1673FF] hover:underline flex items-center gap-1"
-                        >
-                          View Map <ExternalLink size={14} />
-                        </a>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => setSelectedProjectForInventory(project)}>
-                        View Inventory
-                      </Button>
-                    </TableCell>
-                    {!isReadOnly && (
-                      <TableCell>
-                        <ActionMenu actions={[
-                          { label: 'View Inventory', icon: LayoutGrid, onClick: () => setSelectedProjectForInventory(project) },
-                          { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
-                          { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
-                        ]} />
-                      </TableCell>
-                    )}
                   </TableRow>
-                ))}
+                ) : (
+                  projects.map((project: any) => (
+                    <TableRow key={project._id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{project.name}</div>
+                          <div className="text-xs text-gray-500">{project.address || 'No Address'}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{project.project_type || 'Other'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          project.status === 'Running' ? 'success' :
+                            project.status === 'Closed' ? 'secondary' : 'warning'
+                        }>
+                          {project.status || 'Running'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {project.google_maps_url ? (
+                          <a
+                            href={project.google_maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#1673FF] hover:underline flex items-center gap-1"
+                          >
+                            View Map <ExternalLink size={14} />
+                          </a>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedProjectForInventory(project)}>
+                          View Inventory
+                        </Button>
+                      </TableCell>
+                      {!isReadOnly && (
+                        <TableCell>
+                          <ActionMenu actions={[
+                            { label: 'View Inventory', icon: LayoutGrid, onClick: () => setSelectedProjectForInventory(project) },
+                            { label: 'Edit', icon: Pencil, onClick: () => handleEditProject(project) },
+                            { label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => handleDelete(project._id) }
+                          ]} />
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
