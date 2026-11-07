@@ -23,7 +23,7 @@ export const AppTutorial: React.FC = () => {
     {
       target: '#module-toggle',
       title: 'Module Switcher',
-      content: 'Easily switch between Sales and CRM modules based on your current task. Each module has its own dedicated dashboard and tools.',
+      content: 'Easily switch between Post Sales and CRM modules based on your current task. Each module has its own dedicated dashboard and tools.',
     },
     {
       target: '#sidebar-nav',

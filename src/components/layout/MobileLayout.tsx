@@ -95,7 +95,7 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
                                 : 'text-gray-500 dark:text-gray-400'
                                 }`}
                         >
-                            Sales
+                            Post Sales
                         </button>
                     </div>
                 )}

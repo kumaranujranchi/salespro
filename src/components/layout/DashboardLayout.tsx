@@ -451,7 +451,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                     }`}
                 >
-                  Sales
+                  Post Sales
                 </button>
               </div>
             )}
@@ -710,7 +710,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Navigation Items */}
           <nav id="sidebar-nav" className="flex-1 overflow-y-auto py-6 px-4 space-y-4 custom-scrollbar">
             <div className={`px-2 mb-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest ${isCollapsed ? 'hidden' : 'block'}`}>
-              {activeModule === 'crm' ? 'CRM Module' : 'Main Menu'}
+              {activeModule === 'crm' ? 'CRM Module' : 'Post Sales Module'}
             </div>
 
             {activeModule === 'sales' ? (
