@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ProfileModal } from '../profile/ProfileModal';
@@ -25,6 +25,7 @@ import {
   BarChart2,
   Contact,
   Users,
+  User,
   HelpCircle,
   Zap,
   Building2,
@@ -98,18 +99,10 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Inventory', path: '/inventory', icon: Building2, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'Sales Executive', 'crm_staff', 'accountant', 'sales_manager'] },
+      { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
       { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
-    ]
-  },
-  {
-    label: 'System',
-    items: [
-      { label: 'Support', path: '/support', icon: HelpCircle, roles: ['super_admin', 'admin', 'director'] },
-      { label: 'Subscription', path: '/subscription', icon: Zap, roles: ['super_admin'] },
-      { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin'] },
-      { label: 'Settings', path: '/settings', icon: Settings, roles: ['super_admin'] },
     ]
   }
 ];
@@ -135,11 +128,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [imageError, setImageError] = useState(false);
   const { profile, tenant, signOut } = useAuth();
   const { startTutorial } = useTutorial();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    if (isProfileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileDropdownOpen]);
 
   // AI Chatbot State
   const chatAction = useAction(api.ai.chatWithAI);
@@ -328,6 +339,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (item.path === '/users') permKey = 'users';
       if (item.path === '/departments') permKey = 'departments';
       if (item.path === '/roles') permKey = 'roles';
+      if (item.path === '/settings/integrations') permKey = 'roles';
       if (item.path === '/subscription') permKey = 'subscription';
       if (item.path === '/support') permKey = 'support';
 
@@ -463,14 +475,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <NotificationBell />
             </div>
 
-            {/* Profile Dropdown Trigger */}
+            {/* Customer Profile Dropdown */}
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-white/10 mx-2 hidden md:block"></div>
 
-            <Tooltip content="Manage Profile" position="bottom">
+            <div className="relative" ref={profileDropdownRef}>
               <button
                 id="user-profile"
-                onClick={() => setIsProfileOpen(true)}
-                className="flex items-center gap-3 pl-1 pr-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all"
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className={`flex items-center gap-2.5 pl-1.5 pr-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
+                  isProfileDropdownOpen
+                    ? 'bg-gray-100 dark:bg-white/10 border-gray-300 dark:border-white/20 shadow-sm'
+                    : 'hover:bg-gray-50 dark:hover:bg-white/5 border-transparent hover:border-gray-200 dark:hover:border-white/10'
+                }`}
+                title="Customer Profile & Account"
               >
                 <div className="relative">
                   {profile?.image_url && !imageError ? (
@@ -478,22 +495,165 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       src={profile.image_url}
                       alt={profile.full_name}
                       onError={() => setImageError(true)}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-white dark:ring-white/10 shadow-sm"
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-[#10B981]/40 shadow-sm"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-white/10 shadow-sm text-sm">
-                      {profile?.full_name?.charAt(0)}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold ring-2 ring-[#10B981]/40 shadow-sm text-sm">
+                      {profile?.full_name?.charAt(0) || 'U'}
                     </div>
                   )}
                   <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-surface-dark rounded-full"></div>
                 </div>
 
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-semibold text-gray-700 dark:text-white leading-none">{profile?.full_name}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium capitalize mt-1">{profile?.role?.replace('_', ' ')}</p>
+                <div className="hidden md:block text-left">
+                  <p className="text-xs font-bold text-gray-800 dark:text-white leading-none truncate max-w-[130px]">
+                    {profile?.full_name || 'My Profile'}
+                  </p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium capitalize mt-1">
+                    {profile?.role?.replace('_', ' ')}
+                  </p>
                 </div>
+
+                <ChevronDown
+                  size={14}
+                  className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+                    isProfileDropdownOpen ? 'rotate-180 text-emerald-600' : ''
+                  }`}
+                />
               </button>
-            </Tooltip>
+
+              {/* Floating Customer Profile Menu */}
+              {isProfileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#121e18] rounded-2xl shadow-2xl border border-gray-200/80 dark:border-white/10 py-2 z-50 animate-fadeIn backdrop-blur-xl">
+                  {/* Account / Tenant Header */}
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-sm shrink-0 overflow-hidden">
+                        {profile?.image_url && !imageError ? (
+                          <img src={profile.image_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          profile?.full_name?.charAt(0) || 'U'
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                          {profile?.full_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {profile?.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-gray-50 dark:border-white/5">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                        {tenant?.name || 'RealSalePro'}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                        <Zap size={10} className="fill-current" />
+                        {tenant?.plan_tier === 'pro' || tenant?.subscription_status === 'active' ? 'PRO' : 'Free'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Shifted Menu Items: Profile, Settings, Subscription, Support */}
+                  <div className="px-2 py-1.5 space-y-0.5">
+                    {/* My Profile */}
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        setIsProfileOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/5 transition-colors group cursor-pointer text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <User size={15} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="leading-tight">My Profile</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">Personal details & security</p>
+                      </div>
+                    </button>
+
+                    {/* Settings (Shifted to Profile) */}
+                    {(profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'director') && (
+                      <button
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          navigate('/settings');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/5 transition-colors group cursor-pointer text-left"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          <Settings size={15} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="leading-tight">Settings</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">Company details, branding & rules</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Subscription (Shifted to Profile) */}
+                    {(profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'director') && (
+                      <button
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          navigate('/subscription');
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/5 transition-colors group cursor-pointer text-left"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
+                          <Zap size={15} />
+                        </div>
+                        <div className="flex-1 flex items-center justify-between">
+                          <div>
+                            <p className="leading-tight">Subscription & Billing</p>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">Plan, invoices & usage limits</p>
+                          </div>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                            PRO
+                          </span>
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Support (Shifted to Profile) */}
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        navigate('/support');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/5 transition-colors group cursor-pointer text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <HelpCircle size={15} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="leading-tight">Help & Support</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">Support tickets & documentation</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Sign Out */}
+                  <div className="px-2 pt-1 border-t border-gray-100 dark:border-white/5 mt-1">
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer text-left group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-600 dark:text-rose-400 group-hover:-translate-x-0.5 transition-transform">
+                        <LogOut size={15} />
+                      </div>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

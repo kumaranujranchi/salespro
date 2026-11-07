@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { useMutation } from "../../lib/reactive";
@@ -6,7 +7,7 @@ import { api, Id } from '../../lib/api-endpoints';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Eye, EyeOff, Shield, Lock, Check, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Check, User, Phone, Zap, Settings, HelpCircle, ChevronRight, Building2 } from 'lucide-react';
 import { ImageCropper } from '../ImageCropper';
 
 interface ProfileModalProps {
@@ -16,9 +17,10 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileModalProps) {
-    const { profile, signOut } = useAuth();
+    const { profile, tenant, signOut } = useAuth();
+    const navigate = useNavigate();
     const dialog = useDialog();
-    const [activeTab, setActiveTab] = useState<'details' | 'security'>('details');
+    const [activeTab, setActiveTab] = useState<'details' | 'security' | 'system'>('details');
 
     // Backend mutations
     const updateProfile = useMutation(api.profiles.updateProfile);
@@ -298,7 +300,11 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                     <p className="text-xs text-gray-500 truncate" title={profile?.email}>{profile?.email}</p>
                                 </div>
                             </div>
-                            <p className="text-[10px] font-medium text-[#10B981] uppercase mt-0.5">{profile?.role?.replace('_', ' ')}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-bold text-[#10B981] uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</span>
+                                <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                                <span className="text-[10px] text-gray-500 font-medium truncate max-w-[130px]">{tenant?.name || 'RealSalePro'}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -312,24 +318,35 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                         <div className="flex border-b border-gray-200">
                             <button
                                 onClick={() => setActiveTab('details')}
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details'
+                                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors ${activeTab === 'details'
                                     ? 'border-[#10B981] text-[#10B981]'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
-                                <User size={14} />
+                                <User size={13} />
                                 Profile Details
                             </button>
 
                             <button
                                 onClick={() => setActiveTab('security')}
-                                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
+                                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors ${activeTab === 'security'
                                     ? 'border-[#10B981] text-[#10B981]'
                                     : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
-                                <Lock size={14} />
+                                <Lock size={13} />
                                 Security
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('system')}
+                                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors ${activeTab === 'system'
+                                    ? 'border-[#10B981] text-[#10B981]'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                <Building2 size={13} />
+                                Account & System
                             </button>
                         </div>
                     )}
@@ -474,6 +491,102 @@ export function ProfileModal({ isOpen, onClose, forceChange = false }: ProfileMo
                                 </div>
                             </ModalFooter>
                         </form>
+                    )}
+
+                    {/* Shifted System & Organization Tab */}
+                    {activeTab === 'system' && !forceChange && (
+                        <div className="space-y-3 pt-1 animate-fadeIn">
+                            {/* Company Settings Card */}
+                            {(profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'director') && (
+                                <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between hover:border-emerald-300 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-gray-700 shadow-xs border border-gray-100">
+                                            <Settings size={18} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-bold text-gray-900">Company Settings</h4>
+                                            <p className="text-[11px] text-gray-500">Branding, logo, target model & security</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs py-1.5 px-3"
+                                        onClick={() => {
+                                            handleClose();
+                                            navigate('/settings');
+                                        }}
+                                    >
+                                        <span>Manage</span>
+                                        <ChevronRight size={13} className="ml-1" />
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Subscription & Billing Card */}
+                            {(profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'director') && (
+                                <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 shadow-xs">
+                                            <Zap size={18} className="fill-current" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-xs font-bold text-gray-900">Subscription & Billing</h4>
+                                                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                                                    {tenant?.plan_tier === 'pro' || tenant?.subscription_status === 'active' ? 'PRO' : 'Free'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-gray-500">Plan limits, billing invoices & upgrades</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="bg-[#10B981] hover:bg-[#059669] text-white text-xs py-1.5 px-3"
+                                        onClick={() => {
+                                            handleClose();
+                                            navigate('/subscription');
+                                        }}
+                                    >
+                                        <span>Billing</span>
+                                        <ChevronRight size={13} className="ml-1" />
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Help & Support Card */}
+                            <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between hover:border-blue-300 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-xs">
+                                        <HelpCircle size={18} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-gray-900">Help & Support</h4>
+                                        <p className="text-[11px] text-gray-500">Raise tickets, feedback & support guides</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs py-1.5 px-3"
+                                    onClick={() => {
+                                        handleClose();
+                                        navigate('/support');
+                                    }}
+                                >
+                                    <span>Support</span>
+                                    <ChevronRight size={13} className="ml-1" />
+                                </Button>
+                            </div>
+
+                            <ModalFooter>
+                                <div className="flex justify-end w-full">
+                                    <Button type="button" variant="outline" onClick={handleClose} size="sm">
+                                        Close
+                                    </Button>
+                                </div>
+                            </ModalFooter>
+                        </div>
                     )}
                 </div>
             </Modal >
