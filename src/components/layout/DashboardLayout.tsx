@@ -99,10 +99,10 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Projects', path: '/projects', icon: Building, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Inventory', path: '/inventory', icon: Building2, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'Sales Executive', 'crm_staff', 'accountant', 'sales_manager'] },
-      { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
       { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin', 'admin', 'director'] },
     ]
   }
 ];
