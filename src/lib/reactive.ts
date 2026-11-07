@@ -235,28 +235,7 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await salesService.deletePayment(args?.id || args?._id);
   }
 
-  // PROJECTS & INVENTORY
-  if (key.includes('projects.listAllProjects') || key.includes('projects.listRunningProjects') || key.includes('projects.list')) {
-    const isActive = key.includes('projects.listRunningProjects') ? true : args?.is_active;
-    return await projectsService.list(args?.tenant_id, isActive);
-  }
-  if (key.includes('projects.createProject') || key.includes('projects.create')) {
-    const res = await projectsService.create(args);
-    invalidateQuery('projects');
-    return res;
-  }
-  if (key.includes('projects.updateProject') || key.includes('projects.update')) {
-    const id = args?.id || args?._id;
-    const res = await projectsService.update(id, args);
-    invalidateQuery('projects');
-    return res;
-  }
-  if (key.includes('projects.deleteProject') || key.includes('projects.delete') || key.includes('projects.remove')) {
-    const id = args?.id || args?._id;
-    const res = await projectsService.delete(id);
-    invalidateQuery('projects');
-    return res;
-  }
+  // PROJECTS & INVENTORY - UNITS
   if (key.includes('projects.listUnits')) {
     return await projectsService.listUnits(args?.project_id, args?.status);
   }
@@ -273,6 +252,29 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
   if (key.includes('projects.bulkAddUnits')) {
     const res = await projectsService.bulkAddUnits(args?.tenant_id, args?.project_id, args?.units);
+    invalidateQuery('projects');
+    return res;
+  }
+
+  // PROJECTS - CORE CRUD
+  if (key.includes('projects.listAllProjects') || key.includes('projects.listRunningProjects') || key === 'projects.list' || (key.startsWith('projects.list') && !key.includes('Unit'))) {
+    const isActive = key.includes('projects.listRunningProjects') ? true : args?.is_active;
+    return await projectsService.list(args?.tenant_id, isActive);
+  }
+  if (key.includes('projects.createProject') || key === 'projects.create') {
+    const res = await projectsService.create(args);
+    invalidateQuery('projects');
+    return res;
+  }
+  if (key.includes('projects.updateProject') || key === 'projects.update') {
+    const id = args?.id || args?._id;
+    const res = await projectsService.update(id, args);
+    invalidateQuery('projects');
+    return res;
+  }
+  if (key.includes('projects.deleteProject') || key === 'projects.delete' || key === 'projects.remove') {
+    const id = args?.id || args?._id;
+    const res = await projectsService.delete(id);
     invalidateQuery('projects');
     return res;
   }

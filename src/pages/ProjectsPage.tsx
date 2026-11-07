@@ -655,6 +655,7 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
   // Filtered units
   const filteredUnits = (units || []).filter((unit: any) => {
     if (!unit) return false;
+    if (!unit.unit_number && !unit.unit) return false;
     const unitNum = String(unit.unit_number || unit.unit || '');
     const matchesSearch = unitNum.toLowerCase().includes((searchQuery || '').toLowerCase());
     const matchesStatus = !statusFilter || statusFilter === 'All' || unit.status === statusFilter;

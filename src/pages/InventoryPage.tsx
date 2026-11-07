@@ -400,6 +400,7 @@ export function InventoryPage() {
   // Advanced dynamic filter validation
   const filteredUnits = (units || []).filter((unit: any) => {
     if (!unit) return false;
+    if (!unit.unit_number && !unit.unit) return false;
     const unitNum = String(unit.unit_number || unit.unit || '');
     // 1. Search Query Match
     const matchesSearch = unitNum.toLowerCase().includes((searchQuery || '').toLowerCase());
