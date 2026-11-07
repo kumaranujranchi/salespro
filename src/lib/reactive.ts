@@ -150,6 +150,11 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('leads.bulkUpdateLeadStatus') || key.includes('leads.bulkUpdateStatus')) {
     return await leadsService.bulkUpdateStatus(args?.ids || [], args?.lead_status);
   }
+  if (key.includes('leads.bulkInsertLeads') || key.includes('leads.bulkInsert')) {
+    const res = await leadsService.bulkInsert(args);
+    invalidateQuery('leads');
+    return res;
+  }
   if (key.includes('leads.assignLead') || key.includes('leads.assign')) {
     return await leadsService.assign(args?.id || args?._id, args?.sales_executive_id);
   }

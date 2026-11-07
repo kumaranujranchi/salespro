@@ -133,6 +133,165 @@ router.post('/', async (req, res) => {
   }
 });
 
+// 3b. Bulk Insert Leads with duplicate detection and row-by-row error report
+router.post('/bulk-insert', async (req, res) => {
+  try {
+    const { tenant_id, leads = [], created_by } = req.body;
+    const targetTenantId = tenant_id || req.user?.tenant_id;
+
+    if (!targetTenantId) {
+      return res.status(400).json({ error: 'tenant_id is required' });
+    }
+
+    if (!Array.isArray(leads) || leads.length === 0) {
+      return res.json({
+        success: true,
+        total: 0,
+        inserted: 0,
+        failed: 0,
+        details: []
+      });
+    }
+
+    // Fetch existing mobile numbers in this tenant to identify duplicates
+    const existingRes = await query(
+      `SELECT mobile FROM leads WHERE tenant_id = $1`,
+      [targetTenantId]
+    );
+
+    const existingMobiles = new Set();
+    for (const r of existingRes.rows) {
+      if (r.mobile) {
+        const digits = String(r.mobile).replace(/\D/g, '');
+        if (digits.length >= 10) {
+          existingMobiles.add(digits.slice(-10));
+        } else if (digits.length > 0) {
+          existingMobiles.add(digits);
+        }
+      }
+    }
+
+    const batchMobiles = new Set();
+    const details = [];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < leads.length; i++) {
+      const item = leads[i];
+      const rowNum = i + 2; // Row 1 is header in Excel
+      const rawMobile = item.mobile !== undefined && item.mobile !== null ? String(item.mobile).trim() : '';
+      const mobileDigits = rawMobile.replace(/\D/g, '');
+      const customerName = String(item.customer_name || 'Unknown').trim();
+
+      // Validation 1: Missing or too short mobile number
+      if (!rawMobile || mobileDigits.length < 10) {
+        failedCount++;
+        details.push({
+          row: rowNum,
+          customer_name: customerName,
+          mobile: rawMobile || 'Empty',
+          status: 'failed',
+          reason: 'Invalid or missing mobile number (must have at least 10 digits)'
+        });
+        continue;
+      }
+
+      const normalized10 = mobileDigits.slice(-10);
+
+      // Validation 2: Duplicate within the uploaded file itself
+      if (batchMobiles.has(normalized10)) {
+        failedCount++;
+        details.push({
+          row: rowNum,
+          customer_name: customerName,
+          mobile: rawMobile,
+          status: 'failed',
+          reason: 'Duplicate entry in current upload file'
+        });
+        continue;
+      }
+
+      // Validation 3: Duplicate with an existing lead in the CRM
+      if (existingMobiles.has(normalized10)) {
+        failedCount++;
+        details.push({
+          row: rowNum,
+          customer_name: customerName,
+          mobile: rawMobile,
+          status: 'failed',
+          reason: 'Duplicate: Mobile number already exists in CRM'
+        });
+        continue;
+      }
+
+      // Passed validations: insert into database
+      batchMobiles.add(normalized10);
+      existingMobiles.add(normalized10);
+
+      const leadId = `LEAD-${Date.now().toString().slice(-6)}-${successCount + 1}`;
+      const leadDate = item.lead_date ? String(item.lead_date).split('T')[0] : new Date().toISOString().split('T')[0];
+
+      try {
+        const insertRes = await query(
+          `INSERT INTO leads
+            (tenant_id, lead_id, customer_name, mobile, email, lead_source,
+             project_id, sales_executive_id, budget_range, city, purpose,
+             lead_status, lead_score, internal_notes, lead_date, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+           RETURNING id, lead_id`,
+          [
+            targetTenantId,
+            leadId,
+            customerName,
+            rawMobile,
+            item.email ? String(item.email).trim() : null,
+            item.lead_source || 'Walk-in',
+            item.project_id || null,
+            item.sales_executive_id || null,
+            item.budget_range || '<50L',
+            item.city ? String(item.city).trim() : null,
+            item.purpose || 'Investment',
+            item.lead_status || 'New',
+            item.lead_score || 'Warm',
+            item.internal_notes || null,
+            leadDate,
+            created_by || req.user?.id || null
+          ]
+        );
+
+        successCount++;
+        details.push({
+          row: rowNum,
+          customer_name: customerName,
+          mobile: rawMobile,
+          status: 'success',
+          lead_id: insertRes.rows[0].lead_id
+        });
+      } catch (insertErr) {
+        failedCount++;
+        details.push({
+          row: rowNum,
+          customer_name: customerName,
+          mobile: rawMobile,
+          status: 'failed',
+          reason: insertErr.message || 'Database error during insertion'
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      total: leads.length,
+      inserted: successCount,
+      failed: failedCount,
+      details
+    });
+  } catch (err) {
+    console.error('Bulk lead insert error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Update Lead
 router.patch('/:id', async (req, res) => {
   try {

@@ -57,6 +57,21 @@ export const leadsService = {
     api.post<{ success: boolean; sale_id?: string }>(`/leads/${id}/convert`, overrides || {}),
   bulkUpdateStatus: (ids: string[], lead_status: string) =>
     api.post<{ success: boolean; count: number }>('/leads/bulk-status', { ids, lead_status }),
+  bulkInsert: (data: { tenant_id: string; leads: any[]; created_by?: string }) =>
+    api.post<{
+      success: boolean;
+      total: number;
+      inserted: number;
+      failed: number;
+      details: Array<{
+        row: number;
+        customer_name: string;
+        mobile: string;
+        status: 'success' | 'failed';
+        reason?: string;
+        lead_id?: string;
+      }>;
+    }>('/leads/bulk-insert', data),
   assign: (id: string, executiveId: string) =>
     api.post<{ success: boolean }>(`/leads/${id}/assign`, { sales_executive_id: executiveId }),
 };

@@ -12,9 +12,10 @@ export function CompanyLogoAvatar({ className = '', size = 'md', fallbackName }:
   const [imgError, setImgError] = useState(false);
 
   // Logo URL: Prefer tenant company logo, then profile image
+  const appearance = tenant?.settings?.appearance as any;
   const logoUrl =
-    tenant?.settings?.appearance?.resolved_logo_url ||
-    tenant?.settings?.appearance?.logo_url ||
+    appearance?.resolved_logo_url ||
+    appearance?.logo_url ||
     profile?.image_url;
 
   // Name for initials: Company name first, then profile full name, then fallback
@@ -59,3 +60,4 @@ export function CompanyLogoAvatar({ className = '', size = 'md', fallbackName }:
     </div>
   );
 }
+
