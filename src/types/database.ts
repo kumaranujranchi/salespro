@@ -13,6 +13,7 @@ export interface TenantSettings {
   appearance: {
     primary_color: string;
     logo_url: string | null;
+    resolved_logo_url?: string | null;
   };
   security?: {
     mask_lead_phone?: boolean;
