@@ -488,6 +488,9 @@ export function InventoryPage() {
         <div className="flex items-center gap-3">
           {/* Project Selection Dropdown */}
           <div className="relative">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
+              Active Project:
+            </span>
             <select
               value={selectedProjectId || ''}
               onChange={(e) => {
@@ -496,7 +499,7 @@ export function InventoryPage() {
                 setSearchQuery('');
                 setStatusFilter('All');
               }}
-              className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             >
               <option value="">-- Select Real Estate Project --</option>
               {projects?.map(p => (
@@ -831,13 +834,13 @@ export function InventoryPage() {
               <Card className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
                 <CardHeader className="pb-4 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <CardTitle>Configured Specifications for {selectedProject?.name}</CardTitle>
+                    <CardTitle>Configured Specifications for {selectedProject?.name || 'Project'}</CardTitle>
                     <CardDescription>
                       These custom attributes belong exclusively to <strong>{selectedProject?.name}</strong> ({selectedProject?.project_type || 'Property'}). Units created for other projects will not show these fields unless defined there as well.
                     </CardDescription>
                   </div>
                   <Button variant="primary" onClick={() => { resetFieldForm(); setModalFieldProjectId(selectedProjectId || ''); setIsFieldModalOpen(true); }}>
-                    <Plus size={16} className="mr-1.5" /> Add Custom Field
+                    <Plus size={16} className="mr-1.5" /> Add Field to {selectedProject?.name || 'Project'}
                   </Button>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -846,8 +849,13 @@ export function InventoryPage() {
                       <Sparkles className="mx-auto h-12 w-12 text-slate-300" />
                       <h4 className="text-base font-bold">No Custom Fields for {selectedProject?.name}</h4>
                       <p className="text-sm">
-                        Create attributes like {selectedProject?.project_type?.toLowerCase().includes('land') ? '"Plot Area" or "Road Width"' : '"House Configuration" or "Facing"'} specifically for this project.
+                        Create attributes like {selectedProject?.project_type?.toLowerCase().includes('land') ? '"Plot Area" or "Road Width"' : '"House Configuration" or "Facing"'} specifically for {selectedProject?.name}.
                       </p>
+                      <div className="pt-2">
+                        <Button variant="primary" size="sm" onClick={() => { resetFieldForm(); setModalFieldProjectId(selectedProjectId || ''); setIsFieldModalOpen(true); }}>
+                          <Plus size={16} className="mr-1.5" /> Add Field to {selectedProject?.name}
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Table>
@@ -905,35 +913,49 @@ export function InventoryPage() {
       <Modal
         isOpen={isFieldModalOpen}
         onClose={() => setIsFieldModalOpen(false)}
-        title={editingFieldId ? "Edit Custom Field" : "Create Custom Field for Project"}
+        title={editingFieldId ? "Edit Custom Field" : `Add Specification to: ${activeFieldProject?.name || 'Project'}`}
       >
         <form onSubmit={handleSaveField} className="space-y-4">
-          {/* Target Project Dropdown inside Field Modal */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-              Configure for Project <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={activeFieldProjectId || ''}
-              onChange={(e) => {
-                const pid = e.target.value as Id<"projects">;
-                setModalFieldProjectId(pid);
-                if (pid) setSelectedProjectId(pid);
-              }}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm font-medium"
-            >
-              <option value="">-- Select Project * --</option>
-              {projects?.map((p: any) => (
-                <option key={p._id || p.id} value={p._id || p.id}>
-                  {p.name} ({p.project_type || 'Property'})
-                </option>
-              ))}
-            </select>
+          {/* Prominent Project Box inside Field Modal */}
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                Target Project (यह फ़ील्ड इस प्रोजेक्ट में जुड़ेगा)
+              </span>
+              {activeFieldProject && (
+                <Badge variant="outline" className="text-[10px] font-bold uppercase bg-white dark:bg-slate-900 border-blue-300 text-blue-700 dark:text-blue-300">
+                  {activeFieldProject.project_type || 'Property'}
+                </Badge>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Select / Change Project:
+              </label>
+              <select
+                value={activeFieldProjectId || ''}
+                onChange={(e) => {
+                  const pid = e.target.value as Id<"projects">;
+                  setModalFieldProjectId(pid);
+                  if (pid) setSelectedProjectId(pid);
+                }}
+                required
+                className="w-full px-3 py-2 text-sm font-bold bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+              >
+                <option value="">-- Select Project * --</option>
+                {projects?.map((p: any) => (
+                  <option key={p._id || p.id} value={p._id || p.id}>
+                    {p.name} ({p.project_type || 'Property'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {activeFieldProject && (
-              <div className="mt-1.5 flex items-center justify-between gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md border border-blue-200/50 dark:border-blue-900/50">
-                <span>Target: <strong>{activeFieldProject.name}</strong></span>
-                <span className="font-semibold uppercase text-[10px]">{activeFieldProject.project_type || 'General'}</span>
+              <div className="text-xs text-blue-700 dark:text-blue-300 font-medium flex items-center gap-1.5">
+                <span>✓ Currently adding specification specifically for: <strong className="font-bold underline">{activeFieldProject.name}</strong></span>
               </div>
             )}
           </div>
@@ -1022,7 +1044,9 @@ export function InventoryPage() {
           )}
           <ModalFooter>
             <Button type="button" variant="outline" onClick={() => setIsFieldModalOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Save Field</Button>
+            <Button type="submit" variant="primary">
+              Save Field to {activeFieldProject?.name || 'Project'}
+            </Button>
           </ModalFooter>
         </form>
       </Modal>
