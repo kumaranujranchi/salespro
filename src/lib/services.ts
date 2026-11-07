@@ -15,15 +15,12 @@ export const authService = {
       fullName: string;
       emailSent: boolean;
       emailError?: string;
-      hasPhone: boolean;
-      maskedPhone: string | null;
       message: string;
     }>('/auth/forgot-password', { email }),
   resetPassword: (data: {
     email: string;
     code: string;
     newPassword?: string;
-    phone?: string;
   }) =>
     api.post<{ success: boolean; message: string; profile?: Profile }>('/auth/reset-password', data),
 };
@@ -36,6 +33,8 @@ export const tenantsService = {
   remove: (id: string) => api.delete<{ success: boolean }>(`/tenants/${id}`),
   getBillingHistory: (id: string) => api.get<any[]>(`/tenants/${id}/billing-history`),
   getWebhookSecret: (id: string) => api.get<{ secret: string }>(`/tenants/${id}/webhook-secret`),
+  resetUserPassword: (userId: string, newPassword?: string) =>
+    api.post<{ success: boolean; message: string }>('/tenants/reset-user-password', { userId, newPassword }),
 };
 
 export const profilesService = {

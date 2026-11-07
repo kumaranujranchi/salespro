@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { query } from '../db/index.js';
 import bcrypt from 'bcryptjs';
 import { isPlatformRole, requireAuth, signAuthToken } from '../middleware/auth.js';
@@ -278,11 +279,21 @@ router.post('/forgot-password', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Generate 6-digit Security Code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Rate Limiting: 60-second cooldown between requests to prevent OTP spamming
+    const existingOtp = otpStore.get(cleanEmail);
+    if (existingOtp && existingOtp.createdAt && (Date.now() - existingOtp.createdAt < 60 * 1000)) {
+      const waitSeconds = Math.ceil((60 * 1000 - (Date.now() - existingOtp.createdAt)) / 1000);
+      return res.status(429).json({
+        error: `Please wait ${waitSeconds} second${waitSeconds === 1 ? '' : 's'} before requesting another security code.`,
+      });
+    }
+
+    // Generate cryptographically secure 6-digit Security Code
+    const code = crypto.randomInt(100000, 1000000).toString();
     otpStore.set(cleanEmail, {
       code,
-      expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes validity
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes validity
+      createdAt: Date.now(),
       attempts: 0,
     });
 
@@ -373,18 +384,12 @@ router.post('/forgot-password', async (req, res) => {
       });
     }
 
-    const rawPhone = user.phone ? String(user.phone).trim() : null;
-    const phoneDigits = rawPhone ? rawPhone.replace(/\D/g, '') : '';
-    const maskedPhone = phoneDigits.length >= 4 ? `******${phoneDigits.slice(-4)}` : (rawPhone ? 'Registered Phone' : null);
-
     return res.json({
       success: true,
       email: cleanEmail,
       fullName: user.full_name,
       emailSent: true,
-      hasPhone: Boolean(user.phone),
-      maskedPhone,
-      message: `Security code has been sent to ${cleanEmail}.`,
+      message: `A 6-digit security code has been sent to ${cleanEmail}.`,
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -392,16 +397,25 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-// 5. Verify Security Code & Sign In (Optional Password Reset)
+// 5. Verify Security Code & Sign In (Strict Email OTP Verification Only)
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, code, otp, newPassword, phone } = req.body;
+    const { email, code, otp, newPassword } = req.body;
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
     const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
+
+    const inputCode = String(code || otp || '').trim();
+    if (!inputCode) {
+      return res.status(400).json({ error: 'Please enter the 6-digit security code sent to your email.' });
+    }
+
+    if (!/^\d{6}$/.test(inputCode)) {
+      return res.status(400).json({ error: 'Security code must be exactly 6 digits.' });
+    }
 
     const result = await query(
       `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
@@ -417,44 +431,66 @@ router.post('/reset-password', async (req, res) => {
     }
 
     const user = result.rows[0];
-    let isVerified = false;
 
-    // A. Verify by Security Code (OTP)
-    const inputCode = String(code || otp || '').trim();
+    // HARDCORE SECURITY: Only verify against the in-memory/email-sent OTP.
+    // Absolutely NO phone number or secondary bypass.
     const stored = otpStore.get(cleanEmail);
-    if (stored && stored.expiresAt > Date.now() && stored.code === inputCode) {
-      isVerified = true;
-    }
-
-    // B. Secondary verification by registered phone if code is not provided or expired
-    if (!isVerified && phone && user.phone) {
-      const inputDigits = String(phone).replace(/\D/g, '');
-      const storedDigits = String(user.phone).replace(/\D/g, '');
-      if (inputDigits.length >= 4 && (storedDigits.endsWith(inputDigits) || inputDigits.endsWith(storedDigits) || storedDigits === inputDigits)) {
-        isVerified = true;
-      }
-    }
-
-    if (!isVerified) {
+    if (!stored) {
       return res.status(400).json({
-        error: 'Invalid or expired security code. Please check your email and try again.',
+        error: 'No active security code found. Please request a new security code.',
       });
     }
 
-    // If user provided a new password, update it
-    if (newPassword && String(newPassword).trim().length >= 6) {
-      const passwordHash = await bcrypt.hash(newPassword, 10);
+    // Check expiry (10 minutes validity)
+    if (Date.now() > stored.expiresAt) {
+      otpStore.delete(cleanEmail);
+      return res.status(400).json({
+        error: 'Security code has expired (valid for 10 minutes). Please request a new code.',
+      });
+    }
+
+    // Check brute-force attempts (max 5 failed attempts)
+    if (stored.attempts >= 5) {
+      otpStore.delete(cleanEmail);
+      return res.status(429).json({
+        error: 'Too many incorrect attempts. This security code has been invalidated for security. Please request a new code.',
+      });
+    }
+
+    // Strict code comparison
+    if (stored.code !== inputCode) {
+      stored.attempts = (stored.attempts || 0) + 1;
+      const remaining = 5 - stored.attempts;
+      if (remaining <= 0) {
+        otpStore.delete(cleanEmail);
+        return res.status(429).json({
+          error: 'Too many incorrect attempts. This security code has been invalidated for security. Please request a new code.',
+        });
+      }
+      return res.status(400).json({
+        error: `Invalid security code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
+      });
+    }
+
+    // Successful verification - single-use: delete code immediately to prevent replay
+    otpStore.delete(cleanEmail);
+
+    // If user provided a new password, validate and update hash
+    if (newPassword && String(newPassword).trim().length > 0) {
+      const trimmedPass = String(newPassword).trim();
+      if (trimmedPass.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+      }
+      const passwordHash = await bcrypt.hash(trimmedPass, 10);
       await query(
         `UPDATE profiles
          SET password = $1, password_hash = $2, force_password_change = false, updated_at = CURRENT_TIMESTAMP
          WHERE id = $3`,
-        [newPassword, passwordHash, user.id]
+        [trimmedPass, passwordHash, user.id]
       );
-      user.password = newPassword;
+      user.password = trimmedPass;
       user.password_hash = passwordHash;
     }
-
-    otpStore.delete(cleanEmail);
 
     // Auto promote designated admin if needed
     if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {

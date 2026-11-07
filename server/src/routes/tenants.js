@@ -132,6 +132,31 @@ router.delete('/:id', requirePlatformAdmin, async (req, res) => {
   }
 });
 
+// Admin reset user password (platform admin only)
+router.post('/reset-user-password', requirePlatformAdmin, async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword) {
+      return res.status(400).json({ error: 'userId and newPassword are required' });
+    }
+    const target = String(userId).trim().toLowerCase();
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const result = await query(
+      `UPDATE profiles
+       SET password = $1, password_hash = $2, force_password_change = false, updated_at = CURRENT_TIMESTAMP
+       WHERE LOWER(email) = $3 OR LOWER(user_id) = $3 OR id::text = $3
+       RETURNING id, email`,
+      [newPassword, passwordHash, target]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    return res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Get Tenant by ID
 router.get('/:id', requireTenantAccess, async (req, res) => {
   try {

@@ -84,11 +84,10 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await authService.resetPassword(args);
   }
   if (key.includes('tenants.resetUserPassword')) {
-    return await authService.resetPassword({
-      email: args?.userId,
-      newPassword: args?.newPassword,
-      phone: args?.phone,
-    });
+    return await tenantsService.resetUserPassword(
+      args?.userId || args?.email,
+      args?.newPassword
+    );
   }
   if (key.includes('profiles.listUsersByTenant')) {
     return await profilesService.listByTenant(args?.tenant_id, args);

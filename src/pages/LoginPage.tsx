@@ -13,13 +13,13 @@ import {
   Shield,
   Lock,
   Mail,
-  Phone,
   Eye,
   EyeOff,
   Key,
   X,
   ArrowRight,
-  UserCheck
+  UserCheck,
+  RefreshCw
 } from 'lucide-react';
 
 export function LoginPage() {
@@ -39,23 +39,26 @@ export function LoginPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
   const [resetEmail, setResetEmail] = useState('');
-  const [resetPhone, setResetPhone] = useState('');
-  const [resetEmployeeId, setResetEmployeeId] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [resetUserInfo, setResetUserInfo] = useState<{
     fullName?: string;
-    hasPhone?: boolean;
-    maskedPhone?: string | null;
-    hasEmployeeId?: boolean;
-    maskedEmployeeId?: string | null;
     emailSent?: boolean;
     message?: string;
   } | null>(null);
+
+  // Resend OTP countdown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Auto-hide error after 5 seconds
   useEffect(() => {
@@ -102,8 +105,6 @@ export function LoginPage() {
 
   const handleOpenForgotPassword = () => {
     setResetEmail(email.trim());
-    setResetPhone('');
-    setResetEmployeeId('');
     setResetOtp('');
     setResetNewPassword('');
     setResetConfirmPassword('');
@@ -113,8 +114,8 @@ export function LoginPage() {
     setShowForgotPassword(true);
   };
 
-  const handleRequestReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestReset = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setResetError('');
     const clean = resetEmail.trim().toLowerCase();
     if (!clean) {
@@ -124,33 +125,12 @@ export function LoginPage() {
 
     setResetLoading(true);
     try {
-      // 1. Try REST API
       const res = await authService.forgotPassword(clean);
       setResetUserInfo(res);
+      setResendCooldown(60);
       setResetStep(2);
     } catch (apiErr: any) {
-      // 2. Fallback to a direct profile lookup if the REST API is unreachable
-      try {
-        const fallbackProfile = await backend.query(api.profiles.getByEmail, { email: clean });
-        if (!fallbackProfile) {
-          throw new Error('No account found with this email. Please check your spelling.');
-        }
-        const rawPhone = fallbackProfile.phone ? String(fallbackProfile.phone).trim() : null;
-        const phoneDigits = rawPhone ? rawPhone.replace(/\D/g, '') : '';
-        const maskedPhone = phoneDigits.length >= 4 ? `******${phoneDigits.slice(-4)}` : (rawPhone ? 'Registered Phone' : null);
-
-        setResetUserInfo({
-          fullName: fallbackProfile.full_name,
-          hasPhone: Boolean(fallbackProfile.phone),
-          maskedPhone,
-          hasEmployeeId: Boolean(fallbackProfile.employee_id),
-          maskedEmployeeId: fallbackProfile.employee_id ? `***${fallbackProfile.employee_id.slice(-3)}` : null,
-          emailSent: false,
-        });
-        setResetStep(2);
-      } catch (fallbackErr: any) {
-        setResetError(apiErr.message || fallbackErr.message || 'Account not found. Please verify your email.');
-      }
+      setResetError(apiErr.message || 'Unable to send security code. Please check your email.');
     } finally {
       setResetLoading(false);
     }
@@ -161,8 +141,13 @@ export function LoginPage() {
     setResetError('');
 
     const cleanCode = resetOtp.trim();
-    if (!cleanCode && !resetPhone) {
+    if (!cleanCode) {
       setResetError('Please enter the 6-digit security code sent to your email');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(cleanCode)) {
+      setResetError('Security code must be exactly 6 digits');
       return;
     }
 
@@ -181,15 +166,14 @@ export function LoginPage() {
     setResetLoading(true);
 
     try {
-      // 1. Call REST API reset
+      // Strict REST API reset: only verified by 6-digit email code
       const res = await authService.resetPassword({
         email: clean,
         code: cleanCode,
-        phone: resetPhone ? resetPhone.trim() : undefined,
         newPassword: resetNewPassword || undefined,
       });
 
-      // 2. Direct login if profile returned!
+      // Direct login if profile returned!
       if (res?.profile) {
         setSessionUser({
           id: res.profile.userId || (res.profile as any)._id || clean,
@@ -509,8 +493,8 @@ export function LoginPage() {
                   </div>
                 )}
 
-                {/* 6-Digit Security Code Field (Always Visible) */}
-                <div className="space-y-1">
+                {/* 6-Digit Security Code Field (Strict Email OTP Only) */}
+                <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700">
                     6-Digit Security Code <span className="text-red-500">*</span>
                   </label>
@@ -522,38 +506,26 @@ export function LoginPage() {
                       type="text"
                       maxLength={6}
                       autoFocus
-                      required={!resetPhone}
+                      required
                       value={resetOtp}
                       onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
                       placeholder="e.g. 123456"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-base tracking-widest font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white text-center"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-base tracking-widest font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white text-center"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-400 text-center">Check your inbox or spam folder for the email.</p>
-                </div>
-
-                {/* Optional Fallback Phone verification */}
-                {resetUserInfo?.hasPhone && !resetOtp && (
-                  <div className="space-y-1 pt-1">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-semibold text-gray-700">
-                        Or verify with Phone {resetUserInfo.maskedPhone && <span className="text-gray-400 font-normal">({resetUserInfo.maskedPhone})</span>}
-                      </label>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Phone size={16} />
-                      </div>
-                      <input
-                        type="text"
-                        value={resetPhone}
-                        onChange={(e) => setResetPhone(e.target.value)}
-                        placeholder="Last 4 digits or full phone"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white"
-                      />
-                    </div>
+                  <div className="flex items-center justify-between text-[11px] pt-1 px-0.5">
+                    <span className="text-gray-400">Check your inbox or spam folder</span>
+                    <button
+                      type="button"
+                      disabled={resendCooldown > 0 || resetLoading}
+                      onClick={() => handleRequestReset()}
+                      className="text-[#10B981] hover:text-[#059669] hover:underline font-medium inline-flex items-center space-x-1 disabled:text-gray-400 disabled:no-underline cursor-pointer disabled:cursor-not-allowed transition-colors"
+                    >
+                      <RefreshCw size={11} className={resetLoading ? "animate-spin" : ""} />
+                      <span>{resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}</span>
+                    </button>
                   </div>
-                )}
+                </div>
 
                 {/* Optional New Password */}
                 <div className="pt-2 border-t border-gray-100 space-y-2">
