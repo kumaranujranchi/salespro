@@ -22,6 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
   BarChart2,
   Contact,
   Users,
@@ -126,7 +128,90 @@ const crmNavItems: NavItem[] = [
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isMobile = useMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('realsalepro_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('realsalepro_sidebar_width');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= 200 && parsed <= 500) return parsed;
+      }
+    } catch {}
+    return 272; // default width in pixels
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartXRef = useRef<number>(0);
+  const dragStartWidthRef = useRef<number>(272);
+
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('realsalepro_sidebar_collapsed', String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = isCollapsed ? 80 : sidebarWidth;
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - dragStartXRef.current;
+      const newWidth = dragStartWidthRef.current + delta;
+
+      if (newWidth < 140) {
+        setIsCollapsed(true);
+        try { localStorage.setItem('realsalepro_sidebar_collapsed', 'true'); } catch {}
+      } else {
+        if (isCollapsed) {
+          setIsCollapsed(false);
+          try { localStorage.setItem('realsalepro_sidebar_collapsed', 'false'); } catch {}
+        }
+        const clampedWidth = Math.min(Math.max(newWidth, 200), 480);
+        setSidebarWidth(clampedWidth);
+        try { localStorage.setItem('realsalepro_sidebar_width', String(clampedWidth)); } catch {}
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isCollapsed, sidebarWidth]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        const target = e.target as HTMLElement;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        toggleCollapse();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleCollapse]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -422,14 +507,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       />
 
       {/* Top Header - Glassmorphism */}
-      <div className={`fixed top-0 right-0 z-30 transition-all duration-300 border-b border-gray-200/50 dark:border-white/10 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-xl pt-[env(safe-area-inset-top)] ${isCollapsed ? 'left-0 lg:left-20' : 'left-0 lg:left-72'}`}>
+      <div
+        className="fixed top-0 right-0 z-30 border-b border-gray-200/50 dark:border-white/10 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]"
+        style={{
+          left: isMobile ? 0 : (isCollapsed ? '80px' : `${sidebarWidth}px`),
+          transition: isDragging ? 'none' : 'left 300ms cubic-bezier(0.4,0,0.2,1)'
+        }}
+      >
         <div className="flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="lg:hidden text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 p-2 rounded-lg transition-colors"
             >
               <Menu size={20} />
+            </button>
+
+            {/* Desktop Sidebar Toggle Button (Hide / Unhide) */}
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:flex items-center justify-center p-2 rounded-xl text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Hide Sidebar (Ctrl+B)"}
+            >
+              {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
             </button>
 
             {/* Module Toggle Switch */}
@@ -658,18 +758,57 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </div>
 
+      {/* Dragging overlay to prevent cursor loss and text selection */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 cursor-col-resize select-none pointer-events-auto" />
+      )}
+
       {/* Sidebar Navigation */}
       <aside
         className={`
           fixed top-0 left-0 bottom-0 bg-white dark:bg-surface-dark border-r border-slate-200/60 dark:border-white/10 z-40
-          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[4px_0_24px_-4px_rgba(0,0,0,0.02)]
+          shadow-[4px_0_24px_-4px_rgba(0,0,0,0.02)]
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
           ${isCollapsed ? 'w-20' : 'w-72'}
           pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]
         `}
+        style={{
+          width: isMobile ? undefined : (isCollapsed ? '80px' : `${sidebarWidth}px`),
+          transition: isDragging ? 'none' : 'width 300ms cubic-bezier(0.4,0,0.2,1), transform 300ms cubic-bezier(0.4,0,0.2,1)'
+        }}
       >
-        <div className="flex flex-col h-full bg-slate-50/50 dark:bg-transparent">
+        <div className="flex flex-col h-full bg-slate-50/50 dark:bg-transparent relative">
+          {/* Drag Resize Handle (Desktop Only) */}
+          {!isMobile && (
+            <div
+              onMouseDown={handleMouseDown}
+              className={`
+                hidden lg:block absolute top-0 -right-1.5 w-3 h-full cursor-col-resize z-50 group select-none
+                ${isDragging ? 'bg-emerald-500/20' : ''}
+              `}
+              title="Drag to resize sidebar (Double click to reset)"
+              onDoubleClick={() => {
+                setSidebarWidth(272);
+                if (isCollapsed) toggleCollapse();
+                try { localStorage.setItem('realsalepro_sidebar_width', '272'); } catch {}
+              }}
+            >
+              {/* Highlight line on hover or drag */}
+              <div className={`
+                absolute top-0 right-1.5 w-[2px] h-full transition-colors
+                ${isDragging ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'group-hover:bg-emerald-500/70'}
+              `} />
+
+              {/* Grip dots */}
+              <div className="absolute top-1/2 -translate-y-1/2 right-0.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-slate-800 p-0.5 rounded shadow border border-slate-200 dark:border-white/10">
+                <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+              </div>
+            </div>
+          )}
+
           {/* Logo Section */}
           <div className={`h-24 flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-6'} border-b border-dashed border-slate-200 dark:border-white/10 relative`}>
             {isCollapsed ? (
@@ -700,10 +839,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
 
             <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex w-6 h-6 items-center justify-center rounded-full bg-white dark:bg-surface-highlight border border-slate-200 dark:border-white/10 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-md transition-all absolute -right-3 top-7 z-50"
+              onClick={toggleCollapse}
+              className="hidden lg:flex w-7 h-7 items-center justify-center rounded-full bg-white dark:bg-surface-highlight border border-slate-200 dark:border-white/10 text-slate-500 hover:text-emerald-600 hover:border-emerald-300 hover:shadow-lg shadow-md transition-all absolute -right-3.5 top-8 z-50 cursor-pointer"
+              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Hide Sidebar (Ctrl+B)"}
             >
-              {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
             </button>
           </div>
 
@@ -905,11 +1045,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main Content Area */}
       <main
-        className={`
-          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          mt-[calc(4rem+env(safe-area-inset-top))] p-4 md:p-5 overflow-x-hidden
-          ${isCollapsed ? 'ml-0 lg:ml-20' : 'ml-0 lg:ml-72'}
-        `}
+        className="mt-[calc(4rem+env(safe-area-inset-top))] p-4 md:p-5 overflow-x-hidden"
+        style={{
+          marginLeft: isMobile ? 0 : (isCollapsed ? '80px' : `${sidebarWidth}px`),
+          transition: isDragging ? 'none' : 'margin-left 300ms cubic-bezier(0.4,0,0.2,1)'
+        }}
       >
         <div key={location.pathname} className="max-w-[1600px] space-y-6 animate-fadeIn">
           {children}
