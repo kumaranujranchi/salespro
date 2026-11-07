@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { useToast } from '../contexts/ToastContext';
@@ -46,6 +46,16 @@ export function InventoryPage() {
 
   // Queries
   const projects = useQuery(api.projects.listAllProjects, currentTenantId ? { tenant_id: currentTenantId as Id<"tenants"> } : "skip");
+
+  // Auto-select first project if none is selected
+  useEffect(() => {
+    if (projects && projects.length > 0 && !selectedProjectId) {
+      const firstId = (projects[0]._id || projects[0].id) as Id<"projects">;
+      if (firstId) {
+        setSelectedProjectId(firstId);
+      }
+    }
+  }, [projects, selectedProjectId]);
   
   // Resolve active project reactively from query results
   const selectedProject = projects?.find(p => (p._id === selectedProjectId || p.id === selectedProjectId));
@@ -71,10 +81,21 @@ export function InventoryPage() {
 
   // Unit Form State
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+  const [modalProjectId, setModalProjectId] = useState<Id<"projects"> | string>('');
   const [unitNumber, setUnitNumber] = useState('');
   const [unitStatus, setUnitStatus] = useState('Available');
   const [customValues, setCustomValues] = useState<Record<string, any>>({});
   const [editingUnitId, setEditingUnitId] = useState<any>(null);
+
+  // Dynamic project & specifications inside Unit Modal
+  const activeModalProjectId = modalProjectId || selectedProjectId || (projects && projects[0] ? (projects[0]._id || projects[0].id) : null);
+  const activeModalProject = projects?.find((p: any) => (p._id === activeModalProjectId || p.id === activeModalProjectId)) || selectedProject;
+  const activeModalMetadata = typeof activeModalProject?.metadata === 'string'
+    ? (() => { try { return JSON.parse(activeModalProject.metadata); } catch { return {}; } })()
+    : (activeModalProject?.metadata || {});
+  const activeModalCustomFields: CustomField[] = Array.isArray(activeModalMetadata?.custom_fields)
+    ? activeModalMetadata.custom_fields
+    : [];
 
   // Unit Details State (Read-only view for agents)
   const [selectedUnitForDetails, setSelectedUnitForDetails] = useState<any | null>(null);
@@ -108,6 +129,7 @@ export function InventoryPage() {
     setUnitStatus('Available');
     setCustomValues({});
     setEditingUnitId(null);
+    setModalProjectId(selectedProjectId || (projects && projects[0] ? (projects[0]._id || projects[0].id) : ''));
   };
 
   // Manage custom fields
@@ -187,17 +209,36 @@ export function InventoryPage() {
   // Manage individual unit
   const handleSaveUnit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin || !selectedProject) return;
+    if (!isAdmin) {
+      toast.error('Only administrators can add or update inventory units.');
+      return;
+    }
+
+    const targetProject = activeModalProject || selectedProject;
+    if (!targetProject) {
+      toast.error('Please select a project for this unit.');
+      return;
+    }
+
+    const targetProjectId = targetProject._id || targetProject.id;
+    const targetTenantId = targetProject.tenant_id || currentTenantId;
+
+    if (!targetProjectId) {
+      toast.error('A project must be selected to save the unit.');
+      return;
+    }
+
+    if (!unitNumber || !unitNumber.trim()) {
+      toast.error('Unit Number / ID is required.');
+      return;
+    }
 
     try {
-      const targetTenantId = selectedProject.tenant_id || currentTenantId;
-      const targetProjectId = selectedProject._id || selectedProject.id;
-
       await createOrUpdateUnit({
         id: editingUnitId || undefined,
         tenant_id: targetTenantId,
         project_id: targetProjectId,
-        unit_number: unitNumber,
+        unit_number: unitNumber.trim(),
         status: unitStatus,
         custom_values: customValues,
       });
@@ -205,6 +246,11 @@ export function InventoryPage() {
       toast.success(editingUnitId ? 'Unit updated successfully.' : 'Unit added successfully.');
       setIsUnitModalOpen(false);
       resetUnitForm();
+
+      // Ensure the table displays this project's units
+      if (targetProjectId) {
+        setSelectedProjectId(targetProjectId as Id<"projects">);
+      }
     } catch (err: any) {
       console.error('Save unit error:', err);
       toast.error(err?.message || 'Failed to save unit.');
@@ -212,10 +258,11 @@ export function InventoryPage() {
   };
 
   const handleEditUnit = (unit: any) => {
-    setEditingUnitId(unit._id);
+    setEditingUnitId(unit._id || unit.id);
     setUnitNumber(unit.unit_number);
     setUnitStatus(unit.status);
     setCustomValues(unit.custom_values || {});
+    setModalProjectId(unit.project_id || selectedProjectId || '');
     setIsUnitModalOpen(true);
   };
 
@@ -429,7 +476,7 @@ export function InventoryPage() {
             >
               <option value="">-- Select Real Estate Project --</option>
               {projects?.map(p => (
-                <option key={p._id} value={p._id}>{p.name} ({p.project_type})</option>
+                <option key={p._id || p.id} value={p._id || p.id}>{p.name} ({p.project_type || 'Property'})</option>
               ))}
             </select>
           </div>
@@ -441,10 +488,26 @@ export function InventoryPage() {
         <Card className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden py-16 text-center">
           <CardContent className="space-y-4">
             <Building className="mx-auto h-16 w-16 text-slate-300 dark:text-slate-700" />
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white">No Project Selected</h3>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white">
+              {projects && projects.length === 0 ? "No Projects Found" : "No Project Selected"}
+            </h3>
             <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Please choose a real estate project from the dropdown at the top right to start managing custom fields and unit inventory.
+              {projects && projects.length === 0
+                ? "You haven't created any real estate projects yet. Please create a project under Projects first to start managing inventory units."
+                : "Please choose a real estate project from the dropdown at the top right to start managing custom fields and unit inventory."}
             </p>
+            {projects && projects.length > 0 && isAdmin && (
+              <div className="pt-2">
+                <Button variant="primary" onClick={() => {
+                  const firstId = (projects[0]._id || projects[0].id) as Id<"projects">;
+                  setSelectedProjectId(firstId);
+                  resetUnitForm();
+                  setIsUnitModalOpen(true);
+                }}>
+                  <Plus size={16} className="mr-1.5" /> Add Unit
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -823,8 +886,40 @@ export function InventoryPage() {
         title={editingUnitId ? "Edit Unit Details" : "Add Unit / Flat / Plot"}
       >
         <form onSubmit={handleSaveUnit} className="space-y-4">
+          {/* Project Selection Dropdown inside Modal */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              Select Project <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={activeModalProjectId || ''}
+              onChange={(e) => {
+                const newPid = e.target.value as Id<"projects">;
+                setModalProjectId(newPid);
+                if (newPid) {
+                  setSelectedProjectId(newPid);
+                }
+              }}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm font-medium"
+            >
+              <option value="">-- Select Project * --</option>
+              {projects?.map((p: any) => (
+                <option key={p._id || p.id} value={p._id || p.id}>
+                  {p.name} ({p.project_type || 'Property'})
+                </option>
+              ))}
+            </select>
+            {activeModalProject && (
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md">
+                <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Project: <strong>{activeModalProject.name}</strong> • Type: {activeModalProject.project_type || 'Property'}</span>
+              </div>
+            )}
+          </div>
+
           <Input
-            label="Unit Number / ID"
+            label="Unit Number / ID *"
             value={unitNumber}
             onChange={(e) => setUnitNumber(e.target.value)}
             required
@@ -847,7 +942,7 @@ export function InventoryPage() {
           </div>
 
           {/* Render Custom Fields dynamically */}
-          {customFields.map((field) => (
+          {activeModalCustomFields.map((field) => (
             <div key={field.id} className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {field.label}

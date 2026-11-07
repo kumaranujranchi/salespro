@@ -932,8 +932,13 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
         title={editingUnitId ? "Edit Unit Details" : "Add Unit to Inventory"}
       >
         <form onSubmit={handleSaveUnit} className="space-y-4">
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl p-3 flex items-center gap-2.5 text-xs text-blue-700 dark:text-blue-300">
+            <Building className="w-4 h-4 flex-shrink-0" />
+            <span>Target Project: <strong className="font-semibold">{project.name}</strong> ({project.project_type || 'General'})</span>
+          </div>
+
           <Input
-            label="Unit / Plot Number"
+            label="Unit / Plot Number *"
             value={unitNumber}
             onChange={(e) => setUnitNumber(e.target.value)}
             required
