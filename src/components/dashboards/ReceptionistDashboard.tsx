@@ -10,6 +10,7 @@ import { TrendingUp, DollarSign, Target, Award, Bell, BarChart3, Wallet, Buildin
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { RecentActivityLog } from '../dashboards/widgets/RecentActivityLog';
 import { CelebrationCards } from '../sales-executive/CelebrationCards';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 
 export function ReceptionistDashboard() {
     const { profile } = useAuth();
@@ -124,13 +125,7 @@ export function ReceptionistDashboard() {
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-white">
                     <div className="flex items-center gap-4 md:gap-5 w-full md:w-auto">
                         <div className="flex-shrink-0 p-1 bg-white/20 rounded-2xl backdrop-blur-sm">
-                            {profile?.image_url ? (
-                                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover border-2 border-white/50" />
-                            ) : (
-                                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-white/10 flex items-center justify-center text-xl md:text-2xl font-bold border-2 border-white/50">
-                                    {profile?.full_name?.charAt(0)}
-                                </div>
-                            )}
+                            <CompanyLogoAvatar size="lg" />
                         </div>
                         <div className="space-y-1 min-w-0">
                             <h1 className="text-xl md:text-3xl font-bold tracking-tight">

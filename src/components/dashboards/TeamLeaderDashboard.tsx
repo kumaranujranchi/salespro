@@ -4,6 +4,7 @@ import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -116,13 +117,7 @@ export function TeamLeaderDashboard() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 text-white">
           <div className="flex items-center gap-5">
             <div className="p-1 bg-white/20 rounded-2xl backdrop-blur-sm">
-              {profile?.image_url ? (
-                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-16 h-16 rounded-xl object-cover border-2 border-white/50" />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center text-2xl font-bold border-2 border-white/50">
-                  {profile?.full_name?.charAt(0)}
-                </div>
-              )}
+              <CompanyLogoAvatar size="xl" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {profile?.full_name?.split(' ')[0]}!</h1>

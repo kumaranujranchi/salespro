@@ -4,6 +4,7 @@ import { api, Id, Doc } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import {
   TrendingUp,
@@ -120,13 +121,7 @@ export function AdminDashboard() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 text-white">
           <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
             <div className="flex-shrink-0 p-1 bg-white/20 rounded-xl backdrop-blur-sm">
-              {profile?.image_url ? (
-                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover border-2 border-white/50" />
-              ) : (
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-white/10 flex items-center justify-center text-lg md:text-xl font-bold border-2 border-white/50">
-                  {profile?.full_name?.charAt(0)}
-                </div>
-              )}
+              <CompanyLogoAvatar size="md" />
             </div>
             <div className="space-y-0.5 min-w-0">
               <h1 className="text-lg md:text-2xl font-bold tracking-tight">

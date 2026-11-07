@@ -6,6 +6,7 @@ import { DriverTripModal } from '../site-visits/DriverTripModal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 import { MapPin, Clock, Calendar, Car, Navigation, CheckCircle2 } from 'lucide-react';
 
 export function DriverDashboard() {
@@ -59,13 +60,7 @@ export function DriverDashboard() {
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 text-white">
                     <div className="flex items-center gap-5">
                         <div className="p-1 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20">
-                            {profile?.image_url ? (
-                                <img src={profile.image_url} alt={profile.full_name} className="w-14 h-14 rounded-xl object-cover" />
-                            ) : (
-                                <div className="w-14 h-14 rounded-xl bg-slate-700 flex items-center justify-center text-xl font-bold">
-                                    {profile?.full_name?.charAt(0)}
-                                </div>
-                            )}
+                            <CompanyLogoAvatar size="lg" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">

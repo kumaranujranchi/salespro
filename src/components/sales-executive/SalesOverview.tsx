@@ -10,6 +10,7 @@ import { TrendingUp, DollarSign, Target, Award, BarChart3, Wallet, Building } fr
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { RecentActivityLog } from '../dashboards/widgets/RecentActivityLog';
 import { CelebrationCards } from './CelebrationCards';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 
 export function SalesOverview() {
     const { profile, tenant } = useAuth();
@@ -70,13 +71,7 @@ export function SalesOverview() {
                     <div className="flex items-center gap-6 w-full md:w-auto">
                         <div className="relative flex-shrink-0">
                             <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full scale-110"></div>
-                            {profile?.image_url ? (
-                                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover border-2 border-white/50" />
-                            ) : (
-                                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-white/10 flex items-center justify-center text-xl md:text-2xl font-bold border-2 border-white/50">
-                                    {profile?.full_name?.charAt(0)}
-                                </div>
-                            )}
+                            <CompanyLogoAvatar size="lg" />
                         </div>
                         <div className="space-y-1 min-w-0">
                             <h1 className="text-xl md:text-3xl font-bold tracking-tight">

@@ -19,6 +19,7 @@ import {
   FileText
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 
 export function AccountantDashboard() {
   const { profile, tenant } = useAuth();
@@ -61,13 +62,7 @@ export function AccountantDashboard() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="p-1 bg-white/20 rounded-2xl backdrop-blur-sm">
-              {profile?.image_url ? (
-                <img src={profile.image_url} alt={profile.full_name || 'User'} className="w-14 h-14 rounded-xl object-cover border-2 border-white/50" />
-              ) : (
-                <div className="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center text-xl font-bold border-2 border-white/40">
-                  {profile?.full_name?.charAt(0) || 'A'}
-                </div>
-              )}
+              <CompanyLogoAvatar size="lg" />
             </div>
             <div>
               <div className="flex items-center gap-2">
