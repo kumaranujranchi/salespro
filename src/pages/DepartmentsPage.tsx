@@ -35,14 +35,53 @@ export function DepartmentsPage() {
 
   const isReadOnly = profile?.role === 'director';
 
-  const [formData, setFormData] = useState({
+  interface DepartmentCustomFieldItem {
+    id: string;
+    label: string;
+    value: string;
+  }
+
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    custom_fields: DepartmentCustomFieldItem[];
+  }>({
     name: '',
-    description: ''
+    description: '',
+    custom_fields: []
   });
 
   const resetForm = () => {
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', custom_fields: [] });
     setEditingDepartmentId(null);
+  };
+
+  const addCustomField = (defaultLabel = '') => {
+    setFormData(prev => ({
+      ...prev,
+      custom_fields: [
+        ...prev.custom_fields,
+        {
+          id: `f_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          label: defaultLabel,
+          value: ''
+        }
+      ]
+    }));
+  };
+
+  const updateCustomField = (id: string, key: 'label' | 'value', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      custom_fields: prev.custom_fields.map(f => f.id === id ? { ...f, [key]: value } : f)
+    }));
+  };
+
+  const removeCustomField = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      custom_fields: prev.custom_fields.filter(f => f.id !== id)
+    }));
   };
 
   const handleEditDepartment = (dept: Department) => {
@@ -50,7 +89,14 @@ export function DepartmentsPage() {
     setEditingDepartmentId(dept._id);
     setFormData({
       name: dept.name,
-      description: dept.description || ''
+      description: dept.description || '',
+      custom_fields: Array.isArray(dept.custom_fields)
+        ? dept.custom_fields.map((f, idx) => ({
+            id: f.id || `f_${Date.now()}_${idx}`,
+            label: f.label || '',
+            value: f.value || ''
+          }))
+        : []
     });
     setIsModalOpen(true);
   };
@@ -69,11 +115,16 @@ export function DepartmentsPage() {
     }
     setIsSubmitting(true);
     try {
+      const cleanCustomFields = formData.custom_fields
+        .map(f => ({ id: f.id, label: f.label.trim(), value: f.value.trim() }))
+        .filter(f => f.label || f.value);
+
       if (editingDepartmentId) {
         await updateDept({
           id: editingDepartmentId as Id<"departments">,
           name: formData.name,
-          description: formData.description
+          description: formData.description,
+          custom_fields: cleanCustomFields
         });
         await dialog.alert('Department updated successfully!', { variant: 'success', title: 'Success' });
       } else {
@@ -81,6 +132,7 @@ export function DepartmentsPage() {
           tenant_id: targetTenantId,
           name: formData.name,
           description: formData.description,
+          custom_fields: cleanCustomFields
         });
         await dialog.alert('Department added successfully!', { variant: 'success', title: 'Success' });
       }
@@ -159,6 +211,20 @@ export function DepartmentsPage() {
                 <div className="mt-4">
                   <CardTitle className="text-xl font-bold truncate">{dept.name}</CardTitle>
                   <CardDescription className="line-clamp-2 mt-1">{dept.description || 'No description provided.'}</CardDescription>
+                  {dept.custom_fields && dept.custom_fields.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-white/10 space-y-1.5">
+                      {dept.custom_fields.map((field, idx) => (
+                        <div key={field.id || idx} className="flex items-center justify-between text-xs py-0.5">
+                          <span className="text-slate-500 dark:text-slate-400 font-medium truncate max-w-[45%]">
+                            {field.label}:
+                          </span>
+                          <span className="text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[50%] text-right bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md border border-slate-200/50 dark:border-white/5">
+                            {field.value || '-'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="pt-4 flex items-center justify-between">
@@ -184,6 +250,7 @@ export function DepartmentsPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Custom Details</TableHead>
                   <TableHead>Status</TableHead>
                   {!isReadOnly && <TableHead>Actions</TableHead>}
                 </TableRow>
@@ -193,6 +260,23 @@ export function DepartmentsPage() {
                   <TableRow key={dept._id}>
                     <TableCell className="font-medium">{dept.name}</TableCell>
                     <TableCell>{dept.description || '-'}</TableCell>
+                    <TableCell>
+                      {dept.custom_fields && dept.custom_fields.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 max-w-xs">
+                          {dept.custom_fields.map((f, i) => (
+                            <span
+                              key={f.id || i}
+                              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/10"
+                            >
+                              <span className="font-semibold text-slate-500 dark:text-slate-400">{f.label}:</span>
+                              <span className="font-medium">{f.value || '-'}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 text-xs italic">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={dept.is_active ? 'success' : 'default'}>
                         {dept.is_active ? 'Active' : 'Inactive'}
@@ -229,7 +313,7 @@ export function DepartmentsPage() {
         onClose={handleCloseModal}
         title={editingDepartmentId ? "Edit Department" : "Add Department"}
       >
-        <form onSubmit={handleSaveDepartment} className="space-y-6">
+        <form onSubmit={handleSaveDepartment} className="space-y-5">
           <Input
             label="Department Name"
             value={formData.name}
@@ -243,6 +327,91 @@ export function DepartmentsPage() {
             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             placeholder="Department responsibilities..."
           />
+
+          {/* Custom Fields Section */}
+          <div className="pt-3 border-t border-slate-100 dark:border-white/10 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-semibold text-slate-800 dark:text-slate-200 block">
+                  Custom Details & Fields
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Add extra details like Department Head, Email, Room, Budget, etc.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => addCustomField()}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200/60 dark:border-emerald-800/40 transition-colors cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>Add Field</span>
+              </button>
+            </div>
+
+            {/* Quick Suggestions Chips if no custom fields added yet */}
+            {formData.custom_fields.length === 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-slate-400 font-medium">Quick add:</span>
+                {[
+                  'Department Head',
+                  'Room / Floor',
+                  'Contact Email',
+                  'Phone / Extension',
+                  'Budget Code'
+                ].map((sug) => (
+                  <button
+                    key={sug}
+                    type="button"
+                    onClick={() => addCustomField(sug)}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-white/10 transition-colors cursor-pointer"
+                  >
+                    + {sug}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* List of Custom Fields */}
+            {formData.custom_fields.length > 0 && (
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {formData.custom_fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/10 group animate-fadeIn"
+                  >
+                    <div className="w-full sm:w-5/12">
+                      <input
+                        type="text"
+                        placeholder="Detail Name (e.g. Head)"
+                        value={field.label}
+                        onChange={(e) => updateCustomField(field.id, 'label', e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                        autoFocus={index === formData.custom_fields.length - 1 && !field.label}
+                      />
+                    </div>
+                    <div className="w-full sm:w-6/12 flex-1">
+                      <input
+                        type="text"
+                        placeholder="Value (e.g. Rajesh Kumar)"
+                        value={field.value}
+                        onChange={(e) => updateCustomField(field.id, 'value', e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCustomField(field.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer self-end sm:self-center"
+                      title="Delete field"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <ModalFooter>
              {/* ... */}
             <Button

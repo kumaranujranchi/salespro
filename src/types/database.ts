@@ -244,12 +244,19 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface DepartmentCustomField {
+  id?: string;
+  label: string;
+  value: string;
+}
+
 export interface Department {
   id: string; // Legacy UUID support
   _id: string; // Internal database id
   _creationTime: number; // Record creation timestamp
   name: string;
   description: string | null;
+  custom_fields?: DepartmentCustomField[];
   is_active: boolean;
   created_at: string;
   updated_at: string;

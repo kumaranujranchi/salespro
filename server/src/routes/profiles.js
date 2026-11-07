@@ -251,6 +251,12 @@ router.delete('/roles/:id', async (req, res) => {
   }
 });
 
+// Ensure departments table has custom_fields and updated_at columns
+query(`
+  ALTER TABLE departments ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '[]'::jsonb;
+  ALTER TABLE departments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+`).catch(err => console.error('Migration note (departments custom_fields):', err.message));
+
 // 8. Departments List
 router.get('/departments', async (req, res) => {
   try {
@@ -262,7 +268,13 @@ router.get('/departments', async (req, res) => {
       'SELECT * FROM departments WHERE tenant_id = $1 ORDER BY name ASC',
       [targetTenantId]
     );
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      custom_fields: typeof r.custom_fields === 'string'
+        ? JSON.parse(r.custom_fields || '[]')
+        : (r.custom_fields || [])
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -271,19 +283,34 @@ router.get('/departments', async (req, res) => {
 // 9. Create Department
 router.post('/departments', async (req, res) => {
   try {
-    const { tenant_id, name, description } = req.body;
+    const { tenant_id, name, description, custom_fields } = req.body;
     const targetTenantId = tenant_id || req.user?.tenant_id;
     if (!targetTenantId || !name) return res.status(400).json({ error: 'tenant_id and name are required' });
 
+    const cleanCustomFields = Array.isArray(custom_fields)
+      ? custom_fields.filter(f => f && (f.label?.trim() || f.value?.trim()))
+      : [];
+
     const result = await query(
-      `INSERT INTO departments (tenant_id, name, description, is_active)
-       VALUES ($1, $2, $3, true)
+      `INSERT INTO departments (tenant_id, name, description, custom_fields, is_active)
+       VALUES ($1, $2, $3, $4, true)
        RETURNING *`,
-      [targetTenantId, String(name).trim(), description || null]
+      [
+        targetTenantId,
+        String(name).trim(),
+        description || null,
+        JSON.stringify(cleanCustomFields)
+      ]
     );
 
     const d = result.rows[0];
-    return res.status(201).json({ ...d, _id: d.id });
+    return res.status(201).json({
+      ...d,
+      _id: d.id,
+      custom_fields: typeof d.custom_fields === 'string'
+        ? JSON.parse(d.custom_fields || '[]')
+        : (d.custom_fields || [])
+    });
   } catch (err) {
     console.error('Create department error:', err);
     return res.status(500).json({ error: err.message });
@@ -294,7 +321,7 @@ router.post('/departments', async (req, res) => {
 router.patch('/departments/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, is_active } = req.body;
+    const { name, description, is_active, custom_fields } = req.body;
 
     const fields = [];
     const values = [];
@@ -303,6 +330,13 @@ router.patch('/departments/:id', async (req, res) => {
     if (name !== undefined) { fields.push(`name = $${idx++}`); values.push(name); }
     if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description); }
     if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(Boolean(is_active)); }
+    if (custom_fields !== undefined) {
+      const cleanCustomFields = Array.isArray(custom_fields)
+        ? custom_fields.filter(f => f && (f.label?.trim() || f.value?.trim()))
+        : [];
+      fields.push(`custom_fields = $${idx++}`);
+      values.push(JSON.stringify(cleanCustomFields));
+    }
 
     if (fields.length === 0) return res.json({ success: true });
 
@@ -316,7 +350,13 @@ router.patch('/departments/:id', async (req, res) => {
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Department not found' });
     const d = result.rows[0];
-    return res.json({ ...d, _id: d.id });
+    return res.json({
+      ...d,
+      _id: d.id,
+      custom_fields: typeof d.custom_fields === 'string'
+        ? JSON.parse(d.custom_fields || '[]')
+        : (d.custom_fields || [])
+    });
   } catch (err) {
     console.error('Update department error:', err);
     return res.status(500).json({ error: err.message });
