@@ -75,10 +75,19 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await authService.getProfile({ email: args?.email });
   }
   if (key.includes('profiles.createUserProfile') || key.includes('profiles.create')) {
-    return await profilesService.create(args);
+    const res = await profilesService.create(args);
+    invalidateQuery('profiles');
+    return res;
   }
   if (key.includes('profiles.updateProfile') || key.includes('profiles.update')) {
-    return await profilesService.update(args?.id || args?._id, args);
+    const res = await profilesService.update(args?.id || args?._id, args);
+    invalidateQuery('profiles');
+    return res;
+  }
+  if (key.includes('profiles.toggleProfileStatus')) {
+    const res = await profilesService.update(args?.id || args?._id, { is_active: args?.is_active });
+    invalidateQuery('profiles');
+    return res;
   }
   if (key.includes('profiles.resetPassword')) {
     return await authService.resetPassword(args);
@@ -104,11 +113,49 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('profiles.promoteToPlatformAdmin')) {
     return await authService.promote(args?.email);
   }
+
+  // DEPARTMENTS
   if (key.includes('departments.list')) {
     return await profilesService.listDepartments(args?.tenant_id);
   }
+  if (key.includes('departments.create') || key.includes('departments.add')) {
+    const res = await profilesService.createDepartment(args);
+    invalidateQuery('departments');
+    return res;
+  }
+  if (key.includes('departments.update') || key.includes('departments.edit')) {
+    const id = args?.id || args?._id;
+    const res = await profilesService.updateDepartment(id, args);
+    invalidateQuery('departments');
+    return res;
+  }
+  if (key.includes('departments.remove') || key.includes('departments.delete')) {
+    const id = args?.id || args?._id;
+    const res = await profilesService.deleteDepartment(id);
+    invalidateQuery('departments');
+    return res;
+  }
+
+  // ROLES
   if (key.includes('roles.list')) {
     return await profilesService.listRoles(args?.tenant_id);
+  }
+  if (key.includes('roles.create') || key.includes('roles.add')) {
+    const res = await profilesService.createRole(args);
+    invalidateQuery('roles');
+    return res;
+  }
+  if (key.includes('roles.update') || key.includes('roles.edit')) {
+    const id = args?.id || args?._id;
+    const res = await profilesService.updateRole(id, args);
+    invalidateQuery('roles');
+    return res;
+  }
+  if (key.includes('roles.remove') || key.includes('roles.delete')) {
+    const id = args?.id || args?._id;
+    const res = await profilesService.deleteRole(id);
+    invalidateQuery('roles');
+    return res;
   }
 
   // TENANTS

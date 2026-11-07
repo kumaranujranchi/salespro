@@ -38,7 +38,7 @@ export function InventoryPage() {
   const toast = useToast();
   const dialog = useDialog();
 
-  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'admin';
+  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin' || String(profile?.role || '').toLowerCase().includes('admin');
 
   // Selected Project State
   const [selectedProjectId, setSelectedProjectId] = useState<Id<"projects"> | null>(null);
@@ -48,8 +48,11 @@ export function InventoryPage() {
   const projects = useQuery(api.projects.listAllProjects, currentTenantId ? { tenant_id: currentTenantId as Id<"tenants"> } : "skip");
   
   // Resolve active project reactively from query results
-  const selectedProject = projects?.find(p => p._id === selectedProjectId);
-  const customFields: CustomField[] = selectedProject?.metadata?.custom_fields || [];
+  const selectedProject = projects?.find(p => (p._id === selectedProjectId || p.id === selectedProjectId));
+  const selectedProjectMetadata = typeof selectedProject?.metadata === 'string'
+    ? (() => { try { return JSON.parse(selectedProject.metadata); } catch { return {}; } })()
+    : (selectedProject?.metadata || {});
+  const customFields: CustomField[] = Array.isArray(selectedProjectMetadata?.custom_fields) ? selectedProjectMetadata.custom_fields : [];
 
   // Units query
   const units = useQuery(api.projects.listUnits, selectedProjectId ? { project_id: selectedProjectId } : "skip");
@@ -187,10 +190,13 @@ export function InventoryPage() {
     if (!isAdmin || !selectedProject) return;
 
     try {
+      const targetTenantId = selectedProject.tenant_id || currentTenantId;
+      const targetProjectId = selectedProject._id || selectedProject.id;
+
       await createOrUpdateUnit({
         id: editingUnitId || undefined,
-        tenant_id: selectedProject.tenant_id,
-        project_id: selectedProject._id,
+        tenant_id: targetTenantId,
+        project_id: targetProjectId,
         unit_number: unitNumber,
         status: unitStatus,
         custom_values: customValues,
@@ -199,8 +205,9 @@ export function InventoryPage() {
       toast.success(editingUnitId ? 'Unit updated successfully.' : 'Unit added successfully.');
       setIsUnitModalOpen(false);
       resetUnitForm();
-    } catch {
-      toast.error('Failed to save unit.');
+    } catch (err: any) {
+      console.error('Save unit error:', err);
+      toast.error(err?.message || 'Failed to save unit.');
     }
   };
 
@@ -345,11 +352,13 @@ export function InventoryPage() {
 
   // Advanced dynamic filter validation
   const filteredUnits = (units || []).filter((unit: any) => {
+    if (!unit) return false;
+    const unitNum = String(unit.unit_number || unit.unit || '');
     // 1. Search Query Match
-    const matchesSearch = unit.unit_number.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = unitNum.toLowerCase().includes((searchQuery || '').toLowerCase());
     
     // 2. Status Match
-    const matchesStatus = statusFilter === 'All' || unit.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'All' || unit.status === statusFilter;
     
     // 3. Dynamic Custom Filters Match
     let matchesCustom = true;

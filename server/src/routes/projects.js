@@ -196,7 +196,14 @@ router.get('/units', async (req, res) => {
 router.post('/units', async (req, res) => {
   try {
     const { id, tenant_id, project_id, unit_number, status, custom_values } = req.body;
-    const targetTenantId = tenant_id || req.user?.tenant_id;
+    let targetTenantId = tenant_id || req.user?.tenant_id;
+
+    if (!targetTenantId && project_id) {
+      const pRes = await query('SELECT tenant_id FROM projects WHERE id = $1', [project_id]);
+      if (pRes.rows.length > 0) {
+        targetTenantId = pRes.rows[0].tenant_id;
+      }
+    }
 
     const customJson = custom_values ? (typeof custom_values === 'object' ? JSON.stringify(custom_values) : custom_values) : '{}';
 

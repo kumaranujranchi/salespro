@@ -71,9 +71,10 @@ const SALES_PERSPECTIVES: { id: 'none' | 'self' | 'team' | 'overall'; label: str
 
 export function RolesPage() {
   const { tenant, profile, loading } = useAuth();
+  const currentTenantId = tenant?._id || tenant?.id || profile?.tenant_id;
   
   const rolesData = useQuery(api.roles.list, 
-    tenant?._id ? { tenant_id: tenant._id as any } : "skip"
+    currentTenantId ? { tenant_id: currentTenantId as any } : "skip"
   );
   const roles = (rolesData || []) as any[];
   
@@ -128,7 +129,8 @@ export function RolesPage() {
 
   async function handleSaveRole() {
     try {
-      if (!tenant?._id || !formData.name) return;
+      const targetTenantId = currentTenantId;
+      if (!targetTenantId || !formData.name) return;
 
       if (selectedRole) {
         await updateRole({
@@ -139,7 +141,7 @@ export function RolesPage() {
         });
       } else {
         await createRole({
-          tenant_id: tenant._id as any,
+          tenant_id: targetTenantId as any,
           name: formData.name,
           description: formData.description,
           permissions: formData.permissions,
@@ -172,12 +174,13 @@ export function RolesPage() {
     );
   }
 
-  if (profile?.role !== 'super_admin') {
+  const canManageRoles = profile?.role === 'super_admin' || profile?.role === 'platform_admin' || profile?.role === 'admin' || String(profile?.role || '').toLowerCase().includes('admin');
+  if (!canManageRoles) {
     return (
       <div className="flex flex-col items-center justify-center h-full space-y-4">
         <Lock size={48} className="text-slate-400" />
         <h1 className="text-xl font-bold">Access Denied</h1>
-        <p className="text-slate-500">Only Super Admins can manage roles.</p>
+        <p className="text-slate-500">Only Administrators can manage roles.</p>
       </div>
     );
   }

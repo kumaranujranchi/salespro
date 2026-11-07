@@ -484,7 +484,7 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
 }) {
   const toast = useToast();
   const dialog = useDialog();
-  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'admin';
+  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin' || String(profile?.role || '').toLowerCase().includes('admin');
 
   // State
   const [activeTab, setActiveTab] = useState<'units' | 'fields'>('units');
@@ -509,11 +509,15 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
   const [selectedUnitForDetails, setSelectedUnitForDetails] = useState<any | null>(null);
 
   // Fetch project units
-  const units = useQuery(api.projects.listUnits, { project_id: project._id });
+  const projectId = project?._id || project?.id;
+  const units = useQuery(api.projects.listUnits, projectId ? { project_id: projectId } : "skip");
   const createOrUpdateUnit = useMutation(api.projects.createOrUpdateUnit);
   const deleteUnit = useMutation(api.projects.deleteUnit);
 
-  const customFields = project.metadata?.custom_fields || [];
+  const projectMetadata = typeof project?.metadata === 'string'
+    ? (() => { try { return JSON.parse(project.metadata); } catch { return {}; } })()
+    : (project?.metadata || {});
+  const customFields = Array.isArray(projectMetadata?.custom_fields) ? projectMetadata.custom_fields : [];
 
   // Manage custom fields
   const handleSaveField = async (e: React.FormEvent) => {
@@ -544,13 +548,13 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
 
     try {
       await updateProjectMutation({
-        id: project._id,
+        id: project._id || project.id,
         name: project.name,
         project_type: project.project_type,
         status: project.status,
         is_active: project.is_active,
         metadata: {
-          ...project.metadata,
+          ...projectMetadata,
           custom_fields: updatedFields,
         }
       });
@@ -577,13 +581,13 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
     const updatedFields = customFields.filter((f: any) => f.id !== fieldId);
     try {
       await updateProjectMutation({
-        id: project._id,
+        id: project._id || project.id,
         name: project.name,
         project_type: project.project_type,
         status: project.status,
         is_active: project.is_active,
         metadata: {
-          ...project.metadata,
+          ...projectMetadata,
           custom_fields: updatedFields,
         }
       });
@@ -599,10 +603,13 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
     if (!isAdmin) return;
 
     try {
+      const targetTenantId = project?.tenant_id || profile?.tenant_id;
+      const targetProjectId = project?._id || project?.id;
+
       await createOrUpdateUnit({
         id: editingUnitId || undefined,
-        tenant_id: project.tenant_id,
-        project_id: project._id,
+        tenant_id: targetTenantId,
+        project_id: targetProjectId,
         unit_number: unitNumber,
         status: unitStatus,
         custom_values: customValues,
@@ -614,13 +621,14 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
       setUnitStatus('Available');
       setCustomValues({});
       setEditingUnitId(null);
-    } catch {
-      toast.error('Failed to save unit.');
+    } catch (err: any) {
+      console.error('Error saving unit:', err);
+      toast.error(err?.message || 'Failed to save unit.');
     }
   };
 
   const handleEditUnit = (unit: any) => {
-    setEditingUnitId(unit._id);
+    setEditingUnitId(unit._id || unit.id);
     setUnitNumber(unit.unit_number);
     setUnitStatus(unit.status);
     setCustomValues(unit.custom_values || {});
@@ -646,8 +654,10 @@ function InventorySubView({ project, onBack, profile, updateProjectMutation }: {
 
   // Filtered units
   const filteredUnits = (units || []).filter((unit: any) => {
-    const matchesSearch = unit.unit_number.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || unit.status === statusFilter;
+    if (!unit) return false;
+    const unitNum = String(unit.unit_number || unit.unit || '');
+    const matchesSearch = unitNum.toLowerCase().includes((searchQuery || '').toLowerCase());
+    const matchesStatus = !statusFilter || statusFilter === 'All' || unit.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 

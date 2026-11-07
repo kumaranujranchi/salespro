@@ -45,16 +45,18 @@ export function UsersPage() {
 
   const [error, setError] = useState('');
 
+  const currentTenantId = tenant?._id || tenant?.id || profile?.tenant_id;
+
   // Backend queries
   const users = useQuery(api.profiles.listUsersByTenant, 
-    tenant?._id ? { 
-      tenant_id: tenant._id as any,
+    currentTenantId ? { 
+      tenant_id: currentTenantId as any,
       is_active: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined
     } : "skip"
   );
   
-  const departments = useQuery(api.departments.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
-  const roles = useQuery(api.roles.list, tenant?._id ? { tenant_id: tenant._id as any } : "skip");
+  const departments = useQuery(api.departments.list, currentTenantId ? { tenant_id: currentTenantId as any } : "skip");
+  const roles = useQuery(api.roles.list, currentTenantId ? { tenant_id: currentTenantId as any } : "skip");
 
   // Backend mutations
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
@@ -104,7 +106,11 @@ export function UsersPage() {
 
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnly || !profile?.tenant_id) return;
+    const targetTenantId = currentTenantId;
+    if (isReadOnly || !targetTenantId) {
+      setError('Missing tenant identification');
+      return;
+    }
     setError('');
     setIsSubmitting(true);
 
@@ -127,11 +133,9 @@ export function UsersPage() {
       } else {
         if (formData.password !== formData.confirmPassword) throw new Error('Passwords do not match');
         
-        // This is where we would create Auth User in a real app.
-        // For simulation, we just create the Profile in the backend.
         await createUserProfileMutation({
           userId: formData.email, // Use email as Simulated Auth ID
-          tenant_id: profile.tenant_id as Id<"tenants">,
+          tenant_id: targetTenantId as Id<"tenants">,
           full_name: formData.fullName,
           email: formData.email,
           phone: formData.phone || null,
@@ -323,22 +327,40 @@ export function UsersPage() {
               <Select
                 label="Role"
                 name="roleId"
-                value={formData.roleId}
+                value={formData.roleId || formData.role}
                 onChange={(e) => {
                   const rId = e.target.value;
-                  const roleObj = roles?.find(r => r._id === rId);
-                  setFormData(prev => ({ ...prev, roleId: rId, role: roleObj?.name || '' }));
+                  const roleObj = (roles as any[])?.find(r => r._id === rId);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    roleId: roleObj ? rId : '', 
+                    role: roleObj ? roleObj.name : rId 
+                  }));
                 }}
                 required
-                options={(roles as TenantRole[] | undefined)?.map((r: TenantRole) => ({ value: r._id, label: r.name })) || []}
+                options={
+                  (roles && roles.length > 0)
+                    ? roles.map((r: any) => ({ value: r._id, label: r.name }))
+                    : [
+                        { value: 'sales_executive', label: 'Sales Executive' },
+                        { value: 'team_leader', label: 'Team Leader' },
+                        { value: 'sales_manager', label: 'Sales Manager' },
+                        { value: 'admin', label: 'Admin' },
+                        { value: 'accountant', label: 'Accountant' },
+                        { value: 'receptionist', label: 'Receptionist' },
+                        { value: 'driver', label: 'Driver' },
+                      ]
+                }
               />
               <Select
                 label="Department"
                 name="departmentId"
                 value={formData.departmentId}
                 onChange={handleInputChange}
-                required
-                options={(departments as Department[] | undefined)?.map((d: Department) => ({ value: d._id, label: d.name })) || []}
+                options={[
+                  { value: '', label: 'None / General' },
+                  ...((departments as any[])?.map(d => ({ value: d._id, label: d.name })) || [])
+                ]}
               />
               <Select
                 label="Reporting Manager"

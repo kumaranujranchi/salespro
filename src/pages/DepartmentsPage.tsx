@@ -15,12 +15,13 @@ import { ActionMenu } from '../components/ui/ActionMenu';
 
 export function DepartmentsPage() {
   const { profile, tenant } = useAuth();
+  const currentTenantId = tenant?._id || tenant?.id || profile?.tenant_id;
   const dialog = useDialog();
   
   const [viewType, setViewType] = useState<'card' | 'list'>('list');
   
   const departmentsData = useQuery(api.departments.list, 
-    tenant?._id ? { tenant_id: tenant._id } : "skip" as any
+    currentTenantId ? { tenant_id: currentTenantId } : "skip" as any
   );
   const departments = (departmentsData || []) as Department[];
   
@@ -61,7 +62,11 @@ export function DepartmentsPage() {
 
   const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isReadOnly || !tenant) return;
+    const targetTenantId = currentTenantId;
+    if (isReadOnly || !targetTenantId) {
+      await dialog.alert('Missing tenant identification', { variant: 'danger', title: 'Error' });
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (editingDepartmentId) {
@@ -73,7 +78,7 @@ export function DepartmentsPage() {
         await dialog.alert('Department updated successfully!', { variant: 'success', title: 'Success' });
       } else {
         await createDept({
-          tenant_id: tenant._id,
+          tenant_id: targetTenantId,
           name: formData.name,
           description: formData.description,
         });
@@ -81,9 +86,9 @@ export function DepartmentsPage() {
       }
 
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving department:', error);
-      await dialog.alert('Failed to save department', { variant: 'danger', title: 'Error' });
+      await dialog.alert(error?.message || 'Failed to save department', { variant: 'danger', title: 'Error' });
     } finally {
       setIsSubmitting(false);
     }

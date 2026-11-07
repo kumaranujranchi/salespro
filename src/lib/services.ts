@@ -43,7 +43,13 @@ export const profilesService = {
   create: (data: any) => api.post<Profile>('/profiles', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/profiles/${id}`, data),
   listRoles: (tenantId: string) => api.get<any[]>('/profiles/roles', { tenant_id: tenantId }),
+  createRole: (data: any) => api.post<any>('/profiles/roles', data),
+  updateRole: (id: string, data: any) => api.patch<any>(`/profiles/roles/${id}`, data),
+  deleteRole: (id: string) => api.delete<{ success: boolean }>(`/profiles/roles/${id}`),
   listDepartments: (tenantId: string) => api.get<any[]>('/profiles/departments', { tenant_id: tenantId }),
+  createDepartment: (data: any) => api.post<any>('/profiles/departments', data),
+  updateDepartment: (id: string, data: any) => api.patch<any>(`/profiles/departments/${id}`, data),
+  deleteDepartment: (id: string) => api.delete<{ success: boolean }>(`/profiles/departments/${id}`),
 };
 
 export const leadsService = {
