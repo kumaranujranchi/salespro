@@ -74,10 +74,15 @@ export function InventoryPage() {
 
   // Custom Field Form State
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
+  const [modalFieldProjectId, setModalFieldProjectId] = useState<Id<"projects"> | string>('');
   const [fieldLabel, setFieldLabel] = useState('');
   const [fieldType, setFieldType] = useState<'text' | 'number' | 'select'>('text');
   const [fieldOptions, setFieldOptions] = useState('');
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+
+  // Dynamic project for Field Modal
+  const activeFieldProjectId = modalFieldProjectId || selectedProjectId || (projects && projects[0] ? (projects[0]._id || projects[0].id) : null);
+  const activeFieldProject = projects?.find((p: any) => (p._id === activeFieldProjectId || p.id === activeFieldProjectId)) || selectedProject;
 
   // Unit Form State
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
@@ -122,6 +127,7 @@ export function InventoryPage() {
     setFieldType('text');
     setFieldOptions('');
     setEditingFieldId(null);
+    setModalFieldProjectId(selectedProjectId || (projects && projects[0] ? (projects[0]._id || projects[0].id) : ''));
   };
 
   const resetUnitForm = () => {
@@ -135,42 +141,51 @@ export function InventoryPage() {
   // Manage custom fields
   const handleSaveField = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin || !selectedProject) return;
+    const targetProject = activeFieldProject || selectedProject;
+    if (!isAdmin || !targetProject) return;
+
+    const targetProjectMeta = typeof targetProject?.metadata === 'string'
+      ? (() => { try { return JSON.parse(targetProject.metadata); } catch { return {}; } })()
+      : (targetProject?.metadata || {});
+    const targetProjectFields: CustomField[] = Array.isArray(targetProjectMeta?.custom_fields)
+      ? targetProjectMeta.custom_fields
+      : [];
 
     const fieldId = editingFieldId || fieldLabel.toLowerCase().replace(/[^a-z0-9]/g, '_');
     
-    if (!editingFieldId && customFields.some((f: CustomField) => f.id === fieldId)) {
-      toast.error('A field with a similar label already exists.');
+    if (!editingFieldId && targetProjectFields.some((f: CustomField) => f.id === fieldId)) {
+      toast.error('A field with a similar label already exists in this project.');
       return;
     }
 
     const newField: CustomField = {
       id: fieldId,
-      label: fieldLabel,
+      label: fieldLabel.trim(),
       type: fieldType,
       options: fieldType === 'select' ? fieldOptions.split(',').map(o => o.trim()).filter(Boolean) : [],
     };
 
-    let updatedFields;
+    let updatedFields: CustomField[];
     if (editingFieldId) {
-      updatedFields = customFields.map((f: CustomField) => f.id === editingFieldId ? newField : f);
+      updatedFields = targetProjectFields.map((f: CustomField) => f.id === editingFieldId ? newField : f);
     } else {
-      updatedFields = [...customFields, newField];
+      updatedFields = [...targetProjectFields, newField];
     }
 
     try {
+      const pId = targetProject._id || targetProject.id;
       await updateProjectMutation({
-        id: selectedProject._id,
-        name: selectedProject.name,
-        project_type: selectedProject.project_type || 'Other',
-        status: selectedProject.status || 'Running',
-        is_active: selectedProject.is_active,
+        id: pId,
+        name: targetProject.name,
+        project_type: targetProject.project_type || 'Other',
+        status: targetProject.status || 'Running',
+        is_active: targetProject.is_active,
         metadata: {
-          ...selectedProject.metadata,
+          ...targetProjectMeta,
           custom_fields: updatedFields,
         }
       });
-      toast.success(editingFieldId ? 'Field updated.' : 'Custom field added.');
+      toast.success(editingFieldId ? 'Field updated for this project.' : `Custom field added to ${targetProject.name}.`);
       setIsFieldModalOpen(false);
       resetFieldForm();
     } catch {
@@ -180,27 +195,35 @@ export function InventoryPage() {
 
   const handleDeleteField = async (fieldId: string) => {
     if (!isAdmin || !selectedProject) return;
-    const confirmed = await dialog.confirm('Deleting this field will also remove its logged values from all units. Are you sure?', {
+    const confirmed = await dialog.confirm(`Deleting this field will remove it from ${selectedProject.name}. Are you sure?`, {
       variant: 'danger',
       confirmText: 'Delete Field',
       title: 'Delete Custom Field'
     });
     if (!confirmed) return;
 
-    const updatedFields = customFields.filter((f: CustomField) => f.id !== fieldId);
+    const targetProjectMeta = typeof selectedProject?.metadata === 'string'
+      ? (() => { try { return JSON.parse(selectedProject.metadata); } catch { return {}; } })()
+      : (selectedProject?.metadata || {});
+    const targetProjectFields: CustomField[] = Array.isArray(targetProjectMeta?.custom_fields)
+      ? targetProjectMeta.custom_fields
+      : [];
+
+    const updatedFields = targetProjectFields.filter((f: CustomField) => f.id !== fieldId);
     try {
+      const pId = selectedProject._id || selectedProject.id;
       await updateProjectMutation({
-        id: selectedProject._id,
+        id: pId,
         name: selectedProject.name,
         project_type: selectedProject.project_type || 'Other',
         status: selectedProject.status || 'Running',
         is_active: selectedProject.is_active,
         metadata: {
-          ...selectedProject.metadata,
+          ...targetProjectMeta,
           custom_fields: updatedFields,
         }
       });
-      toast.success('Field deleted.');
+      toast.success(`Field removed from ${selectedProject.name}.`);
     } catch {
       toast.error('Failed to delete field.');
     }
@@ -765,13 +788,55 @@ export function InventoryPage() {
           ) : (
             // Custom Fields Configuration Tab (Admin Only)
             <div className="space-y-6">
-              <Card className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
-                <CardHeader className="pb-4 border-b border-slate-100 dark:border-white/5 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Configured Project Specifications</CardTitle>
-                    <CardDescription>Define custom attributes for units in this project (e.g. Facing, Area, Floor, BHK).</CardDescription>
+              {/* Active Project Banner and Switcher */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-900/50 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm">
+                    <Building2 className="w-5 h-5" />
                   </div>
-                  <Button variant="primary" onClick={() => { resetFieldForm(); setIsFieldModalOpen(true); }}>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Project Specific Configuration</span>
+                      <Badge variant="outline" className="text-[11px] font-bold">
+                        {selectedProject?.project_type || 'Property'}
+                      </Badge>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                      {selectedProject?.name || 'Select a Project'}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Quick Project Switcher */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Configure for Project:</span>
+                  <select
+                    value={selectedProjectId || ''}
+                    onChange={(e) => {
+                      const newPid = e.target.value as Id<"projects">;
+                      setSelectedProjectId(newPid);
+                      setCustomFilters({});
+                    }}
+                    className="px-3 py-2 text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {projects?.map((p: any) => (
+                      <option key={p._id || p.id} value={p._id || p.id}>
+                        {p.name} ({p.project_type || 'Property'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <Card className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
+                <CardHeader className="pb-4 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Configured Specifications for {selectedProject?.name}</CardTitle>
+                    <CardDescription>
+                      These custom attributes belong exclusively to <strong>{selectedProject?.name}</strong> ({selectedProject?.project_type || 'Property'}). Units created for other projects will not show these fields unless defined there as well.
+                    </CardDescription>
+                  </div>
+                  <Button variant="primary" onClick={() => { resetFieldForm(); setModalFieldProjectId(selectedProjectId || ''); setIsFieldModalOpen(true); }}>
                     <Plus size={16} className="mr-1.5" /> Add Custom Field
                   </Button>
                 </CardHeader>
@@ -779,9 +844,9 @@ export function InventoryPage() {
                   {customFields.length === 0 ? (
                     <div className="text-center py-16 text-slate-400 max-w-md mx-auto space-y-3">
                       <Sparkles className="mx-auto h-12 w-12 text-slate-300" />
-                      <h4 className="text-base font-bold">No Custom Fields Configured</h4>
+                      <h4 className="text-base font-bold">No Custom Fields for {selectedProject?.name}</h4>
                       <p className="text-sm">
-                        Create fields like "Facing" or "Area" so agents can filter plots or flats correctly.
+                        Create attributes like {selectedProject?.project_type?.toLowerCase().includes('land') ? '"Plot Area" or "Road Width"' : '"House Configuration" or "Facing"'} specifically for this project.
                       </p>
                     </div>
                   ) : (
@@ -840,15 +905,97 @@ export function InventoryPage() {
       <Modal
         isOpen={isFieldModalOpen}
         onClose={() => setIsFieldModalOpen(false)}
-        title={editingFieldId ? "Edit Custom Field" : "Create Custom Field"}
+        title={editingFieldId ? "Edit Custom Field" : "Create Custom Field for Project"}
       >
         <form onSubmit={handleSaveField} className="space-y-4">
+          {/* Target Project Dropdown inside Field Modal */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              Configure for Project <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={activeFieldProjectId || ''}
+              onChange={(e) => {
+                const pid = e.target.value as Id<"projects">;
+                setModalFieldProjectId(pid);
+                if (pid) setSelectedProjectId(pid);
+              }}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm font-medium"
+            >
+              <option value="">-- Select Project * --</option>
+              {projects?.map((p: any) => (
+                <option key={p._id || p.id} value={p._id || p.id}>
+                  {p.name} ({p.project_type || 'Property'})
+                </option>
+              ))}
+            </select>
+            {activeFieldProject && (
+              <div className="mt-1.5 flex items-center justify-between gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md border border-blue-200/50 dark:border-blue-900/50">
+                <span>Target: <strong>{activeFieldProject.name}</strong></span>
+                <span className="font-semibold uppercase text-[10px]">{activeFieldProject.project_type || 'General'}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Specification Templates */}
+          {!editingFieldId && (
+            <div>
+              <span className="text-xs font-semibold text-slate-500 block mb-1.5">
+                Quick Suggestions for {activeFieldProject?.project_type || 'this project'}:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  (activeFieldProject?.project_type || '').toLowerCase().includes('land') ||
+                  (activeFieldProject?.project_type || '').toLowerCase().includes('plot')
+                    ? [
+                        { label: 'Plot Area (sq ft)', type: 'number' },
+                        { label: 'Facing', type: 'select', opts: 'East, West, North, South, North-East, South-West' },
+                        { label: 'Road Width (ft)', type: 'number' },
+                        { label: 'Plot Dimensions', type: 'text' },
+                        { label: 'Corner Plot', type: 'select', opts: 'Yes, No' },
+                        { label: 'Boundary Wall', type: 'select', opts: 'Done, Not Done' }
+                      ]
+                    : (activeFieldProject?.project_type || '').toLowerCase().includes('commer')
+                    ? [
+                        { label: 'Carpet Area (sq ft)', type: 'number' },
+                        { label: 'Property Type', type: 'select', opts: 'Retail Shop, Office, Food Court, Warehouse' },
+                        { label: 'Floor Number', type: 'number' },
+                        { label: 'Power Backup', type: 'select', opts: '100% DG Backup, Standard, None' },
+                        { label: 'Furnishing Status', type: 'select', opts: 'Bare Shell, Warm Shell, Fully Furnished' }
+                      ]
+                    : [
+                        { label: 'House Configuration', type: 'select', opts: '1 BHK, 2 BHK, 3 BHK, 4 BHK, Villa, Penthouse' },
+                        { label: 'Facing', type: 'select', opts: 'East, West, North, South, North-East, South-West' },
+                        { label: 'Floor Number', type: 'number' },
+                        { label: 'Super Built-up Area (sq ft)', type: 'number' },
+                        { label: 'Carpet Area (sq ft)', type: 'number' },
+                        { label: 'Furnishing Status', type: 'select', opts: 'Unfurnished, Semi-Furnished, Fully-Furnished' }
+                      ]
+                ).map((sug, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setFieldLabel(sug.label);
+                      setFieldType(sug.type as any);
+                      if (sug.opts) setFieldOptions(sug.opts);
+                    }}
+                    className="px-2 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-800 dark:hover:bg-blue-900/40 text-xs rounded-md text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
+                  >
+                    + {sug.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Input
             label="Field Label"
             value={fieldLabel}
             onChange={(e) => setFieldLabel(e.target.value)}
             required
-            placeholder="e.g. Facing, Super Area, BHK"
+            placeholder="e.g. Facing, Super Area, BHK, Plot Size"
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -859,9 +1006,9 @@ export function InventoryPage() {
               onChange={(e) => setFieldType(e.target.value as any)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm"
             >
-              <option value="text">Text (e.g. Block Name, Sector)</option>
-              <option value="number">Number (e.g. Size sqft, Floor No)</option>
-              <option value="select">Dropdown Options (e.g. Facings list)</option>
+              <option value="text">Text (e.g. Dimensions, Block Name)</option>
+              <option value="number">Number (e.g. Area sqft, Floor No, Price)</option>
+              <option value="select">Dropdown Options (e.g. 2BHK/3BHK, Facing list)</option>
             </select>
           </div>
           {fieldType === 'select' && (
@@ -897,6 +1044,7 @@ export function InventoryPage() {
               onChange={(e) => {
                 const newPid = e.target.value as Id<"projects">;
                 setModalProjectId(newPid);
+                setCustomValues({}); // Cleanly reset custom values when project changes
                 if (newPid) {
                   setSelectedProjectId(newPid);
                 }
@@ -912,9 +1060,14 @@ export function InventoryPage() {
               ))}
             </select>
             {activeModalProject && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 rounded-md">
-                <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Project: <strong>{activeModalProject.name}</strong> • Type: {activeModalProject.project_type || 'Property'}</span>
+              <div className="mt-1.5 flex items-center justify-between gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-900/50">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Project: <strong>{activeModalProject.name}</strong></span>
+                </div>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold py-0.5">
+                  {activeModalProject.project_type || 'Property'}
+                </Badge>
               </div>
             )}
           </div>
@@ -924,7 +1077,7 @@ export function InventoryPage() {
             value={unitNumber}
             onChange={(e) => setUnitNumber(e.target.value)}
             required
-            placeholder="e.g. Flat-102, Plot-56"
+            placeholder="e.g. Flat-102, Plot-56, Shop-12"
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -942,36 +1095,50 @@ export function InventoryPage() {
             </select>
           </div>
 
-          {/* Render Custom Fields dynamically */}
-          {activeModalCustomFields.map((field) => (
-            <div key={field.id} className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {field.label}
-              </label>
-              {field.type === 'select' ? (
-                <select
-                  value={customValues[field.id] || ''}
-                  onChange={(e) => setCustomValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm"
-                >
-                  <option value="">-- Select {field.label} --</option>
-                  {field.options?.map((opt: string) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              ) : (
-                <Input
-                  type={field.type === 'number' ? 'number' : 'text'}
-                  value={customValues[field.id] || ''}
-                  onChange={(e) => setCustomValues(prev => ({
-                    ...prev,
-                    [field.id]: field.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value
-                  }))}
-                  placeholder={`Enter ${field.label.toLowerCase()}...`}
-                />
-              )}
+          {/* Render Custom Fields dynamically ONLY for this selected project */}
+          <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                {activeModalProject?.name} Specifications ({activeModalCustomFields.length})
+              </span>
             </div>
-          ))}
+
+            {activeModalCustomFields.length === 0 ? (
+              <div className="p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl text-xs text-slate-500">
+                No custom specifications configured for <strong>{activeModalProject?.name || 'this project'}</strong> yet. You can add specs anytime under the <em>Configure Specs / Fields</em> tab.
+              </div>
+            ) : (
+              activeModalCustomFields.map((field) => (
+                <div key={field.id} className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {field.label}
+                  </label>
+                  {field.type === 'select' ? (
+                    <select
+                      value={customValues[field.id] || ''}
+                      onChange={(e) => setCustomValues(prev => ({ ...prev, [field.id]: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-white text-sm"
+                    >
+                      <option value="">-- Select {field.label} --</option>
+                      {field.options?.map((opt: string) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      type={field.type === 'number' ? 'number' : 'text'}
+                      value={customValues[field.id] || ''}
+                      onChange={(e) => setCustomValues(prev => ({
+                        ...prev,
+                        [field.id]: field.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value
+                      }))}
+                      placeholder={`Enter ${field.label.toLowerCase()}...`}
+                    />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
 
           <ModalFooter>
             <Button type="button" variant="outline" onClick={() => setIsUnitModalOpen(false)}>Cancel</Button>
