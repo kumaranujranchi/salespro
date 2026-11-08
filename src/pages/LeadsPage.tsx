@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, usePaginatedQuery, useAction } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
@@ -111,6 +111,52 @@ export function LeadsPage() {
     api.leads.getExecutiveLeadStats,
     profile?.tenant_id && canViewAllLeads ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
   );
+
+  // Fetch active projects and staff for resilient name resolution and filtering
+  const projectsData = useQuery(
+    api.projects.listRunningProjects,
+    profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+  const staffData = useQuery(
+    api.profiles.listActiveStaff,
+    profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip"
+  );
+
+  const projectMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (projectsData || []).forEach((p: any) => {
+      if (p._id) map.set(String(p._id), p.name);
+      if (p.id) map.set(String(p.id), p.name);
+    });
+    return map;
+  }, [projectsData]);
+
+  const staffMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (staffData || []).forEach((s: any) => {
+      if (s._id) map.set(String(s._id), s.full_name);
+      if (s.id) map.set(String(s.id), s.full_name);
+    });
+    return map;
+  }, [staffData]);
+
+  const getLeadProjectName = (lead: any) => {
+    if (lead?.project?.name) return lead.project.name;
+    if (lead?.project_name) return lead.project_name;
+    if (lead?.project_id && projectMap.has(String(lead.project_id))) {
+      return projectMap.get(String(lead.project_id))!;
+    }
+    return 'Not Assigned';
+  };
+
+  const getLeadExecutiveName = (lead: any) => {
+    if (lead?.sales_executive?.full_name) return lead.sales_executive.full_name;
+    if (lead?.sales_executive_name) return lead.sales_executive_name;
+    if (lead?.sales_executive_id && staffMap.has(String(lead.sales_executive_id))) {
+      return staffMap.get(String(lead.sales_executive_id))!;
+    }
+    return 'Unassigned';
+  };
 
   // Fetch Leads using Paginated Query
   const { results: leads, status, loadMore } = usePaginatedQuery(
@@ -367,12 +413,12 @@ export function LeadsPage() {
       'Mobile': isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile,
       'Email': lead.email || '',
       'City': lead.city || '',
-      'Project': lead.project?.name || '',
+      'Project': getLeadProjectName(lead),
       'Budget': lead.budget_range || '',
       'Purpose': lead.purpose || '',
       'Status': lead.lead_status,
       'Score': lead.lead_score,
-      'Executive': lead.sales_executive?.full_name || '',
+      'Executive': getLeadExecutiveName(lead),
       'Follow-ups': lead.followup_count
     }));
 
@@ -812,7 +858,11 @@ export function LeadsPage() {
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               >
                 <option value="all">All Executives</option>
-                {/* We would ideally fetch executives here, but for now we'll just have the state */}
+                {(staffData || []).map((staffMember: any) => (
+                  <option key={staffMember._id || staffMember.id} value={staffMember._id || staffMember.id}>
+                    {staffMember.full_name}
+                  </option>
+                ))}
               </select>
             )}
 
@@ -986,15 +1036,15 @@ export function LeadsPage() {
 
                           {/* Project */}
                           <TableCell>
-                            <div className="text-sm">
-                              {lead.project?.name || 'Not Assigned'}
+                            <div className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                              {getLeadProjectName(lead)}
                             </div>
                           </TableCell>
 
                           {/* Executive */}
                           <TableCell>
-                            <div className="text-sm">
-                              {lead.sales_executive?.full_name || 'Unassigned'}
+                            <div className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                              {getLeadExecutiveName(lead)}
                             </div>
                           </TableCell>
 
@@ -1425,13 +1475,13 @@ export function LeadsPage() {
                       <div>
                         <span className="text-slate-400 block text-[10px] uppercase font-semibold">Project</span>
                         <span className="font-medium text-slate-700 dark:text-slate-200 truncate block">
-                          {lead.project?.name || 'Not Assigned'}
+                          {getLeadProjectName(lead)}
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block text-[10px] uppercase font-semibold">Assigned To</span>
                         <span className="font-medium text-slate-700 dark:text-slate-200 truncate block">
-                          {lead.sales_executive?.full_name || 'Unassigned'}
+                          {getLeadExecutiveName(lead)}
                         </span>
                       </div>
                     </div>

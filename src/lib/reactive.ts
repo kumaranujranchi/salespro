@@ -186,24 +186,55 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await leadsService.getStats(args?.tenant_id, args?.executive_id);
   }
   if (key.includes('leads.create') || key.includes('leads.createLead')) {
-    return await leadsService.create(args);
+    const res = await leadsService.create(args);
+    invalidateQuery('leads');
+    return res;
   }
   if (key.includes('leads.update') || key.includes('leads.updateLead')) {
-    return await leadsService.update(args?.id || args?._id, args);
+    const res = await leadsService.update(args?.id || args?._id, args);
+    invalidateQuery('leads');
+    return res;
   }
   if (key.includes('leads.convertLead') || key.includes('leads.convert')) {
-    return await leadsService.convert(args?.id || args?._id, args);
+    const res = await leadsService.convert(args?.id || args?._id, args);
+    invalidateQuery('leads');
+    invalidateQuery('sales');
+    return res;
   }
   if (key.includes('leads.bulkUpdateLeadStatus') || key.includes('leads.bulkUpdateStatus')) {
-    return await leadsService.bulkUpdateStatus(args?.ids || [], args?.lead_status);
+    const res = await leadsService.bulkUpdateStatus(args?.ids || [], args?.lead_status);
+    invalidateQuery('leads');
+    return res;
   }
   if (key.includes('leads.bulkInsertLeads') || key.includes('leads.bulkInsert')) {
     const res = await leadsService.bulkInsert(args);
     invalidateQuery('leads');
     return res;
   }
+  if (key.includes('leads.bulkAssignLeads') || key.includes('leads.bulkAssign')) {
+    const res = await leadsService.bulkAssign(args?.ids || [], args?.sales_executive_id);
+    invalidateQuery('leads');
+    return res;
+  }
+  if (key.includes('leads.bulkUpdateLeadProject') || key.includes('leads.bulkUpdateProject')) {
+    const res = await leadsService.bulkUpdateProject(args?.ids || [], args?.project_id);
+    invalidateQuery('leads');
+    return res;
+  }
+  if (key.includes('leads.deleteLead') || key.includes('leads.delete')) {
+    const res = await leadsService.delete(args?.id || args?._id);
+    invalidateQuery('leads');
+    return res;
+  }
+  if (key.includes('leads.bulkDeleteLeads') || key.includes('leads.bulkDelete')) {
+    const res = await leadsService.bulkDelete(args?.ids || []);
+    invalidateQuery('leads');
+    return res;
+  }
   if (key.includes('leads.assignLead') || key.includes('leads.assign')) {
-    return await leadsService.assign(args?.id || args?._id, args?.sales_executive_id);
+    const res = await leadsService.assign(args?.id || args?._id, args?.sales_executive_id);
+    invalidateQuery('leads');
+    return res;
   }
 
   // SALES & PAYMENTS

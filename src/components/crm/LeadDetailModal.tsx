@@ -259,7 +259,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
                 {lead.lead_score}
               </div>
               <div className="flex items-center gap-1.5">
-                <User size={14} /> {lead.sales_executive?.full_name?.split(' ')[0] || 'Unassigned'}
+                <User size={14} /> {lead.sales_executive?.full_name?.split(' ')[0] || (lead as any).sales_executive_name?.split(' ')[0] || 'Unassigned'}
               </div>
               <div className="flex items-center gap-1.5" title="Lead Source">
                 <Send size={14} className="rotate-45" /> {lead.lead_source}
@@ -349,7 +349,7 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Project:</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {lead.project?.name || 'Not Specified'}
+                  {lead.project?.name || (lead as any).project_name || 'Not Specified'}
                 </span>
               </div>
             </div>

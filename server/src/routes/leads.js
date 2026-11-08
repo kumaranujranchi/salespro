@@ -44,7 +44,12 @@ router.get('/', async (req, res) => {
     params.push(parseInt(limit, 10), parseInt(offset, 10));
 
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      project: r.project_name ? { id: r.project_id, _id: r.project_id, name: r.project_name } : (r.project_id ? { id: r.project_id, _id: r.project_id, name: 'Project' } : null),
+      sales_executive: r.sales_executive_name ? { id: r.sales_executive_id, _id: r.sales_executive_id, full_name: r.sales_executive_name } : (r.sales_executive_id ? { id: r.sales_executive_id, _id: r.sales_executive_id, full_name: 'Executive' } : null)
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -301,7 +306,7 @@ router.patch('/:id', async (req, res) => {
     const allowed = [
       'customer_name', 'mobile', 'email', 'lead_source', 'project_id',
       'sales_executive_id', 'budget_range', 'city', 'purpose',
-      'lead_status', 'lead_score', 'internal_notes'
+      'lead_status', 'lead_score', 'internal_notes', 'lead_date', 'preferred_locations'
     ];
 
     const fields = [];
@@ -413,9 +418,70 @@ router.post('/:id/assign', async (req, res) => {
     const { sales_executive_id } = req.body;
     await query(
       `UPDATE leads SET sales_executive_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
-      [sales_executive_id, id]
+      [sales_executive_id || null, id]
     );
     return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 5b. Bulk Assign Leads to Sales Executive
+router.post('/bulk-assign', async (req, res) => {
+  try {
+    const { ids, sales_executive_id } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+    await query(
+      `UPDATE leads SET sales_executive_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)`,
+      [sales_executive_id || null, ids]
+    );
+    return res.json({ success: true, count: ids.length });
+  } catch (err) {
+    console.error('Bulk assign error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 5c. Bulk Update Project for Leads
+router.post('/bulk-project', async (req, res) => {
+  try {
+    const { ids, project_id } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+    await query(
+      `UPDATE leads SET project_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)`,
+      [project_id || null, ids]
+    );
+    return res.json({ success: true, count: ids.length });
+  } catch (err) {
+    console.error('Bulk project error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Delete Lead
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await query(`DELETE FROM leads WHERE id = $1`, [id]);
+    return res.json({ success: true, id });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 6b. Bulk Delete Leads
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array is required' });
+    }
+    await query(`DELETE FROM leads WHERE id = ANY($1)`, [ids]);
+    return res.json({ success: true, count: ids.length });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

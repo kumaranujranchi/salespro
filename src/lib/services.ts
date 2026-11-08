@@ -80,6 +80,12 @@ export const leadsService = {
     }>('/leads/bulk-insert', data),
   assign: (id: string, executiveId: string) =>
     api.post<{ success: boolean }>(`/leads/${id}/assign`, { sales_executive_id: executiveId }),
+  bulkAssign: (ids: string[], sales_executive_id: string) =>
+    api.post<{ success: boolean; count: number }>('/leads/bulk-assign', { ids, sales_executive_id }),
+  bulkUpdateProject: (ids: string[], project_id: string) =>
+    api.post<{ success: boolean; count: number }>('/leads/bulk-project', { ids, project_id }),
+  delete: (id: string) => api.delete<{ success: boolean }>(`/leads/${id}`),
+  bulkDelete: (ids: string[]) => api.post<{ success: boolean; count: number }>('/leads/bulk-delete', { ids }),
 };
 
 export const salesService = {
