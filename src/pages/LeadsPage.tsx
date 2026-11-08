@@ -1039,7 +1039,7 @@ export function LeadsPage() {
                 onChange={(e) => setDateFilter(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               >
-                <option value="all">📅 All Dates</option>
+                <option value="all">All Dates</option>
                 <option value="today">Today</option>
                 <option value="yesterday">Yesterday</option>
                 <option value="this_week">This Week</option>
@@ -1073,9 +1073,9 @@ export function LeadsPage() {
               className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             >
               <option value="all">All Scores</option>
-              <option value="Hot">🔥 Hot</option>
-              <option value="Warm">⚡ Warm</option>
-              <option value="Cold">❄️ Cold</option>
+              <option value="Hot">Hot</option>
+              <option value="Warm">Warm</option>
+              <option value="Cold">Cold</option>
             </select>
 
             {/* Executive Filter */}
