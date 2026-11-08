@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import bcrypt from 'bcryptjs';
-import { isPlatformRole, requireRole } from '../middleware/auth.js';
+import { isPlatformRole, requireRole, sanitizeProfile } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
     sql += ` ORDER BY p.created_at ASC`;
 
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => sanitizeProfile(r)));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -86,7 +86,7 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
         targetTenantId, 
         cleanEmail, 
         cleanEmail, 
-        rawPass, 
+        null, 
         passwordHash, 
         full_name, 
         employee_id || null, 
@@ -104,7 +104,7 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
     );
 
     const user = result.rows[0];
-    return res.status(201).json({ ...user, _id: user.id });
+    return res.status(201).json(sanitizeProfile(user));
   } catch (err) {
     console.error('Create profile error:', err);
     return res.status(500).json({ error: err.message });
@@ -161,11 +161,10 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    // Handle password update if passed
+    // Handle password update if passed (strictly hashes with bcrypt and prevents plaintext storage)
     if (body.password) {
       const passwordHash = await bcrypt.hash(body.password, 10);
-      fields.push(`password = $${idx++}`);
-      values.push(body.password);
+      fields.push(`password = NULL`);
       fields.push(`password_hash = $${idx++}`);
       values.push(passwordHash);
     }
@@ -182,7 +181,7 @@ router.patch('/:id', async (req, res) => {
 
     if (updateRes.rows.length === 0) return res.status(404).json({ error: 'User profile not found' });
     const user = updateRes.rows[0];
-    return res.json({ success: true, ...user, _id: user.id });
+    return res.json({ success: true, ...sanitizeProfile(user) });
   } catch (err) {
     console.error('Update profile error:', err);
     return res.status(500).json({ error: err.message });

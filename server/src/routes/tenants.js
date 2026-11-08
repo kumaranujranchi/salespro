@@ -94,8 +94,8 @@ export async function registerTenantHandler(req, res) {
 
     await query(
       `INSERT INTO profiles (user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
-       VALUES ($1, $2, $3, $4, $5, 'ADMIN-001', $6, 'super_admin', $7, true, false)`,
-      [profileUserId, profileEmail, rawPass, passwordHash, user_full_name || 'Admin', contact_phone || null, tenant.id]
+       VALUES ($1, $2, NULL, $3, $4, 'ADMIN-001', $5, 'super_admin', $6, true, false)`,
+      [profileUserId, profileEmail, passwordHash, user_full_name || 'Admin', contact_phone || null, tenant.id]
     );
 
     // 3. Handle referral if present
@@ -143,10 +143,10 @@ router.post('/reset-user-password', requirePlatformAdmin, async (req, res) => {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const result = await query(
       `UPDATE profiles
-       SET password = $1, password_hash = $2, force_password_change = false, updated_at = CURRENT_TIMESTAMP
-       WHERE LOWER(email) = $3 OR LOWER(user_id) = $3 OR id::text = $3
+       SET password = NULL, password_hash = $1, force_password_change = false, updated_at = CURRENT_TIMESTAMP
+       WHERE LOWER(email) = $2 OR LOWER(user_id) = $2 OR id::text = $2
        RETURNING id, email`,
-      [newPassword, passwordHash, target]
+      [passwordHash, target]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });

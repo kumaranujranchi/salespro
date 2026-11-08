@@ -10,9 +10,29 @@ export function normalizeRole(role) {
   return String(role || '').toLowerCase().replace(/[\s-]+/g, '_');
 }
 
+/**
+ * Strips sensitive authentication fields (password, password_hash) from user objects
+ * before returning them to clients or storing in session payloads.
+ */
+export function sanitizeProfile(user) {
+  if (!user) return null;
+  const copy = { ...user };
+  delete copy.password;
+  delete copy.password_hash;
+  return {
+    ...copy,
+    _id: copy.id,
+    userId: copy.user_id || copy.email,
+  };
+}
+
 function jwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (secret) return secret;
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL SECURITY WARNING: JWT_SECRET is not set in production environment.');
+  }
 
   if (!warnedMissingSecret) {
     warnedMissingSecret = true;

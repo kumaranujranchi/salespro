@@ -2,16 +2,20 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { query } from '../db/index.js';
 import bcrypt from 'bcryptjs';
-import { isPlatformRole, requireAuth, signAuthToken } from '../middleware/auth.js';
+import { isPlatformRole, requireAuth, signAuthToken, sanitizeProfile } from '../middleware/auth.js';
+import { authRateLimiter, recordFailedLogin, resetFailedLogin } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-// 1. Sign In / Authentication
-router.post('/login', async (req, res) => {
+// 1. Sign In / Authentication (Protected with strict bcrypt comparison and brute-force rate limiter)
+router.post('/login', authRateLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email) {
+    const { email, password } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.trim()) {
       return res.status(400).json({ error: 'Email is required' });
+    }
+    if (!password || typeof password !== 'string' || !password.trim()) {
+      return res.status(400).json({ error: 'Password is required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -27,80 +31,76 @@ router.post('/login', async (req, res) => {
       [cleanEmail, lookupEmail]
     );
 
-    // Auto-seed admin if missing
+    // Auto-seed admin if missing and default credentials supplied
     if (result.rows.length === 0 && isSuperAdminEmail) {
-      let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
-      let tenantId = tenantRes.rows[0]?.id;
-      if (!tenantId) {
-        const newTenant = await query(
-          `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active)
-           VALUES ('SalesPro Core', 'default-tenant', '{"features": {"crm": true, "inventory": true, "reports": true, "site_visits": true, "incentives": true}}'::jsonb, 'active', 'enterprise', true)
-           RETURNING id`
-        );
-        tenantId = newTenant.rows[0].id;
-      }
+      if (password === 'Admin@123') {
+        let tenantRes = await query(`SELECT id FROM tenants LIMIT 1`);
+        let tenantId = tenantRes.rows[0]?.id;
+        if (!tenantId) {
+          const newTenant = await query(
+            `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active)
+             VALUES ('SalesPro Core', 'default-tenant', '{"features": {"crm": true, "inventory": true, "reports": true, "site_visits": true, "incentives": true}}'::jsonb, 'active', 'enterprise', true)
+             RETURNING id`
+          );
+          tenantId = newTenant.rows[0].id;
+        }
 
-      const rawPass = password || 'Admin@123';
-      const passwordHash = await bcrypt.hash(rawPass, 10);
-      const newProfile = await query(
-        `INSERT INTO profiles (user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
-         VALUES ($1, $2, $3, $4, 'Super Admin', 'ADM-001', '+91-0000000000', 'platform_admin', $5, true, false)
-         RETURNING *`,
-        [cleanEmail, cleanEmail, rawPass, passwordHash, tenantId]
-      );
-      result = await query(
-        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
-         FROM profiles p
-         LEFT JOIN tenants t ON p.tenant_id = t.id
-         WHERE p.id = $1 LIMIT 1`,
-        [newProfile.rows[0].id]
-      );
+        const passwordHash = await bcrypt.hash('Admin@123', 10);
+        const newProfile = await query(
+          `INSERT INTO profiles (user_id, email, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
+           VALUES ($1, $2, $3, 'Super Admin', 'ADM-001', '+91-0000000000', 'platform_admin', $4, true, false)
+           RETURNING *`,
+          [cleanEmail, cleanEmail, passwordHash, tenantId]
+        );
+        result = await query(
+          `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+           FROM profiles p
+           LEFT JOIN tenants t ON p.tenant_id = t.id
+           WHERE p.id = $1 LIMIT 1`,
+          [newProfile.rows[0].id]
+        );
+      }
     }
 
     if (result.rows.length === 0) {
+      recordFailedLogin(req, cleanEmail);
       return res.status(401).json({ error: 'Invalid email or password. Please try again.' });
     }
 
     let user = result.rows[0];
 
-    // Password validation logic:
+    // Strict Password validation logic:
+    // Requires exact bcrypt comparison against password_hash (or verified legacy plaintext)
     let isPasswordValid = false;
 
-    if (isSuperAdminEmail) {
-      // Super admin is always allowed to log in; automatically save whatever password they type!
-      isPasswordValid = true;
-    } else if (!user.password && !user.password_hash) {
-      // User created without password (legacy record or initial migration)
-      isPasswordValid = true;
-    } else if (user.password === 'Admin@123' && password) {
-      // Migrated user who received default fallback password 'Admin@123'
-      isPasswordValid = true;
-    } else if (password) {
-      if (user.password_hash) {
-        isPasswordValid = await bcrypt.compare(password, user.password_hash);
-      }
-      if (!isPasswordValid && (user.password === password || user.password_hash === password)) {
+    if (user.password_hash) {
+      isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    } else if (user.password) {
+      // Legacy plaintext migration check: MUST exactly match
+      if (user.password === password) {
         isPasswordValid = true;
+        // Upgrade user to secure bcrypt hash and erase plaintext password
+        try {
+          const upgradedHash = await bcrypt.hash(password, 10);
+          await query(
+            `UPDATE profiles SET password_hash = $1, password = NULL WHERE id = $2`,
+            [upgradedHash, user.id]
+          );
+          user.password_hash = upgradedHash;
+          user.password = null;
+        } catch (upgradeErr) {
+          console.error('Failed to upgrade user password hash:', upgradeErr);
+        }
       }
-    } else if (!password && (!user.password || user.password === 'Admin@123')) {
-      isPasswordValid = true;
     }
 
     if (!isPasswordValid) {
+      recordFailedLogin(req, cleanEmail);
       return res.status(401).json({ error: 'Invalid email or password. Please try again.' });
     }
 
-    // If new password provided by Super Admin or user with placeholder/unhashed password, update DB
-    if (password && (isSuperAdminEmail || user.password === 'Admin@123' || !user.password_hash)) {
-      try {
-        const newHash = await bcrypt.hash(password, 10);
-        await query(`UPDATE profiles SET password = $1, password_hash = $2 WHERE id = $3`, [password, newHash, user.id]);
-        user.password = password;
-        user.password_hash = newHash;
-      } catch (updateErr) {
-        console.error('Failed to update user password hash:', updateErr);
-      }
-    }
+    // Reset failed login count on successful authentication
+    resetFailedLogin(req, cleanEmail);
 
     // Auto promote designated platform admin
     if ((user.email === 'admin@realsalepro.com' || user.email === 'admin@salespro.com') && user.role !== 'platform_admin') {
@@ -114,13 +114,8 @@ router.post('/login', async (req, res) => {
       user.role = 'super_admin';
     }
 
-    // Map fields for client compatibility
-    const profile = {
-      ...user,
-      _id: user.id,
-      userId: user.user_id || user.email,
-      password: user.password,
-    };
+    // Return sanitized profile (never exposing plaintext password or hash)
+    const profile = sanitizeProfile(user);
 
     return res.json({ profile, token: signAuthToken(profile) });
   } catch (error) {
@@ -214,12 +209,7 @@ router.get('/profile', requireAuth, async (req, res) => {
       user.role = 'super_admin';
     }
 
-    return res.json({
-      ...user,
-      _id: user.id,
-      userId: user.user_id || user.email,
-      password: user.password,
-    });
+    return res.json(sanitizeProfile(user));
   } catch (error) {
     console.error('Get profile error:', error);
     return res.status(500).json({ error: 'Failed to fetch profile' });
@@ -484,11 +474,11 @@ router.post('/reset-password', async (req, res) => {
       const passwordHash = await bcrypt.hash(trimmedPass, 10);
       await query(
         `UPDATE profiles
-         SET password = $1, password_hash = $2, force_password_change = false, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $3`,
-        [trimmedPass, passwordHash, user.id]
+         SET password = NULL, password_hash = $1, force_password_change = false, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [passwordHash, user.id]
       );
-      user.password = trimmedPass;
+      user.password = null;
       user.password_hash = passwordHash;
     }
 
@@ -498,18 +488,14 @@ router.post('/reset-password', async (req, res) => {
       user.role = 'platform_admin';
     }
 
-    // Map user for client session
-    const profile = {
-      ...user,
-      _id: user.id,
-      userId: user.user_id || user.email,
-      password: user.password,
-    };
+    // Return safe profile and signed session token
+    const profile = sanitizeProfile(user);
 
     return res.json({
       success: true,
       message: 'Verified successfully! Logging in...',
       profile,
+      token: signAuthToken(profile),
     });
   } catch (error) {
     console.error('Reset password error:', error);
