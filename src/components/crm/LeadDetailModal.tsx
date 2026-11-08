@@ -33,8 +33,14 @@ export function LeadDetailModal({ isOpen, onClose, lead }: LeadDetailModalProps)
   const [showFollowupForm, setShowFollowupForm] = useState(false);
 
   // Backend queries
-  const followupsData = useQuery(api.followups.listByLead, lead ? { leadId: lead.id as Id<"leads"> } : "skip");
-  const followups = (followupsData || []) as LeadFollowup[];
+  const followupsData = useQuery(api.followups.listByLead, lead ? { leadId: (lead.id || lead._id) as Id<"leads"> } : "skip");
+  const followups = ((followupsData || []) as LeadFollowup[]).filter(
+    (f: any) => f && (
+      String(f.lead_id) === String(lead?.id) ||
+      String(f.lead_id) === String(lead?._id) ||
+      String(f.lead_id) === String(lead?.lead_id)
+    )
+  );
 
   // Backend mutations
   const addFollowupMutation = useMutation(api.followups.addFollowup);

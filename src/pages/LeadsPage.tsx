@@ -298,27 +298,39 @@ export function LeadsPage() {
   };
 
   const renderTimeline = (lead: LeadWithRelations, followupsList: any[]) => {
+    const currentLeadId = String(lead.id || lead._id || lead.lead_id || '');
+
+    // Strictly filter followups to this specific lead only to prevent any cross-lead bleeding
+    const validFollowups = (Array.isArray(followupsList) ? followupsList : []).filter(
+      (f: any) => f && (
+        String(f.lead_id) === String(lead.id) ||
+        String(f.lead_id) === String(lead._id) ||
+        String(f.lead_id) === String(lead.lead_id) ||
+        String(f.lead_id) === currentLeadId
+      )
+    );
+
     const events = [
       {
         id: 'creation',
         type: 'Creation',
-        date: lead._creationTime || new Date(lead.lead_date).getTime(),
+        date: lead._creationTime || (lead.lead_date ? new Date(lead.lead_date).getTime() : Date.now()),
         title: 'Lead Created',
-        description: `Source: ${lead.lead_source}`,
-        creator_name: 'System',
+        description: `Source: ${lead.lead_source || 'Direct'}`,
+        creator_name: (lead as any).created_by_name || lead.sales_executive?.full_name || (lead as any).sales_executive_name || 'System',
         previous_status: undefined,
         new_status: undefined,
         call_status: undefined,
         customer_response: undefined,
         next_followup_date: undefined,
       },
-      ...followupsList.map(f => ({
-        id: f._id,
+      ...validFollowups.map(f => ({
+        id: f._id || f.id,
         type: f.followup_type,
-        date: new Date(f.followup_date).getTime(),
-        title: `${f.followup_type} Update`,
+        date: new Date(f.followup_date || f.created_at || Date.now()).getTime(),
+        title: `${f.followup_type || 'Call'} Update`,
         description: f.discussion_summary,
-        creator_name: f.creator?.full_name || 'Unknown Agent',
+        creator_name: f.creator?.full_name || f.creator_name || 'Staff',
         previous_status: f.previous_status,
         new_status: f.new_status,
         call_status: f.call_status,
@@ -384,6 +396,12 @@ export function LeadsPage() {
             </div>
           );
         })}
+
+        {validFollowups.length === 0 && (
+          <div className="text-center py-3 px-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400">
+            No activity updates recorded yet for this lead.
+          </div>
+        )}
       </div>
     );
   };
@@ -970,8 +988,11 @@ export function LeadsPage() {
                     {leads.map((lead) => (
                       <Fragment key={lead.id}>
                         <TableRow
-                          className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'bg-red-50 dark:bg-red-950/25 border-l-4 border-l-red-500' : lead.overdue_followup ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${expandedLeadId === lead.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                          onClick={() => setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id)}
+                          className={`group cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' ? 'bg-red-50 dark:bg-red-950/25 border-l-4 border-l-red-500' : lead.overdue_followup ? 'bg-red-50/50 dark:bg-red-900/10' : ''} ${expandedLeadId === (lead.id || lead._id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                          onClick={() => {
+                            const thisId = lead.id || lead._id;
+                            setExpandedLeadId(expandedLeadId === thisId ? null : thisId);
+                          }}
                         >
                           <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
                             <input
@@ -1084,7 +1105,8 @@ export function LeadsPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setExpandedLeadId(expandedLeadId === lead.id ? null : lead.id);
+                                    const thisId = lead.id || lead._id;
+                                    setExpandedLeadId(expandedLeadId === thisId ? null : thisId);
                                   }}
                                   className={`px-2 py-1 text-xs font-semibold border dark:border-slate-700 ${
                                     lead.lead_status === 'Lost' || lead.lead_status === 'Disqualified' 
@@ -1138,7 +1160,7 @@ export function LeadsPage() {
                         </TableRow>
                         
                         {/* Expanded Content */}
-                        {expandedLeadId === lead.id && (
+                        {expandedLeadId === (lead.id || lead._id) && (
                           <TableRow className="bg-gray-50 dark:bg-slate-900/50">
                             <TableCell colSpan={8} className="p-0 border-t border-gray-100 dark:border-gray-700">
                               <motion.div

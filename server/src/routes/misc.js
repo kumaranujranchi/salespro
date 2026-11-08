@@ -9,21 +9,25 @@ const router = Router();
 router.get('/followups', async (req, res) => {
   try {
     const { lead_id, tenant_id } = req.query;
-    let sql = 'SELECT * FROM lead_followups WHERE 1=1';
-    const params = [];
 
-    if (lead_id) {
-      params.push(lead_id);
-      sql += ` AND lead_id = $${params.length}`;
-    }
-    if (tenant_id) {
-      params.push(tenant_id);
-      sql += ` AND tenant_id = $${params.length}`;
+    // Strict guard: Do not return random followups if lead_id is missing
+    if (!lead_id || lead_id === 'undefined' || lead_id === 'null') {
+      return res.json([]);
     }
 
-    sql += ' ORDER BY followup_date DESC';
-    const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    const sql = `
+      SELECT f.*, p.full_name as creator_name
+      FROM lead_followups f
+      LEFT JOIN profiles p ON f.created_by = p.id
+      WHERE (f.lead_id = $1 OR f.lead_id IN (SELECT lead_id FROM leads WHERE id = $1))
+      ORDER BY f.followup_date DESC
+    `;
+    const result = await query(sql, [lead_id]);
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      creator: r.creator_name ? { id: r.created_by, full_name: r.creator_name } : null
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

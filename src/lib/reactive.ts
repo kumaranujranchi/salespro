@@ -334,10 +334,15 @@ async function resolveApiCall(functionKey: any, args: any) {
 
   // MISC (FOLLOWUPS, NOTIFICATIONS, ANNOUNCEMENTS, SUPPORT, REFERRALS)
   if (key.includes('followups.listByLead') || key.includes('followups.list')) {
-    return await miscService.listFollowups(args?.lead_id);
+    const leadId = args?.leadId || args?.lead_id || args?.id || args?._id;
+    if (!leadId || leadId === 'skip' || leadId === 'undefined') return [];
+    return await miscService.listFollowups(leadId);
   }
   if (key.includes('followups.add') || key.includes('followups.create')) {
-    return await miscService.addFollowup(args);
+    const res = await miscService.addFollowup(args);
+    invalidateQuery('followups');
+    invalidateQuery('leads');
+    return res;
   }
   if (key.includes('notifications.list')) {
     return await miscService.listNotifications(args?.user_id);
