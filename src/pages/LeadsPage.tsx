@@ -35,6 +35,7 @@ export function LeadsPage() {
   const isFreePlan = tenant?.plan_tier === 'free';
   const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
   const isAdminUser = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin';
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
   const dialog = useDialog();
   const toast = useToast();
   const navigate = useNavigate();
@@ -422,6 +423,10 @@ export function LeadsPage() {
   };
 
   const handleExportCSV = () => {
+    if (!isSuperAdmin) {
+      toast.error('Only Super Admin can export leads.');
+      return;
+    }
     if (leads.length === 0) return;
 
     const dataToExport = leads.map(lead => ({
@@ -493,7 +498,10 @@ export function LeadsPage() {
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return;
+    if (!isSuperAdmin) {
+      toast.error('Only Super Admin can delete leads.');
+      return;
+    }
 
     const confirmed = await dialog.confirm(
       'Are you sure you want to delete this lead? This action cannot be undone.',
@@ -515,7 +523,10 @@ export function LeadsPage() {
   };
 
   const handleBulkDelete = async () => {
-    if (profile?.role !== 'admin' && profile?.role !== 'super_admin') return;
+    if (!isSuperAdmin) {
+      toast.error('Only Super Admin can delete leads.');
+      return;
+    }
 
     const confirmed = await dialog.confirm(
       `Are you sure you want to delete ${selectedLeadIds.length} leads? This action cannot be undone.`,
@@ -647,10 +658,12 @@ export function LeadsPage() {
 
           {canCreateLead && (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExportCSV} className="hidden md:flex">
-                <Download size={18} className="mr-2" />
-                Export CSV
-              </Button>
+              {isSuperAdmin && (
+                <Button variant="outline" onClick={handleExportCSV} className="hidden md:flex">
+                  <Download size={18} className="mr-2" />
+                  Export CSV
+                </Button>
+              )}
               <Button variant="outline" onClick={handleBulkImport} className="hidden md:flex">
                 <Upload size={18} className="mr-2" />
                 Import
@@ -925,7 +938,7 @@ export function LeadsPage() {
           <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 whitespace-nowrap text-xs shrink-0" onClick={() => setSelectedLeadIds([])}>
             Cancel
           </Button>
-          {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
+          {isSuperAdmin && (
             <Button 
               size="sm" 
               variant={isFreePlan ? "outline" : "danger"} 
@@ -1145,7 +1158,7 @@ export function LeadsPage() {
                                      icon: RefreshCw,
                                      onClick: () => handleReopenLead(lead.id)
                                    }] : []),
-                                  ...(profile?.role === 'admin' || profile?.role === 'super_admin' ? [{
+                                  ...(isSuperAdmin ? [{
                                     label: isFreePlan ? 'Delete (Pro Feature)' : 'Delete',
                                     icon: isFreePlan ? Lock : Trash2,
                                     variant: isFreePlan ? 'default' as const : 'danger' as const,

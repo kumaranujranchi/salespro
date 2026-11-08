@@ -465,6 +465,10 @@ router.post('/bulk-project', async (req, res) => {
 // 6. Delete Lead
 router.delete('/:id', async (req, res) => {
   try {
+    const role = req.user?.role;
+    if (role !== 'super_admin' && role !== 'platform_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can delete leads' });
+    }
     const { id } = req.params;
     await query(`DELETE FROM leads WHERE id = $1`, [id]);
     return res.json({ success: true, id });
@@ -476,6 +480,10 @@ router.delete('/:id', async (req, res) => {
 // 6b. Bulk Delete Leads
 router.post('/bulk-delete', async (req, res) => {
   try {
+    const role = req.user?.role;
+    if (role !== 'super_admin' && role !== 'platform_admin') {
+      return res.status(403).json({ error: 'Only Super Admin can delete leads' });
+    }
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: 'ids array is required' });
