@@ -54,6 +54,19 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
 
     const cleanEmail = email.trim().toLowerCase();
 
+    // Validate phone number
+    let normalizedPhone = null;
+    if (phone && String(phone).trim()) {
+      const cleanPhone = String(phone).replace(/\D/g, '');
+      normalizedPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91')
+        ? cleanPhone.slice(2)
+        : (cleanPhone.length === 11 && cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone);
+
+      if (normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone) || /^(\d)\1{9}$/.test(normalizedPhone)) {
+        return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number' });
+      }
+    }
+
     // Check duplicate email
     const existing = await query('SELECT id FROM profiles WHERE LOWER(email) = $1', [cleanEmail]);
     if (existing.rows.length > 0) {
@@ -77,7 +90,7 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
         passwordHash, 
         full_name, 
         employee_id || null, 
-        phone || null, 
+        normalizedPhone || null, 
         role || 'sales_executive',
         department_id || null, 
         reporting_manager_id || null, 
@@ -111,6 +124,18 @@ router.patch('/:id', async (req, res) => {
     }
 
     const body = req.body || {};
+
+    if (body.phone !== undefined && body.phone !== null && String(body.phone).trim() !== '') {
+      const cleanPhone = String(body.phone).replace(/\D/g, '');
+      const normalizedPhone = cleanPhone.length === 12 && cleanPhone.startsWith('91')
+        ? cleanPhone.slice(2)
+        : (cleanPhone.length === 11 && cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone);
+
+      if (normalizedPhone.length !== 10 || !/^[6-9]\d{9}$/.test(normalizedPhone) || /^(\d)\1{9}$/.test(normalizedPhone)) {
+        return res.status(400).json({ error: 'Please enter a valid 10-digit mobile number' });
+      }
+      body.phone = normalizedPhone;
+    }
 
     const allowed = [
       'full_name', 'phone', 'image_url', 'dob', 'marriage_anniversary', 'joining_date'

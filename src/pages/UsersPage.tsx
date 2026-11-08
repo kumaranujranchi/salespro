@@ -15,6 +15,42 @@ import { ActionMenu } from '../components/ui/ActionMenu';
 import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
+export function validatePhoneNumber(phone: string): string | null {
+  const trimmed = (phone || '').trim();
+  if (!trimmed) {
+    return 'Phone number is required';
+  }
+
+  // Remove non-digit characters
+  const digits = trimmed.replace(/\D/g, '');
+
+  // Strip leading country code +91 or 0
+  let normalized = digits;
+  if (digits.length === 12 && digits.startsWith('91')) {
+    normalized = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith('0')) {
+    normalized = digits.slice(1);
+  }
+
+  if (normalized.length < 10) {
+    return `Phone number must be 10 digits (currently ${normalized.length})`;
+  }
+
+  if (normalized.length > 10) {
+    return `Phone number cannot exceed 10 digits (currently ${normalized.length})`;
+  }
+
+  if (!/^[6-9]/.test(normalized)) {
+    return 'Mobile number must start with 6, 7, 8, or 9';
+  }
+
+  if (/^(\d)\1{9}$/.test(normalized)) {
+    return 'Please enter a valid mobile number (repeated digits not allowed)';
+  }
+
+  return null;
+}
+
 export function UsersPage() {
   const { tenant, profile } = useAuth();
   const toast = useToast();
@@ -44,6 +80,7 @@ export function UsersPage() {
   });
 
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   const currentTenantId = tenant?._id || tenant?.id || profile?.tenant_id;
 
@@ -68,6 +105,32 @@ export function UsersPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    // Allow digits, spaces, hyphens, and leading +
+    val = val.replace(/[^\d+\s-]/g, '');
+    if (val.includes('+')) {
+      val = (val.startsWith('+') ? '+' : '') + val.replace(/\+/g, '');
+    }
+    if (val.length > 15) {
+      val = val.slice(0, 15);
+    }
+    setFormData(prev => ({ ...prev, phone: val }));
+
+    if (phoneError) {
+      const err = validatePhoneNumber(val);
+      setPhoneError(err || '');
+      if (!err && error) setError('');
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (formData.phone.trim()) {
+      const err = validatePhoneNumber(formData.phone);
+      setPhoneError(err || '');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       fullName: '', email: '', phone: '', employeeId: '', role: '', roleId: '',
@@ -75,6 +138,8 @@ export function UsersPage() {
       imageUrl: '', dob: '', marriageAnniversary: '', joiningDate: ''
     });
     setEditingUserId(null);
+    setPhoneError('');
+    setError('');
   };
 
   const handleCloseModal = () => {
@@ -85,6 +150,8 @@ export function UsersPage() {
   const handleEditUser = (user: any) => {
     if (isReadOnly) return;
     setEditingUserId(user._id || user.id);
+    setPhoneError('');
+    setError('');
     setFormData({
       fullName: user.full_name,
       email: user.email,
@@ -112,6 +179,21 @@ export function UsersPage() {
       return;
     }
     setError('');
+
+    // Validate phone number
+    const phoneErr = validatePhoneNumber(formData.phone);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
+      setError(phoneErr);
+      toast.error(phoneErr);
+      return;
+    }
+
+    const cleanDigits = formData.phone.replace(/\D/g, '');
+    const normalizedPhone = cleanDigits.length === 12 && cleanDigits.startsWith('91')
+      ? cleanDigits.slice(2)
+      : (cleanDigits.length === 11 && cleanDigits.startsWith('0') ? cleanDigits.slice(1) : cleanDigits);
+
     setIsSubmitting(true);
 
     try {
@@ -119,7 +201,7 @@ export function UsersPage() {
         await updateProfileMutation({
           id: editingUserId,
           full_name: formData.fullName,
-          phone: formData.phone || null,
+          phone: normalizedPhone,
           role: formData.role,
           role_id: formData.roleId as Id<"tenant_roles"> || null,
           department_id: formData.departmentId as Id<"departments"> || null,
@@ -138,7 +220,7 @@ export function UsersPage() {
           tenant_id: targetTenantId as Id<"tenants">,
           full_name: formData.fullName,
           email: formData.email,
-          phone: formData.phone || null,
+          phone: normalizedPhone,
           employee_id: formData.employeeId,
           role: formData.role,
           role_id: formData.roleId as Id<"tenant_roles"> || null,
@@ -323,7 +405,18 @@ export function UsersPage() {
               <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
               <Input label="Employee ID" name="employeeId" value={formData.employeeId} onChange={handleInputChange} required />
               <Input type="email" label="Email" name="email" value={formData.email} onChange={handleInputChange} required />
-              <Input label="Phone" name="phone" value={formData.phone} onChange={handleInputChange} />
+              <Input 
+                type="tel"
+                label="Phone" 
+                name="phone" 
+                value={formData.phone} 
+                onChange={handlePhoneChange} 
+                onBlur={handlePhoneBlur}
+                error={phoneError}
+                placeholder="e.g. 9876543210"
+                helperText={!phoneError ? "10-digit mobile number" : undefined}
+                required 
+              />
               <Select
                 label="Role"
                 name="roleId"
