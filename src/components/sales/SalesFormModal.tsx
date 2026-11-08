@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
@@ -28,6 +28,66 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
     // Backend queries
     const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
     const executives = useQuery(api.profiles.listExecutives, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
+    const staffList = useQuery(api.profiles.listActiveStaff, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
+
+    // Memoized dropdown options with automatic fallbacks so options are never empty
+    const executiveOptions = useMemo(() => {
+        const rawStaff = Array.isArray(staffList) ? staffList : [];
+        const rawExecs = Array.isArray(executives) ? executives : [];
+
+        // Build a Map by user ID to deduplicate and collect valid staff
+        const map = new Map<string, { id: string; name: string; role: string }>();
+
+        // 1. Add all executives
+        rawExecs.forEach((e: any) => {
+            const id = String(e._id || e.id);
+            if (id) map.set(id, { id, name: e.full_name, role: e.role || 'Sales Executive' });
+        });
+
+        // 2. Add all active staff (guarantees admins/leads can also be picked)
+        rawStaff.forEach((s: any) => {
+            const id = String(s._id || s.id);
+            if (id && !map.has(id)) {
+                map.set(id, { id, name: s.full_name, role: s.role || 'Staff' });
+            }
+        });
+
+        // 3. If editingSale already had an executive, ensure they are present in options
+        if (editingSale?.sales_executive_id) {
+            const exId = String(editingSale.sales_executive_id);
+            if (!map.has(exId)) {
+                const exName = editingSale.sales_executive?.name || editingSale.sales_executive?.full_name || editingSale.executive_name || 'Assigned Executive';
+                map.set(exId, { id: exId, name: exName, role: 'Executive' });
+            }
+        }
+
+        return Array.from(map.values()).map(item => {
+            const formattedRole = item.role ? ` (${item.role.replace(/_/g, ' ')})` : '';
+            return {
+                label: `${item.name}${formattedRole}`,
+                value: item.id
+            };
+        });
+    }, [executives, staffList, editingSale]);
+
+    const projectOptions = useMemo(() => {
+        const rawProjs = Array.isArray(projects) ? projects : [];
+        const map = new Map<string, string>();
+        rawProjs.forEach((p: any) => {
+            const id = String(p._id || p.id);
+            if (id) map.set(id, p.name);
+        });
+
+        if (editingSale?.project_id) {
+            const pid = String(editingSale.project_id);
+            if (!map.has(pid)) {
+                const pname = editingSale.project?.name || editingSale.project_name || 'Assigned Project';
+                map.set(pid, pname);
+            }
+        }
+
+        return Array.from(map.entries()).map(([value, label]) => ({ label, value }));
+    }, [projects, editingSale]);
 
     // Mutations
     const createSale = useMutation(api.sales.createSale);
@@ -265,6 +325,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                     customer_name: formData.customerName,
                     mobile: formData.customerPhone,
                     email: formData.customerEmail || undefined,
+                    sales_executive_id: formData.executiveId ? (formData.executiveId as Id<"profiles">) : undefined,
                 });
             } else {
                 // If creating, find lead by mobile or create it
@@ -427,10 +488,26 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 {activeTab === 'booking' && (
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <Select label="Project" value={formData.projectId} onChange={e => setFormData({ ...formData, projectId: e.target.value })} 
-                                options={projects.map(p => ({ label: p.name, value: p._id }))} required />
-                            <Select label="Sales Executive" value={formData.executiveId} onChange={e => setFormData({ ...formData, executiveId: e.target.value })} 
-                                options={executives.map(e => ({ label: e.full_name, value: e._id }))} required />
+                            <Select 
+                                label="Project" 
+                                value={formData.projectId} 
+                                onChange={e => setFormData({ ...formData, projectId: e.target.value })} 
+                                options={[
+                                    { label: 'Select Project', value: '' },
+                                    ...projectOptions
+                                ]} 
+                                required 
+                            />
+                            <Select 
+                                label="Sales Executive" 
+                                value={formData.executiveId} 
+                                onChange={e => setFormData({ ...formData, executiveId: e.target.value })} 
+                                options={[
+                                    { label: 'Select Sales Executive', value: '' },
+                                    ...executiveOptions
+                                ]} 
+                                required 
+                            />
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                             <Input label="Area (Sq Ft)" type="number" step="any" value={formData.areaSqft} onChange={e => setFormData({ ...formData, areaSqft: e.target.value })} required />

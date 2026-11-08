@@ -105,7 +105,10 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await profilesService.listByTenant(args?.tenant_id, { is_active: true });
   }
   if (key.includes('profiles.listExecutives')) {
-    return await profilesService.listByTenant(args?.tenant_id, { role: 'sales_executive', is_active: true });
+    const res = await profilesService.listByTenant(args?.tenant_id, { role: 'sales_executive', is_active: true });
+    if (Array.isArray(res) && res.length > 0) return res;
+    // Fallback: return all active staff so executive dropdowns are NEVER empty
+    return await profilesService.listByTenant(args?.tenant_id, { is_active: true });
   }
   if (key.includes('profiles.listDrivers')) {
     return await profilesService.listByTenant(args?.tenant_id, { role: 'driver', is_active: true });
@@ -254,7 +257,10 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await salesService.create(args);
   }
   if (key.includes('sales.updateSale') || key.includes('sales.update')) {
-    return await salesService.update(args?.id || args?._id, args);
+    const res = await salesService.update(args?.id || args?._id, args);
+    invalidateQuery('sales');
+    invalidateQuery('leads');
+    return res;
   }
   if (key.includes('payments.listPayments') || key.includes('payments.list')) {
     return await salesService.listPayments(args?.tenant_id, args?.sale_id);

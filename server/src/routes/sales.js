@@ -443,6 +443,27 @@ router.patch('/:id', async (req, res) => {
 
     if (fields.length === 0) return res.json({ success: true });
 
+    // If sales_executive_id is being updated, resolve team_leader_id and sync with connected lead
+    if (b.sales_executive_id) {
+      try {
+        const mgrRes = await query('SELECT reporting_manager_id FROM profiles WHERE id = $1', [b.sales_executive_id]);
+        if (mgrRes.rows.length > 0 && mgrRes.rows[0].reporting_manager_id) {
+          if (!fields.some(f => f.startsWith('team_leader_id'))) {
+            fields.push(`team_leader_id = $${idx++}`);
+            values.push(mgrRes.rows[0].reporting_manager_id);
+          }
+        }
+      } catch (e) {}
+
+      try {
+        await query(
+          `UPDATE leads SET sales_executive_id = $1, updated_at = CURRENT_TIMESTAMP 
+           WHERE id = (SELECT customer_id FROM sales WHERE id = $2)`,
+          [b.sales_executive_id, id]
+        );
+      } catch (e) {}
+    }
+
     fields.push(`updated_at = CURRENT_TIMESTAMP`);
     values.push(id);
 
