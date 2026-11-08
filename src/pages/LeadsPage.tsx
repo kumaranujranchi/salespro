@@ -29,6 +29,78 @@ import * as XLSX from 'xlsx';
 import { motion } from 'framer-motion';
 import { isLeadPhoneMasked, maskPhoneNumber } from '../utils/phoneMasking';
 
+function getLeadDate(lead: any): Date | null {
+  if (lead?.created_at) {
+    const d = new Date(lead.created_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (lead?.lead_date) {
+    const d = new Date(lead.lead_date);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (lead?.updated_at) {
+    const d = new Date(lead.updated_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function matchesDateFilter(lead: any, filter: string, customStart?: string, customEnd?: string): boolean {
+  if (filter === 'all' && !customStart && !customEnd) return true;
+  
+  const leadDate = getLeadDate(lead);
+  if (!leadDate) return true;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  if (filter === 'today') {
+    return leadDate >= startOfToday && leadDate <= endOfToday;
+  }
+
+  if (filter === 'yesterday') {
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const endOfYesterday = new Date(endOfToday);
+    endOfYesterday.setDate(endOfYesterday.getDate() - 1);
+    return leadDate >= startOfYesterday && leadDate <= endOfYesterday;
+  }
+
+  if (filter === 'this_week') {
+    const startOfWeek = new Date(startOfToday);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    return leadDate >= startOfWeek;
+  }
+
+  if (filter === 'this_month') {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    return leadDate >= startOfMonth;
+  }
+
+  if (filter === 'last_30_days') {
+    const thirtyDaysAgo = new Date(startOfToday);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return leadDate >= thirtyDaysAgo;
+  }
+
+  if (filter === 'custom' || customStart || customEnd) {
+    if (customStart) {
+      const start = new Date(customStart + 'T00:00:00');
+      if (!isNaN(start.getTime()) && leadDate < start) return false;
+    }
+    if (customEnd) {
+      const end = new Date(customEnd + 'T23:59:59.999');
+      if (!isNaN(end.getTime()) && leadDate > end) return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
 export function LeadsPage() {
   const { profile, tenant } = useAuth();
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
@@ -89,16 +161,43 @@ export function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
     normalizedRole === 'sales_executive'
   );
 
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() ||
+    statusFilter !== 'all' ||
+    scoreFilter !== 'all' ||
+    dateFilter !== 'all' ||
+    executiveFilter !== 'all' ||
+    customStartDate ||
+    customEndDate
+  );
+
+  const resetAllFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setScoreFilter('all');
+    setDateFilter('all');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setExecutiveFilter('all');
+    setShowOnlyMyLeads(normalizedRole === 'sales_executive');
+  };
+
   // Dashboard Stats using optimized query
   const statsData = useQuery(api.leads.getDashboardStats, 
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
-      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : undefined,
+      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : (executiveFilter !== 'all' ? executiveFilter : undefined),
+      dateFilter,
+      startDate: customStartDate || undefined,
+      endDate: customEndDate || undefined,
       callerProfileId: profile.id as Id<"profiles">
     } : "skip"
   );
@@ -160,18 +259,66 @@ export function LeadsPage() {
   };
 
   // Fetch Leads using Paginated Query
-  const { results: leads, status, loadMore } = usePaginatedQuery(
+  const { results: rawLeads, status, loadMore } = usePaginatedQuery(
     api.leads.listLeadsByTenant,
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
       showOnlyMyLeads,
       profileId: profile.id as Id<"profiles">,
       statusFilter,
+      scoreFilter,
       executiveFilter,
-      searchQuery: searchTerm
+      searchQuery: searchTerm,
+      dateFilter,
+      startDate: customStartDate || undefined,
+      endDate: customEndDate || undefined,
     } : "skip",
     { initialNumItems: 50 }
   );
+
+  // Client-side filtering ensures instant response and keeps table & cards in sync
+  const leads = useMemo(() => {
+    let list: LeadWithRelations[] = Array.isArray(rawLeads) ? (rawLeads as LeadWithRelations[]) : [];
+
+    // Status filter
+    if (statusFilter && statusFilter !== 'all') {
+      if (statusFilter === 'active') {
+        list = list.filter(l => !['Lost', 'Disqualified', 'Closed'].includes(l.lead_status));
+      } else {
+        list = list.filter(l => l.lead_status === statusFilter);
+      }
+    }
+
+    // Score filter
+    if (scoreFilter && scoreFilter !== 'all') {
+      list = list.filter(l => (l.lead_score || '').toLowerCase() === scoreFilter.toLowerCase());
+    }
+
+    // Executive filter
+    if (executiveFilter && executiveFilter !== 'all') {
+      list = list.filter(l => String(l.sales_executive_id) === String(executiveFilter));
+    }
+
+    // Date filter
+    if (dateFilter && dateFilter !== 'all') {
+      list = list.filter(l => matchesDateFilter(l, dateFilter, customStartDate, customEndDate));
+    } else if (customStartDate || customEndDate) {
+      list = list.filter(l => matchesDateFilter(l, 'custom', customStartDate, customEndDate));
+    }
+
+    // Search query
+    if (searchTerm && searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim();
+      list = list.filter(l => 
+        (l.customer_name || '').toLowerCase().includes(q) ||
+        (l.mobile || '').toLowerCase().includes(q) ||
+        (l.lead_id || '').toLowerCase().includes(q) ||
+        (l.city || '').toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [rawLeads, statusFilter, scoreFilter, executiveFilter, dateFilter, customStartDate, customEndDate, searchTerm]);
 
   const loading = status === "LoadingFirstPage";
 
@@ -431,7 +578,7 @@ export function LeadsPage() {
 
     const dataToExport = leads.map(lead => ({
       'Lead ID': lead.lead_id,
-      'Date': new Date(lead.lead_date).toLocaleDateString(),
+      'Date': lead.lead_date ? new Date(lead.lead_date).toLocaleDateString() : (lead.created_at ? new Date(lead.created_at).toLocaleDateString() : new Date().toLocaleDateString()),
       'Customer Name': lead.customer_name,
       'Mobile': isPhoneMasked ? maskPhoneNumber(lead.mobile) : lead.mobile,
       'Email': lead.email || '',
@@ -577,20 +724,53 @@ export function LeadsPage() {
     return <Badge variant={variants[status as keyof typeof variants] as any}>{status}</Badge>;
   };
 
-  // Statistics from Server
-  const stats = statsData || {
-    totalLeads: 0,
-    newLeads: 0,
-    qualified: 0,
-    siteVisitDone: 0,
-    converted: 0,
-    lost: 0,
-    inProgress: 0,
-    adsLeads: 0,
-    walkInLeads: 0,
-    referenceLeads: 0,
-    channelPartnerLeads: 0
-  };
+  // Statistics with reliable fallback to guarantee cards always show actual numbers (never undefined or blank)
+  const stats = useMemo(() => {
+    const sTotal = statsData?.totalLeads ?? statsData?.total_leads;
+    const sNew = statsData?.newLeads ?? statsData?.new_leads;
+    const sQual = statsData?.qualified ?? statsData?.qualified_leads;
+    const sInProg = statsData?.inProgress ?? statsData?.in_progress_leads;
+    const sConv = statsData?.converted ?? statsData?.converted_leads;
+
+    const hasActiveFilter = statusFilter !== 'all' || scoreFilter !== 'all' || executiveFilter !== 'all' || dateFilter !== 'all' || !!customStartDate || !!customEndDate || Boolean(searchTerm.trim());
+
+    // When filters are active and leads are loaded, prioritize filtered lead counts
+    if (hasActiveFilter && rawLeads && rawLeads.length > 0) {
+      return {
+        totalLeads: leads.length,
+        newLeads: leads.filter(l => l.lead_status === 'New').length,
+        qualified: leads.filter(l => l.lead_status === 'Qualified').length,
+        inProgress: leads.filter(l => ['In Progress', 'Contacted', 'Negotiation', 'Site Visit Scheduled'].includes(l.lead_status)).length,
+        converted: leads.filter(l => l.lead_status === 'Converted').length,
+        siteVisitDone: 0,
+        lost: leads.filter(l => ['Lost', 'Disqualified'].includes(l.lead_status)).length,
+      };
+    }
+
+    // If server stats available, use them with proper number conversion
+    if (sTotal !== undefined && sTotal !== null) {
+      return {
+        totalLeads: Number(sTotal) || 0,
+        newLeads: Number(sNew) || 0,
+        qualified: Number(sQual) || 0,
+        inProgress: Number(sInProg) || 0,
+        converted: Number(sConv) || 0,
+        siteVisitDone: Number(statsData?.siteVisitDone ?? statsData?.site_visit_leads) || 0,
+        lost: Number(statsData?.lost ?? statsData?.lost_leads) || 0,
+      };
+    }
+
+    // Fallback directly to leads in state
+    return {
+      totalLeads: leads.length,
+      newLeads: leads.filter(l => l.lead_status === 'New').length,
+      qualified: leads.filter(l => l.lead_status === 'Qualified').length,
+      inProgress: leads.filter(l => ['In Progress', 'Contacted', 'Negotiation', 'Site Visit Scheduled'].includes(l.lead_status)).length,
+      converted: leads.filter(l => l.lead_status === 'Converted').length,
+      siteVisitDone: 0,
+      lost: leads.filter(l => ['Lost', 'Disqualified'].includes(l.lead_status)).length,
+    };
+  }, [statsData, leads, rawLeads, statusFilter, scoreFilter, executiveFilter, dateFilter, customStartDate, customEndDate, searchTerm]);
 
   if (!isCRMActive) {
     return (
@@ -838,25 +1018,42 @@ export function LeadsPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Search leads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               />
+            </div>
+
+            {/* Date Filter */}
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              >
+                <option value="all">📅 All Dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_30_days">Last 30 Days</option>
+                <option value="custom">Custom Date Range...</option>
+              </select>
             </div>
 
             {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             >
               <option value="active">Active Leads</option>
               <option value="all">All Leads (incl. Lost)</option>
@@ -873,20 +1070,20 @@ export function LeadsPage() {
             <select
               value={scoreFilter}
               onChange={(e) => setScoreFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
             >
               <option value="all">All Scores</option>
-              <option value="Hot">Hot</option>
-              <option value="Warm">Warm</option>
-              <option value="Cold">Cold</option>
+              <option value="Hot">🔥 Hot</option>
+              <option value="Warm">⚡ Warm</option>
+              <option value="Cold">❄️ Cold</option>
             </select>
 
             {/* Executive Filter */}
-            {canViewAllLeads && (
+            {canViewAllLeads ? (
               <select
                 value={executiveFilter}
                 onChange={(e) => setExecutiveFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
               >
                 <option value="all">All Executives</option>
                 {(staffData || []).map((staffMember: any) => (
@@ -895,22 +1092,73 @@ export function LeadsPage() {
                   </option>
                 ))}
               </select>
-            )}
+            ) : null}
 
-            {/* My Leads Toggle */}
-            {canViewAllLeads && (
-              <div className="flex items-center">
+            {/* My Leads Toggle & Reset Button */}
+            <div className="flex items-center gap-2">
+              {canViewAllLeads && (
                 <Button
                   variant={showOnlyMyLeads ? 'primary' : 'outline'}
                   onClick={() => setShowOnlyMyLeads(!showOnlyMyLeads)}
-                  className="w-full"
+                  className="w-full text-xs"
                   size="sm"
                 >
-                  {showOnlyMyLeads ? 'My Leads' : 'All Leads'}
+                  {showOnlyMyLeads ? 'My Leads' : 'All Team'}
                 </Button>
-              </div>
-            )}
+              )}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  onClick={resetAllFilters}
+                  size="sm"
+                  className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 whitespace-nowrap"
+                  title="Reset all filters"
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Custom Date Range Picker */}
+          {dateFilter === 'custom' && (
+            <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex flex-wrap items-center gap-3 animate-in fade-in-50">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <Calendar size={14} className="text-[#1673FF]" />
+                Custom Date Range:
+              </span>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">From:</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">To:</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1673FF] dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
+              </div>
+              {(customStartDate || customEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                  }}
+                  className="text-xs text-red-500 hover:underline font-medium"
+                >
+                  Clear Range
+                </button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

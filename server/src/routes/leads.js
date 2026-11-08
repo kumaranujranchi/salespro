@@ -9,7 +9,21 @@ const router = Router();
 // 1. List Leads with filtering and search
 router.get('/', async (req, res) => {
   try {
-    const { tenant_id, status, executive_id, search, project_id, limit = 100, offset = 0 } = req.query;
+    const { 
+      tenant_id, 
+      status, statusFilter, 
+      executive_id, executiveFilter, 
+      search, searchQuery, 
+      project_id, 
+      score, scoreFilter,
+      date_filter, dateFilter,
+      start_date, startDate,
+      end_date, endDate,
+      showOnlyMyLeads,
+      profileId,
+      limit = 200, offset = 0 
+    } = req.query;
+
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id is required' });
 
     let sql = `
@@ -23,21 +37,71 @@ router.get('/', async (req, res) => {
     `;
     const params = [tenant_id];
 
-    if (status && status !== 'all') {
-      params.push(status);
-      sql += ` AND l.lead_status = $${params.length}`;
+    // Status filter
+    const effStatus = status || statusFilter;
+    if (effStatus && effStatus !== 'all') {
+      if (effStatus === 'active') {
+        sql += ` AND l.lead_status NOT IN ('Lost', 'Disqualified', 'Closed')`;
+      } else {
+        params.push(effStatus);
+        sql += ` AND l.lead_status = $${params.length}`;
+      }
     }
-    if (executive_id && executive_id !== 'all') {
-      params.push(executive_id);
+
+    // Score filter
+    const effScore = score || scoreFilter;
+    if (effScore && effScore !== 'all') {
+      params.push(effScore);
+      sql += ` AND l.lead_score ILIKE $${params.length}`;
+    }
+
+    // Executive filter
+    let effExec = executive_id || executiveFilter;
+    if (showOnlyMyLeads === 'true' || showOnlyMyLeads === true) {
+      effExec = profileId || req.user?.id;
+    }
+    if (effExec && effExec !== 'all') {
+      params.push(effExec);
       sql += ` AND l.sales_executive_id = $${params.length}`;
     }
+
+    // Project filter
     if (project_id && project_id !== 'all') {
       params.push(project_id);
       sql += ` AND l.project_id = $${params.length}`;
     }
-    if (search) {
-      params.push(`%${search}%`);
-      sql += ` AND (l.customer_name ILIKE $${params.length} OR l.mobile ILIKE $${params.length} OR l.lead_id ILIKE $${params.length})`;
+
+    // Search query
+    const effSearch = search || searchQuery;
+    if (effSearch && String(effSearch).trim()) {
+      params.push(`%${String(effSearch).trim()}%`);
+      sql += ` AND (l.customer_name ILIKE $${params.length} OR l.mobile ILIKE $${params.length} OR l.lead_id ILIKE $${params.length} OR l.city ILIKE $${params.length})`;
+    }
+
+    // Date filter
+    const effDateFilter = date_filter || dateFilter;
+    const effStart = start_date || startDate;
+    const effEnd = end_date || endDate;
+
+    if (effDateFilter === 'today') {
+      sql += ` AND DATE(COALESCE(l.created_at, NOW())) = CURRENT_DATE`;
+    } else if (effDateFilter === 'yesterday') {
+      sql += ` AND DATE(COALESCE(l.created_at, NOW())) = CURRENT_DATE - INTERVAL '1 day'`;
+    } else if (effDateFilter === 'this_week') {
+      sql += ` AND COALESCE(l.created_at, NOW()) >= date_trunc('week', CURRENT_TIMESTAMP)`;
+    } else if (effDateFilter === 'this_month') {
+      sql += ` AND COALESCE(l.created_at, NOW()) >= date_trunc('month', CURRENT_TIMESTAMP)`;
+    } else if (effDateFilter === 'last_30_days') {
+      sql += ` AND COALESCE(l.created_at, NOW()) >= CURRENT_TIMESTAMP - INTERVAL '30 days'`;
+    } else if (effDateFilter === 'custom' || effStart || effEnd) {
+      if (effStart) {
+        params.push(effStart);
+        sql += ` AND DATE(COALESCE(l.created_at, NOW())) >= $${params.length}::date`;
+      }
+      if (effEnd) {
+        params.push(effEnd);
+        sql += ` AND DATE(COALESCE(l.created_at, NOW())) <= $${params.length}::date`;
+      }
     }
 
     sql += ` ORDER BY l.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -58,15 +122,48 @@ router.get('/', async (req, res) => {
 // 2. Dashboard Stats
 router.get('/stats', async (req, res) => {
   try {
-    const { tenant_id, executive_id } = req.query;
+    const { 
+      tenant_id, 
+      executive_id, executiveFilter,
+      date_filter, dateFilter,
+      start_date, startDate,
+      end_date, endDate 
+    } = req.query;
+
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
 
     let filterClause = 'tenant_id = $1';
     const params = [tenant_id];
 
-    if (executive_id) {
-      params.push(executive_id);
-      filterClause += ` AND sales_executive_id = $2`;
+    const effExec = executive_id || executiveFilter;
+    if (effExec && effExec !== 'all') {
+      params.push(effExec);
+      filterClause += ` AND sales_executive_id = $${params.length}`;
+    }
+
+    const effDateFilter = date_filter || dateFilter;
+    const effStart = start_date || startDate;
+    const effEnd = end_date || endDate;
+
+    if (effDateFilter === 'today') {
+      filterClause += ` AND DATE(COALESCE(created_at, NOW())) = CURRENT_DATE`;
+    } else if (effDateFilter === 'yesterday') {
+      filterClause += ` AND DATE(COALESCE(created_at, NOW())) = CURRENT_DATE - INTERVAL '1 day'`;
+    } else if (effDateFilter === 'this_week') {
+      filterClause += ` AND COALESCE(created_at, NOW()) >= date_trunc('week', CURRENT_TIMESTAMP)`;
+    } else if (effDateFilter === 'this_month') {
+      filterClause += ` AND COALESCE(created_at, NOW()) >= date_trunc('month', CURRENT_TIMESTAMP)`;
+    } else if (effDateFilter === 'last_30_days') {
+      filterClause += ` AND COALESCE(created_at, NOW()) >= CURRENT_TIMESTAMP - INTERVAL '30 days'`;
+    } else if (effDateFilter === 'custom' || effStart || effEnd) {
+      if (effStart) {
+        params.push(effStart);
+        filterClause += ` AND DATE(COALESCE(created_at, NOW())) >= $${params.length}::date`;
+      }
+      if (effEnd) {
+        params.push(effEnd);
+        filterClause += ` AND DATE(COALESCE(created_at, NOW())) <= $${params.length}::date`;
+      }
     }
 
     const counts = await query(
@@ -74,15 +171,81 @@ router.get('/stats', async (req, res) => {
         COUNT(*) as total_leads,
         COUNT(*) FILTER (WHERE lead_status = 'New') as new_leads,
         COUNT(*) FILTER (WHERE lead_status = 'Contacted') as contacted_leads,
-        COUNT(*) FILTER (WHERE lead_status = 'Site Visit Scheduled' OR lead_status = 'Site Visit Done') as site_visit_leads,
+        COUNT(*) FILTER (WHERE lead_status IN ('In Progress', 'Contacted', 'Negotiation', 'Site Visit Scheduled')) as in_progress_leads,
+        COUNT(*) FILTER (WHERE lead_status = 'Qualified') as qualified_leads,
+        COUNT(*) FILTER (WHERE lead_status IN ('Site Visit Scheduled', 'Site Visit Done')) as site_visit_leads,
         COUNT(*) FILTER (WHERE lead_status = 'Negotiation') as negotiation_leads,
         COUNT(*) FILTER (WHERE lead_status = 'Converted') as converted_leads,
-        COUNT(*) FILTER (WHERE lead_status = 'Lost') as lost_leads
+        COUNT(*) FILTER (WHERE lead_status IN ('Lost', 'Disqualified')) as lost_leads,
+        -- Sources
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%referral%') as referral_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%99acres%') as acres_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%magic%') as magic_brick_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%housing%') as housing_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%meta%' OR lead_source ILIKE '%facebook%' OR lead_source ILIKE '%instagram%') as meta_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%google%') as google_leads,
+        COUNT(*) FILTER (WHERE lead_source ILIKE '%walk%') as walk_in_leads
        FROM leads WHERE ${filterClause}`,
       params
     );
 
-    return res.json(counts.rows[0] || {});
+    const r = counts.rows[0] || {};
+    const total = parseInt(r.total_leads || 0, 10);
+    const newL = parseInt(r.new_leads || 0, 10);
+    const qual = parseInt(r.qualified_leads || 0, 10);
+    const inProg = parseInt(r.in_progress_leads || 0, 10);
+    const conv = parseInt(r.converted_leads || 0, 10);
+    const cont = parseInt(r.contacted_leads || 0, 10);
+    const sv = parseInt(r.site_visit_leads || 0, 10);
+    const lost = parseInt(r.lost_leads || 0, 10);
+
+    return res.json({
+      // snake_case
+      total_leads: total,
+      new_leads: newL,
+      qualified_leads: qual,
+      in_progress_leads: inProg,
+      converted_leads: conv,
+      contacted_leads: cont,
+      site_visit_leads: sv,
+      lost_leads: lost,
+
+      // camelCase
+      totalLeads: total,
+      newLeads: newL,
+      qualified: qual,
+      inProgress: inProg,
+      converted: conv,
+      contacted: cont,
+      siteVisitDone: sv,
+      lost: lost,
+
+      // Sources
+      referralLeads: parseInt(r.referral_leads || 0, 10),
+      acresLeads: parseInt(r.acres_leads || 0, 10),
+      magicBrickLeads: parseInt(r.magic_brick_leads || 0, 10),
+      housingLeads: parseInt(r.housing_leads || 0, 10),
+      metaLeads: parseInt(r.meta_leads || 0, 10),
+      googleLeads: parseInt(r.google_leads || 0, 10),
+      walkInLeads: parseInt(r.walk_in_leads || 0, 10),
+
+      // Call & Activity Overview structures for CRMDashboardPage
+      callOverview: {
+        all_time: { total: total, connected: conv + inProg + cont },
+        today: { total: newL, connected: cont },
+        yesterday: { total: 0, connected: 0 },
+        this_week: { total: total, connected: cont },
+        this_month: { total: total, connected: conv + cont }
+      },
+      agentActivity: {
+        total: total,
+        today: newL,
+        yesterday: 0,
+        this_week: total,
+        this_month: total,
+        all_time: total
+      }
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
