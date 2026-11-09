@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { UserAvatar } from '../ui/UserAvatar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { Users, UserCheck } from 'lucide-react';
@@ -196,13 +197,7 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
                   >
                     {/* Avatar + name */}
                     <div className="flex items-center gap-2 mb-2">
-                      {exec.avatar ? (
-                        <img src={exec.avatar} alt={exec.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                          {initials}
-                        </div>
-                      )}
+                      <UserAvatar src={exec.avatar} name={exec.name} size="sm" />
                       <div className="min-w-0">
                         <div className="text-xs font-semibold text-gray-900 dark:text-white truncate leading-tight">
                           {exec.name}

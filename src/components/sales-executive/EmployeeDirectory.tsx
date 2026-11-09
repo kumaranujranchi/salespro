@@ -9,6 +9,7 @@ import { Search, Download, Eye, Network, LayoutGrid, User as UserIcon, Briefcase
 import { buildOrgTree } from '../../utils/orgTree';
 import { Badge } from '../ui/Badge';
 import { ActionMenu } from '../ui/ActionMenu';
+import { UserAvatar } from '../ui/UserAvatar';
 export function EmployeeDirectory() {
     const { profile } = useAuth();
     const tenantId = profile?.tenant_id as Id<"tenants">;
@@ -169,13 +170,12 @@ export function EmployeeDirectory() {
                         ) : (
                             <>
                                 <div className="relative mb-3">
-                                    {node.image_url ? (
-                                        <img src={node.image_url} alt="" className="w-14 h-14 rounded-full border-2 border-white dark:border-slate-800 shadow-sm object-cover" />
-                                    ) : (
-                                        <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl font-bold text-slate-400">
-                                            {(node.full_name || 'U').charAt(0)}
-                                        </div>
-                                    )}
+                                    <UserAvatar
+                                        src={node.image_url}
+                                        name={node.full_name}
+                                        size="xl"
+                                        className="w-14 h-14 border-2 border-white dark:border-slate-800 shadow-sm"
+                                    />
                                     <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                                 </div>
                                 

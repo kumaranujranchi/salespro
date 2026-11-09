@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
 import { KPICard } from '../ui/KPICard';
 import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
+import { UserAvatar } from '../ui/UserAvatar';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import {
   TrendingUp,
@@ -386,13 +387,12 @@ export function AdminDashboard() {
                           `}>
                             #{index + 1}
                           </div>
-                          {user.image_url ? (
-                            <img src={user.image_url} alt={user.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-50 dark:ring-white/10" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-slate-100 dark:from-indigo-500/20 dark:to-slate-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
-                              {user.name.charAt(0)}
-                            </div>
-                          )}
+                          <UserAvatar
+                            src={user.image_url}
+                            name={user.name}
+                            size="lg"
+                            className="ring-2 ring-slate-50 dark:ring-white/10"
+                          />
                           {index === 0 && (
                             <div className="absolute -bottom-1 -right-1 bg-yellow-400 rounded-full p-0.5 border-2 border-white dark:border-surface-dark">
                               <Sparkles size={8} className="text-white" fill="currentColor" />

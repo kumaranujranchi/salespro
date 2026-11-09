@@ -12,6 +12,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { ActionMenu } from '../components/ui/ActionMenu';
 import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -420,13 +421,7 @@ export function UsersPage() {
             <Card key={user._id} className="rounded-3xl border-slate-200 dark:border-white/10 overflow-hidden hover:shadow-xl transition-all group flex flex-col border-b-4 border-b-transparent hover:border-b-blue-500">
               <CardHeader className="bg-slate-50 dark:bg-white/5 pb-4">
                 <div className="flex items-start justify-between">
-                  {user.image_url ? (
-                    <img src={user.image_url} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center font-bold text-blue-600 dark:text-blue-400 text-lg shadow-sm border-2 border-white">
-                      {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                  )}
+                  <UserAvatar src={user.image_url} name={user.full_name} size="xl" className="border-2 border-white shadow" />
                   <div className="flex gap-2">
                     <ActionMenu actions={[
                       { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
@@ -506,7 +501,7 @@ export function UsersPage() {
                     <TableCell className="font-mono text-xs">{user.employee_id}</TableCell>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        {user.image_url && <img src={user.image_url} alt="" className="w-6 h-6 rounded-full object-cover" />}
+                        <UserAvatar src={user.image_url} name={user.full_name} size="xs" />
                         <span className={!user.is_active ? 'text-gray-500' : ''}>{user.full_name}</span>
                       </div>
                     </TableCell>

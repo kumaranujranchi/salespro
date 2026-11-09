@@ -320,12 +320,15 @@ router.get('/executive-stats', async (req, res) => {
       const conv = parseInt(stat.converted_count || 0, 10);
       const lost = parseInt(stat.lost_count || 0, 10);
 
+      const rawAvatar = p.image_url ? String(p.image_url).trim() : null;
+      const avatar = (rawAvatar && rawAvatar !== 'null' && rawAvatar !== 'undefined' && rawAvatar !== '' && (rawAvatar.startsWith('http://') || rawAvatar.startsWith('https://') || rawAvatar.startsWith('data:image/') || rawAvatar.startsWith('/'))) ? rawAvatar : null;
+
       return {
         id: p.id,
         _id: p.id,
         name: p.full_name || 'Executive',
         role: p.role_name || p.role || 'Sales Executive',
-        avatar: p.image_url || null,
+        avatar,
         total,
         new: newL,
         contacted: cont,

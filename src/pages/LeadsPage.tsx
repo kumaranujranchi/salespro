@@ -20,6 +20,7 @@ import { BulkProjectModal } from '../components/crm/BulkProjectModal';
 import { ActionMenu } from '../components/ui/ActionMenu';
 import { Modal } from '../components/ui/Modal';
 import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, Search, Download, Upload,
@@ -969,13 +970,7 @@ export function LeadsPage() {
                   >
                     {/* Executive header */}
                     <div className="flex items-center gap-2 mb-2.5">
-                      {exec.avatar ? (
-                        <img src={exec.avatar} alt={exec.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                          {initials}
-                        </div>
-                      )}
+                      <UserAvatar src={exec.avatar} name={exec.name} size="md" />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{exec.name}</div>
                         <div className="text-[10px] text-gray-400">Sales Executive</div>
