@@ -118,46 +118,48 @@ export function IntegrationsPage() {
             <p className="text-gray-400">Choose the infrastructure that best fits your technical expertise</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Supabase */}
-            <div className="bg-[#0E1A15] p-8 rounded-2xl border border-white/10 hover:border-[#10B981] transition-all group">
-              <div className="w-16 h-16 bg-[#3ECF8E]/10 rounded-2xl flex items-center justify-center mb-6">
-                <Database className="w-8 h-8 text-[#3ECF8E]" />
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-10">
+            {/* AWS */}
+            <div className="bg-[#0E1A15] p-8 rounded-2xl border border-white/10 hover:border-[#FF9900] transition-all group">
+              <div className="w-16 h-16 bg-[#FF9900]/10 rounded-2xl flex items-center justify-center mb-6">
+                <Database className="w-8 h-8 text-[#FF9900]" />
               </div>
-              <h3 className="text-2xl font-bold mb-2">Supabase</h3>
-              <p className="text-[#3ECF8E] text-sm font-semibold mb-6 uppercase tracking-wider">Managed Database</p>
+              <h3 className="text-2xl font-bold mb-2">AWS RDS / EC2</h3>
+              <p className="text-[#FF9900] text-sm font-semibold mb-6 uppercase tracking-wider">Enterprise Cloud Database</p>
               <p className="text-gray-400 mb-8 leading-relaxed">
-                The best open-source Firebase alternative. Provides a hosted PostgreSQL database with built-in authentication, real-time subscriptions, and instant APIs. Perfect for teams who want power without maintenance.
+                Deploy your dedicated PostgreSQL database on AWS RDS or Amazon EC2. Benefit from enterprise VPC network isolation, automated multi-AZ snapshots, and ultra-high reliability tailored for enterprise real estate operations.
               </p>
               <ul className="space-y-3 mb-8 text-gray-300">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Zero Maintenance</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Automated Backups</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Point-in-time Recovery</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Enterprise AWS Cloud Security</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Automated Multi-AZ Backups</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Custom Domain Mapping Included</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Custom Incentive Automation</li>
               </ul>
               <a
-                href="https://supabase.com/pricing"
+                href="https://aws.amazon.com/rds/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full py-4 bg-[#3ECF8E]/10 text-[#3ECF8E] text-center rounded-xl font-bold hover:bg-[#3ECF8E] hover:text-[#0E1A15] transition-all"
+                className="block w-full py-4 bg-[#FF9900]/10 text-[#FF9900] text-center rounded-xl font-bold hover:bg-[#FF9900] hover:text-black transition-all"
               >
-                Get Supabase
+                Explore AWS RDS
               </a>
             </div>
 
             {/* Hostinger */}
-            <div className="bg-[#0E1A15] p-8 rounded-2xl border border-white/10 hover:border-[#10B981] transition-all group">
+            <div className="bg-[#0E1A15] p-8 rounded-2xl border border-white/10 hover:border-[#673DE6] transition-all group">
               <div className="w-16 h-16 bg-[#673DE6]/10 rounded-2xl flex items-center justify-center mb-6">
                 <Server className="w-8 h-8 text-[#673DE6]" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Hostinger VPS</h3>
               <p className="text-[#673DE6] text-sm font-semibold mb-6 uppercase tracking-wider">Self-Hosted VPS</p>
               <p className="text-gray-400 mb-8 leading-relaxed">
-                Virtual Private Servers for maximum control and cost efficiency. Deploy your own Docker containers or raw PostgreSQL instances. Ideal for technical teams requiring custom configurations and strict firewalls.
+                Virtual Private Servers for maximum control and budget efficiency. Deploy your own dedicated PostgreSQL or MySQL instances. Ideal for technical teams requiring custom configurations and strict firewalls.
               </p>
               <ul className="space-y-3 mb-8 text-gray-300">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Full Root Access</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Dedicated IP Address</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> NVMe SSD Storage</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Full Root Access & Dedicated IP</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> High-Speed NVMe Storage</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Custom Domain Mapping Included</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-[#10B981]" /> Custom Incentive Automation</li>
               </ul>
               <a
                 href="https://hostinger.in?REFERRALCODE=synergy"
@@ -168,6 +170,20 @@ export function IntegrationsPage() {
                 Get Hostinger VPS
               </a>
             </div>
+          </div>
+
+          {/* Setup Fee & Custom Domain Notice */}
+          <div className="max-w-4xl mx-auto bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-left">
+            <h4 className="text-amber-400 font-bold text-sm uppercase tracking-wider mb-2 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-amber-400" />
+              Upfront Pricing & Domain Customization Clarity
+            </h4>
+            <p className="text-gray-300 text-sm leading-relaxed mb-2">
+              <strong>Database Setup Charges:</strong> In addition to the standard subscription plan, a <strong>separate one-time Database Setup & Deployment Fee</strong> applies for cloud server provisioning, firewall hardening, VPC routing, and custom domain SSL mapping.
+            </p>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              <strong>Custom Domain Whitelabeling:</strong> You can host RealSalePro under your <strong>own custom domain</strong> (e.g., <code>crm.yourcompany.com</code>). Custom domain white-labeling is a premium capability available exclusively with Self-Hosted Database deployments.
+            </p>
           </div>
         </div>
       </div>

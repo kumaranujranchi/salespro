@@ -37,7 +37,8 @@ export function ShippingPolicy() {
               <li><strong>Self-Hosted Database Configuration:</strong>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li><strong>Setup Timeline:</strong> The setup and configuration process for self-hosted databases typically takes <strong>10 days</strong>.</li>
-                  <li><strong>Setup Cost:</strong> The initial configuration service is provided <strong>free of charge</strong>.</li>
+                  <li><strong>Setup Cost:</strong> A dedicated <strong>Database Setup and Deployment Fee</strong> applies separately in addition to the standard platform subscription for infrastructure configuration, VPC hardening, and custom domain mapping.</li>
+                  <li><strong>Custom Domain:</strong> Self-hosted database clients are entitled to host the CRM on their own custom domain (e.g., crm.yourcompany.com).</li>
                   <li><strong>Annual Maintenance:</strong> A separate <strong>Annual Service Fee</strong> is applicable for ongoing support, maintenance, and issue resolution by our technical team.</li>
                 </ul>
               </li>

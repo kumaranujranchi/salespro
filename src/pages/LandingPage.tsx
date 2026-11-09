@@ -561,65 +561,114 @@ export function LandingPage() {
 
                             {activePrivacyTab === 'selfhosted' && (
                                 <div className="animate-fadeIn space-y-6">
-                                    <div className="flex items-center space-x-4 mb-6">
+                                    <div className="flex items-center space-x-4 mb-4">
                                         <div className="p-4 bg-emerald-100 text-emerald-600 rounded-2xl">
                                             <Server size={32} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-[#0E1A15]">Bring Your Own Database</h3>
-                                    </div>
-                                    <p className="text-lg text-gray-600 leading-relaxed">
-                                        For regulated industries or maximum control, RealSalePro supports <strong>Self-Hosted Database</strong> connections.
-                                    </p>
-                                    <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-start gap-3">
-                                        <CheckCircle className="text-emerald-500 mt-1 shrink-0" size={20} />
                                         <div>
-                                            <h4 className="font-bold text-[#0E1A15]">Exclusive Feature</h4>
-                                            <p className="text-sm text-gray-600">
-                                                Self-Hosted Database unlocks <strong>Custom Incentive Automation</strong>. (Standard plans support Manual Incentives only).
+                                            <h3 className="text-2xl font-bold text-[#0E1A15]">Bring Your Own Database</h3>
+                                            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mt-0.5">AWS & Hostinger Supported</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-base text-gray-600 leading-relaxed">
+                                        For regulated real estate enterprises, data sovereignty, or full customization, RealSalePro supports direct connection to your private <strong>AWS</strong> or <strong>Hostinger VPS</strong> database.
+                                    </p>
+
+                                    {/* Exclusive Highlights: Custom Domain & Custom Incentive */}
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200/80 flex items-start gap-3">
+                                            <Globe className="text-emerald-600 mt-1 shrink-0" size={20} />
+                                            <div>
+                                                <h4 className="font-bold text-[#0E1A15] text-sm flex items-center gap-1.5">
+                                                    Use Your Own Custom Domain
+                                                    <span className="text-[10px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded">EXCLUSIVE</span>
+                                                </h4>
+                                                <p className="text-xs text-gray-600 mt-1">
+                                                    Deploy RealSalePro under your own brand address (e.g., <strong>crm.yourcompany.com</strong>). Custom domain white-labeling is exclusively available with Self-Hosted DB.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-emerald-50/70 p-4 rounded-xl border border-emerald-200/80 flex items-start gap-3">
+                                            <CheckCircle className="text-emerald-600 mt-1 shrink-0" size={20} />
+                                            <div>
+                                                <h4 className="font-bold text-[#0E1A15] text-sm">Custom Incentive Automation</h4>
+                                                <p className="text-xs text-gray-600 mt-1">
+                                                    Unlocks tailored broker commission calculations and multi-tiered automated incentive payouts on your own private schema.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Setup Fee Transparency Notice */}
+                                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
+                                        <div className="text-amber-600 mt-0.5 shrink-0">
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-amber-900 text-xs uppercase tracking-wide">Setup & Deployment Pricing Clarity</h4>
+                                            <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                                                Please note: Along with the standard platform subscription, a <strong>separate one-time Database Setup & Deployment Fee</strong> applies for server provisioning, firewall hardening, VPC routing, and custom domain SSL setup by our engineering team.
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-4 mt-6">
-                                        <div className="p-4 border border-gray-200 rounded-lg text-center hover:border-[#10B981] transition-colors cursor-pointer bg-gray-50">
-                                            <Database className="mx-auto mb-2 text-gray-400" size={24} />
-                                            <span className="font-semibold text-gray-700">PostgreSQL</span>
+
+                                    {/* Supported Cloud / VPS Providers (AWS & Hostinger Only) */}
+                                    <div>
+                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Supported Infrastructure Providers:</div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {/* AWS Card */}
+                                            <a
+                                                href="https://aws.amazon.com/rds/"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-5 border-2 border-[#FF9900]/40 bg-[#FF9900]/5 rounded-xl hover:bg-[#FF9900]/10 hover:border-[#FF9900] transition-all group text-left block"
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="text-[#FF9900] font-black text-lg tracking-tight">AWS (Amazon Web Services)</div>
+                                                    <span className="text-[10px] bg-[#FF9900] text-black font-bold px-2 py-0.5 rounded">Amazon Cloud</span>
+                                                </div>
+                                                <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                                                    High-availability enterprise PostgreSQL on AWS RDS or dedicated EC2 Linux instances with automated snapshots and VPC peering.
+                                                </p>
+                                                <div className="text-xs text-[#E68A00] font-semibold group-hover:underline flex items-center gap-1">
+                                                    Explore AWS RDS &rarr;
+                                                </div>
+                                            </a>
+
+                                            {/* Hostinger Card */}
+                                            <a
+                                                href="https://hostinger.in?REFERRALCODE=synergy"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-5 border-2 border-[#673DE6]/40 bg-[#673DE6]/5 rounded-xl hover:bg-[#673DE6]/10 hover:border-[#673DE6] transition-all group text-left block"
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="text-[#673DE6] font-black text-lg tracking-tight">Hostinger VPS</div>
+                                                    <span className="text-[10px] bg-[#673DE6] text-white font-bold px-2 py-0.5 rounded">High-Speed VPS</span>
+                                                </div>
+                                                <p className="text-xs text-gray-600 leading-relaxed mb-3">
+                                                    Dedicated NVMe VPS servers with full root access, PostgreSQL/MySQL support, static IP, and exceptional price-to-performance ratio.
+                                                </p>
+                                                <div className="text-xs text-[#673DE6] font-semibold group-hover:underline flex items-center gap-1">
+                                                    Get Hostinger VPS &rarr;
+                                                </div>
+                                            </a>
                                         </div>
-                                        <a
-                                            href="https://hostinger.in?REFERRALCODE=synergy"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-4 border-2 border-[#673DE6] bg-[#673DE6]/5 rounded-lg text-center hover:bg-[#673DE6]/10 transition-colors cursor-pointer group"
-                                        >
-                                            <div className="mx-auto mb-2 text-[#673DE6]">
-                                                <Server className="w-6 h-6 mx-auto" />
-                                            </div>
-                                            <span className="font-bold text-gray-900 group-hover:text-[#673DE6] transition-colors">Hostinger</span>
-                                            <div className="text-xs text-[#673DE6] font-medium mt-1">Get VPS Hosting &rarr;</div>
-                                        </a>
-                                        <a
-                                            href="https://supabase.com/pricing"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-4 border-2 border-[#3ECF8E] bg-[#3ECF8E]/5 rounded-lg text-center hover:bg-[#3ECF8E]/10 transition-colors cursor-pointer group"
-                                        >
-                                            <div className="mx-auto mb-2 text-[#3ECF8E]">
-                                                <svg className="w-6 h-6 mx-auto" viewBox="0 0 24 24" fill="currentColor">
-                                                    <path d="M21.362 9.354H12L13.714 0L2.638 14.646H12L10.286 24L21.362 9.354Z" />
-                                                </svg>
-                                            </div>
-                                            <span className="font-bold text-gray-900 group-hover:text-[#3ECF8E] transition-colors">Supabase</span>
-                                            <div className="text-xs text-[#3ECF8E] font-medium mt-1">Get Managed DB &rarr;</div>
-                                        </a>
                                     </div>
-                                    <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-100 justify-center">
+
+                                    {/* Action buttons */}
+                                    <div className="flex flex-col sm:flex-row gap-4 mt-6 pt-4 border-t border-gray-100 justify-center">
                                         <button
                                             onClick={() => setShowTechSpecs(true)}
-                                            className="px-6 py-3 bg-[#0E1A15] text-white rounded-xl font-semibold hover:bg-[#10B981] transition-colors"
+                                            className="px-6 py-3 bg-[#0E1A15] text-white rounded-xl font-semibold hover:bg-[#10B981] transition-colors text-sm"
                                         >
                                             View Technical Requirements
                                         </button>
-                                        <a href="tel:9525230232" className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center">
-                                            Contact Sales: 9525230232
+                                        <a href="tel:9525230232" className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center text-sm">
+                                            Contact Setup Team: +91 95252 30232
                                         </a>
                                     </div>
                                 </div>
@@ -633,7 +682,7 @@ export function LandingPage() {
             <Modal
                 isOpen={showTechSpecs}
                 onClose={() => setShowTechSpecs(false)}
-                title="Bring Your Own Database - Technical Specs"
+                title="Bring Your Own Database - Technical Specs & Setup"
             >
                 <div className="space-y-6">
                     <div>
@@ -648,32 +697,42 @@ export function LandingPage() {
 
                     <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
                         <h4 className="flex items-center gap-2 font-bold text-[#0E1A15] mb-2">
-                            <Shield size={20} className="text-green-600" />
-                            Data Ownership & Security
+                            <Globe size={20} className="text-green-600" />
+                            Custom Domain Feature (Exclusive)
                         </h4>
                         <p className="text-gray-700 text-sm leading-relaxed">
-                            <strong>You retain 100% ownership</strong> of your data. RealSalePro acts as a client securely connecting to your instance. You manage the credentials and can revoke our access at any time. We never store your raw database files—only the metadata required to run the application.
+                            Self-Hosted customers can host RealSalePro on their <strong>own custom domain</strong> (e.g. <code>crm.yourcompany.com</code>). Custom domain white-labeling is exclusively available with this self-hosted deployment. We provide DNS CNAME records and automated SSL certificate configuration.
+                        </p>
+                    </div>
+
+                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                        <h4 className="flex items-center gap-2 font-bold text-amber-900 mb-2">
+                            <Shield size={20} className="text-amber-700" />
+                            Setup & Deployment Fee
+                        </h4>
+                        <p className="text-amber-800 text-sm leading-relaxed">
+                            In addition to your standard platform subscription, a <strong>separate one-time Database Setup & Deployment Fee</strong> applies. This covers server provisioning, static IP whitelisting, database schema migrations, and custom domain SSL mapping by our engineering specialists.
                         </p>
                     </div>
 
                     <div>
                         <h4 className="flex items-center gap-2 font-bold text-[#0E1A15] mb-2">
                             <Database size={20} className="text-purple-600" />
-                            Supported Databases
+                            Supported Infrastructure Providers
                         </h4>
                         <ul className="space-y-3 mt-2">
                             <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#10B981] transition-colors">
-                                <span className="bg-emerald-100 text-emerald-600 p-1.5 rounded-md font-bold text-xs">Recommended</span>
+                                <span className="bg-amber-100 text-amber-700 p-1.5 rounded-md font-bold text-xs">Recommended</span>
                                 <div>
-                                    <span className="font-bold text-gray-800 block text-sm">PostgreSQL (v12+)</span>
-                                    <span className="text-xs text-gray-500">Best for performance and JSON support. Using Supabase or AWS RDS is highly recommended.</span>
+                                    <span className="font-bold text-gray-800 block text-sm">AWS (Amazon Web Services)</span>
+                                    <span className="text-xs text-gray-500">AWS RDS (PostgreSQL v12+) or AWS EC2 Virtual Servers. Highly recommended for enterprise high-availability, automated backups, and private VPC security.</span>
                                 </div>
                             </li>
                             <li className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:border-[#10B981] transition-colors">
-                                <span className="bg-gray-100 text-gray-500 p-1.5 rounded-md font-bold text-xs">Supported</span>
+                                <span className="bg-purple-100 text-[#673DE6] p-1.5 rounded-md font-bold text-xs">Supported</span>
                                 <div>
-                                    <span className="font-bold text-gray-800 block text-sm">MySQL (v8.0+) / MariaDB</span>
-                                    <span className="text-xs text-gray-500">Fully supported for standard CRM operations. Hostinger VPS is a popular choice.</span>
+                                    <span className="font-bold text-gray-800 block text-sm">Hostinger VPS</span>
+                                    <span className="text-xs text-gray-500">Dedicated NVMe VPS running PostgreSQL (v12+) or MySQL (v8.0+). Excellent cost-efficiency and full root control.</span>
                                 </div>
                             </li>
                         </ul>
