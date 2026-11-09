@@ -47,15 +47,6 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
-            # Configure Razorpay Keys in server environment
-            touch server/.env
-            sed -i '/RAZORPAY_KEY_ID/d' server/.env
-            sed -i '/VITE_RAZORPAY_KEY_ID/d' server/.env
-            sed -i '/RAZORPAY_KEY_SECRET/d' server/.env
-            echo "RAZORPAY_KEY_ID=rzp_live_Ty3S8PNDGbVlQR" >> server/.env
-            echo "VITE_RAZORPAY_KEY_ID=rzp_live_Ty3S8PNDGbVlQR" >> server/.env
-            echo "RAZORPAY_KEY_SECRET=7cNrXZ52X93jLzMuDMxCaLZI" >> server/.env
-            
             # Restart backend with PM2
             pm2 restart salespro-api --update-env || (cd server && pm2 start src/index.js --name "salespro-api")
             

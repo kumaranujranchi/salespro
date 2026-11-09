@@ -159,7 +159,7 @@ export function PricingPage() {
 
       // Initialize Razorpay Checkout with subscription_id
       const options = {
-        key: (subscription as any)?.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_Ty3S8PNDGbVlQR',
+        key: (subscription as any)?.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.razorpay_subscription_id,
         name: 'RealSalePro',
         description: `${planName} Subscription`,
