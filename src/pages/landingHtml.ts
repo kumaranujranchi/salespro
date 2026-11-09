@@ -938,8 +938,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
           <div class="billing" data-reveal data-reveal-delay="180" role="group" aria-label="Billing period">
             <button class="billing__btn" data-cycle="monthly" aria-pressed="false">Monthly</button>
-            <button class="billing__btn is-active" data-cycle="semi" aria-pressed="true">6 months <span>−20%</span></button>
-            <button class="billing__btn" data-cycle="yearly" aria-pressed="false">Yearly <span>−33%</span></button>
+            <button class="billing__btn" data-cycle="semi" aria-pressed="false">6 months <span>−20%</span></button>
+            <button class="billing__btn is-active" data-cycle="yearly" aria-pressed="true">Yearly <span>−33%</span></button>
           </div>
         </header>
 
@@ -967,9 +967,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <span class="price__badge price__badge--solid">Most popular</span>
             </div>
             <div class="price__amount">
-              <b data-price>₹1,200</b><em>/month</em>
+              <b data-price>₹1,000</b><em>/month</em>
             </div>
-            <p class="price__desc" data-price-note>Billed ₹7,200 semi-annually — save 20%.</p>
+            <p class="price__desc" data-price-note>Billed ₹12,000 annually — save 33%.</p>
             <a class="btn btn--primary btn--block" href="https://realsalepro.com/pricing">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
             <ul class="price__list">
               <li><svg class="icon"><use href="#i-check"/></svg> Everything in Free</li>
