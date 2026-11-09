@@ -179,8 +179,8 @@ export function AffiliateTermsPage() {
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
                     Have questions about the program?
                 </p>
-                <a href="mailto:partners@realsalepro.com" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
-                    Contact Partner Support
+                <a href="mailto:support@realsalepro.com" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+                    Contact Partner Support (support@realsalepro.com)
                 </a>
             </div>
 

@@ -890,7 +890,7 @@ export function LandingPage() {
 
                     <div className="pt-4 mt-4 border-t border-gray-100 text-center">
                         <p className="text-xs text-gray-400">
-                            For further inquiries or a detailed security audit report, please contact our security team at <span className="font-semibold">security@realsalepro.com</span>
+                            For further inquiries or a detailed security audit report, please contact our support team at <span className="font-semibold">support@realsalepro.com</span>
                         </p>
                     </div>
                 </div>
