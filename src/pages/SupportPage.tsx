@@ -27,6 +27,8 @@ interface Notification {
 export function SupportPage() {
   const { tenant, user, profile } = useAuth();
   const isFreePlan = tenant?.plan_tier === 'free';
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
   
   const ticketsData = useQuery(api.support.listByTenant, 
     tenant?._id ? { tenant_id: tenant._id as any } : "skip"
@@ -139,7 +141,17 @@ export function SupportPage() {
             <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-white/10 w-fit">
               <button
                 type="button"
-                onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => setRequestType('ticket')}
+                onClick={isFreePlan ? () => {
+                  if (isSuperAdmin) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    setNotification({
+                      type: 'error',
+                      title: 'Pro Feature',
+                      message: 'Dedicated Priority Support Tickets are a Pro plan feature. Please contact your organization administrator to upgrade the plan.'
+                    });
+                  }
+                } : () => setRequestType('ticket')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 relative ${
                   requestType === 'ticket' 
                     ? 'bg-indigo-600 text-white shadow-sm' 
@@ -166,14 +178,16 @@ export function SupportPage() {
                 <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
                   * Dedicated Priority Support Tickets are a Pro plan feature.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="text-xs font-bold text-amber-900 dark:text-amber-200 hover:underline flex items-center gap-1 shrink-0 ml-3"
-                >
-                  <Zap size={13} className="fill-current text-amber-500" />
-                  Upgrade to Pro
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="text-xs font-bold text-amber-900 dark:text-amber-200 hover:underline flex items-center gap-1 shrink-0 ml-3"
+                  >
+                    <Zap size={13} className="fill-current text-amber-500" />
+                    Upgrade to Pro
+                  </button>
+                )}
               </div>
             )}
           </div>

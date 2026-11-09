@@ -16,6 +16,8 @@ const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
   const isFreePlan = tenant?.plan_tier === 'free';
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
   const toast = useToast();
   const [savingMeta, setSavingMeta] = useState(false);
   const [savingGoogle, setSavingGoogle] = useState(false);
@@ -47,8 +49,12 @@ export function AdminIntegrationsPage() {
   const [lockedFeatureName, setLockedFeatureName] = useState('Platform Integrations');
 
   const handleLockedFeatureClick = (featureName: string) => {
-    setLockedFeatureName(featureName);
-    setUpgradeModalOpen(true);
+    if (isSuperAdmin) {
+      setLockedFeatureName(featureName);
+      setUpgradeModalOpen(true);
+    } else {
+      toast.info("Auto lead capture integrations are a Pro feature. Please contact your organization administrator to upgrade the plan.");
+    }
   };
   const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
@@ -1138,8 +1144,8 @@ export function AdminIntegrationsPage() {
         </div>
       )}
 
-      {/* Free Plan Upgrade Banner */}
-      {isFreePlan && (
+      {/* Free Plan Upgrade Banner (Super Admin Only) */}
+      {isFreePlan && isSuperAdmin && (
         <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-indigo-500/10 border border-amber-500/30 dark:border-amber-400/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shrink-0 shadow-md">

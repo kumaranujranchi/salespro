@@ -1,5 +1,6 @@
 import { X, Zap, Check, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface UpgradeToProModalProps {
   isOpen: boolean;
@@ -15,8 +16,11 @@ export function UpgradeToProModal({
   description
 }: UpgradeToProModalProps) {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
 
-  if (!isOpen) return null;
+  if (!isOpen || !isSuperAdmin) return null;
 
   const handleUpgradeClick = () => {
     onClose();
@@ -153,3 +157,4 @@ export function UpgradeToProModal({
     </div>
   );
 }
+

@@ -1018,41 +1018,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
           </nav>
 
-          {/* Free Plan Upgrade Card in Sidebar */}
-          {tenant?.plan_tier === 'free' && !isCollapsed && (
-            <div className="mx-3 mb-2 p-3.5 rounded-2xl bg-gradient-to-br from-[#0A1C37] to-[#122b4c] text-white shadow-md border border-white/10 relative overflow-hidden">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-6 h-6 rounded-lg bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] flex items-center justify-center font-black text-xs shadow-sm">
-                  <Zap size={13} className="fill-current" />
-                </span>
-                <span className="font-bold text-xs tracking-tight">Free Plan</span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-snug mb-2.5">
-                Unlock ad integrations, unlimited leads & users.
-              </p>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="w-full py-1.5 px-3 rounded-lg bg-gradient-to-r from-[#00E576] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-[#0A1C37] font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span>Upgrade to Pro</span>
-                <ArrowRight size={12} />
-              </button>
-            </div>
-          )}
-
-          {tenant?.plan_tier === 'free' && isCollapsed && (
-            <div className="px-3 mb-2 flex justify-center">
-              <Tooltip content="Upgrade to Pro Plan" position="right">
-                <button
-                  onClick={() => navigate('/pricing')}
-                  className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] flex items-center justify-center shadow-md hover:scale-105 transition-all cursor-pointer"
-                >
-                  <Zap size={18} className="fill-current" />
-                </button>
-              </Tooltip>
-            </div>
-          )}
-
           {/* Bottom Actions */}
           <div className="p-4 border-t border-dashed border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-transparent">
             <button

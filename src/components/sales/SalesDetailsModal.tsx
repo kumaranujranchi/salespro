@@ -25,8 +25,18 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
     const { profile, tenant } = useAuth();
     const toast = useToast();
     const isFreePlan = tenant?.plan_tier === 'free';
+    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
     const [activeTab, setActiveTab] = useState<'profile' | 'coapplicant_address'>('profile');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+    const handleLockedLedgerClick = () => {
+        if (isSuperAdmin) {
+            setShowUpgradeModal(true);
+        } else {
+            toast.info("Downloading payment ledger is a Pro feature. Please contact your organization administrator to upgrade the plan.");
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -215,7 +225,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                             title="Download PDF"
                         >
@@ -225,7 +235,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             title="Download Excel"
                         >
@@ -235,7 +245,7 @@ export function SalesDetailsModal({ isOpen, onClose, sale, onCancel, onEdit, onD
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => sharePaymentLedger(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => sharePaymentLedger(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             title="Share Ledger"
                         >

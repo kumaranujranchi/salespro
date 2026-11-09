@@ -106,6 +106,8 @@ export function UsersPage() {
   const isFreePlan = tenant?.plan_tier === 'free';
   const totalUsersCount = (users as any[]) ? (users as any[]).length : 0;
   const isUserLimitReached = isFreePlan && totalUsersCount >= 5;
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Reset password states for tenant admins
@@ -389,7 +391,11 @@ export function UsersPage() {
               variant={isUserLimitReached ? "outline" : "primary"} 
               onClick={() => { 
                 if (isUserLimitReached) {
-                  setShowUpgradeModal(true);
+                  if (isSuperAdmin) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    toast.error("User limit reached (Maximum 5 users on Free Plan). Please contact your organization administrator to upgrade the plan.");
+                  }
                   return;
                 }
                 resetForm(); 

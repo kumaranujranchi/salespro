@@ -559,7 +559,11 @@ export function LeadsPage() {
   const handleCreateLead = () => {
     const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
     if (isFreePlan && totalLeadsCount >= 1000) {
-      setShowUpgradeModal(true);
+      if (isSuperAdmin) {
+        setShowUpgradeModal(true);
+      } else {
+        toast.error("Lead limit reached (Maximum 1,000 leads on Free Plan). Please contact your organization administrator to upgrade the plan.");
+      }
       return;
     }
     setSelectedLead(null);
@@ -618,7 +622,11 @@ export function LeadsPage() {
   const handleBulkImport = () => {
     const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
     if (isFreePlan && totalLeadsCount >= 1000) {
-      setShowUpgradeModal(true);
+      if (isSuperAdmin) {
+        setShowUpgradeModal(true);
+      } else {
+        toast.error("Lead limit reached (Maximum 1,000 leads on Free Plan). Please contact your organization administrator to upgrade the plan.");
+      }
       return;
     }
     setIsBulkModalOpen(true);
