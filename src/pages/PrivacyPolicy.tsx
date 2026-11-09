@@ -20,7 +20,7 @@ export function PrivacyPolicy() {
             {/* Introduction */}
             <section>
               <p>
-                At <strong>RealSalePro</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), operated by <strong>RealSalePro Technologies Private Limited</strong>, we respect your privacy and are committed to safeguarding your personal data. This Privacy Policy explains how we collect, process, store, and protect digital personal data when you use our real estate CRM software platform, website (<a href="https://realsalepro.com" className="text-blue-600 hover:underline">realsalepro.com</a>), and associated integrations (collectively, the &quot;Platform&quot;).
+                At <strong>RealSalePro</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), operated by <strong>Synergy Brand Architect</strong>, we respect your privacy and are committed to safeguarding your personal data. This Privacy Policy explains how we collect, process, store, and protect digital personal data when you use our real estate CRM software platform, website (<a href="https://realsalepro.com" className="text-blue-600 hover:underline">realsalepro.com</a>), and associated integrations (collectively, the &quot;Platform&quot;).
               </p>
             </section>
 
@@ -111,23 +111,31 @@ export function PrivacyPolicy() {
               </p>
             </section>
 
-            {/* 7. Rights of Data Principals under DPDP Act */}
+            {/* 7. Rights and Duties of Data Principals */}
             <section>
-              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">7. Rights of Data Principals</h2>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">7. Rights and Duties of Data Principals (DPDP Act)</h2>
               <p className="mb-3">
-                Under Chapter III (Sections 11–14) of the DPDP Act, 2023, individuals whose digital personal data is processed possess the following rights:
+                Under Chapter III (Sections 11–15) of the DPDP Act, 2023, individuals whose digital personal data is processed possess the following rights and statutory duties:
               </p>
+              
+              <h3 className="font-semibold text-gray-900 mt-4 mb-2">A. Your Statutory Rights:</h3>
               <ul className="list-disc pl-5 space-y-2 text-gray-600">
                 <li><strong>Right to Access Information (Section 11):</strong> Right to obtain a summary of personal data being processed and the processing activities undertaken.</li>
                 <li><strong>Right to Correction and Erasure (Section 12):</strong> Right to request correction of inaccurate data, completion of incomplete records, and erasure of personal data that is no longer necessary for the specified purpose.</li>
+                <li><strong>Right to Withdraw Consent (Section 6(4)):</strong> Where processing is based on consent, you have the right to withdraw your consent at any time, with the ease of doing so being comparable to the ease with which consent was given.</li>
                 <li><strong>Right of Grievance Redressal (Section 13):</strong> Right to readily available grievance redressal through our designated Grievance Officer.</li>
-                <li><strong>Right to Nominate (Section 14):</strong> Right to designate another individual who may exercise rights on the Data Principal&apos;s behalf in the event of death or incapacity.</li>
+                <li><strong>Right to Nominate (Section 14):</strong> Right to designate another individual who may exercise rights on your behalf in the event of death or incapacity.</li>
               </ul>
+
+              <h3 className="font-semibold text-gray-900 mt-4 mb-2">B. Duties of Data Principals (Section 15):</h3>
+              <p className="text-gray-600 text-sm">
+                As prescribed by Section 15 of the Act, Data Principals shall furnish verifiably authentic information, not impersonate another person, not suppress material information, and not register false or frivolous complaints.
+              </p>
             </section>
 
             {/* 8. User Data Deletion Instructions */}
             <section id="data-deletion">
-              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">8. User Data Deletion Instructions</h2>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">8. User Data Deletion Instructions (Meta &amp; DPDP Erasure)</h2>
               <p className="mb-3">
                 In compliance with Meta Platform Terms and the DPDP Act Right to Erasure, users may revoke access and request data deletion at any time:
               </p>
@@ -172,7 +180,7 @@ export function PrivacyPolicy() {
 
             {/* 10. Data Retention & Storage */}
             <section>
-              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">10. Data Retention and Storage</h2>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">10. Data Retention and Sovereign Storage</h2>
               <p>
                 All primary databases and backups are hosted in secure enterprise cloud infrastructure within the territorial boundaries of <strong>India</strong>. Personal data is retained only for as long as necessary to fulfill the specified purpose, or as required by applicable statutory requirements (e.g., RERA limitation periods, taxation records). When no longer needed, data is securely sanitized.
               </p>
@@ -186,15 +194,31 @@ export function PrivacyPolicy() {
               </p>
             </section>
 
-            {/* 12. Grievance Redressal Officer */}
+            {/* 12. Cookies and Tracking Technologies */}
             <section>
-              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">12. Grievance Redressal and Contact Details</h2>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">12. Cookies and Local Storage</h2>
+              <p>
+                We use strictly necessary session cookies and browser local storage to maintain user authentication, secure sessions against CSRF attacks, and preserve workspace user preferences. We do not deploy third-party advertising tracking cookies across unaffiliated websites. You can configure your browser to reject cookies, though certain Platform functionalities may be restricted.
+              </p>
+            </section>
+
+            {/* 13. Policy Updates */}
+            <section>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">13. Updates to this Privacy Policy</h2>
+              <p>
+                We may modify or update this Privacy Policy from time to time to reflect operational, legal, or regulatory enhancements. Any changes will be posted on this page with an updated &quot;Last Updated&quot; date. Continued use of the Platform following notification of updates constitutes acknowledgment of the revised terms.
+              </p>
+            </section>
+
+            {/* 14. Grievance Redressal Officer */}
+            <section>
+              <h2 className="text-xl font-bold text-[#0A1C37] mb-3">14. Grievance Redressal and Contact Details</h2>
               <p className="mb-3">
                 In compliance with Section 13 of the DPDP Act, 2023 and the Information Technology Act, 2000, we have designated a <strong>Data Protection &amp; Grievance Officer</strong> to address any inquiries, complaints, or rights requests:
               </p>
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-sm space-y-2">
                 <p><strong>Officer:</strong> Data Protection &amp; Grievance Officer</p>
-                <p><strong>Entity:</strong> RealSalePro Technologies Private Limited</p>
+                <p><strong>Entity:</strong> Synergy Brand Architect (Operating RealSalePro)</p>
                 <p>
                   <strong>Contact &amp; Grievance Email:</strong>{' '}
                   <a href="mailto:support@realsalepro.com" className="text-blue-600 hover:underline">
