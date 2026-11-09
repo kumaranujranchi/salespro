@@ -59,62 +59,66 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
             />
 
             {/* Top Header */}
-            <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 z-40 px-4 flex items-center justify-between pt-[env(safe-area-inset-top)]">
-                <div className="flex items-center gap-2 shrink-0">
-                    {tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (
-                        <img src={tenant.settings.appearance.resolved_logo_url || tenant.settings.appearance.logo_url || undefined} alt={tenant.name} className="w-8 h-8 rounded-lg object-contain" />
-                    ) : (
-                        <>
-                            <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain dark:hidden" />
-                            <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain hidden dark:block" />
-                        </>
-                    )}
-                    {tenant?.name && (
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 tracking-wide uppercase">
-                            {tenant.name}
-                        </span>
-                    )}
-                </div>
-
-                {/* Module Toggle - Centered/Flexible */}
-                {hasCRMAccess && (
-                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
-                        <button
-                            onClick={() => onModuleChange(true)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'crm'
-                                ? 'bg-green-600 text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400'
-                                }`}
-                        >
-                            CRM
-                        </button>
-                        <button
-                            onClick={() => onModuleChange(false)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'sales'
-                                ? 'bg-indigo-600 text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400'
-                                }`}
-                        >
-                            Post Sales
-                        </button>
-                    </div>
-                )}
-
-                <div className="flex items-center gap-3 shrink-0">
-                    <ThemeToggle />
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm ring-2 ring-white dark:ring-white/10 shadow-sm cursor-pointer" onClick={() => setIsProfileOpen(true)}>
-                        {profile?.image_url ? (
-                            <img src={profile.image_url} className="w-full h-full rounded-full object-cover" />
+            <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10 pt-[env(safe-area-inset-top,0px)]">
+                <div className="h-16 px-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 shrink-0">
+                        {tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (
+                            <img src={tenant.settings.appearance.resolved_logo_url || tenant.settings.appearance.logo_url || undefined} alt={tenant.name} className="w-8 h-8 rounded-lg object-contain" />
                         ) : (
-                            profile?.full_name?.charAt(0)
+                            <>
+                                <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain dark:hidden" />
+                                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="w-8 h-8 rounded-lg object-contain hidden dark:block" />
+                            </>
+                        )}
+                        {tenant?.name && (
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 tracking-wide uppercase">
+                                {tenant.name}
+                            </span>
                         )}
                     </div>
+
+                    {/* Module Toggle - Centered/Flexible */}
+                    {hasCRMAccess && (
+                        <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-lg">
+                            <button
+                                onClick={() => onModuleChange(true)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'crm'
+                                    ? 'bg-green-600 text-white shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400'
+                                    }`}
+                            >
+                                CRM
+                            </button>
+                            <button
+                                onClick={() => onModuleChange(false)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeModule === 'sales'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400'
+                                    }`}
+                            >
+                                Post Sales
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 shrink-0">
+                        <ThemeToggle />
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm ring-2 ring-white dark:ring-white/10 shadow-sm cursor-pointer" onClick={() => setIsProfileOpen(true)}>
+                            {profile?.image_url ? (
+                                <img src={profile.image_url} className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                                profile?.full_name?.charAt(0)
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </header>
 
             {/* Main Content */}
-            <main key={location.pathname} className="pt-[calc(4rem+env(safe-area-inset-top))] px-4 animate-fadeIn">
-                {children}
+            <main key={location.pathname} className="pt-[calc(4rem+env(safe-area-inset-top,0px))] px-4 pb-28 animate-fadeIn">
+                <div className="pt-5 pb-6">
+                    {children}
+                </div>
             </main>
 
             {/* Bottom Navigation */}
