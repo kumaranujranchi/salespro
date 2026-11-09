@@ -10,6 +10,8 @@ import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy, Send, Smartphone, Check } from 'lucide-react';
 
+const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
+
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
   const isFreePlan = tenant?.plan_tier === 'free';
@@ -82,14 +84,14 @@ export function AdminIntegrationsPage() {
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
     enabled: false,
-    appId: '',
+    appId: DEFAULT_FACEBOOK_APP_ID,
     appSecret: '',
     accessToken: '',
     pageId: '',
     pageName: '',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
-  const [metaConnectMethod, setMetaConnectMethod] = useState<'manual' | 'oauth'>('manual');
+  const [metaConnectMethod, setMetaConnectMethod] = useState<'oauth' | 'manual'>('oauth');
   const [manualPageId, setManualPageId] = useState('');
   const [manualPageName, setManualPageName] = useState('');
   const [manualPageToken, setManualPageToken] = useState('');
@@ -199,7 +201,7 @@ export function AdminIntegrationsPage() {
     if (tenant?.settings?.integrations?.meta) {
       setMetaSettings({
         enabled: tenant.settings.integrations.meta.enabled ?? false,
-        appId: tenant.settings.integrations.meta.appId ?? '',
+        appId: tenant.settings.integrations.meta.appId || DEFAULT_FACEBOOK_APP_ID,
         appSecret: tenant.settings.integrations.meta.appSecret ?? '',
         accessToken: tenant.settings.integrations.meta.accessToken ?? '',
         pageId: tenant.settings.integrations.meta.pageId ?? '',
@@ -364,7 +366,12 @@ export function AdminIntegrationsPage() {
   }, [exchangeCodeAndGetPagesAction, toast, metaSettings.appId, metaSettings.appSecret, tenant?.settings?.integrations?.meta]);
 
   const handleFacebookConnect = () => {
-    const appId = metaSettings.appId?.trim() || tenant?.settings?.integrations?.meta?.appId || (import.meta.env.VITE_FACEBOOK_APP_ID as string)?.trim();
+    const appId =
+      metaSettings.appId?.trim() ||
+      tenant?.settings?.integrations?.meta?.appId ||
+      (import.meta.env.VITE_FACEBOOK_APP_ID as string)?.trim() ||
+      DEFAULT_FACEBOOK_APP_ID;
+
     if (!appId) {
       setMetaConnectMethod('oauth');
       toast.error("Facebook App ID is not configured. Please enter your Meta App ID in the field below.");
@@ -1602,18 +1609,6 @@ export function AdminIntegrationsPage() {
                           <div className="flex border-b border-gray-200 dark:border-white/10 gap-2">
                             <button
                               type="button"
-                              onClick={() => setMetaConnectMethod('manual')}
-                              className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-                                metaConnectMethod === 'manual'
-                                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                              }`}
-                            >
-                              <Sparkles size={13} className="text-amber-500" />
-                              Page Token (Instant)
-                            </button>
-                            <button
-                              type="button"
                               onClick={() => setMetaConnectMethod('oauth')}
                               className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
                                 metaConnectMethod === 'oauth'
@@ -1622,12 +1617,83 @@ export function AdminIntegrationsPage() {
                               }`}
                             >
                               <Facebook size={13} fill="currentColor" />
-                              Facebook Login (App ID)
+                              Facebook Login (1-Click Connect)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMetaConnectMethod('manual')}
+                              className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                                metaConnectMethod === 'manual'
+                                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                              }`}
+                            >
+                              <Sparkles size={13} className="text-amber-500" />
+                              Page Token (Manual Setup)
                             </button>
                           </div>
 
-                          {metaConnectMethod === 'manual' ? (
+                          {metaConnectMethod === 'oauth' ? (
+                            <div className="space-y-4">
+                              {/* 1-Click Connect Primary Card */}
+                              <div className="p-6 bg-gradient-to-b from-blue-50/70 to-white dark:from-blue-950/25 dark:to-slate-900 rounded-2xl border border-blue-100 dark:border-blue-900/40 text-center space-y-3 shadow-sm">
+                                <div className="w-12 h-12 bg-[#1877F2] text-white rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-blue-500/25">
+                                  <Facebook size={26} fill="currentColor" />
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Connect Facebook Business Account</h4>
+                                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 max-w-[280px] mx-auto leading-relaxed">
+                                    Click below to log in with Facebook. RealSalePro will fetch your Facebook Pages and automatically link your Lead Ads.
+                                  </p>
+                                </div>
+                                <div className="pt-1">
+                                  <Button
+                                    onClick={handleFacebookConnect}
+                                    className="bg-[#1877F2] hover:bg-[#166FE5] text-white font-semibold flex items-center justify-center gap-2 shadow-md text-xs py-2.5 px-6 rounded-xl hover:scale-105 transition-all mx-auto"
+                                  >
+                                    <Facebook size={15} fill="currentColor" /> Connect Account with Facebook
+                                  </Button>
+                                </div>
+                                <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-center gap-2 text-[10px] text-gray-400 font-mono">
+                                  <span>App ID: {metaSettings.appId || DEFAULT_FACEBOOK_APP_ID}</span>
+                                  <span>•</span>
+                                  <span className="text-emerald-500 font-semibold">Active & Configured</span>
+                                </div>
+                              </div>
+
+                              {/* App Credentials Override Accordion */}
+                              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-semibold text-slate-700 dark:text-slate-300">App Credentials & OAuth Redirect</span>
+                                  <span className="text-[10px] text-gray-400">Meta for Developers</span>
+                                </div>
+                                <div className="mt-2.5 space-y-2">
+                                  <div>
+                                    <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">
+                                      Facebook App ID:
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={metaSettings.appId}
+                                      onChange={(e) => setMetaSettings({ ...metaSettings, appId: e.target.value })}
+                                      className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                    />
+                                  </div>
+                                  <div className="pt-1">
+                                    <span className="text-[10px] text-gray-500 block mb-0.5">Valid OAuth Redirect URI:</span>
+                                    <div className="flex items-center gap-1 font-mono text-[10px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-gray-200 dark:border-slate-700 select-all">
+                                      <span className="truncate flex-1">{window.location.origin}/settings/integrations</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
                             <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
+                              <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                <Sparkles size={14} className="text-amber-500" />
+                                <span>Manual Page Token Connection</span>
+                              </div>
                               <div>
                                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                                   Facebook Page ID <span className="text-red-500">*</span>
@@ -1705,74 +1771,6 @@ export function AdminIntegrationsPage() {
                               >
                                 <CheckCircle2 size={14} /> Verify & Connect Facebook Page
                               </Button>
-                            </div>
-                          ) : (
-                            <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
-                              <div>
-                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                                  Facebook App ID (client_id) <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={metaSettings.appId}
-                                  onChange={(e) => setMetaSettings({ ...metaSettings, appId: e.target.value })}
-                                  placeholder="e.g. 15-16 digit App ID"
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
-                                />
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  Found in Meta for Developers (<a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="text-blue-500 underline">developers.facebook.com</a>).
-                                </p>
-                              </div>
-
-                              <div>
-                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                                  Facebook App Secret
-                                </label>
-                                <div className="relative">
-                                  <input
-                                    type={showMetaAppSecret ? "text" : "password"}
-                                    value={metaSettings.appSecret}
-                                    onChange={(e) => setMetaSettings({ ...metaSettings, appSecret: e.target.value })}
-                                    placeholder="32 character App Secret"
-                                    className="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowMetaAppSecret(!showMetaAppSecret)}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                  >
-                                    {showMetaAppSecret ? <EyeOff size={13} /> : <Eye size={13} />}
-                                  </button>
-                                </div>
-                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                  App Dashboard → App settings → Basic.
-                                </p>
-                              </div>
-
-                              <div className="flex gap-2 pt-1">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleSaveMetaCredentials}
-                                  isLoading={savingMeta}
-                                  className="text-xs flex-1"
-                                >
-                                  <Save size={12} className="mr-1" /> Save Credentials
-                                </Button>
-                                <Button
-                                  onClick={handleFacebookConnect}
-                                  className="bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-semibold flex-1 flex items-center justify-center gap-1"
-                                >
-                                  <Facebook size={13} fill="currentColor" /> Login with FB
-                                </Button>
-                              </div>
-
-                              <div className="pt-2 border-t border-gray-200 dark:border-white/10 text-[10px] text-gray-500">
-                                <span>OAuth Valid Redirect URI for your Meta App:</span>
-                                <div className="mt-1 flex items-center gap-1 font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded border border-gray-200 dark:border-slate-700 select-all">
-                                  <span className="truncate flex-1">{window.location.origin}/settings/integrations</span>
-                                </div>
-                              </div>
                             </div>
                           )}
                         </div>

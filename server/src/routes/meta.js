@@ -5,6 +5,9 @@ import { sendMetaCloudMessage, sendWatiMessage } from '../services/whatsappServi
 
 const router = Router();
 
+const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
+const DEFAULT_FACEBOOK_APP_SECRET = '73b2d2fb9c45ed22d763aac80c24a46d';
+
 /**
  * Exchange Facebook OAuth code for access token and fetch pages
  * POST /api/meta/exchange-code
@@ -28,11 +31,8 @@ router.post('/exchange-code', requireAuth, async (req, res) => {
       }
     }
 
-    if (!appId || !appSecret) {
-      return res.status(500).json({
-        error: 'Facebook App ID or App Secret not configured. Please set VITE_FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in the environment or inside Meta Lead Ads settings.',
-      });
-    }
+    if (!appId) appId = DEFAULT_FACEBOOK_APP_ID;
+    if (!appSecret) appSecret = DEFAULT_FACEBOOK_APP_SECRET;
 
     // 1. Exchange code for user access token
     const tokenUrl = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&redirect_uri=${encodeURIComponent(redirectUri)}&code=${code}`;
