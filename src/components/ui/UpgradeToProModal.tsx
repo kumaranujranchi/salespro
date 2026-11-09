@@ -89,7 +89,7 @@ export function UpgradeToProModal({
                 <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
                   <Check size={13} strokeWidth={3} />
                 </div>
-                <span><strong>Unlimited Leads:</strong> Scale your CRM without any 1,000 lead ceiling</span>
+                <span><strong>Up to 2,00,000 Leads:</strong> Scale your CRM up to 2,00,000 leads without the 1,000 limit</span>
               </div>
               <div className="flex items-start gap-2.5">
                 <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">

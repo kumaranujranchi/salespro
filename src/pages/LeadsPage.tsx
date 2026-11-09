@@ -567,6 +567,10 @@ export function LeadsPage() {
       }
       return;
     }
+    if (!isFreePlan && totalLeadsCount >= 200000) {
+      toast.error("Pro Plan lead limit reached (Maximum 2,00,000 leads). Please contact support for custom enterprise limits.");
+      return;
+    }
     setSelectedLead(null);
     setIsFormModalOpen(true);
   };
@@ -628,6 +632,10 @@ export function LeadsPage() {
       } else {
         toast.error("Lead limit reached (Maximum 1,000 leads on Free Plan). Please contact your organization administrator to upgrade the plan.");
       }
+      return;
+    }
+    if (!isFreePlan && totalLeadsCount >= 200000) {
+      toast.error("Pro Plan lead limit reached (Maximum 2,00,000 leads). Please contact support for custom enterprise limits.");
       return;
     }
     setIsBulkModalOpen(true);
@@ -2030,8 +2038,8 @@ export function LeadsPage() {
       <UpgradeToProModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        featureName="Unlimited Leads"
-        description="Free Plan allows up to 1,000 leads. Upgrade to Pro Plan for unlimited leads, full ad integrations, and team scaling."
+        featureName="Pro Plan Leads"
+        description="Free Plan allows up to 1,000 leads. Upgrade to Pro Plan for up to 2,00,000 leads, full ad integrations, and team scaling."
       />
     </div>
   );

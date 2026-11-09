@@ -357,7 +357,7 @@ export function PricingPage() {
               )}
 
               <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
-                {['All Pro Features Included', 'Up to 1,00,000 Leads Limit', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support'].map((feature) => (
+                {['All Pro Features Included', 'Up to 2,00,000 Leads Limit', 'Unlimited Users', 'Real-time Analytics', 'Priority Email Support'].map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-blue-400 mt-0.5" />
                     <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-300">{feature}</span>

@@ -358,17 +358,24 @@ router.post('/', async (req, res) => {
     const targetTenantId = tenant_id || req.user?.tenant_id;
     if (!targetTenantId) return res.status(400).json({ error: 'tenant_id is required' });
 
-    // Check Free Plan Lead Limit (Maximum 1,000 leads)
+    // Check Plan Lead Limits (1,000 for Free Plan, 200,000 for Pro Plan)
     const tenantRes = await query('SELECT plan_tier, subscription_status FROM tenants WHERE id = $1', [targetTenantId]);
     const tenantRow = tenantRes.rows[0];
     const isProOrEnterprise = tenantRow?.plan_tier === 'pro' || tenantRow?.plan_tier === 'enterprise' || tenantRow?.subscription_status === 'active';
 
+    const countRes = await query('SELECT COUNT(*) as count FROM leads WHERE tenant_id = $1', [targetTenantId]);
+    const currentLeadsCount = parseInt(countRes.rows[0]?.count || '0', 10);
+
     if (!isProOrEnterprise) {
-      const countRes = await query('SELECT COUNT(*) as count FROM leads WHERE tenant_id = $1', [targetTenantId]);
-      const currentLeadsCount = parseInt(countRes.rows[0]?.count || '0', 10);
       if (currentLeadsCount >= 1000) {
         return res.status(403).json({
           error: 'Free Plan limit reached (Maximum 1,000 leads). Please delete older leads or upgrade to Pro Plan to add more leads.'
+        });
+      }
+    } else {
+      if (currentLeadsCount >= 200000) {
+        return res.status(403).json({
+          error: 'Pro Plan limit reached (Maximum 2,00,000 leads). Please contact support for custom enterprise limits.'
         });
       }
     }
@@ -424,17 +431,24 @@ router.post('/bulk-insert', async (req, res) => {
       return res.status(400).json({ error: 'tenant_id is required' });
     }
 
-    // Check Free Plan Lead Limit for bulk insert
+    // Check Lead Limits for bulk insert (1,000 for Free Plan, 200,000 for Pro Plan)
     const tenantRes = await query('SELECT plan_tier, subscription_status FROM tenants WHERE id = $1', [targetTenantId]);
     const tenantRow = tenantRes.rows[0];
     const isProOrEnterprise = tenantRow?.plan_tier === 'pro' || tenantRow?.plan_tier === 'enterprise' || tenantRow?.subscription_status === 'active';
 
+    const countRes = await query('SELECT COUNT(*) as count FROM leads WHERE tenant_id = $1', [targetTenantId]);
+    const currentLeadsCount = parseInt(countRes.rows[0]?.count || '0', 10);
+
     if (!isProOrEnterprise) {
-      const countRes = await query('SELECT COUNT(*) as count FROM leads WHERE tenant_id = $1', [targetTenantId]);
-      const currentLeadsCount = parseInt(countRes.rows[0]?.count || '0', 10);
       if (currentLeadsCount + leads.length > 1000) {
         return res.status(403).json({
           error: `Free Plan limit exceeded. You currently have ${currentLeadsCount} leads (Maximum limit is 1,000). Adding ${leads.length} leads would exceed your limit. Please delete older leads or upgrade to Pro Plan.`
+        });
+      }
+    } else {
+      if (currentLeadsCount + leads.length > 200000) {
+        return res.status(403).json({
+          error: `Pro Plan limit exceeded. You currently have ${currentLeadsCount} leads (Maximum limit is 2,00,000). Adding ${leads.length} leads would exceed your plan limit. Please contact support for custom enterprise limits.`
         });
       }
     }

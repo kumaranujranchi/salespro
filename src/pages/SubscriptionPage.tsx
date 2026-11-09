@@ -329,7 +329,7 @@ export function SubscriptionPage() {
 
   const planFeatures = isPro ? [
     'All Pro Features Included',
-    'Up to 1,00,000 Leads Limit',
+    'Up to 2,00,000 Leads Limit',
     'Lead Deletion Enabled',
     'Unlimited Users',
     'Real-time Analytics',
@@ -340,7 +340,7 @@ export function SubscriptionPage() {
     'Custom Reports'
   ] : [
     'All Pro Features Included',
-    'Up to 1,00,000 Leads (1,000 Max for Free Plan)',
+    'Up to 2,00,000 Leads (1,000 Max for Free Plan)',
     'Up to 5 Users (Unlimited for Pro)',
     'Real-time Analytics',
     'Standard Email Support',
@@ -663,7 +663,7 @@ export function SubscriptionPage() {
                 Leads Managed
               </h3>
               <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {((tenant as any).leads_count || 0).toLocaleString()} / {isPro ? '1,00,000' : '1,000'}
+                {((tenant as any).leads_count || 0).toLocaleString()} / {isPro ? '2,00,000' : '1,000'}
               </div>
               <div className="text-sm text-slate-600 dark:text-gray-400">
                 {isPro ? 'Upgrade custom for more limits' : 'Upgrade to Pro for more leads'}
@@ -693,7 +693,7 @@ export function SubscriptionPage() {
               <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800">
                 <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade to Pro for more leads &amp; users</h4>
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
-                  Manage up to 1,00,000 leads and unlock unlimited team users. Upgrade now.
+                  Manage up to 2,00,000 leads and unlock unlimited team users. Upgrade now.
                 </p>
                 <button onClick={() => navigate('/pricing')} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
                   View Plans →
