@@ -1,0 +1,1165 @@
+// Auto-generated from realsalepro-redesign landing page
+export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-arrow-ur" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.2 3 7.5 7 9 4-1.5 7-4.8 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.2-3.6-8.5S9.6 5.8 12 3.5Z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12.5 16V8M17 16v-8.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14.7c2 .7 3 2.7 3 5.3"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.5 13.5 6 5h12l2.5 8.5V19h-17v-5.5Z"/><path d="M3.5 13.5H9l1 2h4l1-2h5.5"/></symbol>
+    <symbol id="i-kanban" viewBox="0 0 24 24"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="10" rx="1.5"/><rect x="15.5" y="4" width="5" height="13" rx="1.5"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V7l8-4v18M12 21h8V10l-8-3"/><path d="M7.5 9.5h1M7.5 13h1M7.5 16.5h1M15.5 12.5h1M15.5 16h1M2.5 21h19"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3.5h14V21l-2.3-1.6L14.4 21 12 19.4 9.6 21l-2.3-1.6L5 21V3.5Z"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M7.2 16.8 5.6 18.4a3.9 3.9 0 0 1-5.5 5.5"/><path d="M16.8 7.2l1.6-1.6a3.9 3.9 0 0 1 5.5 5.5l-1.6 1.6"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20.5H6V3.5Z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16M15 4v16"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m4 10.5 8-7 8 7V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5Z"/><path d="M9.5 21v-6h5v6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.5 12a7.5 7.5 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7.6 7.6 0 0 0-2-1.2L14.7 3h-4l-.4 2.5a7.6 7.6 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5a7.5 7.5 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7.6 7.6 0 0 0 2 1.2l.4 2.5h4l.4-2.5a7.6 7.6 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.07-.4.1-.8.1-1.2Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M12 2a9.9 9.9 0 0 0-8.5 15L2 22l5.2-1.4A9.9 9.9 0 1 0 12 2Zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20Zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.2 7.2 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4c.1-.1 0-.3 0-.4l-.7-1.7c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 2s.8 2.3 1 2.5a9.6 9.6 0 0 0 4 3.5 6.6 6.6 0 0 0 1.3.5 3 3 0 0 0 1.5.1c.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.4-.3Z"/></symbol>
+    <symbol id="i-facebook" viewBox="0 0 24 24"><path d="M14.5 8.5H17V5h-2.5A3.5 3.5 0 0 0 11 8.5V11H8.5v3.5H11V21h3.5v-6.5H17L17.5 11h-3V9a.5.5 0 0 1 .5-.5Z"/></symbol>
+    <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-linkedin" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M8 10v7M8 7.2v.1M12 17v-4a2.2 2.2 0 0 1 4.4 0v4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m4 3 16 18M20 3 4 21"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><path d="M9.5 6C6.5 7.5 5 10 5 13v5h6v-6H8c0-2 .6-3.4 2.4-4.4L9.5 6Zm10 0c-3 1.5-4.5 4-4.5 7v5h6v-6h-3c0-2 .6-3.4 2.4-4.4L19.5 6Z"/></symbol>
+  </svg>
+
+  <div class="scroll-progress" aria-hidden="true"><span id="scrollBar"></span></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="nav__brand" href="#top" aria-label="RealSalePro home">
+        <img src="/assets/img/logo-light.png" alt="RealSalePro" width="176" height="42" />
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#product">Platform</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#security">Security</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav__actions">
+        <a class="nav__login" href="https://realsalepro.com/login">Log in</a>
+        <a class="btn btn--primary btn--sm" href="https://realsalepro.com/register">
+          <span>Start free</span><svg class="icon"><use href="#i-arrow"/></svg>
+        </a>
+        <button class="nav__toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+          <svg class="icon"><use href="#i-menu"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="nav__mobile" id="mobileMenu" hidden>
+      <a href="#features">Features</a>
+      <a href="#product">Platform</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#security">Security</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://realsalepro.com/login">Log in</a>
+      <a class="btn btn--primary" href="https://realsalepro.com/register">Start free <svg class="icon"><use href="#i-arrow"/></svg></a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero__bg" aria-hidden="true">
+        <div class="hero__grid"></div>
+        <div class="hero__glow hero__glow--a"></div>
+        <div class="hero__glow hero__glow--b"></div>
+        <div class="hero__ring"></div>
+      </div>
+
+      <div class="container hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow hero__eyebrow" data-reveal>
+            <span class="eyebrow__dot"></span>
+            100% free real-estate CRM
+            <span class="eyebrow__new">No card, ever</span>
+          </p>
+
+          <h1 class="hero__title" data-reveal data-reveal-delay="80">
+            Turn every<br />enquiry into<br />a <em>booking</em>.
+          </h1>
+
+          <p class="hero__lede" data-reveal data-reveal-delay="160">
+            RealSalePro pulls leads from Meta, Google, Magicbricks and WhatsApp into
+            one calm pipeline — then runs site visits, inventory and incentives from
+            a single tab. Free up to <strong>1,000 leads</strong>.
+          </p>
+
+          <div class="hero__cta" data-reveal data-reveal-delay="240">
+            <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
+              <span>Start free — no card</span><svg class="icon"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="btn btn--ghost btn--lg" href="mailto:support@realsalepro.com?subject=Demo%20request%20—%20RealSalePro">
+              <span class="btn__play"><svg class="icon"><use href="#i-play"/></svg></span>
+              <span>Book a demo</span>
+            </a>
+          </div>
+
+          <ul class="hero__facts" data-reveal data-reveal-delay="320">
+            <li><b>₹0</b><span>Free forever plan</span></li>
+            <li><b>1,000</b><span>Lead capacity</span></li>
+            <li><b>4.8<span class="star">★</span></b><span>1,056 reviews</span></li>
+          </ul>
+
+          <div class="hero__proof" data-reveal data-reveal-delay="380">
+            <span class="avatars" aria-hidden="true">
+              <i style="--av:linear-gradient(135deg,#34d399,#059669)">RS</i>
+              <i style="--av:linear-gradient(135deg,#f0c987,#c98b3c)">AK</i>
+              <i style="--av:linear-gradient(135deg,#8fb7ff,#3f6fd8)">NP</i>
+              <i style="--av:linear-gradient(135deg,#c0f08a,#79b131)">VJ</i>
+            </span>
+            <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
+          </div>
+        </div>
+
+        <!-- App mockup -->
+        <div class="hero__visual" data-reveal data-reveal-delay="200">
+          <div class="stage">
+            <div class="stage__label"><span></span> Live on the sales floor</div>
+
+            <div class="app" id="heroApp">
+              <div class="app__bar">
+                <span class="app__dots"><i></i><i></i><i></i></span>
+                <span class="app__url">app.realsalepro.com / pipeline</span>
+                <span class="app__live"><i></i> Live</span>
+              </div>
+              <div class="app__body">
+                <aside class="app__rail" aria-hidden="true">
+                  <span class="rail__logo">R</span>
+                  <span class="rail__ic is-on"><svg class="icon"><use href="#i-home"/></svg></span>
+                  <span class="rail__ic"><svg class="icon"><use href="#i-users"/></svg></span>
+                  <span class="rail__ic"><svg class="icon"><use href="#i-kanban"/></svg></span>
+                  <span class="rail__ic"><svg class="icon"><use href="#i-building"/></svg></span>
+                  <span class="rail__ic"><svg class="icon"><use href="#i-target"/></svg></span>
+                  <span class="rail__ic"><svg class="icon"><use href="#i-chart"/></svg></span>
+                  <span class="rail__spacer"></span>
+                  <span class="rail__avatar">AK</span>
+                </aside>
+
+                <div class="app__main">
+                  <div class="app__head">
+                    <div>
+                      <p class="app__crumb">Pipeline · Green Meadows, Pune</p>
+                      <p class="app__title">Sales pipeline</p>
+                    </div>
+                    <div class="app__head-actions">
+                      <span class="chip chip--ghost">This month</span>
+                      <span class="chip chip--solid"><svg class="icon"><use href="#i-plus"/></svg>Add lead</span>
+                    </div>
+                  </div>
+
+                  <div class="app__kpis">
+                    <div class="kpi">
+                      <span>Booked value</span>
+                      <b>₹8.4 Cr</b>
+                      <em class="up"><svg class="icon"><use href="#i-arrow-ur"/></svg>+12% MoM</em>
+                    </div>
+                    <div class="kpi">
+                      <span>Site visits</span>
+                      <b>124</b>
+                      <em>32 scheduled</em>
+                    </div>
+                    <div class="kpi kpi--hide-sm">
+                      <span>Win rate</span>
+                      <b>38%</b>
+                      <em class="up">+6 pts</em>
+                    </div>
+                  </div>
+
+                  <div class="kanban">
+                    <div class="kanban__col">
+                      <div class="kanban__head"><span>New lead</span><b>3</b></div>
+                      <article class="lead">
+                        <div class="lead__top"><span class="lead__av" style="--av:#34d399">RS</span><span class="src src--meta">Meta</span></div>
+                        <strong>Rohit Sharma</strong>
+                        <span class="lead__meta">3BHK · ₹1.4 Cr</span>
+                        <div class="lead__foot"><span>2h ago</span><span class="tag tag--hot">Hot</span></div>
+                      </article>
+                      <article class="lead">
+                        <div class="lead__top"><span class="lead__av" style="--av:#8fb7ff">MP</span><span class="src src--wa">WhatsApp</span></div>
+                        <strong>Meera Patel</strong>
+                        <span class="lead__meta">2BHK · ₹92 L</span>
+                        <div class="lead__foot"><span>20m ago</span><span class="tag">New</span></div>
+                      </article>
+                    </div>
+
+                    <div class="kanban__col">
+                      <div class="kanban__head"><span>Site visit</span><b>2</b></div>
+                      <article class="lead">
+                        <div class="lead__top"><span class="lead__av" style="--av:#f0c987">AK</span><span class="src src--mb">Magicbricks</span></div>
+                        <strong>Arjun Kapoor</strong>
+                        <span class="lead__meta">4BHK · ₹2.8 Cr</span>
+                        <div class="lead__foot"><span>Sat, 11:00</span><span class="tag tag--visit">Visit</span></div>
+                      </article>
+                      <article class="lead">
+                        <div class="lead__top"><span class="lead__av" style="--av:#c0f08a">GL</span><span class="src src--google">Google</span></div>
+                        <strong>Geeta Luthra</strong>
+                        <span class="lead__meta">3BHK · ₹1.1 Cr</span>
+                        <div class="lead__foot"><span>Sun, 16:30</span><span class="tag tag--visit">Visit</span></div>
+                      </article>
+                    </div>
+
+                    <div class="kanban__col kanban__col--hide">
+                      <div class="kanban__head"><span>Negotiation</span><b>1</b></div>
+                      <article class="lead">
+                        <div class="lead__top"><span class="lead__av" style="--av:#c9a0ff">SN</span><span class="src src--walk">Walk-in</span></div>
+                        <strong>Sanjay Nair</strong>
+                        <span class="lead__meta">Villa · ₹3.6 Cr</span>
+                        <div class="lead__foot"><span>Today</span><span class="tag">Offer</span></div>
+                      </article>
+                    </div>
+
+                    <div class="kanban__col kanban__col--hide">
+                      <div class="kanban__head"><span>Booked</span><b>1</b></div>
+                      <article class="lead lead--won">
+                        <div class="lead__top"><span class="lead__av" style="--av:#34d399">TK</span><span class="src src--meta">Meta</span></div>
+                        <strong>Tarun Khanna</strong>
+                        <span class="lead__meta">Unit 402 · ₹1.5 Cr</span>
+                        <div class="lead__foot"><span>Today</span><span class="tag tag--won"><svg class="icon"><use href="#i-check"/></svg>Booked</span></div>
+                      </article>
+                    </div>
+                  </div>
+
+                  <div class="app__foot">
+                    <div class="app__chart" aria-hidden="true">
+                      <span style="--h:38%"></span><span style="--h:56%"></span><span style="--h:44%"></span>
+                      <span style="--h:72%"></span><span style="--h:60%"></span><span style="--h:88%"></span>
+                      <span style="--h:66%"></span><span style="--h:96%"></span>
+                    </div>
+                    <div class="app__foot-meta">
+                      <strong>18<span>/24</span></strong>
+                      <em>units available · Green Meadows</em>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="float float--lead">
+              <span class="float__pulse"><svg class="icon"><use href="#i-bolt"/></svg></span>
+              <div><strong>New lead · Meta Ads</strong><span>Rohit S. · 3BHK enquiry</span></div>
+              <em>now</em>
+            </div>
+
+            <div class="float float--book">
+              <span class="float__tick"><svg class="icon"><use href="#i-check"/></svg></span>
+              <div><strong>Unit 402 booked</strong><span>Green Meadows · ₹1.5 Cr</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="marquee-wrap" aria-label="Lead sources that connect to RealSalePro">
+        <div class="marquee">
+          <div class="marquee__track">
+            <span class="mq"><b>Meta Lead Ads</b></span>
+            <span class="mq"><b>Google Ads</b></span>
+            <span class="mq"><b>WhatsApp Business</b></span>
+            <span class="mq"><b>Magicbricks</b></span>
+            <span class="mq"><b>99acres</b></span>
+            <span class="mq"><b>WordPress</b></span>
+            <span class="mq"><b>Webflow</b></span>
+            <span class="mq"><b>Google Forms</b></span>
+            <span class="mq"><b>Google Sheets</b></span>
+            <span class="mq"><b>Webhooks</b></span>
+            <span class="mq"><b>Meta Lead Ads</b></span>
+            <span class="mq"><b>Google Ads</b></span>
+            <span class="mq"><b>WhatsApp Business</b></span>
+            <span class="mq"><b>Magicbricks</b></span>
+            <span class="mq"><b>99acres</b></span>
+            <span class="mq"><b>WordPress</b></span>
+            <span class="mq"><b>Webflow</b></span>
+            <span class="mq"><b>Google Forms</b></span>
+            <span class="mq"><b>Google Sheets</b></span>
+            <span class="mq"><b>Webhooks</b></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROBLEM / CONTRAST ============ -->
+    <section class="section section--paper" id="why">
+      <div class="container">
+        <header class="sec-head">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">01</span> The daily grind</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Your leads are everywhere.<br />Your team is <em>guessing</em>.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Six channels, four spreadsheets, one WhatsApp group. Every handoff drops a lead —
+            and month-end is a scramble to reconstruct what actually happened.
+          </p>
+        </header>
+
+        <div class="vsm">
+          <div class="vsm__panel vsm__panel--old" data-reveal>
+            <div class="vsm__top">
+              <span class="vsm__tag">Before</span>
+              <span class="vsm__meta">~6 tabs open</span>
+            </div>
+            <h3>The nine-tab sales floor</h3>
+            <ul class="vsm__list">
+              <li><span class="vsm__x">×</span> Meta enquiries sit in a shared inbox nobody owns</li>
+              <li><span class="vsm__x">×</span> Portal leads get re-typed into Excel by hand</li>
+              <li><span class="vsm__x">×</span> Site visits tracked on one salesperson's phone</li>
+              <li><span class="vsm__x">×</span> Two agents book the same flat, same week</li>
+              <li><span class="vsm__x">×</span> Incentives calculated on a whiteboard</li>
+              <li><span class="vsm__x">×</span> Nobody knows the real win rate</li>
+            </ul>
+            <div class="vsm__scatter" aria-hidden="true">
+              <span class="chip chip--scatter" style="--r:-7deg;--x:6%;--y:62%">leads_july.xlsx</span>
+              <span class="chip chip--scatter" style="--r:5deg;--x:36%;--y:66%">WhatsApp forward</span>
+              <span class="chip chip--scatter" style="--r:-3deg;--x:64%;--y:60%">site_visit_notes.txt</span>
+              <span class="chip chip--scatter" style="--r:6deg;--x:20%;--y:74%">new lead · Meta</span>
+              <span class="chip chip--scatter" style="--r:-6deg;--x:52%;--y:76%">inventory_final_FINAL.xlsx</span>
+            </div>
+          </div>
+
+          <div class="vsm__arrow" aria-hidden="true"><svg class="icon"><use href="#i-arrow"/></svg></div>
+
+          <div class="vsm__panel vsm__panel--new" data-reveal data-reveal-delay="80">
+            <div class="vsm__top">
+              <span class="vsm__tag vsm__tag--mint">After</span>
+              <span class="vsm__meta">1 workspace</span>
+            </div>
+            <h3>One pipeline, one truth</h3>
+            <ul class="vsm__list">
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> Every enquiry lands in one inbox in under 5 seconds</li>
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> Duplicates flagged and merged automatically</li>
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> Leads routed round-robin, or by rule you set</li>
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> Live inventory stops double-booking</li>
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> Targets and incentives update themselves</li>
+              <li><span class="vsm__ok"><svg class="icon"><use href="#i-check"/></svg></span> One funnel view, from click to handover</li>
+            </ul>
+            <div class="vsm__mini" aria-hidden="true">
+              <div class="mini-stage"><span>New</span><b>128</b></div>
+              <i class="mini-line"></i>
+              <div class="mini-stage"><span>Visit</span><b>39</b></div>
+              <i class="mini-line"></i>
+              <div class="mini-stage"><span>Booked</span><b>12</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BENTO FEATURES ============ -->
+    <section class="section section--dark" id="features">
+      <div class="container">
+        <header class="sec-head sec-head--split">
+          <div>
+            <p class="eyebrow" data-reveal><span class="eyebrow__no">02</span> Capabilities</p>
+            <h2 class="sec-head__title" data-reveal data-reveal-delay="60">One platform.<br />The whole <em>deal</em>.</h2>
+          </div>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            From the first ad click to the final handover — every tool your sales floor
+            needs, built specifically for real estate and priced at zero to start.
+          </p>
+        </header>
+
+        <div class="bento">
+          <article class="card card--wide" data-reveal>
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-inbox"/></svg></span>
+              <h3>Capture every enquiry</h3>
+              <p>Meta, Google, Magicbricks, 99acres, WhatsApp and your own website forms — deduped, scored and assigned in under five seconds.</p>
+            </div>
+            <div class="card__viz viz-channels" aria-hidden="true">
+              <span class="src src--meta">Meta</span>
+              <span class="src src--google">Google</span>
+              <span class="src src--mb">Magicbricks</span>
+              <span class="src src--wa">WhatsApp</span>
+              <span class="viz-channels__arrow"><svg class="icon"><use href="#i-arrow"/></svg></span>
+              <span class="viz-channels__inbox"><svg class="icon"><use href="#i-inbox"/></svg><b>1 inbox</b></span>
+            </div>
+          </article>
+
+          <article class="card" data-reveal data-reveal-delay="60">
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-kanban"/></svg></span>
+              <h3>A pipeline the team actually uses</h3>
+              <p>Drag any deal from New lead to Site visit to Booked. Every stage, owner and amount visible at a glance.</p>
+            </div>
+            <div class="card__viz viz-kanban" aria-hidden="true">
+              <span class="vk-col"><i></i><i></i></span>
+              <span class="vk-col vk-col--b"><i></i></span>
+              <span class="vk-col vk-col--c"><i></i><i></i></span>
+              <span class="vk-cursor">↖</span>
+            </div>
+          </article>
+
+          <article class="card" data-reveal data-reveal-delay="120">
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-building"/></svg></span>
+              <h3>Inventory that can't double-book</h3>
+              <p>Live availability across every project, tower and unit. Holds expire, bookings lock, the master sheet finally retires.</p>
+            </div>
+            <div class="card__viz viz-units" aria-hidden="true">
+              <span class="unit is-free">A-101</span><span class="unit is-booked">A-102</span>
+              <span class="unit is-hold">A-103</span><span class="unit is-free">A-104</span>
+              <span class="unit is-free">B-201</span><span class="unit is-booked">B-202</span>
+              <span class="unit is-free">B-203</span><span class="unit is-hold">B-204</span>
+            </div>
+          </article>
+
+          <article class="card" data-reveal data-reveal-delay="180">
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-target"/></svg></span>
+              <h3>Incentives that calculate themselves</h3>
+              <p>Monthly targets per agent, project or value. Real-time achievement, commission and payouts — no spreadsheet archaeology.</p>
+            </div>
+            <div class="card__viz viz-targets" aria-hidden="true">
+              <div class="vt"><span>Ravi — ₹1.5 Cr</span><b>78%</b><i style="--w:78%"></i></div>
+              <div class="vt"><span>Neha — 15 units</span><b>80%</b><i style="--w:80%"></i></div>
+              <div class="vt"><span>Firm — monthly</span><b>64%</b><i style="--w:64%"></i></div>
+            </div>
+          </article>
+
+          <article class="card" data-reveal data-reveal-delay="240">
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-receipt"/></svg></span>
+              <h3>Booking to handover</h3>
+              <p>Digital booking forms, payment milestones and automated reminders, with branded PDF receipts you can send on WhatsApp.</p>
+            </div>
+            <div class="card__viz viz-timeline" aria-hidden="true">
+              <div class="vtl"><span class="vtl__dot is-done"></span><span>Booking</span><em>Paid</em></div>
+              <div class="vtl"><span class="vtl__dot is-done"></span><span>Agreement</span><em>Paid</em></div>
+              <div class="vtl"><span class="vtl__dot"></span><span>Milestone 2</span><em>Due</em></div>
+              <div class="vtl"><span class="vtl__dot"></span><span>Handover</span><em>Apr</em></div>
+            </div>
+          </article>
+
+          <article class="card card--wide" data-reveal data-reveal-delay="300">
+            <div class="card__body">
+              <span class="card__ic"><svg class="icon"><use href="#i-phone"/></svg></span>
+              <h3>Run the floor from your phone</h3>
+              <p>Field-ready access for site visits, follow-ups and inventory checks — so the update happens at the site, not at 9 pm.</p>
+              <ul class="card__chips">
+                <li>Site-visit updates</li>
+                <li>Follow-up reminders</li>
+                <li>Inventory checks</li>
+              </ul>
+            </div>
+            <div class="card__viz viz-phone" aria-hidden="true">
+              <div class="phone-mini">
+                <div class="phone-mini__top"><span>Site visit</span><b>Today</b></div>
+                <div class="phone-mini__row"><span class="dot"></span><div><strong>Arjun Kapoor</strong><em>4BHK · ₹2.8 Cr</em></div><b>11:00</b></div>
+                <div class="phone-mini__row"><span class="dot dot--mint"></span><div><strong>Geeta Luthra</strong><em>3BHK · ₹1.1 Cr</em></div><b>16:30</b></div>
+                <div class="phone-mini__btn">Mark visit done</div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DEEP DIVE: CAPTURE ============ -->
+    <section class="section section--paper" id="capture">
+      <div class="container split">
+        <div class="split__copy">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">03</span> Omnichannel capture</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Ads in.<br />Leads <em>out</em>.</h2>
+          <p class="split__lede" data-reveal data-reveal-delay="120">
+            Connect Meta Lead Ads, Google Ads, Magicbricks, 99acres or a simple webhook.
+            RealSalePro validates the number, checks for duplicates and hands the lead to
+            the right executive before the enquiry goes cold.
+          </p>
+          <ul class="checklist" data-reveal data-reveal-delay="180">
+            <li><svg class="icon"><use href="#i-check"/></svg> Native one-click integrations — no Zapier required</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> Round-robin or manual assignment, per project</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> Instant WhatsApp welcome flow on every new lead</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> Source-level attribution in every report</li>
+          </ul>
+          <a class="link-arrow" href="#integrations" data-reveal data-reveal-delay="240">See all integrations <svg class="icon"><use href="#i-arrow"/></svg></a>
+        </div>
+
+        <div class="split__visual" data-reveal data-reveal-delay="120">
+          <div class="capture">
+            <span class="capture__chip capture__chip--a"><i class="dot dot--meta"></i>Meta Lead Ads</span>
+            <span class="capture__chip capture__chip--b"><i class="dot dot--google"></i>Google Ads</span>
+            <span class="capture__chip capture__chip--c"><i class="dot dot--mb"></i>Magicbricks</span>
+            <span class="capture__chip capture__chip--d"><i class="dot dot--wa"></i>WhatsApp</span>
+
+            <div class="capture__phone">
+              <div class="wa">
+                <div class="wa__bar">
+                  <span class="wa__av">R</span>
+                  <div><strong>RealSalePro</strong><em>Business account</em></div>
+                  <svg class="icon wa__icon"><use href="#i-whatsapp"/></svg>
+                </div>
+                <div class="wa__body">
+                  <div class="bubble bubble--in"><span class="bubble__tag">Auto welcome · 3s</span>Hi Rohit! Thanks for your interest in Green Meadows. I'm Priya from the sales team — when would you like to visit the site? 🙂</div>
+                  <div class="bubble bubble--out">Saturday 11 am works</div>
+                  <div class="bubble bubble--in"><span class="bubble__tag">Site visit booked</span>Perfect — Saturday, 11:00 AM at the Green Meadows experience centre. I've added it to your pipeline. See you then!</div>
+                  <span class="wa__typing"><i></i><i></i><i></i></span>
+                </div>
+                <div class="wa__input"><span>Reply…</span><b><svg class="icon"><use href="#i-arrow"/></svg></b></div>
+              </div>
+            </div>
+
+            <div class="capture__toast">
+              <span class="capture__toast-ic"><svg class="icon"><use href="#i-bolt"/></svg></span>
+              <div><strong>Lead captured</strong><span>Rohit Sharma · Meta Ads · 3BHK</span></div>
+              <em>4.2s</em>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCT TABS ============ -->
+    <section class="section section--dark" id="product">
+      <div class="container">
+        <header class="sec-head sec-head--center">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">04</span> Inside the product</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Watch the busywork <em>disappear</em>.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Four views replace the spreadsheet, the whiteboard and the endless status call.
+          </p>
+        </header>
+
+        <div class="tabs" data-tabs>
+          <div class="tabs__list" role="tablist" aria-label="Product views">
+            <button class="tab is-active" role="tab" aria-selected="true" aria-controls="panel-pipeline" id="tab-pipeline" data-tab="pipeline">Pipeline</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-inventory" id="tab-inventory" data-tab="inventory" tabindex="-1">Inventory</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-incentives" id="tab-incentives" data-tab="incentives" tabindex="-1">Incentives</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-reports" id="tab-reports" data-tab="reports" tabindex="-1">Reports</button>
+          </div>
+
+          <div class="tabs__panels">
+            <!-- PIPELINE -->
+            <div class="panel is-active" id="panel-pipeline" role="tabpanel" aria-labelledby="tab-pipeline">
+              <div class="panel__frame">
+                <div class="panel__head">
+                  <div><span class="panel__eyebrow">Funnel · Green Meadows</span><h3>Conversion, stage by stage</h3></div>
+                  <span class="chip chip--ghost">This quarter</span>
+                </div>
+                <div class="funnel">
+                  <div class="funnel__row"><span>New lead</span><i style="--w:100%"><b>128</b></i></div>
+                  <div class="funnel__row"><span>Contacted</span><i style="--w:74%"><b>74</b></i></div>
+                  <div class="funnel__row"><span>Site visit</span><i style="--w:49%"><b>39</b></i></div>
+                  <div class="funnel__row"><span>Negotiation</span><i style="--w:31%"><b>21</b></i></div>
+                  <div class="funnel__row"><span>Booked</span><i style="--w:18%"><b>12</b></i></div>
+                </div>
+                <div class="panel__foot">
+                  <div><b>38%</b><span>visit → booking rate</span></div>
+                  <div><b>₹8.4 Cr</b><span>booked value</span></div>
+                  <div><b>2.4 days</b><span>avg. first response</span></div>
+                </div>
+              </div>
+              <p class="panel__caption">Stop asking “where is that lead?” — the answer is one screen away.</p>
+            </div>
+
+            <!-- INVENTORY -->
+            <div class="panel" id="panel-inventory" role="tabpanel" aria-labelledby="tab-inventory" hidden>
+              <div class="panel__frame">
+                <div class="panel__head">
+                  <div><span class="panel__eyebrow">Inventory · Tower A</span><h3>Every unit, live</h3></div>
+                  <span class="chip chip--ghost">24 units</span>
+                </div>
+                <div class="unit-table">
+                  <div class="unit-table__head"><span>Unit</span><span>Type</span><span>Agent</span><span>Status</span></div>
+                  <div class="unit-table__row"><span>A-101</span><span>2BHK</span><span>Ravi</span><em class="st st--free">Available</em></div>
+                  <div class="unit-table__row"><span>A-102</span><span>2BHK</span><span>Neha</span><em class="st st--booked">Booked</em></div>
+                  <div class="unit-table__row"><span>A-103</span><span>3BHK</span><span>Priya</span><em class="st st--hold">On hold · 48h</em></div>
+                  <div class="unit-table__row"><span>A-104</span><span>3BHK</span><span>Ravi</span><em class="st st--free">Available</em></div>
+                  <div class="unit-table__row"><span>B-201</span><span>4BHK</span><span>Neha</span><em class="st st--free">Available</em></div>
+                </div>
+                <div class="panel__foot">
+                  <div><b>18/24</b><span>units available</span></div>
+                  <div><b>6</b><span>booked this month</span></div>
+                  <div><b>0</b><span>double-bookings</span></div>
+                </div>
+              </div>
+              <p class="panel__caption">Holds expire, bookings lock — the master sheet finally retires.</p>
+            </div>
+
+            <!-- INCENTIVES -->
+            <div class="panel" id="panel-incentives" role="tabpanel" aria-labelledby="tab-incentives" hidden>
+              <div class="panel__frame">
+                <div class="panel__head">
+                  <div><span class="panel__eyebrow">Team · August</span><h3>Targets, live</h3></div>
+                  <span class="chip chip--ghost">₹2.1 Cr target</span>
+                </div>
+                <div class="leader">
+                  <div class="leader__row"><span class="leader__rank">01</span><span class="leader__av" style="--av:#34d399">RS</span><div class="leader__who"><strong>Ravi Sharma</strong><em>₹1.17 Cr of ₹1.5 Cr</em><i style="--w:78%"></i></div><b class="leader__pct">78%</b><em class="leader__inc">₹42,000</em></div>
+                  <div class="leader__row"><span class="leader__rank">02</span><span class="leader__av" style="--av:#f0c987">NP</span><div class="leader__who"><strong>Neha Patel</strong><em>12 of 15 units</em><i style="--w:80%"></i></div><b class="leader__pct">80%</b><em class="leader__inc">₹36,500</em></div>
+                  <div class="leader__row"><span class="leader__rank">03</span><span class="leader__av" style="--av:#8fb7ff">AK</span><div class="leader__who"><strong>Arjun Kapoor</strong><em>₹62 L of ₹1.2 Cr</em><i style="--w:52%"></i></div><b class="leader__pct">52%</b><em class="leader__inc">₹18,000</em></div>
+                </div>
+                <div class="panel__foot">
+                  <div><b>₹2.1 Cr</b><span>team target</span></div>
+                  <div><b>64%</b><span>achieved</span></div>
+                  <div><b>₹96.5k</b><span>incentives accrued</span></div>
+                </div>
+              </div>
+              <p class="panel__caption">Salespeople chase numbers they can see. This is the number.</p>
+            </div>
+
+            <!-- REPORTS -->
+            <div class="panel" id="panel-reports" role="tabpanel" aria-labelledby="tab-reports" hidden>
+              <div class="panel__frame">
+                <div class="panel__head">
+                  <div><span class="panel__eyebrow">Reports · Bookings</span><h3>Revenue, by month</h3></div>
+                  <span class="chip chip--ghost">Export ↓</span>
+                </div>
+                <div class="bars">
+                  <div class="bars__col"><i style="--h:34%"></i><span>Mar</span></div>
+                  <div class="bars__col"><i style="--h:46%"></i><span>Apr</span></div>
+                  <div class="bars__col"><i style="--h:40%"></i><span>May</span></div>
+                  <div class="bars__col"><i style="--h:62%"></i><span>Jun</span></div>
+                  <div class="bars__col"><i style="--h:74%"></i><span>Jul</span></div>
+                  <div class="bars__col"><i class="is-hot" style="--h:92%"></i><span>Aug</span></div>
+                </div>
+                <div class="panel__foot">
+                  <div><b>₹8.4 Cr</b><span>booked in August</span></div>
+                  <div><b>+12%</b><span>vs July</span></div>
+                  <div><b>21</b><span>sources tracked</span></div>
+                </div>
+              </div>
+              <p class="panel__caption">Every source, agent and stage — exported to Excel in one click.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INTEGRATIONS ============ -->
+    <section class="section section--paper" id="integrations">
+      <div class="container">
+        <header class="sec-head sec-head--split">
+          <div>
+            <p class="eyebrow" data-reveal><span class="eyebrow__no">05</span> Integrations</p>
+            <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Plays well with the tools<br />you already <em>pay for</em>.</h2>
+          </div>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Native connections for the ad platforms, portals and forms you already use —
+            plus one webhook for websites and everything else.
+          </p>
+        </header>
+
+        <div class="int-filter" data-reveal>
+          <button class="int-filter__btn is-active" data-filter="all" aria-pressed="true">All sources</button>
+          <button class="int-filter__btn" data-filter="ads" aria-pressed="false">Advertising</button>
+          <button class="int-filter__btn" data-filter="portals" aria-pressed="false">Property portals</button>
+          <button class="int-filter__btn" data-filter="forms" aria-pressed="false">Websites &amp; forms</button>
+          <button class="int-filter__btn" data-filter="chat" aria-pressed="false">Chat &amp; APIs</button>
+        </div>
+
+        <div class="int-grid" data-int-grid>
+          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal>
+            <span class="int__logo"><img src="/assets/img/facebook_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Meta Ads</strong><em>Facebook &amp; Instagram leads</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="30">
+            <span class="int__logo"><img src="/assets/img/google_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Google Ads</strong><em>Search, Maps &amp; display</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="60">
+            <span class="int__logo"><img src="/assets/img/magicbricks.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Magicbricks</strong><em>Property portal leads</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="90">
+            <span class="int__logo"><img src="/assets/img/99acres.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>99acres</strong><em>Listings &amp; buyer enquiries</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="120">
+            <span class="int__logo"><img src="/assets/img/hosing.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Housing.com</strong><em>Property page leads</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="chat" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="150">
+            <span class="int__logo"><img src="/assets/img/whatsApp.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>WhatsApp Business</strong><em>Chatbots &amp; auto-welcome</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="80">
+            <span class="int__logo"><img src="/assets/img/Googlesheet.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Google Sheets</strong><em>Offline &amp; walk-in data</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="110">
+            <span class="int__logo"><img src="/assets/img/google_form.webp" alt="" width="22" height="22" loading="lazy" /></span>
+            <div><strong>Google Forms</strong><em>Contact &amp; survey forms</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="140">
+            <span class="int__logo"><svg class="icon"><use href="#i-globe"/></svg></span>
+            <div><strong>WordPress</strong><em>Website forms · webhook</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="170">
+            <span class="int__logo"><svg class="icon"><use href="#i-grid"/></svg></span>
+            <div><strong>Webflow</strong><em>Website forms · webhook</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="chat" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="150">
+            <span class="int__logo"><svg class="icon"><use href="#i-bolt"/></svg></span>
+            <div><strong>Zapier</strong><em>Connect anything</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+          <a class="int" data-cat="chat" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="180">
+            <span class="int__logo"><svg class="icon"><use href="#i-link"/></svg></span>
+            <div><strong>Webhooks &amp; API</strong><em>Custom landing pages</em></div>
+            <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
+          </a>
+        </div>
+
+        <div class="flow" data-reveal>
+          <div class="flow__copy">
+            <p class="eyebrow eyebrow--mint">Lead flow automation</p>
+            <h3>Watch your leads route <em>automatically</em>.</h3>
+            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds.</p>
+            <div class="flow__tags">
+              <span><svg class="icon"><use href="#i-check"/></svg> Round-robin routing</span>
+              <span><svg class="icon"><use href="#i-whatsapp"/></svg> Instant WhatsApp welcome</span>
+            </div>
+            <a class="link-arrow" href="https://realsalepro.com/integration">View setup guides <svg class="icon"><use href="#i-arrow"/></svg></a>
+          </div>
+
+          <div class="flow__viz" aria-hidden="true">
+            <div class="flow__col">
+              <span class="flow__label">Lead sources</span>
+              <span class="flow__item"><img src="/assets/img/facebook_ads.webp" alt="" width="16" height="16" loading="lazy" />Meta Ads</span>
+              <span class="flow__item"><img src="/assets/img/magicbricks.webp" alt="" width="16" height="16" loading="lazy" />Magicbricks</span>
+              <span class="flow__item"><img src="/assets/img/whatsApp.webp" alt="" width="16" height="16" loading="lazy" />WhatsApp</span>
+            </div>
+
+            <div class="flow__hub">
+              <span class="flow__hub-ring"></span>
+              <svg class="icon"><use href="#i-spark"/></svg>
+              <b>Router</b>
+              <em>&lt; 5s</em>
+            </div>
+
+            <div class="flow__col">
+              <span class="flow__label">Automation</span>
+              <span class="flow__item"><svg class="icon"><use href="#i-users"/></svg>Team assigned</span>
+              <span class="flow__item"><svg class="icon"><use href="#i-whatsapp"/></svg>WhatsApp welcome</span>
+              <span class="flow__item"><svg class="icon"><use href="#i-check"/></svg>CRM logged</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECURITY ============ -->
+    <section class="section section--dark" id="security">
+      <div class="container">
+        <header class="sec-head sec-head--split">
+          <div>
+            <p class="eyebrow" data-reveal><span class="eyebrow__no">06</span> Security &amp; ownership</p>
+            <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Your data. Your database.<br />Your <em>brand</em>.</h2>
+          </div>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Enterprise-grade protection by default — and a self-hosted option for teams
+            that want to hold the keys to their own client data.
+          </p>
+        </header>
+
+        <div class="sec-grid">
+          <article class="sec-card" data-reveal>
+            <span class="sec-card__ic"><svg class="icon"><use href="#i-lock"/></svg></span>
+            <h3>Bank-grade encryption</h3>
+            <p>AES-256 at rest, TLS 1.3 in transit. Backups are encrypted on disk, always.</p>
+            <span class="sec-card__tag">AES-256 · TLS 1.3</span>
+          </article>
+          <article class="sec-card" data-reveal data-reveal-delay="60">
+            <span class="sec-card__ic"><svg class="icon"><use href="#i-users"/></svg></span>
+            <h3>Access you control</h3>
+            <p>Role-based permissions and strict tenant isolation — directors, managers and agents see only what they should.</p>
+            <span class="sec-card__tag">RBAC · Tenant isolation</span>
+          </article>
+          <article class="sec-card" data-reveal data-reveal-delay="120">
+            <span class="sec-card__ic"><svg class="icon"><use href="#i-shield"/></svg></span>
+            <h3>Privacy by default</h3>
+            <p>Sensitive fields are opt-in, and our support team has zero access to custom sensitive fields.</p>
+            <span class="sec-card__tag">Data minimisation</span>
+          </article>
+          <article class="sec-card" data-reveal data-reveal-delay="180">
+            <span class="sec-card__ic"><svg class="icon"><use href="#i-clock"/></svg></span>
+            <h3>Always on</h3>
+            <p>Weekly automated backups with 24/7 monitoring and uptime checks.</p>
+            <span class="sec-card__tag">Weekly backups · 24/7</span>
+          </article>
+        </div>
+
+        <div class="selfhost" data-reveal>
+          <div class="selfhost__copy">
+            <p class="eyebrow eyebrow--mint">Bring your own database</p>
+            <h3>Run it on your infrastructure, under your domain.</h3>
+            <p>
+              Point RealSalePro at your own PostgreSQL on AWS or a Hostinger VPS. Whitelist our
+              static IP, hand over a scoped connection string, and we validate the handshake
+              before anything goes live.
+            </p>
+            <ul class="selfhost__list">
+              <li><svg class="icon"><use href="#i-check"/></svg> AWS RDS or EC2 · Hostinger VPS</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> PostgreSQL v12+ or MySQL v8.0+</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> White-label hosting on <code>crm.yourcompany.com</code></li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Custom incentive automation on your own schema</li>
+            </ul>
+            <a class="link-arrow" href="https://realsalepro.com/contact">Talk to the setup team <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <p class="selfhost__fine">Self-hosted deployments carry a one-time database setup &amp; deployment fee for provisioning, firewall hardening and SSL configuration.</p>
+          </div>
+
+          <div class="selfhost__viz" aria-hidden="true">
+            <div class="terminal">
+              <div class="terminal__bar"><span>connection</span><i></i></div>
+              <pre><span class="t-dim">// your infrastructure</span>
+<span class="t-key">host</span>     crm-db.yourcompany.com
+<span class="t-key">port</span>     5432
+<span class="t-key">database</span> realsalepro
+<span class="t-key">ssl</span>      <span class="t-ok">require</span>
+<span class="t-dim">// static IP whitelisted: 13.235.xx.xx</span>
+<span class="t-ok">✓ handshake validated</span></pre>
+            </div>
+            <div class="providers">
+              <span class="provider"><b>AWS</b><em>RDS · EC2</em></span>
+              <span class="provider"><b>Hostinger</b><em>NVMe VPS</em></span>
+              <span class="provider"><b>SSL</b><em>Auto-provisioned</em></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CUSTOMER STORIES ============ -->
+    <section class="section stories" id="stories">
+      <div class="stories__bg" aria-hidden="true"></div>
+      <div class="container">
+        <header class="sec-head sec-head--split">
+          <div>
+            <p class="eyebrow" data-reveal><span class="eyebrow__no">07</span> Customer stories</p>
+            <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Trusted by leading<br />real-estate <em>professionals</em>.</h2>
+          </div>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Join hundreds of agencies that have transformed their sales operations with RealSalePro.
+          </p>
+        </header>
+
+        <div class="stories-grid">
+          <article class="quote-card quote-card--feature" data-reveal>
+            <span class="quote-card__mark"><svg class="icon"><use href="#i-quote"/></svg></span>
+            <blockquote>“RealSalePro transformed our sales process completely. We went from managing 50+ Excel sheets to one unified platform. Our team productivity increased by 40% in just 3 months!”</blockquote>
+            <div class="quote-card__result">
+              <span><b>40%</b>Team productivity</span>
+              <span><b>50+</b>Spreadsheets retired</span>
+              <span><b>3 mo</b>To full adoption</span>
+            </div>
+            <footer>
+              <span class="quote-card__av" style="--av:linear-gradient(135deg,#34d399,#059669)">RS</span>
+              <div><strong>Rajesh Sharma</strong><em>Director, Sharma Realty Group</em></div>
+              <span class="stars" aria-label="5 out of 5 stars">★★★★★</span>
+            </footer>
+          </article>
+
+          <div class="stories-col">
+            <article class="quote-card" data-reveal data-reveal-delay="80">
+              <span class="quote-card__mark quote-card__mark--sm"><svg class="icon"><use href="#i-quote"/></svg></span>
+              <blockquote>“The automated incentive calculations alone saved us 20 hours per month. The visual pipeline helps us track every deal stage. Best investment we made for our sales team!”</blockquote>
+              <footer>
+                <span class="quote-card__av" style="--av:linear-gradient(135deg,#c9a0ff,#7c5bd6)">PM</span>
+                <div><strong>Priya Mehta</strong><em>Sales Head, Metro Properties</em></div>
+                <span class="stars" aria-label="5 out of 5 stars">★★★★★</span>
+              </footer>
+            </article>
+
+            <article class="quote-card" data-reveal data-reveal-delay="140">
+              <span class="quote-card__mark quote-card__mark--sm"><svg class="icon"><use href="#i-quote"/></svg></span>
+              <blockquote>“We manage 12 projects across 3 cities. RealSalePro's inventory management prevents double-booking and gives real-time visibility to all our agents. Game changer!”</blockquote>
+              <footer>
+                <span class="quote-card__av" style="--av:linear-gradient(135deg,#f0c987,#c98b3c)">AP</span>
+                <div><strong>Amit Patel</strong><em>CEO, Skyline Developers</em></div>
+                <span class="stars" aria-label="5 out of 5 stars">★★★★★</span>
+              </footer>
+            </article>
+          </div>
+        </div>
+
+        <div class="stories-logos" data-reveal>
+          <p>Trusted by 50+ real-estate agencies</p>
+          <div class="logo-row">
+            <span class="logo-chip"><img src="/assets/img/omav-logo-transparent.png" alt="Omav Group" loading="lazy" /></span>
+            <span class="logo-chip"><img src="/assets/img/mithila-realinfra-logo.png" alt="Mithila Realinfra" loading="lazy" /></span>
+            <span class="logo-chip"><img src="/assets/img/dutta-realty-logo.png" alt="Dutta Realty" loading="lazy" /></span>
+            <span class="logo-chip"><img src="/assets/img/wishluv-logo.png" alt="Wishluv" loading="lazy" /></span>
+            <span class="logo-chip"><img src="/assets/img/dehliz-new-logo.png" alt="Dehliz Developers" loading="lazy" /></span>
+          </div>
+        </div>
+
+        <p class="stories-mission" data-reveal>
+          “We believe that sales should be about relationships, not paperwork. <em>RealSalePro</em> removes the friction, so you can focus on closing deals.”
+          <span>— The team at RealSalePro</span>
+        </p>
+
+        <div class="stats" data-reveal data-reveal-delay="80">
+          <div class="stat"><b data-count="4.8" data-decimals="1">4.8</b><span>Average rating</span></div>
+          <div class="stat"><b data-count="1056">1,056</b><span>Customer reviews</span></div>
+          <div class="stat"><b data-count="10000" data-suffix="+">10,000+</b><span>Active users</span></div>
+          <div class="stat"><b data-count="50" data-suffix="+">50+</b><span>Developers onboard</span></div>
+          <div class="stat"><b>₹0</b><span>To get started</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRICING ============ -->
+    <section class="section section--paper" id="pricing">
+      <div class="container">
+        <header class="sec-head sec-head--center">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">08</span> Pricing</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Free forever. Pro when you <em>scale</em>.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Start with the whole product. Upgrade only when your lead volume does.
+          </p>
+
+          <div class="billing" data-reveal data-reveal-delay="180" role="group" aria-label="Billing period">
+            <button class="billing__btn" data-cycle="monthly" aria-pressed="false">Monthly</button>
+            <button class="billing__btn is-active" data-cycle="semi" aria-pressed="true">6 months <span>−20%</span></button>
+            <button class="billing__btn" data-cycle="yearly" aria-pressed="false">Yearly <span>−33%</span></button>
+          </div>
+        </header>
+
+        <div class="price-grid">
+          <article class="price" data-reveal>
+            <div class="price__top">
+              <span class="price__name">Free Forever</span>
+              <span class="price__badge">No card</span>
+            </div>
+            <div class="price__amount"><b>₹0</b><em>forever</em></div>
+            <p class="price__desc">For small teams getting organised — the whole product, not a teaser.</p>
+            <a class="btn btn--outline btn--block" href="https://realsalepro.com/register">Get started free <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list">
+              <li><svg class="icon"><use href="#i-check"/></svg> All pro features included</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Up to 1,000 leads</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Up to 5 users</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Real-time analytics</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Standard email support</li>
+            </ul>
+          </article>
+
+          <article class="price price--pro" data-reveal data-reveal-delay="80">
+            <div class="price__top">
+              <span class="price__name">Pro</span>
+              <span class="price__badge price__badge--solid">Most popular</span>
+            </div>
+            <div class="price__amount">
+              <b data-price>₹1,200</b><em>/month</em>
+            </div>
+            <p class="price__desc" data-price-note>Billed ₹7,200 semi-annually — save 20%.</p>
+            <a class="btn btn--primary btn--block" href="https://realsalepro.com/pricing">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list">
+              <li><svg class="icon"><use href="#i-check"/></svg> Everything in Free</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Up to 2,00,000 leads</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Unlimited users</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> All lead integrations</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Priority email support</li>
+            </ul>
+          </article>
+
+          <article class="price" data-reveal data-reveal-delay="160">
+            <div class="price__top">
+              <span class="price__name">Custom</span>
+              <span class="price__badge">Enterprise</span>
+            </div>
+            <div class="price__amount price__amount--text"><b>Custom</b></div>
+            <p class="price__desc">Bespoke limits, integrations and terms for large teams and multi-city groups.</p>
+            <a class="btn btn--outline btn--block" href="mailto:support@realsalepro.com?subject=Custom%20plan%20enquiry%20—%20RealSalePro">Contact sales <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list">
+              <li><svg class="icon"><use href="#i-check"/></svg> Custom lead limits</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Custom integrations</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Dedicated support manager</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Custom SLA guarantee</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Flexible billing options</li>
+            </ul>
+          </article>
+        </div>
+
+        <p class="sr-only" aria-live="polite" data-price-live></p>
+        <p class="price-fine" data-reveal>No credit card required for the Free plan. Self-hosted database setup is quoted separately.</p>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section section--paper section--alt" id="faq">
+      <div class="container faq-wrap">
+        <header class="sec-head faq-head">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> FAQ</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Got questions?<br />Good <em>answers</em>.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Can't find what you're looking for? <a href="mailto:support@realsalepro.com">Contact our team</a> — a human replies.
+          </p>
+        </header>
+
+        <div class="faq" data-faq>
+          <div class="faq__item" data-reveal>
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-1">
+              <span>Is it really free?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-1" aria-hidden="true"><p>Yes! RealSalePro is 100% free forever for small teams. The Free plan supports up to 1,000 leads and up to 5 users, and includes the pro features such as automated lead routing, pipeline visualisation and inventory tracking — without any credit card details.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="40">
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-2">
+              <span>Can I customise the app for my agency?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-2" aria-hidden="true"><p>Absolutely. RealSalePro supports custom fields, workflows, branding (logo and colours), role-based permissions and custom reports. A Business Customisation package (starting at ₹19,999) tailors the platform to your specific business, and API access is available for advanced integrations.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="80">
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-3">
+              <span>How secure is my client data?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-3" aria-hidden="true"><p>Security is the priority. We use AES-256 encryption for data at rest, TLS 1.3 for data in transit, role-based access control and strict tenant isolation. Backups run weekly, monitoring is 24/7, and self-hosted deployment is available for enterprises that need maximum control.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="120">
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-4">
+              <span>Do you offer support and onboarding?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-4" aria-hidden="true"><p>Yes. Every subscription includes onboarding support: live video training for your team, a dedicated onboarding manager for the first 30 days, data migration assistance from Excel or another CRM, 24/7 email and chat support, and priority phone support on enterprise plans.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="160">
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-5">
+              <span>What payment methods are supported?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-5" aria-hidden="true"><p>UPI, credit and debit cards (Visa, Mastercard, RuPay), net banking, and bank transfers (NEFT/RTGS/IMPS). Enterprise clients can use invoice-based billing with NET-30 terms. All transactions are secured with PCI-DSS compliant encryption.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="200">
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-6">
+              <span>Can I integrate RealSalePro with other tools?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-6" aria-hidden="true"><p>Yes — WhatsApp Business API, Google Workspace, Zapier, payment gateways (Razorpay, PayU), accounting software and the portals and ad platforms you already use. REST APIs are available for custom integrations, with dedicated integration support on enterprise plans.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="cta" id="demo">
+      <div class="cta__bg" aria-hidden="true"></div>
+      <div class="container">
+        <div class="cta__card" data-reveal>
+          <p class="eyebrow eyebrow--mint"><span class="eyebrow__dot"></span> Free forever plan</p>
+          <h2>Ready to sell out your<br /><em>next project?</em></h2>
+          <p class="cta__lede">
+            Join 50+ real-estate developers who trust RealSalePro. Start free up to
+            1,000 leads — no card, no catch, set up in minutes.
+          </p>
+          <div class="cta__actions">
+            <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
+              <span>Start free — no card</span><svg class="icon"><use href="#i-arrow"/></svg>
+            </a>
+            <a class="btn btn--ghost btn--lg" href="mailto:support@realsalepro.com?subject=Demo%20request%20—%20RealSalePro">
+              <span class="btn__play"><svg class="icon"><use href="#i-play"/></svg></span>
+              <span>Book a demo</span>
+            </a>
+          </div>
+          <ul class="cta__meta">
+            <li><svg class="icon"><use href="#i-check"/></svg> Free forever plan</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> No credit card</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> Import from Excel</li>
+            <li><svg class="icon"><use href="#i-check"/></svg> WhatsApp support</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <img src="/assets/img/logo-light.png" alt="RealSalePro — Real Estate Sales & CRM Platform" width="190" height="45" />
+          <p>Empowering real-estate teams with intelligent tools and real-time insight. Built for the future of sales.</p>
+          <div class="footer__social">
+            <a href="https://www.facebook.com/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on Facebook"><svg class="icon"><use href="#i-facebook"/></svg></a>
+            <a href="https://www.linkedin.com/company/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on LinkedIn"><svg class="icon"><use href="#i-linkedin"/></svg></a>
+            <a href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp"><svg class="icon icon--fill"><use href="#i-whatsapp"/></svg></a>
+          </div>
+        </div>
+
+        <div class="footer__col">
+          <h3>Platform</h3>
+          <a href="#features">Features</a>
+          <a href="#product">Product tour</a>
+          <a href="#integrations">Integrations</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#security">Security</a>
+        </div>
+
+        <div class="footer__col">
+          <h3>Integrations</h3>
+          <a href="#integrations">Meta Lead Ads</a>
+          <a href="#integrations">Google Ads</a>
+          <a href="#integrations">WhatsApp Business</a>
+          <a href="#integrations">Magicbricks</a>
+          <a href="#integrations">99acres</a>
+        </div>
+
+        <div class="footer__col">
+          <h3>Company</h3>
+          <a href="#stories">About us</a>
+          <a href="https://realsalepro.com/referral-program">Refer &amp; earn</a>
+          <a href="https://realsalepro.com/contact">Careers</a>
+          <a href="https://realsalepro.com/contact">Contact</a>
+          <a href="https://realsalepro.com/pricing">Pricing</a>
+        </div>
+
+        <div class="footer__col footer__col--contact">
+          <h3>Talk to a human</h3>
+          <a href="mailto:support@realsalepro.com">support@realsalepro.com</a>
+          <a href="tel:+919525230232">+91 95252 30232</a>
+          <a class="footer__wa" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer">
+            <svg class="icon"><use href="#i-whatsapp"/></svg> Chat on WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div class="footer__wordmark" aria-hidden="true">RealSalePro</div>
+
+      <div class="footer__bottom">
+        <p>© <span id="year">2025</span> RealSalePro. All rights reserved.</p>
+        <div class="footer__legal">
+          <a href="https://realsalepro.com/privacy">Privacy Policy</a>
+          <a href="https://realsalepro.com/terms">Terms of Service</a>
+          <a href="https://realsalepro.com/refund-policy">Refund Policy</a>
+          <a href="https://realsalepro.com/shipping-policy">Shipping Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <a class="wa-float" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
+    <svg class="icon"><use href="#i-whatsapp"/></svg>
+    <span class="wa-float__tip">Chat with us</span>
+  </a>
+
+`;
