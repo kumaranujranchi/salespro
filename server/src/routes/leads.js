@@ -251,6 +251,98 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// 2b. Per-Executive Lead Statistics (for Assign modal & executive lead distribution)
+router.get('/executive-stats', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    const targetTenantId = tenant_id || req.user?.tenant_id;
+    if (!targetTenantId) return res.status(400).json({ error: 'tenant_id required' });
+
+    // 1. Fetch active profiles for this tenant
+    const profilesResult = await query(
+      `SELECT p.id, p.full_name, p.role, p.image_url, r.name as role_name
+       FROM profiles p
+       LEFT JOIN tenant_roles r ON p.role_id = r.id
+       WHERE p.tenant_id = $1 AND (p.is_active = true OR p.is_active IS NULL)
+       ORDER BY p.full_name ASC`,
+      [targetTenantId]
+    );
+
+    // 2. Fetch lead status counts grouped by sales_executive_id
+    const leadStatsResult = await query(
+      `SELECT 
+        sales_executive_id,
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE lead_status = 'New') as new_count,
+        COUNT(*) FILTER (WHERE lead_status = 'Contacted') as contacted_count,
+        COUNT(*) FILTER (WHERE lead_status IN ('In Progress', 'Negotiation', 'Site Visit Scheduled')) as in_progress_count,
+        COUNT(*) FILTER (WHERE lead_status = 'Qualified') as qualified_count,
+        COUNT(*) FILTER (WHERE lead_status = 'Converted') as converted_count,
+        COUNT(*) FILTER (WHERE lead_status IN ('Lost', 'Disqualified')) as lost_count
+       FROM leads
+       WHERE tenant_id = $1 AND sales_executive_id IS NOT NULL
+       GROUP BY sales_executive_id`,
+      [targetTenantId]
+    );
+
+    const statsByExecId = new Map();
+    for (const row of leadStatsResult.rows) {
+      statsByExecId.set(String(row.sales_executive_id), row);
+    }
+
+    // Role check helper (case-insensitive & space/underscore agnostic)
+    const isSalesRole = (role, roleName) => {
+      const combined = `${role || ''} ${roleName || ''}`.toLowerCase().replace(/[\s_-]+/g, '');
+      return (
+        combined.includes('sales') ||
+        combined.includes('executive') ||
+        combined.includes('manager') ||
+        combined.includes('leader') ||
+        combined.includes('agent') ||
+        combined.includes('advisor') ||
+        combined.includes('caller') ||
+        combined.includes('telecaller')
+      );
+    };
+
+    let eligibleProfiles = profilesResult.rows.filter(p => isSalesRole(p.role, p.role_name));
+    if (eligibleProfiles.length === 0) {
+      eligibleProfiles = profilesResult.rows;
+    }
+
+    const executiveStats = eligibleProfiles.map(p => {
+      const stat = statsByExecId.get(String(p.id)) || {};
+      const total = parseInt(stat.total || 0, 10);
+      const newL = parseInt(stat.new_count || 0, 10);
+      const cont = parseInt(stat.contacted_count || 0, 10);
+      const inProg = parseInt(stat.in_progress_count || 0, 10);
+      const qual = parseInt(stat.qualified_count || 0, 10);
+      const conv = parseInt(stat.converted_count || 0, 10);
+      const lost = parseInt(stat.lost_count || 0, 10);
+
+      return {
+        id: p.id,
+        _id: p.id,
+        name: p.full_name || 'Executive',
+        role: p.role_name || p.role || 'Sales Executive',
+        avatar: p.image_url || null,
+        total,
+        new: newL,
+        contacted: cont,
+        inProgress: inProg,
+        qualified: qual,
+        converted: conv,
+        lost,
+      };
+    });
+
+    return res.json(executiveStats);
+  } catch (err) {
+    console.error('getExecutiveLeadStats error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // 3. Create Lead
 router.post('/', async (req, res) => {
   try {
@@ -592,13 +684,18 @@ router.post('/:id/assign', async (req, res) => {
 // 5b. Bulk Assign Leads to Sales Executive
 router.post('/bulk-assign', async (req, res) => {
   try {
-    const { ids, sales_executive_id } = req.body;
+    const { ids, sales_executive_id, updated_by } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: 'ids array is required' });
     }
+    const updater = updated_by || req.user?.id || null;
     await query(
-      `UPDATE leads SET sales_executive_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = ANY($2)`,
-      [sales_executive_id || null, ids]
+      `UPDATE leads 
+       SET sales_executive_id = $1, 
+           updated_by = COALESCE($3, updated_by), 
+           updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ANY($2::text[])`,
+      [sales_executive_id || null, ids, updater]
     );
     return res.json({ success: true, count: ids.length });
   } catch (err) {

@@ -59,6 +59,8 @@ export const leadsService = {
     api.get<any[]>('/leads', { tenant_id: tenantId, ...filters }),
   getStats: (tenantId: string, executiveId?: string) =>
     api.get<any>('/leads/stats', { tenant_id: tenantId, executive_id: executiveId }),
+  getExecutiveStats: (tenantId: string) =>
+    api.get<any[]>('/leads/executive-stats', { tenant_id: tenantId }),
   create: (data: any) => api.post<any>('/leads', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/leads/${id}`, data),
   convert: (id: string, overrides?: any) =>
@@ -82,8 +84,8 @@ export const leadsService = {
     }>('/leads/bulk-insert', data),
   assign: (id: string, executiveId: string) =>
     api.post<{ success: boolean }>(`/leads/${id}/assign`, { sales_executive_id: executiveId }),
-  bulkAssign: (ids: string[], sales_executive_id: string) =>
-    api.post<{ success: boolean; count: number }>('/leads/bulk-assign', { ids, sales_executive_id }),
+  bulkAssign: (ids: string[], sales_executive_id: string, updated_by?: string) =>
+    api.post<{ success: boolean; count: number }>('/leads/bulk-assign', { ids, sales_executive_id, updated_by }),
   bulkUpdateProject: (ids: string[], project_id: string) =>
     api.post<{ success: boolean; count: number }>('/leads/bulk-project', { ids, project_id }),
   delete: (id: string) => api.delete<{ success: boolean }>(`/leads/${id}`),

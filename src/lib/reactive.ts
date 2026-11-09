@@ -185,6 +185,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('leads.list') || key.includes('leads.listLeads')) {
     return await leadsService.list(args?.tenant_id, args);
   }
+  if (key.includes('leads.getExecutiveLeadStats') || key.includes('leads.getExecutiveStats')) {
+    return await leadsService.getExecutiveStats(args?.tenant_id);
+  }
   if (key.includes('leads.getDashboardStats')) {
     return await leadsService.getStats(args?.tenant_id, args?.executive_id);
   }
@@ -215,7 +218,7 @@ async function resolveApiCall(functionKey: any, args: any) {
     return res;
   }
   if (key.includes('leads.bulkAssignLeads') || key.includes('leads.bulkAssign')) {
-    const res = await leadsService.bulkAssign(args?.ids || [], args?.sales_executive_id);
+    const res = await leadsService.bulkAssign(args?.ids || [], args?.sales_executive_id, args?.updated_by);
     invalidateQuery('leads');
     return res;
   }
