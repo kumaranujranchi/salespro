@@ -1891,10 +1891,10 @@ export function AdminIntegrationsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl animate-scaleIn">
             <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-white/10 p-5 sm:p-6 flex-shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <svg className="w-6 h-6 text-red-500 fill-current shrink-0" viewBox="0 0 24 24">
-                  <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.113-5.111 4.113-3.41 0-6.19-2.779-6.19-6.19s2.78-6.19 6.19-6.19c1.483 0 2.825.524 3.878 1.547l3.123-3.124C19.046 2.372 15.824 1 12.24 1 5.756 1 .5 6.256.5 12.74s5.256 11.74 11.74 11.74c7.17 0 11.24-5.02 11.24-11.44 0-.771-.06-1.5-.2-2.19H12.24z"/>
-                </svg>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-white/10 shrink-0">
+                  <img src="/images/google_ads.webp" alt="Google Ads" className="w-6 h-6 object-contain" />
+                </div>
                 <h2 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white truncate">Google Ads Webhook Configuration</h2>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 shrink-0">
