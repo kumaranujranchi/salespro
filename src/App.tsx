@@ -67,6 +67,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterCompanyPage />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/data-deletion" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
