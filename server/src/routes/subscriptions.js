@@ -11,30 +11,34 @@ const router = Router();
  * Priority 2: PostgreSQL system_settings table (key = 'razorpay_credentials')
  */
 export async function getRazorpayCredentials() {
-  let key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || null;
-  let key_secret = process.env.RAZORPAY_KEY_SECRET || null;
+  let key_id = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_Ty3S8PNDGbVlQR';
+  let key_secret = process.env.RAZORPAY_KEY_SECRET || '7cNrXZ52X93jLzMuDMxCaLZI';
 
   if (key_id) key_id = String(key_id).trim();
   if (key_secret) key_secret = String(key_secret).trim();
 
-  if (!key_id || !key_secret) {
-    try {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    const res = await query(`SELECT value FROM system_settings WHERE key = 'razorpay_credentials' LIMIT 1`);
+    if (res.rows[0]?.value) {
+      const val = typeof res.rows[0].value === 'string' ? JSON.parse(res.rows[0].value) : res.rows[0].value;
+      if (val?.key_id) key_id = String(val.key_id).trim();
+      if (val?.key_secret) key_secret = String(val.key_secret).trim();
+    } else {
       await query(`
-        CREATE TABLE IF NOT EXISTS system_settings (
-          key VARCHAR(255) PRIMARY KEY,
-          value JSONB NOT NULL,
-          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      const res = await query(`SELECT value FROM system_settings WHERE key = 'razorpay_credentials' LIMIT 1`);
-      if (res.rows[0]?.value) {
-        const val = typeof res.rows[0].value === 'string' ? JSON.parse(res.rows[0].value) : res.rows[0].value;
-        if (!key_id && val?.key_id) key_id = String(val.key_id).trim();
-        if (!key_secret && val?.key_secret) key_secret = String(val.key_secret).trim();
-      }
-    } catch (e) {
-      console.warn('Could not read razorpay_credentials from system_settings:', e.message);
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES ('razorpay_credentials', $1, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) DO NOTHING
+      `, [JSON.stringify({ key_id, key_secret })]);
     }
+  } catch (e) {
+    console.warn('System settings query note:', e.message);
   }
 
   return { key_id, key_secret };
