@@ -19,6 +19,7 @@ import { BulkStatusModal } from '../components/crm/BulkStatusModal';
 import { BulkProjectModal } from '../components/crm/BulkProjectModal';
 import { ActionMenu } from '../components/ui/ActionMenu';
 import { Modal } from '../components/ui/Modal';
+import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 import {
   Users, Plus, Phone, Mail, MapPin,
   TrendingUp, Search, Download, Upload,
@@ -105,6 +106,7 @@ export function LeadsPage() {
   const { profile, tenant } = useAuth();
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   const isFreePlan = tenant?.plan_tier === 'free';
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
   const isAdminUser = profile?.role === 'super_admin' || profile?.role === 'admin' || profile?.role === 'platform_admin';
   const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
@@ -557,7 +559,7 @@ export function LeadsPage() {
   const handleCreateLead = () => {
     const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
     if (isFreePlan && totalLeadsCount >= 1000) {
-      toast.error("Free Plan limit reached (Maximum 1,000 leads). Please delete older leads or upgrade to Pro Plan to add more leads.");
+      setShowUpgradeModal(true);
       return;
     }
     setSelectedLead(null);
@@ -616,7 +618,7 @@ export function LeadsPage() {
   const handleBulkImport = () => {
     const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
     if (isFreePlan && totalLeadsCount >= 1000) {
-      toast.error("Free Plan limit reached (Maximum 1,000 leads). Please delete older leads or upgrade to Pro Plan to import more leads.");
+      setShowUpgradeModal(true);
       return;
     }
     setIsBulkModalOpen(true);
@@ -2020,6 +2022,14 @@ export function LeadsPage() {
           <Plus size={22} strokeWidth={2.5} />
         </button>
       )}
+
+      {/* Upgrade to Pro Modal */}
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Unlimited Leads"
+        description="Free Plan allows up to 1,000 leads. Upgrade to Pro Plan for unlimited leads, full ad integrations, and team scaling."
+      />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
+import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 import { ActionMenu } from '../components/ui/ActionMenu';
 import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -105,6 +106,7 @@ export function UsersPage() {
   const isFreePlan = tenant?.plan_tier === 'free';
   const totalUsersCount = (users as any[]) ? (users as any[]).length : 0;
   const isUserLimitReached = isFreePlan && totalUsersCount >= 5;
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Reset password states for tenant admins
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -387,7 +389,7 @@ export function UsersPage() {
               variant={isUserLimitReached ? "outline" : "primary"} 
               onClick={() => { 
                 if (isUserLimitReached) {
-                  toast.error("Free Plan limit reached (Maximum 5 users). Please delete an existing user or upgrade to Pro Plan for unlimited users.");
+                  setShowUpgradeModal(true);
                   return;
                 }
                 resetForm(); 
@@ -745,6 +747,13 @@ export function UsersPage() {
           </ModalFooter>
         </form>
       </Modal>
+
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Unlimited Users"
+        description="Free Plan allows up to 5 user accounts. Upgrade to Pro for unlimited users, manager hierarchies, and team assignment."
+      />
     </div>
   );
 }

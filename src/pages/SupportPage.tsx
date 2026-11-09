@@ -4,7 +4,8 @@ import { api } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Plus, Loader2, MessageSquare, Clock, CheckCircle2, XCircle, X, Lock } from 'lucide-react';
+import { Plus, Loader2, MessageSquare, Clock, CheckCircle2, XCircle, X, Lock, Zap } from 'lucide-react';
+import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 
 interface Ticket {
   _id: string;
@@ -36,6 +37,7 @@ export function SupportPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Form State
   const [requestType, setRequestType] = useState<'ticket' | 'feedback'>(isFreePlan ? 'feedback' : 'ticket');
@@ -137,16 +139,15 @@ export function SupportPage() {
             <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-white/10 w-fit">
               <button
                 type="button"
-                disabled={isFreePlan}
-                onClick={() => setRequestType('ticket')}
+                onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => setRequestType('ticket')}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 relative ${
                   requestType === 'ticket' 
                     ? 'bg-indigo-600 text-white shadow-sm' 
                     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                } ${isFreePlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${isFreePlan ? 'opacity-70 hover:opacity-100 cursor-pointer' : ''}`}
               >
                 {isFreePlan && <Lock size={12} />}
-                Support Ticket
+                Support Ticket {isFreePlan && '(Pro)'}
               </button>
               <button
                 type="button"
@@ -161,9 +162,19 @@ export function SupportPage() {
               </button>
             </div>
             {isFreePlan && (
-              <p className="text-xs text-rose-500 mt-2 font-medium">
-                * Dedicated Support Tickets are a Pro plan feature. Free plan users can submit App Feedbacks or report bugs.
-              </p>
+              <div className="flex items-center justify-between mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 max-w-xl">
+                <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                  * Dedicated Priority Support Tickets are a Pro plan feature.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="text-xs font-bold text-amber-900 dark:text-amber-200 hover:underline flex items-center gap-1 shrink-0 ml-3"
+                >
+                  <Zap size={13} className="fill-current text-amber-500" />
+                  Upgrade to Pro
+                </button>
+              </div>
             )}
           </div>
 
@@ -315,6 +326,13 @@ export function SupportPage() {
           </div>
         </div>
       )}
+      {/* Upgrade to Pro Modal */}
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Priority Support Tickets"
+        description="Priority one-on-one ticket support is available exclusively for Pro plan members. Upgrade to get instant priority assistance."
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
+import { UpgradeToProModal } from '../ui/UpgradeToProModal';
 import { Plus, Download, TrendingUp, History, Edit2, X, Share2, FileSpreadsheet, Lock, FileText, MessageSquare, Receipt } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
@@ -84,6 +85,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
     if (!sale) return null;
 
     const isFreePlan = tenant?.plan_tier === 'free';
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const totalReceived = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const totalRevenue = sale.total_revenue || 0;
     const pendingAmount = totalRevenue - totalReceived;
@@ -104,7 +106,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                             title="Download PDF"
                         >
@@ -114,7 +116,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => toast.info("Downloading payment ledger is a Pro feature. Please upgrade your plan.") : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             title="Download Excel"
                         >
@@ -124,7 +126,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? () => toast.info("Sharing payment ledger is a Pro feature. Please upgrade your plan.") : () => sharePaymentLedger(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? () => setShowUpgradeModal(true) : () => sharePaymentLedger(sale, payments || [], tenant)}
                             className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             title="Share Ledger"
                         >
@@ -223,6 +225,13 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                 </div>
             </div>
             <ModalFooter><Button variant="outline" onClick={onClose}>Close</Button></ModalFooter>
+
+            <UpgradeToProModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                featureName="Payment Ledger PDF & Excel Export"
+                description="Downloading and sharing branded payment ledgers and customer statements is available on the Pro Plan. Upgrade now to unlock."
+            />
         </Modal>
     );
 }

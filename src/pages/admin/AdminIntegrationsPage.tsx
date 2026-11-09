@@ -8,7 +8,8 @@ import { tenantsService, capiService, metaService } from '../../lib/services';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy, Send, Smartphone, Check } from 'lucide-react';
+import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRight, Lock, CheckCircle2, AlertCircle, ExternalLink, Activity, Sparkles, RefreshCw, Globe, Code, Copy, Send, Smartphone, Check, Zap } from 'lucide-react';
+import { UpgradeToProModal } from '../../components/ui/UpgradeToProModal';
 
 const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
 
@@ -42,6 +43,13 @@ export function AdminIntegrationsPage() {
 
   // Modal display states
   const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | 'website' | 'metaCapi' | 'googleConversion' | null>(null);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState('Platform Integrations');
+
+  const handleLockedFeatureClick = (featureName: string) => {
+    setLockedFeatureName(featureName);
+    setUpgradeModalOpen(true);
+  };
   const [showMetaHelp, setShowMetaHelp] = useState(false);
   const [showGoogleHelp, setShowGoogleHelp] = useState(false);
   const [showNineNineHelp, setShowNineNineHelp] = useState(false);
@@ -1130,6 +1138,37 @@ export function AdminIntegrationsPage() {
         </div>
       )}
 
+      {/* Free Plan Upgrade Banner */}
+      {isFreePlan && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-indigo-500/10 border border-amber-500/30 dark:border-amber-400/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shrink-0 shadow-md">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base">
+                  Platform Integrations are locked on Free Plan
+                </h3>
+                <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  PRO ONLY
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                Upgrade to Pro to connect Meta Lead Ads, WhatsApp API, Google Ads, 99acres, Magicbricks & Webhooks directly into your CRM.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => handleLockedFeatureClick('Platform Integrations')}
+            className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] font-bold px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 whitespace-nowrap text-xs sm:text-sm cursor-pointer"
+          >
+            <Zap className="w-4 h-4 fill-current" />
+            Upgrade to Pro
+          </button>
+        </div>
+      )}
+
       {/* Grid of integrations cards */}
       <div className="space-y-8 pt-4">
         {/* Social Media Category */}
@@ -1137,7 +1176,7 @@ export function AdminIntegrationsPage() {
           <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Social Media</h2>
           <div className="flex flex-wrap gap-6 mt-4">
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('meta')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Facebook & Instagram Lead Capture') : () => setActiveModal('meta')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -1168,7 +1207,7 @@ export function AdminIntegrationsPage() {
 
             {/* WhatsApp Integration Card */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('whatsapp')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('WhatsApp Business API & Auto Messaging') : () => setActiveModal('whatsapp')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -1209,7 +1248,7 @@ export function AdminIntegrationsPage() {
           <h2 className="text-base font-bold text-slate-700 dark:text-slate-300">Google Apps</h2>
           <div className="flex flex-wrap gap-6 mt-4">
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('google')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Google Ads Webhook Integration') : () => setActiveModal('google')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -1240,7 +1279,7 @@ export function AdminIntegrationsPage() {
 
             {/* Google Form Integration Card */}
             <div
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleForm')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Google Forms Lead Capture') : () => setActiveModal('googleForm')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -1265,7 +1304,7 @@ export function AdminIntegrationsPage() {
 
             {/* Google Sheet Integration Card */}
             <div
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleSheet')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Google Sheets Sync') : () => setActiveModal('googleSheet')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -1296,7 +1335,7 @@ export function AdminIntegrationsPage() {
           <div className="flex flex-wrap gap-6 mt-4">
             {/* 99acres */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('nineNineAcres')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('99acres Portal Integration') : () => setActiveModal('nineNineAcres')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -1325,7 +1364,7 @@ export function AdminIntegrationsPage() {
 
             {/* Magicbricks */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('magicbricks')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Magicbricks Portal Integration') : () => setActiveModal('magicbricks')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -1354,7 +1393,7 @@ export function AdminIntegrationsPage() {
 
             {/* Housing.com */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('housing')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Housing.com Portal Integration') : () => setActiveModal('housing')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -1402,7 +1441,7 @@ export function AdminIntegrationsPage() {
           <div className="flex flex-wrap gap-6 mt-4">
             {/* Website Webhook Card */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Auto lead capture integrations are a Pro feature. Please upgrade your plan.") : () => setActiveModal('website')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Website Form Webhooks') : () => setActiveModal('website')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -1450,7 +1489,7 @@ export function AdminIntegrationsPage() {
           <div className="flex flex-wrap gap-6 mt-4">
             {/* Meta CAPI Card */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Conversion API tracking is a Pro feature. Please upgrade your plan.") : () => setActiveModal('metaCapi')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Meta Conversions API (CAPI)') : () => setActiveModal('metaCapi')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -1479,7 +1518,7 @@ export function AdminIntegrationsPage() {
 
             {/* Google Enhanced Conversions Card */}
             <div 
-              onClick={isFreePlan ? () => toast.info("Conversion tracking is a Pro feature. Please upgrade your plan.") : () => setActiveModal('googleConversion')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('Google Enhanced Conversions') : () => setActiveModal('googleConversion')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-44 h-48 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}
@@ -4174,6 +4213,12 @@ wp_remote_post('${websiteWebhookUrl}', [
           </div>
         </div>
       )}
+      {/* Upgrade to Pro Modal */}
+      <UpgradeToProModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        featureName={lockedFeatureName}
+      />
     </div>
   );
 }
