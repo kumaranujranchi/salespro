@@ -50,6 +50,8 @@ export const profilesService = {
   createDepartment: (data: any) => api.post<any>('/profiles/departments', data),
   updateDepartment: (id: string, data: any) => api.patch<any>(`/profiles/departments/${id}`, data),
   deleteDepartment: (id: string) => api.delete<{ success: boolean }>(`/profiles/departments/${id}`),
+  resetUserPassword: (userId: string, newPassword?: string) =>
+    api.post<{ success: boolean; message: string }>('/profiles/reset-password', { userId, newPassword }),
 };
 
 export const leadsService = {

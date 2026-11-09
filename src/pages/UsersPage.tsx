@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ActionMenu } from '../components/ui/ActionMenu';
-import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List } from 'lucide-react';
+import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function validatePhoneNumber(phone: string): string | null {
@@ -99,6 +99,22 @@ export function UsersPage() {
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
   const updateProfileMutation = useMutation(api.profiles.updateProfile);
   const toggleProfileStatusMutation = useMutation(api.profiles.toggleProfileStatus);
+  const resetUserPasswordMutation = useMutation(api.tenants.resetUserPassword);
+
+  // Reset password states for tenant admins
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
+  const canManagePasswords = !isReadOnly && (
+    profile?.role === 'platform_admin' ||
+    ['super_admin', 'admin', 'director'].includes(profile?.role || '')
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -257,6 +273,71 @@ export function UsersPage() {
     }
   };
 
+  const handleOpenResetPassword = (user: any) => {
+    setSelectedUserForReset(user);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setResetError('');
+    setShowPassword(false);
+    setCopiedPassword(false);
+    setResetModalOpen(true);
+  };
+
+  const handleGeneratePassword = () => {
+    const rawName = (selectedUserForReset?.full_name?.split(' ')[0] || 'User')
+      .replace(/[^a-zA-Z]/g, '');
+    const capitalized = (rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()) || 'User';
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
+    const gen = `${capitalized}@${randomDigits}`;
+    setNewPassword(gen);
+    setConfirmNewPassword(gen);
+    setResetError('');
+    setShowPassword(true);
+  };
+
+  const handleCopyGeneratedPassword = () => {
+    if (!newPassword) return;
+    navigator.clipboard.writeText(newPassword);
+    setCopiedPassword(true);
+    toast.success('Password copied to clipboard!');
+    setTimeout(() => setCopiedPassword(false), 2000);
+  };
+
+  const handleConfirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForReset) return;
+    setResetError('');
+
+    const trimmed = newPassword.trim();
+    if (trimmed.length < 6) {
+      setResetError('Password must be at least 6 characters long');
+      return;
+    }
+    if (trimmed !== confirmNewPassword.trim()) {
+      setResetError('Passwords do not match');
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetUserPasswordMutation({
+        userId: selectedUserForReset._id || selectedUserForReset.id || selectedUserForReset.email,
+        newPassword: trimmed,
+      });
+      toast.success(`Password for ${selectedUserForReset.full_name || selectedUserForReset.email} reset successfully!`);
+      setResetModalOpen(false);
+      setSelectedUserForReset(null);
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to reset password';
+      setResetError(msg);
+      toast.error(msg);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -300,6 +381,9 @@ export function UsersPage() {
                   <div className="flex gap-2">
                     <ActionMenu actions={[
                       { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
+                      ...(canManagePasswords ? [
+                        { label: 'Reset Password', icon: KeyRound, onClick: () => handleOpenResetPassword(user) }
+                      ] : []),
                       { 
                         label: user.is_active ? 'Deactivate' : 'Activate', 
                         icon: user.is_active ? UserX : UserCheck, 
@@ -379,6 +463,9 @@ export function UsersPage() {
                     <TableCell className="text-right">
                        <ActionMenu actions={[
                          { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
+                         ...(canManagePasswords ? [
+                           { label: 'Reset Password', icon: KeyRound, onClick: () => handleOpenResetPassword(user) }
+                         ] : []),
                          { 
                            label: user.is_active ? 'Deactivate' : 'Activate', 
                            icon: user.is_active ? UserX : UserCheck, 
@@ -478,6 +565,131 @@ export function UsersPage() {
               <Button type="button" variant="outline" onClick={handleCloseModal}>Cancel</Button>
               <Button type="submit" variant="primary" isLoading={isSubmitting}>{editingUserId ? "Update" : "Create"}</Button>
            </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* Reset Password Modal for Tenant Admins */}
+      <Modal
+        isOpen={resetModalOpen}
+        onClose={() => !isResetting && setResetModalOpen(false)}
+        title="Reset User Password"
+        size="md"
+      >
+        <form onSubmit={handleConfirmResetPassword} className="space-y-5">
+          {selectedUserForReset && (
+            <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center font-bold text-emerald-700 dark:text-emerald-400">
+                  {selectedUserForReset.full_name ? selectedUserForReset.full_name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900 dark:text-white text-sm">
+                    {selectedUserForReset.full_name}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {selectedUserForReset.email} {selectedUserForReset.employee_id ? `• ${selectedUserForReset.employee_id}` : ''}
+                  </div>
+                </div>
+              </div>
+              <Badge variant="outline">
+                {(roles as TenantRole[] | undefined)?.find((r: TenantRole) => r._id === selectedUserForReset.role_id)?.name || selectedUserForReset.role}
+              </Badge>
+            </div>
+          )}
+
+          {resetError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm">
+              {resetError}
+            </div>
+          )}
+
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              New Password Credentials
+            </span>
+            <button
+              type="button"
+              onClick={handleGeneratePassword}
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+            >
+              <Sparkles size={14} />
+              Generate Password
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              New Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                required
+                minLength={6}
+                className="w-full h-11 px-3.5 pr-20 bg-white dark:bg-[#0E1A15] border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {newPassword && (
+                  <button
+                    type="button"
+                    onClick={handleCopyGeneratedPassword}
+                    title="Copy password"
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {copiedPassword ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Confirm New Password <span className="text-red-500">*</span>
+            </label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="Re-enter new password"
+              required
+              minLength={6}
+              className="w-full h-11 px-3.5 bg-white dark:bg-[#0E1A15] border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Share this new password with the user so they can sign in immediately.
+          </p>
+
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setResetModalOpen(false)}
+              disabled={isResetting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isResetting}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              Update Password
+            </Button>
+          </ModalFooter>
         </form>
       </Modal>
     </div>

@@ -188,6 +188,63 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// 3b. Admin Reset User Password
+router.post('/reset-password', requireRole('platform_admin', 'super_admin', 'admin', 'director'), async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+    if (!userId || !newPassword) {
+      return res.status(400).json({ error: 'userId and newPassword are required' });
+    }
+
+    const trimmedPassword = String(newPassword).trim();
+    if (trimmedPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    const target = String(userId).trim().toLowerCase();
+
+    let sql = `
+      SELECT id, email, role, tenant_id, full_name
+      FROM profiles
+      WHERE (LOWER(email) = $1 OR LOWER(user_id) = $1 OR id::text = $1)
+    `;
+    const params = [target];
+
+    if (!isPlatformRole(req.user)) {
+      params.push(req.user.tenant_id);
+      sql += ` AND tenant_id = $2`;
+    }
+    sql += ` LIMIT 1`;
+
+    const profileRes = await query(sql, params);
+    if (profileRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found in your organization' });
+    }
+
+    const targetUser = profileRes.rows[0];
+
+    if (targetUser.role === 'platform_admin' && !isPlatformRole(req.user)) {
+      return res.status(403).json({ error: 'Cannot reset credentials for a platform administrator' });
+    }
+
+    const passwordHash = await bcrypt.hash(trimmedPassword, 10);
+    await query(
+      `UPDATE profiles
+       SET password = NULL, password_hash = $1, force_password_change = false, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [passwordHash, targetUser.id]
+    );
+
+    return res.json({
+      success: true,
+      message: `Password for ${targetUser.full_name || targetUser.email} updated successfully.`
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Roles List
 router.get('/roles', async (req, res) => {
   try {

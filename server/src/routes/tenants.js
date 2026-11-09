@@ -2,7 +2,7 @@ import { Router } from 'express';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from '../db/index.js';
-import { requirePlatformAdmin, requireRole, requireTenantAccess } from '../middleware/auth.js';
+import { isPlatformRole, requirePlatformAdmin, requireRole, requireTenantAccess } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -132,27 +132,62 @@ router.delete('/:id', requirePlatformAdmin, async (req, res) => {
   }
 });
 
-// Admin reset user password (platform admin only)
-router.post('/reset-user-password', requirePlatformAdmin, async (req, res) => {
+// Admin reset user password (Platform Admin OR Tenant Admin: super_admin, admin, director)
+router.post('/reset-user-password', requireRole('platform_admin', 'super_admin', 'admin', 'director'), async (req, res) => {
   try {
     const { userId, newPassword } = req.body;
     if (!userId || !newPassword) {
       return res.status(400).json({ error: 'userId and newPassword are required' });
     }
+
+    const trimmedPassword = String(newPassword).trim();
+    if (trimmedPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
     const target = String(userId).trim().toLowerCase();
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    const result = await query(
+
+    // Find target profile
+    let sql = `
+      SELECT id, email, role, tenant_id, full_name
+      FROM profiles
+      WHERE (LOWER(email) = $1 OR LOWER(user_id) = $1 OR id::text = $1)
+    `;
+    const params = [target];
+
+    // If caller is NOT platform admin, restrict strictly to their own tenant
+    if (!isPlatformRole(req.user)) {
+      params.push(req.user.tenant_id);
+      sql += ` AND tenant_id = $2`;
+    }
+    sql += ` LIMIT 1`;
+
+    const profileRes = await query(sql, params);
+    if (profileRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found in your organization' });
+    }
+
+    const targetUser = profileRes.rows[0];
+
+    // Prevent tenant admin from resetting platform admin credentials
+    if (targetUser.role === 'platform_admin' && !isPlatformRole(req.user)) {
+      return res.status(403).json({ error: 'Cannot reset credentials for a platform administrator' });
+    }
+
+    const passwordHash = await bcrypt.hash(trimmedPassword, 10);
+    await query(
       `UPDATE profiles
        SET password = NULL, password_hash = $1, force_password_change = false, updated_at = CURRENT_TIMESTAMP
-       WHERE LOWER(email) = $2 OR LOWER(user_id) = $2 OR id::text = $2
-       RETURNING id, email`,
-      [passwordHash, target]
+       WHERE id = $2`,
+      [passwordHash, targetUser.id]
     );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    return res.json({ success: true, message: 'Password updated successfully' });
+
+    return res.json({
+      success: true,
+      message: `Password for ${targetUser.full_name || targetUser.email} updated successfully.`
+    });
   } catch (err) {
+    console.error('Reset user password error:', err);
     return res.status(500).json({ error: err.message });
   }
 });

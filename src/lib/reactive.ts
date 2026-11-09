@@ -92,9 +92,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('profiles.resetPassword')) {
     return await authService.resetPassword(args);
   }
-  if (key.includes('tenants.resetUserPassword')) {
+  if (key.includes('tenants.resetUserPassword') || key.includes('profiles.resetUserPassword')) {
     return await tenantsService.resetUserPassword(
-      args?.userId || args?.email,
+      args?.userId || args?.email || args?.id,
       args?.newPassword
     );
   }
