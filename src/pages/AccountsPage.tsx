@@ -472,7 +472,7 @@ _${companyName} Accounts & Recovery Team_`;
         </div>
       </div>
 
-      {/* TAB 1: Outstanding Collections (Kiska payment baki hai) */}
+      {/* TAB 1: Outstanding Collections (Pending payments) */}
       {activeTab === 'collections' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">

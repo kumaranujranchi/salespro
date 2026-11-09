@@ -921,7 +921,7 @@ export function InventoryPage() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
                 <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                Target Project (यह फ़ील्ड इस प्रोजेक्ट में जुड़ेगा)
+                Target Project (This field will be linked to this project)
               </span>
               {activeFieldProject && (
                 <Badge variant="outline" className="text-[10px] font-bold uppercase bg-white dark:bg-slate-900 border-blue-300 text-blue-700 dark:text-blue-300">

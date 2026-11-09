@@ -276,9 +276,9 @@ export function AssignLeadModal({ isOpen, onClose, leadIds, onSuccess }: AssignL
         {/* ── Selected executive preview message ── */}
         {selectedExecutive && (
           <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-            <span className="font-semibold">{selectedName}</span> ko{' '}
-            <span className="font-bold">{leadIds.length}</span> naya lead{leadIds.length > 1 ? 's' : ''} assign hoga.
-            {' '}Currently unke paas <span className="font-bold">{selectedTotal} leads</span> hain.
+            <span className="font-semibold">{selectedName}</span> will be assigned{' '}
+            <span className="font-bold">{leadIds.length}</span> new lead{leadIds.length > 1 ? 's' : ''}.
+            {' '}Currently assigned <span className="font-bold">{selectedTotal} leads</span>.
           </div>
         )}
 

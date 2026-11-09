@@ -148,7 +148,7 @@ export function AdminIntegrationsPage() {
     autoWelcomeEnabled: false,
     welcomeTemplateName: 'realsalepro_lead_welcome',
     templateLanguage: 'en',
-    customGreeting: 'Namaste',
+    customGreeting: 'Hello',
     companyDisplayName: '',
     representativeName: 'Our Property Specialist',
     brochureUrl: '',
@@ -261,7 +261,7 @@ export function AdminIntegrationsPage() {
         autoWelcomeEnabled: wa.autoWelcomeEnabled ?? false,
         welcomeTemplateName: wa.welcomeTemplateName ?? 'realsalepro_lead_welcome',
         templateLanguage: wa.templateLanguage ?? 'en',
-        customGreeting: wa.customGreeting ?? 'Namaste',
+        customGreeting: wa.customGreeting ?? 'Hello',
         companyDisplayName: wa.companyDisplayName ?? tenant.name ?? '',
         representativeName: wa.representativeName ?? 'Our Property Specialist',
         brochureUrl: wa.brochureUrl ?? '',
@@ -2569,7 +2569,7 @@ export function AdminIntegrationsPage() {
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <span>2. Auto Messaging (मैसेज ड्राफ्टर)</span>
+                <span>2. Auto Messaging</span>
                 {whatsappSettings.autoWelcomeEnabled && (
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                 )}
@@ -2865,7 +2865,7 @@ export function AdminIntegrationsPage() {
                               type="text"
                               value={whatsappSettings.customGreeting}
                               onChange={(e) => setWhatsappSettings({ ...whatsappSettings, customGreeting: e.target.value })}
-                              placeholder="e.g. Namaste / Hello"
+                              placeholder="e.g. Hello / Dear"
                               className="w-full text-xs p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg"
                             />
                           </div>
@@ -2928,7 +2928,7 @@ export function AdminIntegrationsPage() {
                             </div>
 
                             <p>
-                              {whatsappSettings.customGreeting || 'Namaste'} <strong>Saurav Verma</strong>!
+                              {whatsappSettings.customGreeting || 'Hello'} <strong>Saurav Verma</strong>!
                             </p>
                             <p>
                               Thank you for inquiring regarding <strong>Sunrise Sky Villas</strong> with <strong>{whatsappSettings.companyDisplayName || tenant?.name || 'our team'}</strong>.
