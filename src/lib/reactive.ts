@@ -89,6 +89,11 @@ async function resolveApiCall(functionKey: any, args: any) {
     invalidateQuery('profiles');
     return res;
   }
+  if (key.includes('profiles.deleteProfile') || key.includes('profiles.delete') || key.includes('profiles.remove')) {
+    const res = await profilesService.delete(args?.id || args?._id);
+    invalidateQuery('profiles');
+    return res;
+  }
   if (key.includes('profiles.resetPassword')) {
     return await authService.resetPassword(args);
   }

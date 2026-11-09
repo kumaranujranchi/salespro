@@ -555,6 +555,11 @@ export function LeadsPage() {
   };
 
   const handleCreateLead = () => {
+    const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
+    if (isFreePlan && totalLeadsCount >= 1000) {
+      toast.error("Free Plan limit reached (Maximum 1,000 leads). Please delete older leads or upgrade to Pro Plan to add more leads.");
+      return;
+    }
     setSelectedLead(null);
     setIsFormModalOpen(true);
   };
@@ -609,6 +614,11 @@ export function LeadsPage() {
   };
 
   const handleBulkImport = () => {
+    const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
+    if (isFreePlan && totalLeadsCount >= 1000) {
+      toast.error("Free Plan limit reached (Maximum 1,000 leads). Please delete older leads or upgrade to Pro Plan to import more leads.");
+      return;
+    }
     setIsBulkModalOpen(true);
   };
 
@@ -1189,14 +1199,12 @@ export function LeadsPage() {
           {isSuperAdmin && (
             <Button 
               size="sm" 
-              variant={isFreePlan ? "outline" : "danger"} 
-              onClick={isFreePlan ? () => toast.info("Lead deletion is a Pro feature. Please upgrade your plan.") : handleBulkDelete}
-              className={`whitespace-nowrap text-xs shrink-0 ${
-                isFreePlan ? "text-gray-400 hover:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-700" : ""
-              }`}
+              variant="danger" 
+              onClick={handleBulkDelete}
+              className="whitespace-nowrap text-xs shrink-0"
             >
-              {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Trash2 size={14} className="mr-1.5" />}
-              {isFreePlan ? "Delete (Pro Feature)" : "Delete"}
+              <Trash2 size={14} className="mr-1.5" />
+              Delete
             </Button>
           )}
         </div>
@@ -1407,12 +1415,10 @@ export function LeadsPage() {
                                      onClick: () => handleReopenLead(lead.id)
                                    }] : []),
                                   ...(isSuperAdmin ? [{
-                                    label: isFreePlan ? 'Delete (Pro Feature)' : 'Delete',
-                                    icon: isFreePlan ? Lock : Trash2,
-                                    variant: isFreePlan ? 'default' as const : 'danger' as const,
-                                    onClick: isFreePlan 
-                                      ? () => toast.info('Lead deletion is a Pro feature. Please upgrade your plan.')
-                                      : () => handleDeleteLead(lead.id)
+                                    label: 'Delete',
+                                    icon: Trash2,
+                                    variant: 'danger' as const,
+                                    onClick: () => handleDeleteLead(lead.id)
                                   }] : [])
                                 ]}
                               />

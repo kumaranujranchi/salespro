@@ -12,7 +12,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Modal, ModalFooter } from '../components/ui/Modal';
 import { ActionMenu } from '../components/ui/ActionMenu';
-import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function validatePhoneNumber(phone: string): string | null {
@@ -99,7 +99,12 @@ export function UsersPage() {
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
   const updateProfileMutation = useMutation(api.profiles.updateProfile);
   const toggleProfileStatusMutation = useMutation(api.profiles.toggleProfileStatus);
+  const deleteProfileMutation = useMutation(api.profiles.deleteProfile);
   const resetUserPasswordMutation = useMutation(api.tenants.resetUserPassword);
+
+  const isFreePlan = tenant?.plan_tier === 'free';
+  const totalUsersCount = (users as any[]) ? (users as any[]).length : 0;
+  const isUserLimitReached = isFreePlan && totalUsersCount >= 5;
 
   // Reset password states for tenant admins
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -229,6 +234,9 @@ export function UsersPage() {
         });
         toast.success("User updated successfully!");
       } else {
+        if (isUserLimitReached) {
+          throw new Error('Free Plan limit reached (Maximum 5 users). Please delete an existing user or upgrade to Pro Plan for unlimited users.');
+        }
         if (formData.password !== formData.confirmPassword) throw new Error('Passwords do not match');
         
         await createUserProfileMutation({
@@ -270,6 +278,23 @@ export function UsersPage() {
       toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully!`);
     } catch (err: any) {
       toast.error(err.message || "Failed to update user status");
+    }
+  };
+
+  const handleDeleteUser = async (user: any) => {
+    const userId = user._id || user.id;
+    const currentUserId = profile?._id || profile?.id;
+    if (userId === currentUserId) {
+      toast.error("You cannot delete your own profile.");
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete user "${user.full_name}"? This action cannot be undone.`)) {
+      try {
+        await deleteProfileMutation({ id: userId });
+        toast.success(`User "${user.full_name}" deleted successfully!`);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete user.");
+      }
     }
   };
 
@@ -357,7 +382,23 @@ export function UsersPage() {
             className="w-40 h-[42px]"
             options={[{ value: 'active', label: 'Active Users' }, { value: 'inactive', label: 'Inactive Users' }, { value: 'all', label: 'All Users' }]}
           />
-          {!isReadOnly && <Button variant="primary" onClick={() => { resetForm(); setIsModalOpen(true); }} className="h-[42px] whitespace-nowrap"><UserPlus size={18} className="mr-2" />Add User</Button>}
+          {!isReadOnly && (
+            <Button 
+              variant={isUserLimitReached ? "outline" : "primary"} 
+              onClick={() => { 
+                if (isUserLimitReached) {
+                  toast.error("Free Plan limit reached (Maximum 5 users). Please delete an existing user or upgrade to Pro Plan for unlimited users.");
+                  return;
+                }
+                resetForm(); 
+                setIsModalOpen(true); 
+              }} 
+              className={`h-[42px] whitespace-nowrap ${isUserLimitReached ? 'border-amber-400 text-amber-600 dark:text-amber-400' : ''}`}
+            >
+              {isUserLimitReached ? <Lock size={16} className="mr-2" /> : <UserPlus size={18} className="mr-2" />}
+              Add User {isFreePlan && `(${totalUsersCount}/5)`}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -388,6 +429,12 @@ export function UsersPage() {
                         label: user.is_active ? 'Deactivate' : 'Activate', 
                         icon: user.is_active ? UserX : UserCheck, 
                         onClick: () => handleToggleStatus(user) 
+                      },
+                      {
+                        label: 'Delete User',
+                        icon: Trash2,
+                        variant: 'danger',
+                        onClick: () => handleDeleteUser(user)
                       }
                     ]} />
                   </div>
@@ -470,6 +517,12 @@ export function UsersPage() {
                            label: user.is_active ? 'Deactivate' : 'Activate', 
                            icon: user.is_active ? UserX : UserCheck, 
                            onClick: () => handleToggleStatus(user) 
+                         },
+                         {
+                           label: 'Delete User',
+                           icon: Trash2,
+                           variant: 'danger',
+                           onClick: () => handleDeleteUser(user)
                          }
                        ]} />
                     </TableCell>

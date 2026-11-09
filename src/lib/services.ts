@@ -42,6 +42,7 @@ export const profilesService = {
     api.get<Profile[]>('/profiles', { tenant_id: tenantId, ...filters }),
   create: (data: any) => api.post<Profile>('/profiles', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/profiles/${id}`, data),
+  delete: (id: string) => api.delete<{ success: boolean; message: string }>(`/profiles/${id}`),
   listRoles: (tenantId: string) => api.get<any[]>('/profiles/roles', { tenant_id: tenantId }),
   createRole: (data: any) => api.post<any>('/profiles/roles', data),
   updateRole: (id: string, data: any) => api.patch<any>(`/profiles/roles/${id}`, data),

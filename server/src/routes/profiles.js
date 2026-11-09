@@ -52,6 +52,21 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
     if (!targetTenantId) return res.status(400).json({ error: 'tenant_id is required' });
     if (!email || !full_name) return res.status(400).json({ error: 'Full name and email are required' });
 
+    // Check Free Plan User Limit (Maximum 5 users)
+    const tenantRes = await query('SELECT plan_tier, subscription_status FROM tenants WHERE id = $1', [targetTenantId]);
+    const tenantRow = tenantRes.rows[0];
+    const isProOrEnterprise = tenantRow?.plan_tier === 'pro' || tenantRow?.plan_tier === 'enterprise' || tenantRow?.subscription_status === 'active';
+
+    if (!isProOrEnterprise) {
+      const countRes = await query('SELECT COUNT(*) as count FROM profiles WHERE tenant_id = $1', [targetTenantId]);
+      const currentUsersCount = parseInt(countRes.rows[0]?.count || '0', 10);
+      if (currentUsersCount >= 5) {
+        return res.status(403).json({
+          error: 'Free Plan limit reached (Maximum 5 users). Please delete an existing user or upgrade to Pro Plan for unlimited users.'
+        });
+      }
+    }
+
     const cleanEmail = email.trim().toLowerCase();
 
     // Validate phone number
@@ -241,6 +256,46 @@ router.post('/reset-password', requireRole('platform_admin', 'super_admin', 'adm
     });
   } catch (err) {
     console.error('Reset password error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 3c. Delete User / Profile
+router.delete('/:id', requireRole('platform_admin', 'super_admin', 'admin', 'director'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: 'User ID is required' });
+
+    // Prevent self-deletion
+    if (req.user?.id === id) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+
+    let sql = `SELECT id, full_name, email, tenant_id FROM profiles WHERE id = $1`;
+    const params = [id];
+
+    if (!isPlatformRole(req.user)) {
+      params.push(req.user.tenant_id);
+      sql += ` AND tenant_id = $2`;
+    }
+
+    const checkRes = await query(sql, params);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    // Set reporting_manager_id to NULL for any users reporting to this user
+    await query(`UPDATE profiles SET reporting_manager_id = NULL WHERE reporting_manager_id = $1`, [id]);
+    
+    // Set sales_executive_id to NULL on leads assigned to this user so leads are preserved safely
+    await query(`UPDATE leads SET sales_executive_id = NULL WHERE sales_executive_id = $1`, [id]);
+
+    // Delete profile
+    await query(`DELETE FROM profiles WHERE id = $1`, [id]);
+
+    return res.json({ success: true, message: 'User deleted successfully', id });
+  } catch (err) {
+    console.error('Delete user error:', err);
     return res.status(500).json({ error: err.message });
   }
 });

@@ -341,8 +341,7 @@ export function SubscriptionPage() {
   ] : [
     'All Pro Features Included',
     'Up to 1,00,000 Leads (1,000 Max for Free Plan)',
-    'Lead Deletion Disabled (Pro Feature)',
-    'Unlimited Users',
+    'Up to 5 Users (Unlimited for Pro)',
     'Real-time Analytics',
     'Standard Email Support',
     'Full CRM Module Access',
@@ -692,9 +691,9 @@ export function SubscriptionPage() {
             </ul>
             {!isPro && (
               <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade to Pro for more leads</h4>
+                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade to Pro for more leads &amp; users</h4>
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
-                  Manage more than 1,00,000 leads and unlock lead deletion. Upgrade now.
+                  Manage up to 1,00,000 leads and unlock unlimited team users. Upgrade now.
                 </p>
                 <button onClick={() => navigate('/pricing')} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
                   View Plans →

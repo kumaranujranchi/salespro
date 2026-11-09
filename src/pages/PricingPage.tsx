@@ -297,7 +297,7 @@ export function PricingPage() {
               </div>
               <p className="mt-4 md:mt-6 text-sm md:text-base text-gray-500">For small teams starting out, manage up to 1,000 leads</p>
               <ul className="mt-4 md:mt-6 space-y-2 md:space-y-4 flex-1">
-                {['All Pro Features Included', 'Up to 1,000 Leads Limit', 'Unlimited Users', 'Real-time Analytics', 'Standard Email Support'].map((feature) => (
+                {['All Pro Features Included', 'Up to 1,000 Leads Limit', 'Up to 5 Users', 'Real-time Analytics', 'Standard Email Support'].map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500 mt-0.5" />
                     <span className="ml-2 md:ml-3 text-sm md:text-base text-gray-500">{feature}</span>
