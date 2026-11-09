@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { landingHtml } from './landingHtml';
 import { initLandingInteractions } from './landingInteractions';
+import '../styles/landing.css';
 
 export function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);

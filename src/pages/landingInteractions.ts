@@ -349,3 +349,4 @@ export function initLandingInteractions(): () => void {
     cardPointerCleanups.forEach((cleanup) => cleanup());
   };
 }
+

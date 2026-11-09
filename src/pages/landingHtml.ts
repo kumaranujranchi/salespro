@@ -46,8 +46,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
   <!-- ============ NAV ============ -->
   <header class="nav" id="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="#top" aria-label="RealSalePro home">
-        <img src="/assets/img/logo-light.png" alt="RealSalePro" width="176" height="42" />
+      <a class="nav__brand" href="#top" aria-label="RealSalePro home" style="max-width: 190px !important; display: flex !important; align-items: center !important;">
+        <img src="/assets/img/logo-light.png" alt="RealSalePro" width="176" height="34" style="height: 34px !important; max-height: 34px !important; width: auto !important; max-width: 176px !important; object-fit: contain !important; display: block !important;" />
       </a>
       <nav class="nav__links" aria-label="Primary">
         <a href="#features">Features</a>
@@ -903,11 +903,11 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="stories-logos" data-reveal>
           <p>Trusted by 50+ real-estate agencies</p>
           <div class="logo-row">
-            <span class="logo-chip"><img src="/assets/img/omav-logo-transparent.png" alt="Omav Group" loading="lazy" /></span>
-            <span class="logo-chip"><img src="/assets/img/mithila-realinfra-logo.png" alt="Mithila Realinfra" loading="lazy" /></span>
-            <span class="logo-chip"><img src="/assets/img/dutta-realty-logo.png" alt="Dutta Realty" loading="lazy" /></span>
-            <span class="logo-chip"><img src="/assets/img/wishluv-logo.png" alt="Wishluv" loading="lazy" /></span>
-            <span class="logo-chip"><img src="/assets/img/dehliz-new-logo.png" alt="Dehliz Developers" loading="lazy" /></span>
+            <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 12px !important;"><img src="/assets/img/omav-logo-transparent.png" alt="Omav Group" loading="lazy" style="height: 48px !important; max-height: 48px !important; width: auto !important; max-width: 124px !important; object-fit: contain !important; display: block !important;" /></span>
+            <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 12px !important;"><img src="/assets/img/mithila-realinfra-logo.png" alt="Mithila Realinfra" loading="lazy" style="height: 48px !important; max-height: 48px !important; width: auto !important; max-width: 124px !important; object-fit: contain !important; display: block !important;" /></span>
+            <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 12px !important;"><img src="/assets/img/dutta-realty-logo.png" alt="Dutta Realty" loading="lazy" style="height: 48px !important; max-height: 48px !important; width: auto !important; max-width: 124px !important; object-fit: contain !important; display: block !important;" /></span>
+            <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 12px !important;"><img src="/assets/img/wishluv-logo.png" alt="Wishluv" loading="lazy" style="height: 48px !important; max-height: 48px !important; width: auto !important; max-width: 124px !important; object-fit: contain !important; display: block !important;" /></span>
+            <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 12px !important;"><img src="/assets/img/dehliz-new-logo.png" alt="Dehliz Developers" loading="lazy" style="height: 48px !important; max-height: 48px !important; width: auto !important; max-width: 124px !important; object-fit: contain !important; display: block !important;" /></span>
           </div>
         </div>
 
@@ -1065,14 +1065,14 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
     <section class="cta" id="demo">
       <div class="cta__bg" aria-hidden="true"></div>
       <div class="container">
-        <div class="cta__card" data-reveal>
-          <p class="eyebrow eyebrow--mint"><span class="eyebrow__dot"></span> Free forever plan</p>
-          <h2>Ready to sell out your<br /><em>next project?</em></h2>
-          <p class="cta__lede">
+        <div class="cta__card" data-reveal style="text-align: center !important;">
+          <p class="eyebrow eyebrow--mint" style="display: inline-flex !important; align-items: center !important; margin: 0 auto !important;"><span class="eyebrow__dot"></span> Free forever plan</p>
+          <h2 style="text-align: center !important; margin-top: 22px !important;">Ready to sell out your<br /><em>next project?</em></h2>
+          <p class="cta__lede" style="text-align: center !important; margin: 22px auto 0 !important; max-width: 580px !important;">
             Join 50+ real-estate developers who trust RealSalePro. Start free up to
             1,000 leads — no card, no catch, set up in minutes.
           </p>
-          <div class="cta__actions">
+          <div class="cta__actions" style="display: flex !important; flex-wrap: wrap !important; justify-content: center !important; align-items: center !important; gap: 14px !important; margin-top: 32px !important;">
             <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
               <span>Start free — no card</span><svg class="icon"><use href="#i-arrow"/></svg>
             </a>
@@ -1081,11 +1081,11 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <span>Book a demo</span>
             </a>
           </div>
-          <ul class="cta__meta">
-            <li><svg class="icon"><use href="#i-check"/></svg> Free forever plan</li>
-            <li><svg class="icon"><use href="#i-check"/></svg> No credit card</li>
-            <li><svg class="icon"><use href="#i-check"/></svg> Import from Excel</li>
-            <li><svg class="icon"><use href="#i-check"/></svg> WhatsApp support</li>
+          <ul class="cta__meta" style="display: flex !important; flex-wrap: wrap !important; justify-content: center !important; align-items: center !important; gap: 12px 28px !important; margin-top: 36px !important; padding: 0 !important; list-style: none !important;">
+            <li style="display: inline-flex !important; align-items: center !important; gap: 8px !important; font-size: 11.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: var(--muted-dark) !important; white-space: nowrap !important;"><svg class="icon"><use href="#i-check"/></svg> Free forever plan</li>
+            <li style="display: inline-flex !important; align-items: center !important; gap: 8px !important; font-size: 11.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: var(--muted-dark) !important; white-space: nowrap !important;"><svg class="icon"><use href="#i-check"/></svg> No credit card</li>
+            <li style="display: inline-flex !important; align-items: center !important; gap: 8px !important; font-size: 11.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: var(--muted-dark) !important; white-space: nowrap !important;"><svg class="icon"><use href="#i-check"/></svg> Import from Excel</li>
+            <li style="display: inline-flex !important; align-items: center !important; gap: 8px !important; font-size: 11.5px !important; font-weight: 700 !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; color: var(--muted-dark) !important; white-space: nowrap !important;"><svg class="icon"><use href="#i-check"/></svg> WhatsApp support</li>
           </ul>
         </div>
       </div>
@@ -1097,7 +1097,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
     <div class="container">
       <div class="footer__top">
         <div class="footer__brand">
-          <img src="/assets/img/logo-light.png" alt="RealSalePro — Real Estate Sales & CRM Platform" width="190" height="45" />
+          <img src="/assets/img/logo-light.png" alt="RealSalePro — Real Estate Sales & CRM Platform" width="190" height="40" style="height: 40px !important; max-height: 40px !important; width: auto !important; max-width: 190px !important; object-fit: contain !important; display: block !important;" />
           <p>Empowering real-estate teams with intelligent tools and real-time insight. Built for the future of sales.</p>
           <div class="footer__social">
             <a href="https://www.facebook.com/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on Facebook"><svg class="icon"><use href="#i-facebook"/></svg></a>
