@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Check, Loader2, ArrowLeft } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, KeyRound, Zap, Sparkles, X } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useBackend, useAction, useMutation } from "../lib/reactive";
 import { api } from '../lib/api-endpoints';
+import { subscriptionService } from '../lib/services';
 
 export function PricingPage() {
   const { user, tenant, profile } = useAuth();
@@ -21,6 +22,71 @@ export function PricingPage() {
   const [referralCode, setReferralCode] = useState('');
   const [referralData, setReferralData] = useState<{ code: string, discount: number, campaignId: string, referrerEmail?: string, referrerName?: string } | null>(null);
   const [validatingReferral, setValidatingReferral] = useState(false);
+
+  // Razorpay Gateway Setup & Test Mode Modal State
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<{ planName: string; originalAmount: number } | null>(null);
+  const [razorpayKeyId, setRazorpayKeyId] = useState('');
+  const [razorpayKeySecret, setRazorpayKeySecret] = useState('');
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [activatingTest, setActivatingTest] = useState(false);
+
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin';
+
+  useEffect(() => {
+    if (showConfigModal && isSuperAdmin) {
+      subscriptionService.getConfig().then((res) => {
+        if (res?.fullKeyId) {
+          setRazorpayKeyId(res.fullKeyId);
+        }
+      }).catch(() => {});
+    }
+  }, [showConfigModal, isSuperAdmin]);
+
+  const handleSaveRazorpayConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!razorpayKeyId.trim() || !razorpayKeySecret.trim()) {
+      toast.error('Please enter both Razorpay Key ID and Key Secret');
+      return;
+    }
+    setSavingConfig(true);
+    try {
+      await subscriptionService.saveConfig({
+        key_id: razorpayKeyId.trim(),
+        key_secret: razorpayKeySecret.trim()
+      });
+      toast.success('Razorpay credentials saved successfully!');
+      setShowConfigModal(false);
+      if (pendingPlan) {
+        handleSubscribe(pendingPlan.planName, pendingPlan.originalAmount);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save Razorpay keys');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const handleActivateTestMode = async () => {
+    if (!tenant?.id) return;
+    setActivatingTest(true);
+    try {
+      const cycle = pendingPlan?.planName === '6 Months' ? 'semi_annual' : pendingPlan?.planName === 'Yearly' ? 'yearly' : 'monthly';
+      const res = await subscriptionService.activateTestMode({
+        tenantId: tenant.id,
+        planTier: 'pro',
+        billingCycle: cycle
+      });
+      toast.success(res.message || 'Pro Plan activated successfully in Test Mode!');
+      setShowConfigModal(false);
+      navigate('/dashboard');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to activate test mode');
+    } finally {
+      setActivatingTest(false);
+    }
+  };
 
   // Auto-trigger checkout if returning from registration
   useEffect(() => {
@@ -159,7 +225,7 @@ export function PricingPage() {
 
       // Initialize Razorpay Checkout with subscription_id
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: (subscription as any)?.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         subscription_id: subscription.razorpay_subscription_id,
         name: 'RealSalePro',
         description: `${planName} Subscription`,
@@ -194,7 +260,18 @@ export function PricingPage() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('Payment initialization failed:', error);
-      toast.error(`Failed to initialize payment: ${errorMessage}`);
+
+      const isMissingKeys =
+        errorMessage.toLowerCase().includes('razorpay keys') ||
+        errorMessage.toLowerCase().includes('missing_razorpay_keys') ||
+        errorMessage.toLowerCase().includes('missing razorpay');
+
+      if (isMissingKeys) {
+        setPendingPlan({ planName, originalAmount });
+        setShowConfigModal(true);
+      } else {
+        toast.error(`Failed to initialize payment: ${errorMessage}`);
+      }
       setLoading(false);
     }
   };
@@ -422,6 +499,128 @@ export function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Razorpay Gateway Configuration & Test Mode Modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowConfigModal(false)}
+          />
+          <div className="relative bg-white dark:bg-[#0E1A15] border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="relative bg-gradient-to-r from-[#0A1C37] via-[#0F2942] to-[#0A1C37] text-white p-6">
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-500 text-slate-950">
+                  <KeyRound size={12} /> Payment Gateway
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-white">Razorpay Setup Required</h3>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                To process live online payments, RealSalePro connects to your Razorpay merchant account.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {isSuperAdmin ? (
+                <>
+                  <form onSubmit={handleSaveRazorpayConfig} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Razorpay Key ID <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="rzp_live_xxxxxxxx or rzp_test_xxxxxxxx"
+                        value={razorpayKeyId}
+                        onChange={(e) => setRazorpayKeyId(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">
+                        Get from Razorpay Dashboard &rarr; Settings &rarr; API Keys
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Razorpay Key Secret <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="Enter your 24-character Key Secret"
+                        value={razorpayKeySecret}
+                        onChange={(e) => setRazorpayKeySecret(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={savingConfig}
+                      className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {savingConfig ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                      <span>Save Keys &amp; Proceed to Payment</span>
+                    </button>
+                  </form>
+
+                  {/* Divider */}
+                  <div className="relative my-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white dark:bg-[#0E1A15] px-2 text-slate-400 font-semibold text-[10px]">
+                        Or Test Without Payment
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Test Mode Activation Box */}
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                      <Sparkles size={14} />
+                      <span>Testing the System?</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                      As Super Admin, you can activate the Pro Plan in Demo/Test Mode right now to test all features without paying.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleActivateTestMode}
+                      disabled={activatingTest}
+                      className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      {activatingTest ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                      <span>Activate Pro Plan (Test Mode)</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 space-y-3">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Online payment gateway is not yet configured on this system. Please contact your Organization Super Admin to configure Razorpay keys.
+                  </p>
+                  <button
+                    onClick={() => setShowConfigModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

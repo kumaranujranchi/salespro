@@ -265,3 +265,12 @@ export const metaService = {
     fallbackText?: string;
   }) => api.post<{ success: boolean; messageId?: string }>('/meta/whatsapp-test', data),
 };
+
+export const subscriptionService = {
+  getConfig: () =>
+    api.get<{ configured: boolean; keyId: string | null; fullKeyId: string | null }>('/subscriptions/config'),
+  saveConfig: (data: { key_id: string; key_secret: string }) =>
+    api.post<{ success: boolean; message: string; keyId: string }>('/subscriptions/config', data),
+  activateTestMode: (data: { tenantId?: string; planTier?: string; billingCycle?: string }) =>
+    api.post<{ success: boolean; message: string; planTier: string; billingCycle: string }>('/subscriptions/activate-test-mode', data),
+};

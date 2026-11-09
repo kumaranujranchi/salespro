@@ -18,7 +18,7 @@ interface CreateSubscriptionParams {
   billingCycle: 'monthly' | 'semi_annual' | 'yearly';
 }
 
-export async function createRazorpaySubscription(params: CreateSubscriptionParams): Promise<{ subscription: Subscription; shortUrl: string }> {
+export async function createRazorpaySubscription(params: CreateSubscriptionParams): Promise<{ subscription: any; shortUrl: string; keyId?: string }> {
   try {
     const data = await apiClient.post<any>('/subscriptions/create', {
       tenantId: params.tenantId,
@@ -28,33 +28,21 @@ export async function createRazorpaySubscription(params: CreateSubscriptionParam
       planType: params.billingCycle,
     });
 
-    // Save the created subscription
-    await backend.mutation(api.subscriptions.upsert, {
-      tenant_id: params.tenantId as Id<"tenants">,
+    const subscriptionObj = {
+      _id: data.subscriptionId,
+      id: data.subscriptionId,
       razorpay_subscription_id: data.subscriptionId,
       plan_id: data.planId,
       status: 'created',
       current_start: new Date().toISOString(),
       current_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-
-    // Update tenant with subscription details and customer ID
-    await backend.mutation(api.tenants.update, {
-      id: params.tenantId as Id<"tenants">,
-      subscription_status: 'created',
-      razorpay_customer_id: data.customerId,
-    });
-
-    // Fetch the updated subscription for the return value
-    const subscription = await backend.query(api.subscriptions.getByRazorpayId, {
-      razorpay_subscription_id: data.subscriptionId
-    });
-        
-    if (!subscription) throw new Error('Failed to retrieve created subscription');
+      keyId: data.keyId,
+    };
 
     return {
-      subscription: subscription as unknown as Subscription,
+      subscription: subscriptionObj,
       shortUrl: data.shortUrl,
+      keyId: data.keyId,
     };
   } catch (error) {
     console.error('Error creating subscription:', error);
