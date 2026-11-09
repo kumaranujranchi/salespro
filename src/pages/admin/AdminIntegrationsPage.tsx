@@ -36,6 +36,7 @@ export function AdminIntegrationsPage() {
   // Facebook OAuth Actions
   const exchangeCodeAndGetPagesAction = useAction("meta:exchangeCodeAndGetPages" as any);
   const subscribePageToWebhookAction = useAction("meta:subscribePageToWebhook" as any);
+  const verifyPageTokenAction = useAction("meta:verifyPageToken" as any);
 
   // Modal display states
   const [activeModal, setActiveModal] = useState<'meta' | 'google' | 'nineNineAcres' | 'magicbricks' | 'housing' | 'whatsapp' | 'googleForm' | 'googleSheet' | 'website' | 'metaCapi' | 'googleConversion' | null>(null);
@@ -81,11 +82,22 @@ export function AdminIntegrationsPage() {
   // Meta Integration State
   const [metaSettings, setMetaSettings] = useState({
     enabled: false,
+    appId: '',
+    appSecret: '',
     accessToken: '',
     pageId: '',
     pageName: '',
     assignmentRule: 'manual' as 'manual' | 'round_robin'
   });
+  const [metaConnectMethod, setMetaConnectMethod] = useState<'manual' | 'oauth'>('manual');
+  const [manualPageId, setManualPageId] = useState('');
+  const [manualPageName, setManualPageName] = useState('');
+  const [manualPageToken, setManualPageToken] = useState('');
+  const [verifyingPage, setVerifyingPage] = useState(false);
+  const [showMetaPageToken, setShowMetaPageToken] = useState(false);
+  const [showMetaAppSecret, setShowMetaAppSecret] = useState(false);
+  const [isTestingMetaLead, setIsTestingMetaLead] = useState(false);
+  const [metaTestResult, setMetaTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Google Integration State
   const [googleSettings, setGoogleSettings] = useState({
@@ -187,11 +199,19 @@ export function AdminIntegrationsPage() {
     if (tenant?.settings?.integrations?.meta) {
       setMetaSettings({
         enabled: tenant.settings.integrations.meta.enabled ?? false,
+        appId: tenant.settings.integrations.meta.appId ?? '',
+        appSecret: tenant.settings.integrations.meta.appSecret ?? '',
         accessToken: tenant.settings.integrations.meta.accessToken ?? '',
         pageId: tenant.settings.integrations.meta.pageId ?? '',
         pageName: tenant.settings.integrations.meta.pageName ?? '',
         assignmentRule: (tenant.settings.integrations.meta.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
       });
+      if (tenant.settings.integrations.meta.pageId) {
+        setManualPageId(tenant.settings.integrations.meta.pageId);
+      }
+      if (tenant.settings.integrations.meta.pageName) {
+        setManualPageName(tenant.settings.integrations.meta.pageName);
+      }
     }
     if (tenant?.settings?.integrations?.google) {
       setGoogleSettings({
@@ -323,11 +343,16 @@ export function AdminIntegrationsPage() {
       const fetchPages = async () => {
         try {
           const redirectUri = `${window.location.origin}/settings/integrations`;
-          const pages = await exchangeCodeAndGetPagesAction({ code, redirectUri });
+          const pages = await exchangeCodeAndGetPagesAction({
+            code,
+            redirectUri,
+            appId: metaSettings.appId?.trim() || tenant?.settings?.integrations?.meta?.appId,
+            appSecret: metaSettings.appSecret?.trim() || tenant?.settings?.integrations?.meta?.appSecret,
+          });
           setPagesList(pages);
         } catch (error: any) {
           console.error("Error exchanging Facebook code:", error);
-          toast.error(error.message || "Failed to retrieve Facebook pages. Check server environment keys.");
+          toast.error(error.message || "Failed to retrieve Facebook pages. Check server environment keys or credentials.");
           setShowPagesModal(false);
         } finally {
           setFetchingPages(false);
@@ -336,19 +361,159 @@ export function AdminIntegrationsPage() {
 
       fetchPages();
     }
-  }, [exchangeCodeAndGetPagesAction, toast]);
+  }, [exchangeCodeAndGetPagesAction, toast, metaSettings.appId, metaSettings.appSecret, tenant?.settings?.integrations?.meta]);
 
   const handleFacebookConnect = () => {
-    const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    const appId = metaSettings.appId?.trim() || tenant?.settings?.integrations?.meta?.appId || (import.meta.env.VITE_FACEBOOK_APP_ID as string)?.trim();
     if (!appId) {
-      toast.error("Facebook App ID (VITE_FACEBOOK_APP_ID) is not configured in client environment variables.");
+      setMetaConnectMethod('oauth');
+      toast.error("Facebook App ID is not configured. Please enter your Meta App ID in the field below.");
       return;
     }
 
     const redirectUri = `${window.location.origin}/settings/integrations`;
-    const oauthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval&state=meta_auth`;
+    const oauthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval&state=meta_auth`;
     
     window.location.href = oauthUrl;
+  };
+
+  const handleManualPageConnect = async () => {
+    if (!tenant?._id) return;
+    if (!manualPageId.trim() || !manualPageToken.trim()) {
+      toast.error("Please enter both Facebook Page ID and Page Access Token.");
+      return;
+    }
+
+    setVerifyingPage(true);
+    try {
+      const verifyRes = await verifyPageTokenAction({
+        pageId: manualPageId.trim(),
+        pageAccessToken: manualPageToken.trim()
+      });
+
+      const pageName = verifyRes?.page?.name || manualPageName.trim() || "Connected Facebook Page";
+
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta: {
+            ...tenant.settings?.integrations?.meta,
+            enabled: true,
+            accessToken: manualPageToken.trim(),
+            pageId: manualPageId.trim(),
+            pageName,
+            assignmentRule: metaSettings.assignmentRule || 'manual',
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || '',
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || ''
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success(`Successfully connected Facebook Page: ${pageName}`);
+    } catch (error: any) {
+      console.error("Error connecting Facebook page:", error);
+      toast.error(error.message || "Failed to verify Facebook Page with Meta. Please check your Page ID and Token.");
+    } finally {
+      setVerifyingPage(false);
+    }
+  };
+
+  const handleSaveMetaCredentials = async () => {
+    if (!tenant?._id) return;
+    if (!metaSettings.appId.trim()) {
+      toast.error("Please enter Facebook App ID.");
+      return;
+    }
+    setSavingMeta(true);
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta: {
+            ...tenant.settings?.integrations?.meta,
+            appId: metaSettings.appId.trim(),
+            appSecret: metaSettings.appSecret.trim()
+          }
+        }
+      };
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+      await refreshTenant();
+      toast.success("Facebook App credentials saved!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save credentials");
+    } finally {
+      setSavingMeta(false);
+    }
+  };
+
+  const handleSendTestMetaLead = async () => {
+    if (!webhookSecret) {
+      toast.error("Webhook token not ready yet. Please wait a moment.");
+      return;
+    }
+    setIsTestingMetaLead(true);
+    setMetaTestResult(null);
+    try {
+      const apiEndpoint = getApiBaseUrl().replace(/\/+$/, '');
+      const fullApiBase = apiEndpoint.startsWith('http') ? apiEndpoint : `${window.location.origin}${apiEndpoint}`;
+      const testUrl = `${fullApiBase}/v1/inbound-leads?portal=meta&token=${webhookToken}`;
+      const res = await fetch(testUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: [{
+            changes: [{
+              field: 'leadgen',
+              value: {
+                form_id: 'test_meta_form',
+                leadgen_id: `test_lead_${Date.now()}`,
+                page_id: metaSettings.pageId || 'test_page'
+              }
+            }]
+          }],
+          customer_name: 'Pooja Verma (Facebook Test Lead)',
+          phone: '9876543210',
+          email: 'pooja.verma@example.com',
+          city: 'Mumbai',
+          budget: '85 Lakhs',
+          purpose: '3 BHK Residential Apartment',
+          lead_source: 'Meta Lead Ads'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMetaTestResult({
+          success: true,
+          message: `Test lead successfully created in CRM! Check your Leads page.`
+        });
+        toast.success("Test Facebook lead received by CRM! Check Leads page.");
+      } else {
+        setMetaTestResult({
+          success: false,
+          message: data.error || "Server rejected test lead"
+        });
+        toast.error(data.error || "Failed to submit test lead");
+      }
+    } catch (err: any) {
+      setMetaTestResult({
+        success: false,
+        message: err.message || "Network error while testing Facebook webhook"
+      });
+      toast.error(err.message || "Failed to send test lead");
+    } finally {
+      setIsTestingMetaLead(false);
+    }
   };
 
   const handleConnectPage = async (page: any) => {
@@ -440,6 +605,8 @@ export function AdminIntegrationsPage() {
             ...tenant.settings?.integrations?.meta,
             enabled: metaSettings.enabled,
             assignmentRule: metaSettings.assignmentRule,
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || '',
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || ''
           }
         }
       };
@@ -1430,20 +1597,184 @@ export function AdminIntegrationsPage() {
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Status</h3>
                       
                       {!isMetaConnected ? (
-                        <div className="p-6 border border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-center space-y-3">
-                          <Facebook className="text-gray-300 dark:text-gray-700 w-10 h-10" />
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">No account linked</p>
-                            <p className="text-[11px] text-gray-400 mt-1 max-w-[200px]">
-                              Connect your Facebook Page to automatically pull new leads.
-                            </p>
+                        <div className="space-y-4">
+                          {/* Connection Mode Tabs */}
+                          <div className="flex border-b border-gray-200 dark:border-white/10 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setMetaConnectMethod('manual')}
+                              className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                                metaConnectMethod === 'manual'
+                                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                              }`}
+                            >
+                              <Sparkles size={13} className="text-amber-500" />
+                              Page Token (Instant)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMetaConnectMethod('oauth')}
+                              className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                                metaConnectMethod === 'oauth'
+                                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                              }`}
+                            >
+                              <Facebook size={13} fill="currentColor" />
+                              Facebook Login (App ID)
+                            </button>
                           </div>
-                          <Button
-                            onClick={handleFacebookConnect}
-                            className="bg-[#1877F2] text-white hover:bg-[#166FE5] border-none font-semibold flex items-center gap-1.5 shadow-sm text-xs py-2"
-                          >
-                            <Facebook size={14} fill="currentColor" /> Connect Account
-                          </Button>
+
+                          {metaConnectMethod === 'manual' ? (
+                            <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Facebook Page ID <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={manualPageId}
+                                  onChange={(e) => setManualPageId(e.target.value)}
+                                  placeholder="e.g. 104829104820192"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                />
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Find in your Facebook Page → About → Page transparency.
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Page Access Token <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showMetaPageToken ? "text" : "password"}
+                                    value={manualPageToken}
+                                    onChange={(e) => setManualPageToken(e.target.value)}
+                                    placeholder="EAAG..."
+                                    className="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowMetaPageToken(!showMetaPageToken)}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showMetaPageToken ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  </button>
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Permanent Page Token or System User Token from Meta Business Suite / Graph API Explorer.
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Page Name (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={manualPageName}
+                                  onChange={(e) => setManualPageName(e.target.value)}
+                                  placeholder="e.g. Dream City Realty"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Lead Assignment Rule
+                                </label>
+                                <Select
+                                  value={metaSettings.assignmentRule}
+                                  onChange={(e) => setMetaSettings({ ...metaSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
+                                  className="text-xs py-1.5 h-8"
+                                  options={[
+                                    { label: 'Manual Assignment (Unassigned)', value: 'manual' },
+                                    { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
+                                  ]}
+                                />
+                              </div>
+
+                              <Button
+                                onClick={handleManualPageConnect}
+                                disabled={verifyingPage || !manualPageId.trim() || !manualPageToken.trim()}
+                                isLoading={verifyingPage}
+                                className="w-full bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-semibold py-2 shadow-sm flex items-center justify-center gap-1.5 mt-2"
+                              >
+                                <CheckCircle2 size={14} /> Verify & Connect Facebook Page
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Facebook App ID (client_id) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={metaSettings.appId}
+                                  onChange={(e) => setMetaSettings({ ...metaSettings, appId: e.target.value })}
+                                  placeholder="e.g. 15-16 digit App ID"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                />
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Found in Meta for Developers (<a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="text-blue-500 underline">developers.facebook.com</a>).
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                  Facebook App Secret
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type={showMetaAppSecret ? "text" : "password"}
+                                    value={metaSettings.appSecret}
+                                    onChange={(e) => setMetaSettings({ ...metaSettings, appSecret: e.target.value })}
+                                    placeholder="32 character App Secret"
+                                    className="w-full pr-8 pl-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowMetaAppSecret(!showMetaAppSecret)}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showMetaAppSecret ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  </button>
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  App Dashboard → App settings → Basic.
+                                </p>
+                              </div>
+
+                              <div className="flex gap-2 pt-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleSaveMetaCredentials}
+                                  isLoading={savingMeta}
+                                  className="text-xs flex-1"
+                                >
+                                  <Save size={12} className="mr-1" /> Save Credentials
+                                </Button>
+                                <Button
+                                  onClick={handleFacebookConnect}
+                                  className="bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-semibold flex-1 flex items-center justify-center gap-1"
+                                >
+                                  <Facebook size={13} fill="currentColor" /> Login with FB
+                                </Button>
+                              </div>
+
+                              <div className="pt-2 border-t border-gray-200 dark:border-white/10 text-[10px] text-gray-500">
+                                <span>OAuth Valid Redirect URI for your Meta App:</span>
+                                <div className="mt-1 flex items-center gap-1 font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded border border-gray-200 dark:border-slate-700 select-all">
+                                  <span className="truncate flex-1">{window.location.origin}/settings/integrations</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-4">
@@ -1491,6 +1822,30 @@ export function AdminIntegrationsPage() {
                                 : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
                             </p>
                           </div>
+
+                          {/* Test Facebook Lead Capture Button */}
+                          <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Test Live Lead Import</h4>
+                                <p className="text-[10px] text-gray-400">Simulate a live Meta Lead Ad submission into CRM.</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleSendTestMetaLead}
+                                isLoading={isTestingMetaLead}
+                                className="text-xs flex items-center gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                              >
+                                <Send size={12} /> Send Test Lead
+                              </Button>
+                            </div>
+                            {metaTestResult && (
+                              <div className={`p-2 rounded-lg text-[11px] ${metaTestResult.success ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                {metaTestResult.message}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1498,13 +1853,21 @@ export function AdminIntegrationsPage() {
                     <div className="space-y-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-white/5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Automated Sync</h3>
                       <p>
-                        RealSalePro simplifies the integration. Once you log in with your Facebook account, our system handles the backend configuration:
+                        RealSalePro simplifies the integration. Once you connect your Facebook page:
                       </p>
                       <ul className="space-y-1.5 list-disc pl-4 mt-2">
-                        <li>Exchanges authentication codes for permanent page security tokens.</li>
-                        <li>Configures webhooks automatically on Facebook Graph API.</li>
-                        <li>Saves incoming leads and matches them directly to sales executives.</li>
+                        <li>Subscribes to your Facebook Lead Ads webhook listeners automatically.</li>
+                        <li>Captures new leads in under 5 seconds with name, phone, email, and questions.</li>
+                        <li>Distributes them to sales executives using Round Robin or Manual rule.</li>
+                        <li>Sends instant WhatsApp welcome messages if WhatsApp automation is enabled.</li>
                       </ul>
+
+                      <div className="pt-3 border-t border-gray-200 dark:border-white/10">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Direct Webhook URL for Meta Leads:</span>
+                        <div className="font-mono text-[10px] bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-700 break-all select-all">
+                          {window.location.origin}/api/v1/inbound-leads?portal=meta&token={webhookToken}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>

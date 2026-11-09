@@ -243,12 +243,14 @@ export const capiService = {
 };
 
 export const metaService = {
-  exchangeCodeAndGetPages: async (data: { code: string; redirectUri: string }) => {
+  exchangeCodeAndGetPages: async (data: { code: string; redirectUri: string; appId?: string; appSecret?: string }) => {
     const res = await api.post<{ success: boolean; pages: any[] }>('/meta/exchange-code', data);
     return res.pages || [];
   },
   subscribePageToWebhook: (data: { pageId: string; pageAccessToken: string }) =>
     api.post<{ success: boolean }>('/meta/subscribe-page', data),
+  verifyPageToken: (data: { pageId: string; pageAccessToken: string }) =>
+    api.post<{ success: boolean; page: { id: string; name: string; category?: string }; subscribed: boolean }>('/meta/verify-page-token', data),
   testWhatsAppMessage: (data: {
     provider: string;
     phoneNumberId?: string;

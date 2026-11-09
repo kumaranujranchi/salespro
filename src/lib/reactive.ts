@@ -416,6 +416,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('meta:subscribePageToWebhook') || key.includes('meta.subscribePageToWebhook')) {
     return await metaService.subscribePageToWebhook(args);
   }
+  if (key.includes('meta:verifyPageToken') || key.includes('meta.verifyPageToken')) {
+    return await metaService.verifyPageToken(args);
+  }
 
   // Fallback
   return null;

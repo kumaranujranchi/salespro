@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { query } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { sendMetaCloudMessage, sendWatiMessage } from '../services/whatsappService.js';
 
@@ -10,17 +11,26 @@ const router = Router();
  */
 router.post('/exchange-code', requireAuth, async (req, res) => {
   try {
-    const { code, redirectUri } = req.body;
+    const { code, redirectUri, appId: clientAppId, appSecret: clientAppSecret } = req.body;
     if (!code) {
       return res.status(400).json({ error: 'OAuth code is required' });
     }
 
-    const appId = process.env.VITE_FACEBOOK_APP_ID || process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    let appId = clientAppId || process.env.VITE_FACEBOOK_APP_ID || process.env.FACEBOOK_APP_ID;
+    let appSecret = clientAppSecret || process.env.FACEBOOK_APP_SECRET;
+
+    if (!appId || !appSecret) {
+      if (req.user?.tenant_id) {
+        const tenantRes = await query('SELECT settings FROM tenants WHERE id = $1', [req.user.tenant_id]);
+        const metaCfg = tenantRes.rows[0]?.settings?.integrations?.meta;
+        if (metaCfg?.appId && !appId) appId = metaCfg.appId;
+        if (metaCfg?.appSecret && !appSecret) appSecret = metaCfg.appSecret;
+      }
+    }
 
     if (!appId || !appSecret) {
       return res.status(500).json({
-        error: 'Facebook App ID or App Secret not configured on the server. Please set VITE_FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in the environment.',
+        error: 'Facebook App ID or App Secret not configured. Please set VITE_FACEBOOK_APP_ID and FACEBOOK_APP_SECRET in the environment or inside Meta Lead Ads settings.',
       });
     }
 
@@ -55,6 +65,52 @@ router.post('/exchange-code', requireAuth, async (req, res) => {
     }));
 
     return res.json({ success: true, pages });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+/**
+ * Verify Direct Page Access Token and retrieve page info
+ * POST /api/meta/verify-page-token
+ */
+router.post('/verify-page-token', requireAuth, async (req, res) => {
+  try {
+    const { pageId, pageAccessToken } = req.body;
+    if (!pageId || !pageAccessToken) {
+      return res.status(400).json({ error: 'Page ID and Page Access Token are required' });
+    }
+
+    const checkUrl = `https://graph.facebook.com/v19.0/${encodeURIComponent(pageId)}?fields=id,name,category&access_token=${encodeURIComponent(pageAccessToken)}`;
+    const checkRes = await fetch(checkUrl);
+    const checkData = await checkRes.json();
+
+    if (!checkRes.ok || checkData.error) {
+      return res.status(400).json({
+        error: checkData.error?.message || 'Failed to verify Facebook Page with Meta Graph API. Please check your Page ID and Token.',
+      });
+    }
+
+    // Auto-subscribe to leadgen webhooks
+    let subscribed = false;
+    try {
+      const subUrl = `https://graph.facebook.com/v19.0/${encodeURIComponent(pageId)}/subscribed_apps?subscribed_fields=leadgen&access_token=${encodeURIComponent(pageAccessToken)}`;
+      const subRes = await fetch(subUrl, { method: 'POST' });
+      const subData = await subRes.json();
+      subscribed = subRes.ok && (subData.success === true || (Array.isArray(subData.data) && subData.data.length > 0));
+    } catch {
+      subscribed = false;
+    }
+
+    return res.json({
+      success: true,
+      page: {
+        id: checkData.id,
+        name: checkData.name,
+        category: checkData.category,
+      },
+      subscribed,
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
