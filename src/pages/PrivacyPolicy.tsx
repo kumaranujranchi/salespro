@@ -147,7 +147,7 @@ export function PrivacyPolicy() {
                     Send an email with the subject <em>&quot;Data Deletion Request&quot;</em> to:
                   </p>
                   <p className="text-sm font-medium text-blue-600">
-                    <a href="mailto:privacy@realsalepro.com" className="hover:underline">privacy@realsalepro.com</a> or <a href="mailto:support@realsalepro.com" className="hover:underline">support@realsalepro.com</a>
+                    <a href="mailto:support@realsalepro.com" className="hover:underline">support@realsalepro.com</a>
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
                     Upon identity verification, your personal records will be purged from our production databases within 7 business days, and a confirmation of erasure will be provided.
@@ -196,13 +196,7 @@ export function PrivacyPolicy() {
                 <p><strong>Officer:</strong> Data Protection &amp; Grievance Officer</p>
                 <p><strong>Entity:</strong> RealSalePro Technologies Private Limited</p>
                 <p>
-                  <strong>Grievance Email:</strong>{' '}
-                  <a href="mailto:grievance@realsalepro.com" className="text-blue-600 hover:underline">
-                    grievance@realsalepro.com
-                  </a>
-                </p>
-                <p>
-                  <strong>Support Desk:</strong>{' '}
+                  <strong>Contact &amp; Grievance Email:</strong>{' '}
                   <a href="mailto:support@realsalepro.com" className="text-blue-600 hover:underline">
                     support@realsalepro.com
                   </a>
