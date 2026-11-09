@@ -379,7 +379,7 @@ export function AdminIntegrationsPage() {
     }
 
     const redirectUri = `${window.location.origin}/settings/integrations`;
-    const oauthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval&state=meta_auth`;
+    const oauthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_show_list,pages_read_engagement,pages_manage_metadata,leads_retrieval&auth_type=rerequest&state=meta_auth`;
     
     window.location.href = oauthUrl;
   };

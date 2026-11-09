@@ -47,24 +47,33 @@ router.post('/exchange-code', requireAuth, async (req, res) => {
 
     const userAccessToken = tokenData.access_token;
 
-    // 2. Fetch pages the user manages
-    const pagesUrl = `https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}&fields=id,name,access_token,tasks`;
-    const pagesRes = await fetch(pagesUrl);
-    const pagesData = await pagesRes.json();
+    // 2. Fetch all pages the user manages (handling pagination up to 100+ pages)
+    let allPages = [];
+    let pagesUrl = `https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}&fields=id,name,access_token,tasks&limit=100`;
 
-    if (!pagesRes.ok || pagesData.error) {
-      return res.status(400).json({
-        error: pagesData.error?.message || 'Failed to fetch Facebook pages',
-      });
+    while (pagesUrl) {
+      const pagesRes = await fetch(pagesUrl);
+      const pagesData = await pagesRes.json();
+
+      if (!pagesRes.ok || pagesData.error) {
+        if (allPages.length > 0) break; // keep already fetched pages if subsequent page fails
+        return res.status(400).json({
+          error: pagesData.error?.message || 'Failed to fetch Facebook pages',
+        });
+      }
+
+      const currentPages = (pagesData.data || []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        access_token: p.access_token,
+      }));
+      allPages = allPages.concat(currentPages);
+
+      // Follow next pagination URL if user has more than 100 pages
+      pagesUrl = pagesData.paging?.next || null;
     }
 
-    const pages = (pagesData.data || []).map((p) => ({
-      id: p.id,
-      name: p.name,
-      access_token: p.access_token,
-    }));
-
-    return res.json({ success: true, pages });
+    return res.json({ success: true, pages: allPages });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
