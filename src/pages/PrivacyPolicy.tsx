@@ -15,7 +15,7 @@ export function PrivacyPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#0A1C37] mb-2">Privacy Policy</h1>
           <p className="text-gray-500 mb-8 text-sm">Last Updated: November 9, 2026</p>
 
-          <div className="prose prose-blue max-w-none text-gray-600 space-y-8 text-sm sm:text-base leading-relaxed">
+          <div className="prose prose-blue max-w-none text-gray-600 space-y-8 text-sm sm:text-base leading-relaxed text-justify [text-align-last:left] prose-headings:text-left">
             
             {/* Introduction */}
             <section>
