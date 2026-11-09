@@ -2416,7 +2416,7 @@ body.landing-page-active .container {
 }
 .price {
   position: relative;
-  padding: 30px;
+  padding: 32px 30px 38px;
   border: 1px solid var(--line-light);
   border-radius: 26px;
   background: #fff;
@@ -2457,8 +2457,8 @@ body.landing-page-active .container {
 .price--pro .price__amount em { color: var(--muted-dark); }
 .price__desc { min-height: 42px; margin-top: 10px; font-size: 13px; line-height: 1.6; color: var(--muted-light); }
 .price--pro .price__desc { color: var(--muted-dark); }
-.price .btn { margin-top: 22px; }
-.price__list { display: grid; gap: 11px; margin-top: 24px; }
+.price .btn { margin-top: 22px !important; margin-bottom: 26px !important; }
+.price__list { display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important; }
 .price__list li { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
 .price__list .icon {
   width: 15px;
@@ -2470,7 +2470,7 @@ body.landing-page-active .container {
   stroke-width: 3;
 }
 .price--pro .price__list .icon { background: rgba(94, 242, 176, 0.14); color: var(--mint-bright); }
-.price-fine { margin-top: 26px; font-size: 12px; text-align: center; color: var(--muted-light); }
+.price-fine { margin-top: 50px !important; margin-bottom: 20px !important; font-size: 12.5px !important; text-align: center !important; color: var(--muted-light) !important; }
 
 /* ==========================================================================
    SECTION: FAQ

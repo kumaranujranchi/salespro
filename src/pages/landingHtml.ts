@@ -944,15 +944,15 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </header>
 
         <div class="price-grid">
-          <article class="price" data-reveal>
+          <article class="price" data-reveal style="padding: 32px 30px 38px !important;">
             <div class="price__top">
               <span class="price__name">Free Forever</span>
               <span class="price__badge">No card</span>
             </div>
             <div class="price__amount"><b>₹0</b><em>forever</em></div>
             <p class="price__desc">For small teams getting organised — the whole product, not a teaser.</p>
-            <a class="btn btn--outline btn--block" href="https://realsalepro.com/register">Get started free <svg class="icon"><use href="#i-arrow"/></svg></a>
-            <ul class="price__list">
+            <a class="btn btn--outline btn--block" href="https://realsalepro.com/register" style="margin-top: 22px !important; margin-bottom: 26px !important;">Get started free <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> All pro features included</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Up to 1,000 leads</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Up to 5 users</li>
@@ -961,7 +961,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             </ul>
           </article>
 
-          <article class="price price--pro" data-reveal data-reveal-delay="80">
+          <article class="price price--pro" data-reveal data-reveal-delay="80" style="padding: 32px 30px 38px !important;">
             <div class="price__top">
               <span class="price__name">Pro</span>
               <span class="price__badge price__badge--solid">Most popular</span>
@@ -970,8 +970,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <b data-price>₹1,000</b><em>/month</em>
             </div>
             <p class="price__desc" data-price-note>Billed ₹12,000 annually — save 33%.</p>
-            <a class="btn btn--primary btn--block" href="https://realsalepro.com/pricing">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
-            <ul class="price__list">
+            <a class="btn btn--primary btn--block" href="https://realsalepro.com/pricing" style="margin-top: 22px !important; margin-bottom: 26px !important;">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> Everything in Free</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Up to 2,00,000 leads</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Unlimited users</li>
@@ -980,15 +980,15 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             </ul>
           </article>
 
-          <article class="price" data-reveal data-reveal-delay="160">
+          <article class="price" data-reveal data-reveal-delay="160" style="padding: 32px 30px 38px !important;">
             <div class="price__top">
               <span class="price__name">Custom</span>
               <span class="price__badge">Enterprise</span>
             </div>
             <div class="price__amount price__amount--text"><b>Custom</b></div>
             <p class="price__desc">Bespoke limits, integrations and terms for large teams and multi-city groups.</p>
-            <a class="btn btn--outline btn--block" href="mailto:support@realsalepro.com?subject=Custom%20plan%20enquiry%20—%20RealSalePro">Contact sales <svg class="icon"><use href="#i-arrow"/></svg></a>
-            <ul class="price__list">
+            <a class="btn btn--outline btn--block" href="mailto:support@realsalepro.com?subject=Custom%20plan%20enquiry%20—%20RealSalePro" style="margin-top: 22px !important; margin-bottom: 26px !important;">Contact sales <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> Custom lead limits</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Custom integrations</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Dedicated support manager</li>
@@ -999,7 +999,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </div>
 
         <p class="sr-only" aria-live="polite" data-price-live></p>
-        <p class="price-fine" data-reveal>No credit card required for the Free plan. Self-hosted database setup is quoted separately.</p>
+        <p class="price-fine" data-reveal style="margin-top: 52px !important; margin-bottom: 24px !important; font-size: 12.5px !important; text-align: center !important;">No credit card required for the Free plan. Self-hosted database setup is quoted separately.</p>
       </div>
     </section>
 
