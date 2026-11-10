@@ -48,6 +48,8 @@ import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 import { ServerHealthPage } from './pages/admin/ServerHealthPage';
 import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { FreeCRMPage } from './pages/FreeCRMPage';
+import { ExcelTemplatePage } from './pages/ExcelTemplatePage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -66,6 +68,8 @@ function App() {
                 <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/free-real-estate-crm" element={<FreeCRMPage />} />
+                <Route path="/templates/real-estate-crm-excel-template" element={<ExcelTemplatePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterCompanyPage />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

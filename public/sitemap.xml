@@ -12,6 +12,22 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Free Real Estate CRM Landing Page (Primary SEO Cluster) -->
+  <url>
+    <loc>https://realsalepro.com/free-real-estate-crm</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Real Estate CRM Excel Template & Lead Tracker -->
+  <url>
+    <loc>https://realsalepro.com/templates/real-estate-crm-excel-template</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
   <!-- Pricing -->
   <url>
     <loc>https://realsalepro.com/pricing</loc>

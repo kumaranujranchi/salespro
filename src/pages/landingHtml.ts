@@ -50,6 +50,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <img src="/assets/img/logo-light.png" alt="RealSalePro" width="176" height="34" style="height: 34px !important; max-height: 34px !important; width: auto !important; max-width: 176px !important; object-fit: contain !important; display: block !important;" />
       </a>
       <nav class="nav__links" aria-label="Primary">
+        <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
         <a href="#features">Features</a>
         <a href="#product">Platform</a>
         <a href="#integrations">Integrations</a>
@@ -68,6 +69,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       </div>
     </div>
     <div class="nav__mobile" id="mobileMenu" hidden>
+      <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
+      <a href="/templates/real-estate-crm-excel-template">Free Excel Template</a>
       <a href="#features">Features</a>
       <a href="#product">Platform</a>
       <a href="#integrations">Integrations</a>
@@ -1108,6 +1111,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
         <div class="footer__col">
           <h3>Platform</h3>
+          <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free Real Estate CRM</a>
+          <a href="/templates/real-estate-crm-excel-template">Free Excel Template</a>
           <a href="#features">Features</a>
           <a href="#product">Product tour</a>
           <a href="#integrations">Integrations</a>
