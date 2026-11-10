@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -309,7 +310,7 @@ export function FreeCRMPage() {
                   <span className="bento__tag">Automation</span>
                   <h3 className="bento__h">Meta &amp; WhatsApp webhooks</h3>
                   <p className="bento__p">
-                    Inquiries from Facebook Ads, Instagram, and web portals arrive in your pipeline within 30 seconds.
+                    Inquiries from Facebook Ads, Instagram, and web portals arrive in your pipeline within 30 seconds. Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link>.
                   </p>
                 </div>
               </article>
@@ -339,7 +340,7 @@ export function FreeCRMPage() {
                   <span className="bento__tag">Data Security</span>
                   <h3 className="bento__h">Staff phone number masking</h3>
                   <p className="bento__p">
-                    Prevent disgruntled executives or telecallers from stealing your client database by hiding the last 5 digits.
+                    Prevent telecallers from stealing your client database by hiding the last 5 digits — essential for <Link to="/crm-for-real-estate-brokers" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>brokers &amp; channel partners</Link>.
                   </p>
                 </div>
               </article>
@@ -489,6 +490,9 @@ export function FreeCRMPage() {
                   </tr>
                 </tbody>
               </table>
+              <p style={{ textAlign: 'center', padding: '16px 24px', margin: 0, borderTop: '1px solid rgba(10,32,24,0.06)', fontSize: '14px', color: 'var(--muted-light)', background: '#fbfaf7' }}>
+                Still managing property leads manually? <Link to="/templates/real-estate-crm-excel-template" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Download our Free Real Estate CRM Excel Template</Link> or explore our <Link to="/real-estate-crm-india" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>India real estate CRM edition</Link>.
+              </p>
             </div>
 
             {/* Savings Calculator Widget */}
@@ -584,6 +588,9 @@ export function FreeCRMPage() {
             </div>
           </div>
         </section>
+
+        {/* ============ RELATED SOLUTIONS SEO CLUSTER ============ */}
+        <RelatedSolutionsCluster currentPath="/free-real-estate-crm" />
 
         {/* ============ FINAL CTA ============ */}
         <section className="cta" id="demo">

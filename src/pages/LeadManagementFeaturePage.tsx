@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -203,6 +204,7 @@ export function LeadManagementFeaturePage() {
                   <p className="bento__p">
                     Connect Facebook Lead Ads, Google Ads, Magicbricks, and WhatsApp. 
                     The moment a user fills a form, their details populate your CRM with source tags, campaign names, and UTM parameters.
+                    Built natively for <Link to="/real-estate-crm-india" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>Indian real estate portals</Link>.
                   </p>
                 </div>
               </article>
@@ -282,7 +284,7 @@ export function LeadManagementFeaturePage() {
                 <span style={{ fontSize: '12px', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Data Security</span>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, margin: '12px 0 16px', color: '#0a2018' }}>Role-Based Phone Number Masking</h3>
                 <p style={{ color: 'var(--muted-light)', fontSize: '14.5px', lineHeight: 1.6, marginBottom: '16px' }}>
-                  Only administrators see full customer phone numbers. Telecallers and field executives can call directly through the web dialer, preventing contact book theft.
+                  Only administrators see full customer phone numbers. Telecallers and field executives can call directly through the web dialer, preventing contact book theft — a critical shield for <Link to="/crm-for-real-estate-brokers" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>brokers &amp; channel partners</Link>.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Staff View: +91 98765 •••••</span>
@@ -292,6 +294,9 @@ export function LeadManagementFeaturePage() {
             </div>
           </div>
         </section>
+
+        {/* ============ RELATED SOLUTIONS SEO CLUSTER ============ */}
+        <RelatedSolutionsCluster currentPath="/features/lead-management" />
 
         {/* ============ FINAL CTA ============ */}
         <section className="cta" id="demo">

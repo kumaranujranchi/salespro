@@ -485,7 +485,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <p class="split__lede" data-reveal data-reveal-delay="120">
             Connect Meta Lead Ads, Google Ads, Magicbricks, 99acres or a simple webhook.
             RealSalePro validates the number, checks for duplicates and hands the lead to
-            the right executive before the enquiry goes cold.
+            the right executive before the enquiry goes cold. Powered by our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">real estate lead management engine</a> and native <a href="/real-estate-crm-india" style="color: var(--mint); text-decoration: underline;">India portal integrations</a>.
           </p>
           <ul class="checklist" data-reveal data-reveal-delay="180">
             <li><svg class="icon"><use href="#i-check"/></svg> Native one-click integrations — no Zapier required</li>
@@ -656,7 +656,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </div>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
             Native connections for the ad platforms, portals and forms you already use —
-            plus one webhook for websites and everything else.
+            plus one webhook for websites and everything else. Discover our <a href="/real-estate-crm-india" style="color: var(--mint); text-decoration: underline;">India real estate CRM portal integrations</a> or configure our <a href="/integration" style="color: var(--mint); text-decoration: underline;">self-hosted database integration</a>.
           </p>
         </header>
 
@@ -735,7 +735,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <div class="flow__copy">
             <p class="eyebrow eyebrow--mint">Lead flow automation</p>
             <h3>Watch your leads route <em>automatically</em>.</h3>
-            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds.</p>
+            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds. Explore our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">lead management workflow</a> or our <a href="/crm-for-real-estate-brokers" style="color: var(--mint); text-decoration: underline;">broker agency features</a>.</p>
             <div class="flow__tags">
               <span><svg class="icon"><use href="#i-check"/></svg> Round-robin routing</span>
               <span><svg class="icon"><use href="#i-whatsapp"/></svg> Instant WhatsApp welcome</span>
@@ -953,7 +953,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <span class="price__badge">No card</span>
             </div>
             <div class="price__amount"><b>₹0</b><em>forever</em></div>
-            <p class="price__desc">For small teams getting organised — the whole product, not a teaser.</p>
+            <p class="price__desc">For small teams getting organised — the whole product, not a teaser. Read about our <a href="/free-real-estate-crm" style="color: var(--mint); text-decoration: underline;">Free Real Estate CRM plan</a>.</p>
             <a class="btn btn--outline btn--block" href="https://realsalepro.com/register" style="margin-top: 22px !important; margin-bottom: 26px !important;">Get started free <svg class="icon"><use href="#i-arrow"/></svg></a>
             <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> All pro features included</li>
@@ -1003,6 +1003,89 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
         <p class="sr-only" aria-live="polite" data-price-live></p>
         <p class="price-fine" data-reveal style="margin-top: 52px !important; margin-bottom: 24px !important; font-size: 12.5px !important; text-align: center !important;">No credit card required for the Free plan. Self-hosted database setup is quoted separately.</p>
+      </div>
+    </section>
+
+    <!-- ============ RELATED REAL ESTATE SOLUTIONS CLUSTER ============ -->
+    <section class="section section--paper" id="solutions" style="border-top: 1px solid rgba(10,32,24,0.06); padding: 80px 0;">
+      <div class="container">
+        <header class="sec-head sec-head--center" style="margin-bottom: 44px;">
+          <p class="eyebrow" data-reveal style="display: inline-flex; align-items: center; margin: 0 auto 10px;"><span class="eyebrow__dot"></span> Explore RealSalePro Platform</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60" style="font-size: clamp(26px, 3.2vw, 38px);">
+            Specialized Real Estate <em>Solutions &amp; Tools</em>
+          </h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120" style="max-width: 640px; margin: 14px auto 0;">
+            Explore our dedicated software editions, free starter tools, and portal integration modules built for Indian real estate professionals.
+          </p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+          <a href="/free-real-estate-crm" data-reveal style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">100% Free Forever</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">Free Real Estate CRM</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Up to 1,000 active leads and 5 users with zero subscription fee. Meta ads sync and visual deal pipeline.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Free Real Estate CRM Software</span> &rarr;
+            </div>
+          </a>
+
+          <a href="/crm-for-real-estate-brokers" data-reveal data-reveal-delay="60" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">Brokers &amp; CPs</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">CRM for Real Estate Brokers</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Phone number masking to stop database theft, site visit GPS dispatching, and brokerage commission tracking.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Real Estate Broker CRM</span> &rarr;
+            </div>
+          </a>
+
+          <a href="/real-estate-crm-india" data-reveal data-reveal-delay="120" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">India Edition</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">India Real Estate CRM</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Direct webhooks for Magicbricks, 99acres &amp; Housing.com, with native ₹ Lakhs &amp; Crores revenue math.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Real Estate CRM Software in India</span> &rarr;
+            </div>
+          </a>
+
+          <a href="/features/lead-management" data-reveal data-reveal-delay="180" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">Core Feature</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">Lead Management Engine</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Sub-30s capture, deduplication, round-robin team assignment, and WhatsApp welcome automation.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Real Estate Lead Management</span> &rarr;
+            </div>
+          </a>
+
+          <a href="/templates/real-estate-crm-excel-template" data-reveal data-reveal-delay="240" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">Free Download</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">Excel CRM &amp; Lead Tracker</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Pre-formatted spreadsheet template with Indian property stages, follow-up alerts, and formula logic.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Free Real Estate Excel Template</span> &rarr;
+            </div>
+          </a>
+
+          <a href="/integration" data-reveal data-reveal-delay="300" style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
+            <div>
+              <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">Enterprise BYOD</span>
+              <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 700; color: #0a2018; margin-bottom: 10px;">Self-Hosted Database Integration</h3>
+              <p style="font-size: 13.5px; color: var(--muted-light); line-height: 1.6; margin: 0;">Bring your own PostgreSQL or AWS RDS database for 100% data sovereignty behind your private firewall.</p>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-size: 13px; font-weight: 700; color: #059669;">
+              <span>Enterprise Database Integration</span> &rarr;
+            </div>
+          </a>
+        </div>
       </div>
     </section>
 

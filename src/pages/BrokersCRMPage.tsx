@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -227,6 +228,7 @@ export function BrokersCRMPage() {
                   <p className="bento__p">
                     When an employee leaves, your database walks out with them in spreadsheets. 
                     RealSalePro's built-in phone number masking hides the last 5 digits so telecallers can dial out without ever copying customer numbers.
+                    Still using manual sheets? <Link to="/templates/real-estate-crm-excel-template" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>See why Excel leaks buyer data</Link>.
                   </p>
                 </div>
               </article>
@@ -266,7 +268,7 @@ export function BrokersCRMPage() {
                   <span className="bento__tag">Free Forever</span>
                   <h3 className="bento__h">Zero upfront cost for your agency</h3>
                   <p className="bento__p">
-                    Start with up to 1,000 client contacts and 5 agent accounts for ₹0. Upgrade only when your agency grows to hundreds of bookings.
+                    Start with up to 1,000 client contacts and 5 agent accounts for ₹0. Explore our <Link to="/free-real-estate-crm" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>100% Free CRM Plan</Link> with zero time limits.
                   </p>
                 </div>
               </article>
@@ -291,7 +293,9 @@ export function BrokersCRMPage() {
               <div style={{ padding: '28px 24px', background: '#fff', borderRadius: '20px', border: '1px solid rgba(10,32,24,0.08)', boxShadow: '0 12px 30px rgba(10,32,24,0.04)' }}>
                 <span style={{ fontSize: '12px', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>Step 01</span>
                 <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 700, margin: '8px 0', color: '#0a2018' }}>Capture &amp; Tag</h4>
-                <p style={{ fontSize: '13px', color: 'var(--muted-light)', lineHeight: 1.6 }}>Lead auto-syncs from Meta or portal and is tagged with budget, location &amp; configuration.</p>
+                <p style={{ fontSize: '13px', color: 'var(--muted-light)', lineHeight: 1.6 }}>
+                  Lead auto-syncs from Meta or portal and is tagged with budget, location &amp; configuration. Explore our <Link to="/features/lead-management" style={{ color: '#059669', textDecoration: 'underline' }}>lead management workflow</Link> &amp; <Link to="/real-estate-crm-india" style={{ color: '#059669', textDecoration: 'underline' }}>India portal integrations</Link>.
+                </p>
               </div>
 
               <div style={{ padding: '28px 24px', background: '#fff', borderRadius: '20px', border: '1px solid rgba(10,32,24,0.08)', boxShadow: '0 12px 30px rgba(10,32,24,0.04)' }}>
@@ -320,6 +324,9 @@ export function BrokersCRMPage() {
             </div>
           </div>
         </section>
+
+        {/* ============ RELATED SOLUTIONS SEO CLUSTER ============ */}
+        <RelatedSolutionsCluster currentPath="/crm-for-real-estate-brokers" />
 
         {/* ============ FINAL CTA ============ */}
         <section className="cta" id="demo">

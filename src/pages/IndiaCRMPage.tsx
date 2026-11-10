@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -203,7 +204,7 @@ export function IndiaCRMPage() {
                   <h3 className="bento__h">Magicbricks, 99acres &amp; Housing.com</h3>
                   <p className="bento__p">
                     Inquiries from major property portals sync straight into your RealSalePro New Leads column in under 30 seconds. 
-                    No missing lead emails or manual data transcription.
+                    Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link> for automatic deduplication and routing.
                   </p>
                 </div>
               </article>
@@ -283,12 +284,16 @@ export function IndiaCRMPage() {
                   <li>• Field-ready mobile phone access for on-site visit updates.</li>
                   <li>• Automatic customer phone number masking to prevent lead theft.</li>
                   <li>• 1-Click WhatsApp follow-ups with brochures and video tours.</li>
-                  <li>• 100% Free Forever up to 1,000 client leads with zero card needed.</li>
+                  <li>• Tailored for <Link to="/crm-for-real-estate-brokers" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Brokers &amp; Channel Partners</Link> across major Indian metros.</li>
+                  <li>• 100% Free Forever up to 1,000 client leads on our <Link to="/free-real-estate-crm" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Free Real Estate CRM</Link>.</li>
                 </ul>
               </div>
             </div>
           </div>
         </section>
+
+        {/* ============ RELATED SOLUTIONS SEO CLUSTER ============ */}
+        <RelatedSolutionsCluster currentPath="/real-estate-crm-india" />
 
         {/* ============ FINAL CTA ============ */}
         <section className="cta" id="demo">

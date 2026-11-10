@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { SEOHead } from '../components/seo/SEOHead';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -422,7 +423,7 @@ export function ExcelTemplatePage() {
                 </h3>
                 <ul style={{ display: 'grid', gap: '16px', color: 'var(--muted-light)', fontSize: '14.5px', lineHeight: 1.6 }}>
                   <li><strong>• Leads entered at 10 PM:</strong> Facebook inquiries received at 2 PM sit waiting for manual copying. By the time someone calls, the buyer has already scheduled a visit elsewhere.</li>
-                  <li><strong>• Staff Database Theft:</strong> Any employee can save your entire sheet to a personal flash drive and walk out the door.</li>
+                  <li><strong>• Staff Database Theft:</strong> Any employee can save your entire sheet to a personal flash drive. See how <Link to="/crm-for-real-estate-brokers" style={{ color: '#dc2626', fontWeight: 600, textDecoration: 'underline' }}>brokers protect data with phone number masking</Link>.</li>
                   <li><strong>• Zero Follow-up Alerts:</strong> Follow-up dates get buried in rows without WhatsApp or daily task notifications.</li>
                 </ul>
               </div>
@@ -436,9 +437,9 @@ export function ExcelTemplatePage() {
                   Calm automation &amp; zero lead theft
                 </h3>
                 <ul style={{ display: 'grid', gap: '16px', color: '#0a2018', fontSize: '14.5px', lineHeight: 1.6 }}>
-                  <li><strong>• 30-Second Webhook Sync:</strong> Every Meta, Google, and portal lead pings your team immediately. First-minute calls convert 391% better.</li>
+                  <li><strong>• 30-Second Webhook Sync:</strong> Every Meta, Google, and portal lead pings your team immediately. Powered by our <Link to="/features/lead-management" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>real estate lead management engine</Link>.</li>
                   <li><strong>• Staff Number Masking:</strong> Telecallers dial clients without seeing the last 5 digits. Zero database leakage.</li>
-                  <li><strong>• 100% Free Forever:</strong> Up to 1,000 active leads and 5 users with zero subscription fee.</li>
+                  <li><strong>• 100% Free Forever:</strong> Up to 1,000 active leads and 5 users with zero subscription fee on our <Link to="/free-real-estate-crm" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Free Real Estate CRM</Link>.</li>
                 </ul>
               </div>
             </div>
@@ -513,6 +514,9 @@ export function ExcelTemplatePage() {
             </div>
           </div>
         </section>
+
+        {/* ============ RELATED SOLUTIONS SEO CLUSTER ============ */}
+        <RelatedSolutionsCluster currentPath="/templates/real-estate-crm-excel-template" />
 
         {/* ============ FINAL CTA ============ */}
         <section className="cta" id="demo">
