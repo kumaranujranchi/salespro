@@ -1,21 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Check, ArrowRight, Shield, Zap, Users, Smartphone, 
-  HelpCircle, ChevronDown, ChevronUp, Database, Download,
-  Sparkles, Star, Lock, Award, FileSpreadsheet, Building2
-} from 'lucide-react';
 import { SEOHead } from '../components/seo/SEOHead';
+import { initLandingInteractions } from './landingInteractions';
+import '../styles/landing.css';
 
 export function FreeCRMPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [teamSize, setTeamSize] = useState<number>(3);
+  const annualSavings = teamSize * 36000;
 
-  const toggleFaq = (idx: number) => {
-    setOpenFaq(openFaq === idx ? null : idx);
-  };
+  useEffect(() => {
+    // 1. Activate landing page scoped CSS and reveal animations
+    document.body.classList.add('landing-page-active');
+    document.documentElement.classList.add('js');
 
-  const annualSavings = teamSize * 36000; // Average ₹3,000/user/mo on paid CRM
+    // 2. Initialize interactive UI components
+    const cleanupInteractions = initLandingInteractions();
+
+    return () => {
+      document.body.classList.remove('landing-page-active');
+      cleanupInteractions();
+    };
+  }, []);
 
   const faqSchema = {
     "@context": "https://schema.org",
@@ -42,7 +47,7 @@ export function FreeCRMPage() {
         "name": "What happens when I reach 1,000 leads?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "You can either archive/delete older leads to stay on the 100% Free Forever plan, or easily upgrade to the Pro Plan for ₹1,000/month which gives you 2,00,000 leads capacity and unlimited users. Your data is always safe."
+          "text": "You can either archive or delete older leads to stay on the 100% Free Forever plan, or easily upgrade to the Pro Plan for ₹1,000/month which gives you 2,00,000 leads capacity and unlimited users."
         }
       },
       {
@@ -55,17 +60,17 @@ export function FreeCRMPage() {
       },
       {
         "@type": "Question",
-        "name": "Can my sales executives steal or copy my customer database?",
+        "name": "Can my sales executives copy or steal my client database?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No. RealSalePro includes tenant-level phone number masking where the last 5 digits of customer numbers are hidden for non-admin executives, preventing database theft by disgruntled staff."
+          "text": "No. RealSalePro includes tenant-level phone number masking where the last 5 digits of customer numbers are hidden for non-admin executives, preventing database theft by staff."
         }
       }
     ]
   };
 
   return (
-    <div className="min-h-screen bg-[#07130E] text-slate-100 font-sans selection:bg-[#00E576] selection:text-[#07130E]">
+    <>
       <SEOHead
         title="Free Real Estate CRM Software | 1,000 Leads Free Forever | RealSalePro"
         description="Looking for the best free CRM for real estate? RealSalePro gives you 1,000 leads free forever, Meta & WhatsApp auto-sync, site visit tracker & pipeline with no credit card required."
@@ -74,476 +79,619 @@ export function FreeCRMPage() {
         jsonLd={faqSchema}
       />
 
-      {/* Navigation */}
-      <nav className="border-b border-emerald-950/60 bg-[#07130E]/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <img 
-              src="/images/RealSalePro_Favicon.png" 
-              alt="RealSalePro Logo" 
-              className="w-9 h-9 object-contain"
-            />
-            <span className="text-xl font-bold tracking-tight text-white flex items-center">
-              RealSale<span className="text-[#00E576]">Pro</span>
-            </span>
+      {/* SVG SPRITE */}
+      <svg xmlns="http://www.w3.org/2000/svg" className="sprite" aria-hidden="true">
+        <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+        <symbol id="i-arrow-ur" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+        <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="m4 10.5 8-7 8 7V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5Z"/><path d="M9.5 21v-6h5v6"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14.7c2 .7 3 2.7 3 5.3"/></symbol>
+        <symbol id="i-kanban" viewBox="0 0 24 24"><rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="10" rx="1.5"/><rect x="15.5" y="4" width="5" height="13" rx="1.5"/></symbol>
+        <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V7l8-4v18M12 21h8V10l-8-3"/><path d="M7.5 9.5h1M7.5 13h1M7.5 16.5h1M15.5 12.5h1M15.5 16h1M2.5 21h19"/></symbol>
+        <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12.5 16V8M17 16v-8.5"/></symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.2 3 7.5 7 9 4-1.5 7-4.8 7-9V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></symbol>
+        <symbol id="i-whatsapp" viewBox="0 0 24 24"><path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24M8.53 7.33c-.14 0-.36.05-.55.26-.19.2-.72.7-.72 1.71 0 1.01.74 1.99.84 2.13.1.14 1.44 2.21 3.5 3.1 1.71.74 2.06.59 2.43.56.37-.04 1.19-.49 1.36-.96.17-.47.17-.87.12-.96-.05-.09-.19-.14-.4-.25-.21-.1-1.2-.59-1.39-.66-.19-.07-.33-.1-.47.1-.14.21-.55.69-.67.83-.12.14-.24.16-.45.05-.21-.1-.89-.33-1.69-1.05-.62-.56-1.04-1.25-1.16-1.46-.12-.21-.01-.32.09-.43.09-.1.21-.26.31-.38.1-.12.14-.21.21-.35.07-.14.03-.26-.02-.37-.05-.1-.47-1.14-.65-1.56-.17-.41-.35-.35-.48-.36-.12-.01-.26-.01-.4-.01z"/></symbol>
+        <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M14 13.5h2.5l1-4H14v-2c0-1.03.77-1.5 1.5-1.5h2v-3.5h-3.5C10.5 2.5 9 4 9 7.5v2H6v4h3v10h5v-10z"/></symbol>
+        <symbol id="i-linkedin" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></symbol>
+      </svg>
+
+      <div className="noise" aria-hidden="true"></div>
+
+      {/* FLOATING NAVIGATION */}
+      <header className="nav" id="nav">
+        <div className="nav__inner">
+          <Link to="/" className="nav__brand" aria-label="RealSalePro home">
+            <img src="/assets/img/logo-light.png" alt="RealSalePro" width="176" height="34" />
           </Link>
 
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-            <a href="#features" className="hover:text-white transition-colors">Free Features</a>
-            <a href="#why-free" className="hover:text-white transition-colors">Why It's Free</a>
-            <a href="#comparison" className="hover:text-white transition-colors">Compare vs Paid</a>
-            <Link to="/templates/real-estate-crm-excel-template" className="hover:text-white transition-colors flex items-center gap-1.5 text-emerald-400">
-              <FileSpreadsheet size={15} /> Free Excel Template
-            </Link>
-            <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          </div>
+          <nav className="nav__links" aria-label="Primary">
+            <Link to="/free-real-estate-crm" className="is-active" style={{ color: 'var(--mint-bright)' }}>Free CRM</Link>
+            <Link to="/templates/real-estate-crm-excel-template">Excel Template</Link>
+            <a href="#features">Free Features</a>
+            <a href="#why-free">Why Free?</a>
+            <a href="#comparison">Compare vs Paid</a>
+            <a href="#faq">FAQ</a>
+          </nav>
 
-          <div className="flex items-center gap-3">
-            <Link 
-              to="/login" 
-              className="text-sm font-semibold text-slate-300 hover:text-white px-3 py-2 transition-colors"
-            >
-              Log in
+          <div className="nav__actions">
+            <Link className="nav__login" to="/login">Log in</Link>
+            <Link className="btn btn--primary btn--sm" to="/register">
+              <span>Claim free account</span><svg className="icon"><use href="#i-arrow"/></svg>
             </Link>
-            <Link
-              to="/register"
-              className="text-xs sm:text-sm font-bold bg-[#00E576] hover:bg-[#00c853] text-[#07130E] px-4 py-2.5 rounded-full shadow-lg shadow-[#00E576]/20 transition-all hover:scale-105"
-            >
-              Claim Free Account →
-            </Link>
+            <button className="nav__toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+              <svg className="icon"><use href="#i-menu"/></svg>
+            </button>
           </div>
         </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 overflow-hidden border-b border-emerald-950/40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(0,229,118,0.15),transparent_70%)] pointer-events-none" />
-        
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-semibold mb-6">
-            <Sparkles size={14} className="text-[#00E576]" />
-            100% Free Forever • No Credit Card Required • Instant Setup
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
-            The #1 Free Real Estate CRM for <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00E576] via-emerald-300 to-teal-400">
-              Brokers, Realtors & Small Teams
-            </span>
-          </h1>
-
-          <p className="max-w-3xl mx-auto text-lg sm:text-xl text-slate-300 leading-relaxed mb-10">
-            Stop paying ₹15,000+ every month for bloated corporate software. RealSalePro gives you automatic Meta & WhatsApp lead sync, 
-            a calm visual pipeline, site visit dispatching, and inventory management — 
-            <strong className="text-white font-semibold"> 100% free up to 1,000 leads</strong>.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[#00E576] to-emerald-400 text-[#07130E] text-base font-extrabold rounded-2xl shadow-xl shadow-[#00E576]/25 hover:opacity-95 hover:scale-[1.02] transition-all cursor-pointer"
-            >
-              Start Free — No Card Needed
-              <ArrowRight size={18} />
-            </Link>
-            <a
-              href="#comparison"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 bg-white/5 hover:bg-white/10 text-white text-base font-semibold rounded-2xl border border-white/10 transition-all"
-            >
-              Compare Free vs Paid CRMs
-            </a>
-          </div>
-
-          {/* Key Metric Highlights */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-6 border-t border-emerald-950/60">
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#00E576]">₹0</div>
-              <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-medium">To Get Started</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">1,000</div>
-              <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-medium">Free Active Leads</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">4.8 <Star size={18} className="inline text-amber-400 fill-amber-400 mb-1" /></div>
-              <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-medium">1,056+ Reviews</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">50+</div>
-              <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-medium">Agencies Across India</div>
-            </div>
-          </div>
+        <div className="nav__mobile" id="mobileMenu" hidden>
+          <Link to="/free-real-estate-crm" style={{ color: 'var(--mint-bright)' }}>Free CRM</Link>
+          <Link to="/templates/real-estate-crm-excel-template">Free Excel Template</Link>
+          <a href="#features">Free Features</a>
+          <a href="#why-free">Why Free?</a>
+          <a href="#comparison">Compare vs Paid</a>
+          <a href="#faq">FAQ</a>
+          <Link to="/login">Log in</Link>
+          <Link className="btn btn--primary" to="/register">Claim free account <svg className="icon"><use href="#i-arrow"/></svg></Link>
         </div>
-      </section>
+      </header>
 
-      {/* What is Included in Free Section */}
-      <section id="features" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-3">Complete Real Estate Toolkit</div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            What You Get in the <span className="text-[#00E576]">Free-Forever Plan</span>
-          </h2>
-          <p className="text-slate-400 mt-3 text-base">
-            Not a watered-down demo or 7-day trial. You get the whole product with zero time limit.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Database size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Up to 1,000 Active Leads</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Store contact numbers, property preferences, budgets, and full interaction timelines for up to 1,000 client prospects.
-            </p>
+      <main id="top">
+        {/* ============ HERO SECTION ============ */}
+        <section className="hero">
+          <div className="hero__bg" aria-hidden="true">
+            <div className="hero__grid"></div>
+            <div className="hero__glow hero__glow--a"></div>
+            <div className="hero__glow hero__glow--b"></div>
+            <div className="hero__ring"></div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Zap size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Instant Meta & WhatsApp Webhooks</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Leads from Facebook Ads, Instagram, and web forms sync within 30 seconds. No manual data entry or copy-pasting.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Users size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Up to 5 User Seats</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Collaborate with your sales executives, telecallers, and site staff with separate role-based logins and assignments.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Building2 size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Site Visit & Inventory Management</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Dispatch site visits, log driver feedback, share Google location pins with buyers, and track available unit inventory.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Lock size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Phone Number Masking & Security</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Prevent disgruntled staff or telecallers from copying your database. Hide the last 5 digits of customer numbers automatically.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 transition-all group">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-[#00E576] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Smartphone size={24} />
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Field-Ready Mobile Access</h3>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Update booking notes and site visits directly from your smartphone while standing at the project site, not at 9 PM on a laptop.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Is It Really Free Section (Addresses Skepticism) */}
-      <section id="why-free" className="py-20 bg-emerald-950/20 border-y border-emerald-950/50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <Shield size={160} className="text-[#00E576]" />
-            </div>
-
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-[#00E576] text-xs font-bold mb-6">
-              <Award size={14} /> Transparent Pricing Philosophy
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-6">
-              "Is it really free? What's the catch?"
-            </h2>
-
-            <div className="space-y-4 text-base text-slate-300 leading-relaxed max-w-3xl">
-              <p>
-                We hear this every day from property dealers and real estate founders who have been burned by "free trials" 
-                that lock up their data after 7 days unless they swipe a credit card for ₹20,000.
+          <div className="container hero__inner">
+            <div className="hero__copy">
+              <p className="eyebrow hero__eyebrow" data-reveal>
+                <span className="eyebrow__dot"></span>
+                100% free real estate CRM
+                <span className="eyebrow__new">No card, ever</span>
               </p>
-              <p>
-                <strong className="text-white">Here is the honest truth:</strong> We built RealSalePro because existing real estate CRMs (like Sell.Do and LeadSquared) 
-                charge exorbitant setup fees and ₹1,500+ per user per month. Small agencies and solo brokers cannot afford that before they even close their first deal.
-              </p>
-              <p>
-                Our Free-Forever plan gives you up to <strong className="text-[#00E576]">1,000 active leads</strong> and 5 team accounts. 
-                We only charge when you become a large agency with hundreds of bookings and cross 1,000 leads — at which point our Pro plan is just ₹1,000/month. 
-                Until then, you pay <strong className="text-white">₹0, forever</strong>.
-              </p>
-            </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-6 pt-6 border-t border-white/10 text-xs sm:text-sm text-slate-400">
-              <div className="flex items-center gap-2 text-white">
-                <Check size={16} className="text-[#00E576]" /> No credit card needed
+              <h1 className="hero__title" data-reveal data-reveal-delay="80">
+                The free real-estate<br />CRM built to <em>close</em>.
+              </h1>
+
+              <p className="hero__lede" data-reveal data-reveal-delay="160">
+                Stop paying ₹15,000+ every month for bloated corporate software. RealSalePro gives you automatic Meta & WhatsApp lead sync, 
+                a calm visual pipeline, site visit dispatching, and phone number masking — 
+                <strong> 100% free forever up to 1,000 leads</strong>.
+              </p>
+
+              <div className="hero__cta" data-reveal data-reveal-delay="240" style={{ marginTop: '34px', marginBottom: '24px' }}>
+                <Link className="btn btn--primary btn--lg" to="/register">
+                  <span>Start free — no card</span><svg className="icon"><use href="#i-arrow"/></svg>
+                </Link>
+                <a className="btn btn--ghost btn--lg" href="#comparison">
+                  <span>Compare vs paid CRMs</span>
+                </a>
               </div>
-              <div className="flex items-center gap-2 text-white">
-                <Check size={16} className="text-[#00E576]" /> No expiring 14-day timer
+
+              <ul className="hero__facts" data-reveal data-reveal-delay="320" style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid rgba(255, 255, 255, 0.14)' }}>
+                <li><b>₹0</b><span>Free forever plan</span></li>
+                <li><b>1,000</b><span>Lead capacity</span></li>
+                <li><b>4.8<span className="star">★</span></b><span>1,056 reviews</span></li>
+              </ul>
+
+              <div className="hero__proof" data-reveal data-reveal-delay="380">
+                <span className="avatars" aria-hidden="true">
+                  <i style={{ background: 'linear-gradient(135deg,#34d399,#059669)' }}>RS</i>
+                  <i style={{ background: 'linear-gradient(135deg,#f0c987,#c98b3c)' }}>AK</i>
+                  <i style={{ background: 'linear-gradient(135deg,#8fb7ff,#3f6fd8)' }}>NP</i>
+                  <i style={{ background: 'linear-gradient(135deg,#c0f08a,#79b131)' }}>VJ</i>
+                </span>
+                <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
               </div>
-              <div className="flex items-center gap-2 text-white">
-                <Check size={16} className="text-[#00E576]" /> 1-click CSV database export
+            </div>
+
+            {/* App Mockup Visual */}
+            <div className="hero__visual" data-reveal data-reveal-delay="200">
+              <div className="stage">
+                <div className="stage__label"><span></span> 100% Free Forever Tier</div>
+
+                <div className="app" id="heroApp">
+                  <div className="app__bar">
+                    <span className="app__dots"><i></i><i></i><i></i></span>
+                    <span className="app__url">app.realsalepro.com / free-plan</span>
+                    <span className="app__live"><i></i> Free Active</span>
+                  </div>
+                  <div className="app__body">
+                    <aside className="app__rail" aria-hidden="true">
+                      <span className="rail__logo">R</span>
+                      <span className="rail__ic is-on"><svg className="icon"><use href="#i-home"/></svg></span>
+                      <span className="rail__ic"><svg className="icon"><use href="#i-users"/></svg></span>
+                      <span className="rail__ic"><svg className="icon"><use href="#i-kanban"/></svg></span>
+                      <span className="rail__ic"><svg className="icon"><use href="#i-building"/></svg></span>
+                      <span className="rail__ic"><svg className="icon"><use href="#i-target"/></svg></span>
+                      <span className="rail__ic"><svg className="icon"><use href="#i-chart"/></svg></span>
+                      <span className="rail__spacer"></span>
+                      <span className="rail__avatar">FP</span>
+                    </aside>
+
+                    <div className="app__main">
+                      <div className="app__head">
+                        <div>
+                          <p className="app__crumb">Workspace · Free Forever Account</p>
+                          <p className="app__title">Lead pipeline</p>
+                        </div>
+                        <div className="app__head-actions">
+                          <span className="chip chip--ghost">Up to 1,000 leads</span>
+                          <span className="chip chip--solid"><svg className="icon"><use href="#i-plus"/></svg>Add lead</span>
+                        </div>
+                      </div>
+
+                      <div className="app__kpis">
+                        <div className="kpi">
+                          <span>Monthly Fee</span>
+                          <b>₹0</b>
+                          <em className="up"><svg className="icon"><use href="#i-check"/></svg>Active</em>
+                        </div>
+                        <div className="kpi">
+                          <span>Team Accounts</span>
+                          <b>5 Users</b>
+                          <em className="up">Included</em>
+                        </div>
+                        <div className="kpi">
+                          <span>Meta & WhatsApp</span>
+                          <b>Real-time</b>
+                          <em className="up">30s Sync</em>
+                        </div>
+                      </div>
+
+                      <div className="app__funnel">
+                        <div className="funnel__row">
+                          <span className="funnel__name">New inquiry</span>
+                          <div className="funnel__track"><span className="funnel__bar" style={{ width: '92%' }}></span></div>
+                          <span className="funnel__val">128</span>
+                        </div>
+                        <div className="funnel__row">
+                          <span className="funnel__name">Contacted</span>
+                          <div className="funnel__track"><span className="funnel__bar" style={{ width: '68%' }}></span></div>
+                          <span className="funnel__val">74</span>
+                        </div>
+                        <div className="funnel__row">
+                          <span className="funnel__name">Site visit</span>
+                          <div className="funnel__track"><span className="funnel__bar" style={{ width: '45%' }}></span></div>
+                          <span className="funnel__val">39</span>
+                        </div>
+                        <div className="funnel__row">
+                          <span className="funnel__name">Token booked</span>
+                          <div className="funnel__track"><span className="funnel__bar" style={{ width: '22%' }}></span></div>
+                          <span className="funnel__val">12</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Comparison Table Section */}
-      <section id="comparison" className="py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <div className="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-3">Honest Breakdown</div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-            RealSalePro Free vs Traditional Paid CRMs
-          </h2>
-          <p className="text-slate-400 mt-2 text-sm sm:text-base">
-            See how our Free plan stacks up against tools that charge tens of thousands per month.
-          </p>
-        </div>
+        {/* ============ WHAT'S INCLUDED (DARK BENTO SECTION) ============ */}
+        <section className="section section--dark" id="features">
+          <div className="container">
+            <header className="sec-head">
+              <p className="eyebrow" data-reveal><span class="eyebrow__no">01</span> Free Toolkit</p>
+              <h2 className="sec-head__title" data-reveal data-reveal-delay="60">
+                Everything you need to <em>run the floor</em>. 100% free.
+              </h2>
+              <p className="sec-head__lede" data-reveal data-reveal-delay="120">
+                Not a 7-day teaser or stripped-down demo. You get the whole real-estate sales machine with zero countdown clock.
+              </p>
+            </header>
 
-        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02]">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-white/5 border-b border-white/10 text-xs uppercase tracking-wider text-slate-300">
-              <tr>
-                <th className="py-4 px-6 font-semibold">Capability</th>
-                <th className="py-4 px-6 font-bold text-[#00E576] bg-emerald-500/10">RealSalePro Free Plan</th>
-                <th className="py-4 px-6 font-semibold">Sell.Do / LeadSquared</th>
-                <th className="py-4 px-6 font-semibold">Excel / Google Sheets</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Monthly Subscription</td>
-                <td className="py-4 px-6 font-extrabold text-[#00E576] bg-emerald-500/5">₹0 / forever</td>
-                <td className="py-4 px-6 text-rose-400 font-medium">₹15,000 – ₹50,000/mo</td>
-                <td className="py-4 px-6 text-slate-300">Free (High labor cost)</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Credit Card Required</td>
-                <td className="py-4 px-6 font-bold text-[#00E576] bg-emerald-500/5">No (Never asked)</td>
-                <td className="py-4 px-6 text-slate-400">Yes</td>
-                <td className="py-4 px-6 text-slate-300">No</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Lead Capacity</td>
-                <td className="py-4 px-6 font-bold text-white bg-emerald-500/5">Up to 1,000 Leads</td>
-                <td className="py-4 px-6 text-slate-400">Strict per-lead billing</td>
-                <td className="py-4 px-6 text-slate-300">Crashes with large data</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Meta / WhatsApp Auto-Sync</td>
-                <td className="py-4 px-6 font-bold text-[#00E576] bg-emerald-500/5">
-                  <Check size={18} className="inline mr-1 text-[#00E576]" /> Included Free
-                </td>
-                <td className="py-4 px-6 text-slate-400">Expensive add-on integration</td>
-                <td className="py-4 px-6 text-rose-400">None (Manual typing)</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Site Visit Tracking & Driver Log</td>
-                <td className="py-4 px-6 font-bold text-[#00E576] bg-emerald-500/5">
-                  <Check size={18} className="inline mr-1 text-[#00E576]" /> Included Free
-                </td>
-                <td className="py-4 px-6 text-slate-400">Extra module fees</td>
-                <td className="py-4 px-6 text-rose-400">None</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Staff Lead Theft Masking</td>
-                <td className="py-4 px-6 font-bold text-[#00E576] bg-emerald-500/5">
-                  <Check size={18} className="inline mr-1 text-[#00E576]" /> Included Free
-                </td>
-                <td className="py-4 px-6 text-slate-400">Enterprise tier only</td>
-                <td className="py-4 px-6 text-rose-400">Zero security</td>
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-medium text-white">Setup / Onboarding Fee</td>
-                <td className="py-4 px-6 font-extrabold text-[#00E576] bg-emerald-500/5">₹0 (Self-serve)</td>
-                <td className="py-4 px-6 text-rose-400 font-medium">₹25,000 – ₹50,000</td>
-                <td className="py-4 px-6 text-slate-300">None</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+            <div className="bento" data-reveal data-reveal-delay="180">
+              <article className="bento__card bento__card--wide">
+                <div className="bento__copy">
+                  <span className="bento__tag">Core Capacity</span>
+                  <h3 className="bento__h">Up to 1,000 active leads with zero expiry</h3>
+                  <p className="bento__p">
+                    Store complete contact cards, property requirements, budget brackets, and interaction histories. 
+                    Full cloud storage with zero time cutoff.
+                  </p>
+                </div>
+              </article>
 
-      {/* Interactive Savings Calculator */}
-      <section className="py-16 bg-white/[0.02] border-y border-white/5">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-            Calculate How Much You Save With RealSalePro Free
-          </h2>
-          <p className="text-slate-400 text-sm mb-8">
-            Compared to standard paid CRMs charging ₹1,500 – ₹3,000 per user per month.
-          </p>
+              <article className="bento__card">
+                <div className="bento__copy">
+                  <span className="bento__tag">Automation</span>
+                  <h3 className="bento__h">Meta &amp; WhatsApp webhooks</h3>
+                  <p className="bento__p">
+                    Inquiries from Facebook Ads, Instagram, and web portals arrive in your pipeline within 30 seconds.
+                  </p>
+                </div>
+              </article>
 
-          <div className="p-8 rounded-2xl bg-[#0B1E15] border border-emerald-500/20 max-w-xl mx-auto">
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-slate-300 block mb-3">
-                Your Sales Team Size: <span className="text-[#00E576] font-bold text-lg">{teamSize} Users</span>
-              </label>
+              <article className="bento__card">
+                <div className="bento__copy">
+                  <span className="bento__tag">Team Seats</span>
+                  <h3 className="bento__h">Up to 5 team member logins</h3>
+                  <p className="bento__p">
+                    Add telecallers, sales executives, and site staff with separate roles and permissions.
+                  </p>
+                </div>
+              </article>
+
+              <article className="bento__card">
+                <div className="bento__copy">
+                  <span className="bento__tag">Field Operations</span>
+                  <h3 className="bento__h">Site visit dispatching</h3>
+                  <p className="bento__p">
+                    Send Google route pins to clients, track driver status, and record on-site walkthrough feedback.
+                  </p>
+                </div>
+              </article>
+
+              <article className="bento__card">
+                <div className="bento__copy">
+                  <span className="bento__tag">Data Security</span>
+                  <h3 className="bento__h">Staff phone number masking</h3>
+                  <p className="bento__p">
+                    Prevent disgruntled executives or telecallers from stealing your client database by hiding the last 5 digits.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* ============ WHY IS IT FREE (PAPER PRICING SECTION) ============ */}
+        <section className="section section--paper" id="why-free">
+          <div className="container">
+            <header className="sec-head sec-head--center">
+              <p className="eyebrow" data-reveal><span className="eyebrow__no">02</span> Honest Philosophy</p>
+              <h2 className="sec-head__title" data-reveal data-reveal-delay="60">
+                Free forever. Pro when you <em>scale</em>.
+              </h2>
+              <p className="sec-head__lede" data-reveal data-reveal-delay="120">
+                Why is RealSalePro free? Because small agencies shouldn't pay ₹15,000/month before closing their first deal.
+              </p>
+            </header>
+
+            <div className="price-grid">
+              <article className="price" data-reveal style={{ padding: '32px 30px 38px' }}>
+                <div className="price__top">
+                  <span className="price__name">Free Forever</span>
+                  <span className="price__badge">No card</span>
+                </div>
+                <div className="price__amount"><b>₹0</b><em>forever</em></div>
+                <p className="price__desc">For small teams getting organised — the whole product, not a teaser.</p>
+                <Link className="btn btn--outline btn--block" to="/register" style={{ marginTop: '22px', marginBottom: '26px' }}>
+                  Get started free <svg className="icon"><use href="#i-arrow"/></svg>
+                </Link>
+                <ul className="price__list" style={{ display: 'grid', gap: '13px', margin: 0, padding: 0 }}>
+                  <li><svg className="icon"><use href="#i-check"/></svg> All pro features included</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 1,000 leads</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 5 users</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Real-time analytics</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Standard email support</li>
+                </ul>
+              </article>
+
+              <article className="price price--pro" data-reveal data-reveal-delay="80" style={{ padding: '32px 30px 38px' }}>
+                <div className="price__top">
+                  <span className="price__name">Pro</span>
+                  <span className="price__badge price__badge--solid">Most popular</span>
+                </div>
+                <div className="price__amount">
+                  <b>₹1,000</b><em>/month</em>
+                </div>
+                <p className="price__desc">Billed ₹12,000 annually — upgrade only when volume grows.</p>
+                <Link className="btn btn--primary btn--block" to="/pricing" style={{ marginTop: '22px', marginBottom: '26px' }}>
+                  Upgrade to Pro <svg className="icon"><use href="#i-arrow"/></svg>
+                </Link>
+                <ul className="price__list" style={{ display: 'grid', gap: '13px', margin: 0, padding: 0 }}>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Everything in Free</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 2,00,000 leads</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Unlimited users</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> All lead integrations</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Priority email support</li>
+                </ul>
+              </article>
+
+              <article className="price" data-reveal data-reveal-delay="160" style={{ padding: '32px 30px 38px' }}>
+                <div className="price__top">
+                  <span className="price__name">Custom</span>
+                  <span className="price__badge">Enterprise</span>
+                </div>
+                <div className="price__amount price__amount--text"><b>Custom</b></div>
+                <p className="price__desc">Bespoke limits, integrations and terms for large developer groups.</p>
+                <a className="btn btn--outline btn--block" href="mailto:support@realsalepro.com?subject=Custom%20plan%20enquiry%20—%20RealSalePro" style={{ marginTop: '22px', marginBottom: '26px' }}>
+                  Contact sales <svg className="icon"><use href="#i-arrow"/></svg>
+                </a>
+                <ul className="price__list" style={{ display: 'grid', gap: '13px', margin: 0, padding: 0 }}>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Custom lead limits</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Custom integrations</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Dedicated support manager</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Custom SLA guarantee</li>
+                  <li><svg className="icon"><use href="#i-check"/></svg> Flexible billing options</li>
+                </ul>
+              </article>
+            </div>
+
+            <p className="price-fine" data-reveal style={{ marginTop: '48px', marginBottom: '16px', fontSize: '13px', textAlign: 'center' }}>
+              No credit card required for the Free plan. 1-click CSV database export anytime.
+            </p>
+          </div>
+        </section>
+
+        {/* ============ COMPARISON MATRIX SECTION ============ */}
+        <section className="section section--paper section--alt" id="comparison">
+          <div className="container">
+            <header className="sec-head sec-head--center">
+              <p className="eyebrow" data-reveal><span className="eyebrow__no">03</span> Comparison</p>
+              <h2 className="sec-head__title" data-reveal data-reveal-delay="60">
+                RealSalePro Free vs <em>Legacy CRMs</em>
+              </h2>
+              <p className="sec-head__lede" data-reveal data-reveal-delay="120">
+                See how our ₹0 plan stacks up against tools that charge tens of thousands every month.
+              </p>
+            </header>
+
+            <div style={{ overflowX: 'auto', borderRadius: '18px', background: '#fff', boxShadow: '0 20px 50px rgba(10,32,24,0.08)', border: '1px solid rgba(10,32,24,0.08)', marginBottom: '56px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14.5px' }}>
+                <thead>
+                  <tr style={{ background: '#f5f3ec', borderBottom: '1px solid rgba(10,32,24,0.1)', color: '#0a2018', textTransform: 'uppercase', fontSize: '11.5px', letterSpacing: '0.08em' }}>
+                    <th style={{ padding: '18px 24px' }}>Feature</th>
+                    <th style={{ padding: '18px 24px', color: '#059669', background: 'rgba(16,185,129,0.08)', fontWeight: 800 }}>RealSalePro Free</th>
+                    <th style={{ padding: '18px 24px' }}>Sell.Do / LeadSquared</th>
+                    <th style={{ padding: '18px 24px' }}>Excel / Spreadsheets</th>
+                  </tr>
+                </thead>
+                <tbody style={{ color: '#0a2018' }}>
+                  <tr style={{ borderBottom: '1px solid rgba(10,32,24,0.06)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Monthly Cost</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669', background: 'rgba(16,185,129,0.04)' }}>₹0 / forever</td>
+                    <td style={{ padding: '16px 24px', color: '#dc2626' }}>₹15,000 – ₹50,000/mo</td>
+                    <td style={{ padding: '16px 24px' }}>Free (High manual labor)</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(10,32,24,0.06)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Credit Card Required</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669', background: 'rgba(16,185,129,0.04)' }}>No (Never asked)</td>
+                    <td style={{ padding: '16px 24px' }}>Yes</td>
+                    <td style={{ padding: '16px 24px' }}>No</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(10,32,24,0.06)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Lead Capacity</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, background: 'rgba(16,185,129,0.04)' }}>Up to 1,000 Leads</td>
+                    <td style={{ padding: '16px 24px' }}>Per-contact charges</td>
+                    <td style={{ padding: '16px 24px' }}>Laggy above 1,000 rows</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(10,32,24,0.06)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Meta &amp; WhatsApp Auto-Sync</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669', background: 'rgba(16,185,129,0.04)' }}>Included Free</td>
+                    <td style={{ padding: '16px 24px' }}>Paid add-on</td>
+                    <td style={{ padding: '16px 24px', color: '#dc2626' }}>None (Manual copy-paste)</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid rgba(10,32,24,0.06)' }}>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Site Visit &amp; Driver Logs</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669', background: 'rgba(16,185,129,0.04)' }}>Included Free</td>
+                    <td style={{ padding: '16px 24px' }}>Extra module fees</td>
+                    <td style={{ padding: '16px 24px', color: '#dc2626' }}>None</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '16px 24px', fontWeight: 600 }}>Staff Number Masking</td>
+                    <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669', background: 'rgba(16,185,129,0.04)' }}>Included Free</td>
+                    <td style={{ padding: '16px 24px' }}>Enterprise tier only</td>
+                    <td style={{ padding: '16px 24px', color: '#dc2626' }}>Zero theft protection</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Savings Calculator Widget */}
+            <div style={{ maxWidth: '640px', margin: '0 auto', padding: '36px', background: '#fff', borderRadius: '24px', border: '1px solid rgba(10,32,24,0.08)', boxShadow: '0 20px 60px rgba(10,32,24,0.06)', textAlign: 'center' }}>
+              <p className="eyebrow" style={{ color: '#059669', marginBottom: '10px' }}><span className="eyebrow__dot"></span> ROI Calculator</p>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, color: '#0a2018', marginBottom: '14px' }}>
+                See how much you save with RealSalePro Free
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--muted-light)', marginBottom: '24px' }}>
+                Your Team Size: <strong style={{ color: '#059669', fontSize: '18px' }}>{teamSize} Users</strong>
+              </p>
               <input
                 type="range"
                 min="1"
                 max="5"
                 value={teamSize}
                 onChange={(e) => setTeamSize(parseInt(e.target.value, 10))}
-                className="w-full accent-[#00E576] h-2 bg-slate-700 rounded-lg cursor-pointer"
+                style={{ width: '100%', accentColor: '#059669', marginBottom: '24px', cursor: 'pointer' }}
               />
-              <div className="flex justify-between text-xs text-slate-500 mt-2">
-                <span>1 Solo Broker</span>
-                <span>2 Agents</span>
-                <span>3 Telecallers</span>
-                <span>4 Staff</span>
-                <span>5 Full Team</span>
+              <div style={{ paddingTop: '20px', borderTop: '1px solid rgba(10,32,24,0.08)' }}>
+                <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-light)', fontWeight: 700 }}>
+                  Estimated Annual Savings
+                </p>
+                <p style={{ fontFamily: 'var(--font-display)', fontSize: '38px', fontWeight: 800, color: '#059669', margin: '6px 0' }}>
+                  ₹{annualSavings.toLocaleString('en-IN')} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--muted-light)' }}>/ year</span>
+                </p>
               </div>
             </div>
-
-            <div className="pt-6 border-t border-emerald-950/60">
-              <div className="text-xs uppercase text-slate-400 font-semibold tracking-wider">Estimated Annual Money Saved</div>
-              <div className="text-4xl font-extrabold text-[#00E576] mt-1">
-                ₹{annualSavings.toLocaleString('en-IN')} <span className="text-sm font-normal text-slate-400">/ year</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Plus zero setup fees and zero lost leads from missed follow-ups.
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Lead Magnet Callout (Cross Link to Template Page) */}
-      <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-8 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-emerald-950/40 border border-emerald-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-[#00E576] flex items-center justify-center flex-shrink-0">
-              <FileSpreadsheet size={28} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-1">Still Prefer Excel or Google Sheets?</h3>
-              <p className="text-sm text-slate-300">
-                Download our free pre-configured 2026 Real Estate CRM spreadsheet with pipeline stages and visit tracker.
+        {/* ============ FAQ SECTION ============ */}
+        <section className="section section--paper section--alt" id="faq">
+          <div className="container faq-wrap">
+            <header className="sec-head faq-head">
+              <p className="eyebrow" data-reveal><span className="eyebrow__no">04</span> FAQ</p>
+              <h2 className="sec-head__title" data-reveal data-reveal-delay="60">Got questions?<br />Good <em>answers</em>.</h2>
+              <p className="sec-head__lede" data-reveal data-reveal-delay="120">
+                Can't find what you're looking for? <a href="mailto:support@realsalepro.com">Contact our team</a> — a human replies.
               </p>
-            </div>
-          </div>
-          <Link
-            to="/templates/real-estate-crm-excel-template"
-            className="flex-shrink-0 flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm rounded-xl border border-white/15 transition-all"
-          >
-            <Download size={16} /> Download Free Excel Template
-          </Link>
-        </div>
-      </section>
+            </header>
 
-      {/* FAQ Section */}
-      <section className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <div className="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-3">Got Questions?</div>
-          <h2 className="text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
-        </div>
-
-        <div className="space-y-4">
-          {[
-            {
-              q: "Is RealSalePro really 100% free forever?",
-              a: "Yes. Our Free plan has no time limit, no expiration date, and requires no credit card. You can keep using it forever up to 1,000 active leads and 5 team accounts."
-            },
-            {
-              q: "What happens when I reach 1,000 leads?",
-              a: "You will receive a notification. You can either delete old disqualified leads to maintain space under 1,000 leads for free, or upgrade to our Pro plan (₹1,000/month) for a massive 2,00,000 leads capacity."
-            },
-            {
-              q: "Can I import my existing customer list from Excel or Google Sheets?",
-              a: "Yes! RealSalePro provides a simple CSV/Excel bulk import tool. You can upload thousands of leads in under 30 seconds with automatic duplicate phone number detection."
-            },
-            {
-              q: "Can I export my database if I ever want to leave?",
-              a: "100% yes. You own your data completely. You can export your entire database into Excel/CSV with all client notes and dates at any time."
-            },
-            {
-              q: "Does this free real estate CRM work on mobile phones?",
-              a: "Yes. RealSalePro is designed as a responsive mobile-first web app (PWA). Your executives can update site visit notes, call clients, and check floor inventory directly on their phones."
-            },
-            {
-              q: "How does the Meta and WhatsApp auto-sync work?",
-              a: "Under Settings > Integrations, you can connect your Facebook Lead Ads page or WhatsApp webhook in a couple of clicks. Any new inquiry instantly lands in your RealSalePro New Leads column."
-            }
-          ].map((item, idx) => (
-            <div 
-              key={idx}
-              className="border border-white/10 rounded-2xl bg-white/[0.02] overflow-hidden transition-colors"
-            >
-              <button
-                onClick={() => toggleFaq(idx)}
-                className="w-full text-left py-4 px-6 flex items-center justify-between text-base font-semibold text-white focus:outline-none cursor-pointer"
-              >
-                <span>{item.q}</span>
-                {openFaq === idx ? (
-                  <ChevronUp size={18} className="text-[#00E576] flex-shrink-0" />
-                ) : (
-                  <ChevronDown size={18} className="text-slate-400 flex-shrink-0" />
-                )}
-              </button>
-              {openFaq === idx && (
-                <div className="px-6 pb-5 text-sm text-slate-300 leading-relaxed border-t border-white/5 pt-3">
-                  {item.a}
+            <div className="faq" data-faq>
+              <div className="faq__item" data-reveal>
+                <button className="faq__q" aria-expanded="false" aria-controls="faq-a-1">
+                  <span>Is RealSalePro really 100% free forever?</span>
+                  <span className="faq__icon"><svg className="icon"><use href="#i-plus"/></svg></span>
+                </button>
+                <div className="faq__a" id="faq-a-1" aria-hidden="true">
+                  <p>Yes! RealSalePro is 100% free forever for small teams. The Free plan supports up to 1,000 leads and up to 5 users, and includes pro features such as automated lead routing, pipeline visualisation and inventory tracking — without requiring any credit card details.</p>
                 </div>
-              )}
+              </div>
+
+              <div className="faq__item" data-reveal data-reveal-delay="40">
+                <button className="faq__q" aria-expanded="false" aria-controls="faq-a-2">
+                  <span>What happens when I reach 1,000 leads?</span>
+                  <span className="faq__icon"><svg className="icon"><use href="#i-plus"/></svg></span>
+                </button>
+                <div className="faq__a" id="faq-a-2" aria-hidden="true">
+                  <p>You will receive a notification. You can either delete or archive old disqualified leads to maintain space under 1,000 leads for free, or upgrade to our Pro plan (₹1,000/month) for a massive 2,00,000 leads capacity and unlimited users.</p>
+                </div>
+              </div>
+
+              <div className="faq__item" data-reveal data-reveal-delay="80">
+                <button className="faq__q" aria-expanded="false" aria-controls="faq-a-3">
+                  <span>Can I import my existing leads from Excel or Google Sheets?</span>
+                  <span className="faq__icon"><svg className="icon"><use href="#i-plus"/></svg></span>
+                </button>
+                <div className="faq__a" id="faq-a-3" aria-hidden="true">
+                  <p>Yes! RealSalePro provides a simple CSV/Excel bulk import tool. You can upload thousands of leads in under 30 seconds with automatic duplicate phone number detection.</p>
+                </div>
+              </div>
+
+              <div className="faq__item" data-reveal data-reveal-delay="120">
+                <button className="faq__q" aria-expanded="false" aria-controls="faq-a-4">
+                  <span>Can I export my database if I ever want to leave?</span>
+                  <span className="faq__icon"><svg className="icon"><use href="#i-plus"/></svg></span>
+                </button>
+                <div className="faq__a" id="faq-a-4" aria-hidden="true">
+                  <p>100% yes. You own your data completely. You can export your entire database into Excel/CSV with all client notes and dates at any time with a single click.</p>
+                </div>
+              </div>
+
+              <div className="faq__item" data-reveal data-reveal-delay="160">
+                <button className="faq__q" aria-expanded="false" aria-controls="faq-a-5">
+                  <span>Does this free CRM work on mobile phones?</span>
+                  <span className="faq__icon"><svg className="icon"><use href="#i-plus"/></svg></span>
+                </button>
+                <div className="faq__a" id="faq-a-5" aria-hidden="true">
+                  <p>Yes. RealSalePro is built as a responsive mobile web app (PWA). Your executives can update site visit notes, call clients, and check floor inventory directly on their phones while on-site.</p>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Final CTA Banner */}
-      <section className="py-20 border-t border-emerald-950/60 bg-gradient-to-b from-[#07130E] to-[#040C09] text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex p-3 rounded-2xl bg-emerald-500/10 text-[#00E576] mb-6">
-            <Sparkles size={32} />
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-white mb-6">
-            Ready to Supercharge Your Real Estate Pipeline?
-          </h2>
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-10">
-            Join 10,000+ real estate brokers and developers across India who manage leads without spending a fortune.
-          </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-3 px-10 py-4 bg-[#00E576] hover:bg-[#00c853] text-[#07130E] text-base font-extrabold rounded-2xl shadow-2xl shadow-[#00E576]/30 transition-all hover:scale-105 cursor-pointer"
-          >
-            Claim Your Free Account Now
-            <ArrowRight size={18} />
-          </Link>
-          <div className="text-xs text-slate-500 mt-4">
-            Takes 60 seconds • No credit card required • Instant dashboard access
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="border-t border-emerald-950/80 bg-[#040C09] py-12 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <img src="/images/RealSalePro_Favicon.png" alt="RealSalePro Logo" className="w-6 h-6 object-contain" />
-            <span className="font-semibold text-slate-300">RealSalePro © {new Date().getFullYear()}</span>
+        {/* ============ FINAL CTA ============ */}
+        <section className="cta" id="demo">
+          <div className="cta__bg" aria-hidden="true"></div>
+          <div className="container">
+            <div className="cta__card" data-reveal style={{ textAlign: 'center' }}>
+              <p className="eyebrow eyebrow--mint" style={{ display: 'inline-flex', alignItems: 'center', margin: '0 auto' }}>
+                <span className="eyebrow__dot"></span> Free forever plan
+              </p>
+              <h2 style={{ textAlign: 'center', marginTop: '22px' }}>
+                Ready to sell out your<br /><em>next project?</em>
+              </h2>
+              <p className="cta__lede" style={{ textAlign: 'center', margin: '22px auto 0', maxWidth: '580px' }}>
+                Join 50+ real-estate developers who trust RealSalePro. Start free up to 1,000 leads — no card, no catch, set up in minutes.
+              </p>
+              <div className="cta__actions" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '32px' }}>
+                <Link className="btn btn--primary btn--lg" to="/register">
+                  <span>Start free — no card</span><svg className="icon"><use href="#i-arrow"/></svg>
+                </Link>
+                <Link className="btn btn--ghost btn--lg" to="/templates/real-estate-crm-excel-template">
+                  <span>Download Excel template</span>
+                </Link>
+              </div>
+              <ul className="cta__meta" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '12px 28px', marginTop: '36px', padding: 0, listStyle: 'none' }}>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-dark)' }}>
+                  <svg className="icon"><use href="#i-check"/></svg> Free forever plan
+                </li>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-dark)' }}>
+                  <svg className="icon"><use href="#i-check"/></svg> No credit card
+                </li>
+                <li style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-dark)' }}>
+                  <svg className="icon"><use href="#i-check"/></svg> Import from Excel
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* ============ FOOTER ============ */}
+      <footer className="footer">
+        <div className="container">
+          <div className="footer__top">
+            <div className="footer__brand">
+              <img src="/assets/img/logo-light.png" alt="RealSalePro — Real Estate Sales & CRM Platform" width="190" height="40" style={{ height: '40px', width: 'auto', display: 'block' }} />
+              <p>Empowering real-estate teams with intelligent tools and real-time insight. Built for the future of sales.</p>
+              <div className="footer__social">
+                <a href="https://www.facebook.com/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on Facebook"><svg className="icon icon--fill"><use href="#i-facebook"/></svg></a>
+                <a href="https://www.linkedin.com/company/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on LinkedIn"><svg className="icon icon--fill"><use href="#i-linkedin"/></svg></a>
+                <a href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp"><svg className="icon icon--fill"><use href="#i-whatsapp"/></svg></a>
+              </div>
+            </div>
+
+            <div className="footer__col">
+              <h3>Platform</h3>
+              <Link to="/free-real-estate-crm">Free Real Estate CRM</Link>
+              <Link to="/templates/real-estate-crm-excel-template">Free Excel Template</Link>
+              <Link to="/pricing">Pricing</Link>
+              <Link to="/contact">Support</Link>
+            </div>
+
+            <div className="footer__col">
+              <h3>Integrations</h3>
+              <a href="/#integrations">Meta Lead Ads</a>
+              <a href="/#integrations">Google Ads</a>
+              <a href="/#integrations">WhatsApp Business</a>
+              <a href="/#integrations">Magicbricks</a>
+              <a href="/#integrations">99acres</a>
+            </div>
+
+            <div className="footer__col">
+              <h3>Company</h3>
+              <a href="/#stories">About us</a>
+              <Link to="/referral-program">Refer &amp; earn</Link>
+              <Link to="/contact">Contact</Link>
+              <Link to="/pricing">Pricing</Link>
+            </div>
+
+            <div className="footer__col footer__col--contact">
+              <h3>Talk to a human</h3>
+              <a href="mailto:support@realsalepro.com">support@realsalepro.com</a>
+              <a href="tel:+919525230232">+91 95252 30232</a>
+              <a className="footer__wa" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer">
+                <svg className="icon"><use href="#i-whatsapp"/></svg> Chat on WhatsApp
+              </a>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            <Link to="/" className="hover:text-white">Home</Link>
-            <Link to="/pricing" className="hover:text-white">Pricing</Link>
-            <Link to="/templates/real-estate-crm-excel-template" className="hover:text-white">Free Excel Template</Link>
-            <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-white">Terms of Service</Link>
-            <Link to="/contact" className="hover:text-white">Contact Us</Link>
+          <div className="footer__wordmark" aria-hidden="true">RealSalePro</div>
+
+          <div className="footer__bottom">
+            <p>© {new Date().getFullYear()} RealSalePro. All rights reserved.</p>
+            <div className="footer__legal">
+              <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/terms">Terms of Service</Link>
+              <Link to="/refund-policy">Refund Policy</Link>
+              <Link to="/shipping-policy">Shipping Policy</Link>
+              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+            </div>
           </div>
         </div>
       </footer>
-    </div>
+
+      {/* Floating WhatsApp FAB */}
+      <a className="wa-float" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
+        <svg className="icon"><use href="#i-whatsapp"/></svg>
+        <span className="wa-float__tip">Chat with us</span>
+      </a>
+    </>
   );
 }

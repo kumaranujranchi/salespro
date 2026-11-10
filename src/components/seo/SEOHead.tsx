@@ -82,3 +82,4 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
 
   return null;
 }
+
