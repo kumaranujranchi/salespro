@@ -1,9 +1,16 @@
 import { Database, Server, Shield, CheckCircle, ArrowRight, Lock, Globe, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export function IntegrationsPage() {
   return (
-    <div className="min-h-screen bg-[#0E1A15] text-white font-sans">
+    <>
+      <SEOHead
+        title="Enterprise BYOD Database Integration & Self-Hosting | RealSalePro"
+        description="Host your real estate CRM database on your own private PostgreSQL or cloud infrastructure with RealSalePro's Bring Your Own Database (BYOD) enterprise architecture."
+        canonicalUrl="https://realsalepro.com/integration"
+      />
+      <div className="min-h-screen bg-[#0E1A15] text-white font-sans">
       {/* Navbar / Header Placeholder - Or just back link */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <Link to="/" className="inline-flex items-center text-[#10B981] hover:text-[#34D399] transition-colors mb-8">
@@ -216,5 +223,6 @@ export function IntegrationsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

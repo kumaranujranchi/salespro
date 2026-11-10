@@ -1,9 +1,16 @@
 import { Mail, Phone, MapPin, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export function ContactUsPage() {
   return (
-    <div className="min-h-screen bg-[#0E1A15] py-12 px-4 sm:px-6 lg:px-8 text-white">
+    <>
+      <SEOHead
+        title="Contact Us & Book a Demo | RealSalePro Real Estate CRM"
+        description="Get in touch with the RealSalePro team for sales inquiries, custom integrations, onboarding support, or product demos. WhatsApp: +91 95252 30232."
+        canonicalUrl="https://realsalepro.com/contact"
+      />
+      <div className="min-h-screen bg-[#0E1A15] py-12 px-4 sm:px-6 lg:px-8 text-white">
       <div className="max-w-4xl mx-auto">
         <Link to="/" className="inline-flex items-center text-[#10B981] hover:text-[#34D399] mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -70,5 +77,6 @@ export function ContactUsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

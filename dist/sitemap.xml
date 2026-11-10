@@ -20,7 +20,31 @@
     <priority>0.95</priority>
   </url>
 
-  <!-- Real Estate CRM Excel Template & Lead Tracker -->
+  <!-- CRM for Real Estate Brokers & Agents (Audience Landing Page) -->
+  <url>
+    <loc>https://realsalepro.com/crm-for-real-estate-brokers</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Real Estate CRM India (Portals, Builders & Local Compliance) -->
+  <url>
+    <loc>https://realsalepro.com/real-estate-crm-india</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Real Estate Lead Management Feature Deep-Dive -->
+  <url>
+    <loc>https://realsalepro.com/features/lead-management</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Real Estate CRM Excel Template & Lead Tracker Lead Magnet -->
   <url>
     <loc>https://realsalepro.com/templates/real-estate-crm-excel-template</loc>
     <lastmod>2026-11-10</lastmod>
@@ -28,60 +52,52 @@
     <priority>0.90</priority>
   </url>
 
-  <!-- CRM for Real Estate Brokers & Agents -->
-  <url>
-    <loc>https://realsalepro.com/crm-for-real-estate-brokers</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
-
-  <!-- Real Estate CRM India (Portals & Builders) -->
-  <url>
-    <loc>https://realsalepro.com/real-estate-crm-india</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
-
-  <!-- Real Estate Lead Management Feature -->
-  <url>
-    <loc>https://realsalepro.com/features/lead-management</loc>
-    <lastmod>2026-11-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
-
-  <!-- Pricing -->
+  <!-- Pricing Plans -->
   <url>
     <loc>https://realsalepro.com/pricing</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.90</priority>
   </url>
 
-  <!-- Register Company -->
+  <!-- Enterprise Bring-Your-Own-Database (BYOD) & Server Integration -->
+  <url>
+    <loc>https://realsalepro.com/integration</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Contact Us & Sales Demo Inquiries -->
+  <url>
+    <loc>https://realsalepro.com/contact</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Register Company & Start Free Account -->
   <url>
     <loc>https://realsalepro.com/register</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.80</priority>
   </url>
 
-  <!-- Login -->
+  <!-- Login Portal -->
   <url>
     <loc>https://realsalepro.com/login</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.70</priority>
   </url>
 
-  <!-- Referral Program -->
+  <!-- Customer Referral Program -->
   <url>
     <loc>https://realsalepro.com/referral-program</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.70</priority>
   </url>
 
   <!-- Affiliate Partner Registration -->
@@ -89,15 +105,15 @@
     <loc>https://realsalepro.com/affiliate/register</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.65</priority>
   </url>
 
-  <!-- Affiliate Terms -->
+  <!-- Affiliate Terms & Agreement -->
   <url>
     <loc>https://realsalepro.com/affiliate/terms</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.40</priority>
   </url>
 
   <!-- Privacy Policy -->
@@ -105,7 +121,7 @@
     <loc>https://realsalepro.com/privacy</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.50</priority>
   </url>
 
   <!-- Terms of Service -->
@@ -113,7 +129,7 @@
     <loc>https://realsalepro.com/terms</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.50</priority>
   </url>
 
   <!-- Refund Policy -->
@@ -121,7 +137,7 @@
     <loc>https://realsalepro.com/refund-policy</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.50</priority>
   </url>
 
   <!-- Shipping Policy -->
@@ -129,8 +145,7 @@
     <loc>https://realsalepro.com/shipping-policy</loc>
     <lastmod>2026-11-10</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.50</priority>
   </url>
 
 </urlset>
-

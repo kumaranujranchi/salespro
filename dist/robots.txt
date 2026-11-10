@@ -1,6 +1,13 @@
 User-agent: *
 Allow: /
+Allow: /free-real-estate-crm
+Allow: /crm-for-real-estate-brokers
+Allow: /real-estate-crm-india
+Allow: /features/lead-management
+Allow: /templates/real-estate-crm-excel-template
 Allow: /pricing
+Allow: /integration
+Allow: /contact
 Allow: /register
 Allow: /login
 Allow: /privacy
@@ -48,4 +55,3 @@ Disallow: /subscription/
 Disallow: /affiliate/dashboard
 
 Sitemap: https://realsalepro.com/sitemap.xml
-
