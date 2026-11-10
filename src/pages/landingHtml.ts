@@ -1152,6 +1152,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <a href="https://realsalepro.com/terms">Terms of Service</a>
           <a href="https://realsalepro.com/refund-policy">Refund Policy</a>
           <a href="https://realsalepro.com/shipping-policy">Shipping Policy</a>
+          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
         </div>
       </div>
     </div>
