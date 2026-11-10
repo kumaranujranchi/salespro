@@ -107,7 +107,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             a single tab. Free up to <strong>1,000 leads</strong>.
           </p>
 
-          <div class="hero__cta" data-reveal data-reveal-delay="240">
+          <div class="hero__cta" data-reveal data-reveal-delay="240" style="margin-top: 34px !important; margin-bottom: 24px !important;">
             <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
               <span>Start free — no card</span><svg class="icon"><use href="#i-arrow"/></svg>
             </a>
@@ -117,7 +117,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             </a>
           </div>
 
-          <ul class="hero__facts" data-reveal data-reveal-delay="320">
+          <ul class="hero__facts" data-reveal data-reveal-delay="320" style="margin-top: 48px !important; padding-top: 32px !important; border-top: 1px solid rgba(255, 255, 255, 0.14) !important;">
             <li><b>₹0</b><span>Free forever plan</span></li>
             <li><b>1,000</b><span>Lead capacity</span></li>
             <li><b>4.8<span class="star">★</span></b><span>1,056 reviews</span></li>
@@ -453,8 +453,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <div class="card__body">
               <span class="card__ic"><svg class="icon"><use href="#i-phone"/></svg></span>
               <h3>Run the floor from your phone</h3>
-              <p>Field-ready access for site visits, follow-ups and inventory checks — so the update happens at the site, not at 9 pm.</p>
-              <ul class="card__chips">
+              <p style="margin-bottom: 0 !important;">Field-ready access for site visits, follow-ups and inventory checks — so the update happens at the site, not at 9 pm.</p>
+              <ul class="card__chips" style="display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-top: 24px !important; padding: 0 !important; list-style: none !important;">
                 <li>Site-visit updates</li>
                 <li>Follow-up reminders</li>
                 <li>Inventory checks</li>
@@ -567,7 +567,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
                   <div><b>2.4 days</b><span>avg. first response</span></div>
                 </div>
               </div>
-              <p class="panel__caption">Stop asking “where is that lead?” — the answer is one screen away.</p>
+              <p class="panel__caption" style="margin-top: 32px !important; margin-bottom: 8px !important; text-align: center !important;">Stop asking “where is that lead?” — the answer is one screen away.</p>
             </div>
 
             <!-- INVENTORY -->
@@ -591,7 +591,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
                   <div><b>0</b><span>double-bookings</span></div>
                 </div>
               </div>
-              <p class="panel__caption">Holds expire, bookings lock — the master sheet finally retires.</p>
+              <p class="panel__caption" style="margin-top: 32px !important; margin-bottom: 8px !important; text-align: center !important;">Holds expire, bookings lock — the master sheet finally retires.</p>
             </div>
 
             <!-- INCENTIVES -->
@@ -612,7 +612,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
                   <div><b>₹96.5k</b><span>incentives accrued</span></div>
                 </div>
               </div>
-              <p class="panel__caption">Salespeople chase numbers they can see. This is the number.</p>
+              <p class="panel__caption" style="margin-top: 32px !important; margin-bottom: 8px !important; text-align: center !important;">Salespeople chase numbers they can see. This is the number.</p>
             </div>
 
             <!-- REPORTS -->
@@ -636,7 +636,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
                   <div><b>21</b><span>sources tracked</span></div>
                 </div>
               </div>
-              <p class="panel__caption">Every source, agent and stage — exported to Excel in one click.</p>
+              <p class="panel__caption" style="margin-top: 32px !important; margin-bottom: 8px !important; text-align: center !important;">Every source, agent and stage — exported to Excel in one click.</p>
             </div>
           </div>
         </div>

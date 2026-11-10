@@ -116,7 +116,7 @@ export function AdminRoleSwitcherBar() {
   return (
     <aside
       aria-label="SaaS Admin Testing Toolbar"
-      className="fixed bottom-4 right-4 z-[9999] font-sans antialiased max-w-sm sm:max-w-md pointer-events-auto"
+      className="fixed top-3 right-4 z-[9999] font-sans antialiased max-w-sm sm:max-w-md pointer-events-auto"
     >
       {/* Collapsed Pill (Discreet, Mobile-Friendly) */}
       {!isExpanded && (
@@ -135,7 +135,7 @@ export function AdminRoleSwitcherBar() {
           <span className="px-2 py-0.5 rounded-full bg-black/30 text-[11px] font-mono capitalize">
             {activeRoleConfig.label}
           </span>
-          <ChevronUp className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
+          <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
         </button>
       )}
 
@@ -166,7 +166,7 @@ export function AdminRoleSwitcherBar() {
               className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               title="Minimize toolbar"
             >
-              <ChevronDown className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4" />
             </button>
           </div>
 

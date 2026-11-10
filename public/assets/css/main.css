@@ -517,13 +517,13 @@ body.landing-page-active .container {
   color: #b8ccc1;
 }
 .hero__lede strong { color: #fff; font-weight: 700; }
-.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; margin-bottom: 24px; }
 .hero__facts {
-  display: flex;
-  gap: 40px;
-  margin-top: 42px;
-  padding-top: 26px;
-  border-top: 1px solid var(--line-dark);
+  display: flex !important;
+  gap: 40px !important;
+  margin-top: 48px !important;
+  padding-top: 32px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
 }
 .hero__facts li { display: flex; flex-direction: column; gap: 4px; }
 .hero__facts b {
@@ -1209,7 +1209,7 @@ body.landing-page-active .container {
   color: var(--muted-dark);
 }
 .card__viz { margin-top: auto; padding-top: 22px; }
-.card__chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+.card__chips { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-top: 24px !important; padding: 0 !important; }
 .card__chips li {
   padding: 6px 11px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1684,10 +1684,11 @@ body.landing-page-active .container {
   color: rgba(255, 255, 255, 0.56);
 }
 .panel__caption {
-  margin-top: 18px;
-  font-size: 13.5px;
-  text-align: center;
-  color: var(--muted-dark);
+  margin-top: 32px !important;
+  margin-bottom: 8px !important;
+  font-size: 13.5px !important;
+  text-align: center !important;
+  color: var(--muted-dark) !important;
 }
 
 .funnel { display: grid; gap: 9px; }
