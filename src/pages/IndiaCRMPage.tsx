@@ -197,56 +197,54 @@ export function IndiaCRMPage() {
               </p>
             </header>
 
-            <div className="bento" data-reveal data-reveal-delay="180">
-              <article className="bento__card bento__card--wide">
-                <div className="bento__copy">
-                  <span className="bento__tag">Portal Webhooks</span>
-                  <h3 className="bento__h">Magicbricks, 99acres &amp; Housing.com</h3>
-                  <p className="bento__p">
-                    Inquiries from major property portals sync straight into your RealSalePro New Leads column in under 30 seconds. 
-                    Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link> for automatic deduplication and routing.
-                  </p>
-                </div>
+            <div className="feature-grid-symmetric" data-reveal data-reveal-delay="180">
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Portal Webhooks</span>
+                <h3 className="feature-card-clean__h">Magicbricks, 99acres &amp; Housing.com</h3>
+                <p className="feature-card-clean__p">
+                  Inquiries from major property portals sync straight into your RealSalePro New Leads column in under 30 seconds. 
+                  Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link> for automatic deduplication and routing.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">WhatsApp Cloud</span>
-                  <h3 className="bento__h">WhatsApp Business API</h3>
-                  <p className="bento__p">
-                    Send automated project brochures, payment schedules, and site visit confirmations directly on WhatsApp in English or Hindi.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">WhatsApp Cloud</span>
+                <h3 className="feature-card-clean__h">WhatsApp Business API</h3>
+                <p className="feature-card-clean__p">
+                  Send automated project brochures, payment schedules, and site visit confirmations directly on WhatsApp in English or Hindi.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Currency Math</span>
-                  <h3 className="bento__h">Lakhs &amp; Crores native math</h3>
-                  <p className="bento__p">
-                    Calculate pipeline revenue, token deposits, and broker commissions natively in ₹ Lakhs &amp; ₹ Crores with zero currency conversion errors.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Currency Math</span>
+                <h3 className="feature-card-clean__h">Lakhs &amp; Crores native math</h3>
+                <p className="feature-card-clean__p">
+                  Calculate pipeline revenue, token deposits, and broker commissions natively in ₹ Lakhs &amp; ₹ Crores with zero currency conversion errors.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Phone Masking</span>
-                  <h3 className="bento__h">10-Digit Indian phone masking</h3>
-                  <p className="bento__p">
-                    Standardized to Indian +91 numbers with intelligent masking that conceals the last 5 digits from telecallers to eliminate database theft.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Phone Masking</span>
+                <h3 className="feature-card-clean__h">10-Digit Indian phone masking</h3>
+                <p className="feature-card-clean__p">
+                  Standardized to Indian +91 numbers with intelligent masking that conceals the last 5 digits from telecallers to eliminate database theft.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Local Support</span>
-                  <h3 className="bento__h">Indian business hours support</h3>
-                  <p className="bento__p">
-                    Dedicated WhatsApp and phone support based in India during standard operational hours (9 AM – 7 PM IST).
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">RERA &amp; Units</span>
+                <h3 className="feature-card-clean__h">Carpet area &amp; tower inventory</h3>
+                <p className="feature-card-clean__p">
+                  Track project phase approvals, RERA compliance certificates, carpet area rates, and floor inventory in real-time.
+                </p>
+              </article>
+
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Local Support</span>
+                <h3 className="feature-card-clean__h">Indian business hours support</h3>
+                <p className="feature-card-clean__p">
+                  Dedicated WhatsApp and phone support based in India during standard operational hours (9 AM – 7 PM IST).
+                </p>
               </article>
             </div>
           </div>

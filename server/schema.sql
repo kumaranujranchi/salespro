@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS tenants (
     trial_ends_at TIMESTAMPTZ,
     is_active BOOLEAN DEFAULT true,
     leads_count INT DEFAULT 0,
+    last_login_at TIMESTAMPTZ,
+    inactivity_warning_count INT DEFAULT 0,
+    last_inactivity_warning_at TIMESTAMPTZ,
+    inactivity_deactivated_at TIMESTAMPTZ,
+    deactivation_reason VARCHAR(100),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -76,6 +81,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     joining_date VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
     force_password_change BOOLEAN DEFAULT false,
+    last_login_at TIMESTAMPTZ,
+    temp_login_password VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

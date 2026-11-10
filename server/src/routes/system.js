@@ -221,5 +221,90 @@ router.get('/metrics', requirePlatformAdmin, async (req, res) => {
   }
 });
 
+// Trigger 30-Day Inactivity Check (Platform Admin on-demand execution)
+router.post('/check-inactivity', requirePlatformAdmin, async (req, res) => {
+  try {
+    const { checkAndProcessInactivity } = await import('../services/inactivityService.js');
+    const summary = await checkAndProcessInactivity();
+    return res.json({ success: true, ...summary });
+  } catch (err) {
+    console.error('Error running inactivity check:', err);
+    return res.status(500).json({ error: 'Failed to execute inactivity check', message: err.message });
+  }
+});
+
+// Get Inactivity Status across all tenants
+router.get('/inactivity-status', requirePlatformAdmin, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT t.id, t.name, t.slug, t.created_at, t.last_login_at,
+             t.is_active, t.deactivation_reason, t.inactivity_deactivated_at,
+             t.inactivity_warning_count, t.last_inactivity_warning_at,
+             COALESCE(
+               (SELECT email FROM profiles WHERE tenant_id = t.id AND role IN ('super_admin', 'admin') ORDER BY created_at ASC LIMIT 1),
+               (SELECT email FROM profiles WHERE tenant_id = t.id ORDER BY created_at ASC LIMIT 1)
+             ) as admin_email,
+             COALESCE(
+               (SELECT full_name FROM profiles WHERE tenant_id = t.id AND role IN ('super_admin', 'admin') ORDER BY created_at ASC LIMIT 1),
+               (SELECT full_name FROM profiles WHERE tenant_id = t.id ORDER BY created_at ASC LIMIT 1)
+             ) as admin_name
+      FROM tenants t
+      WHERE LOWER(t.slug) != 'default-tenant'
+      ORDER BY t.created_at DESC
+    `);
+
+    const now = Date.now();
+    const tenantsStatus = result.rows.map(row => {
+      const baseline = row.last_login_at || row.created_at || new Date();
+      const inactiveDays = Math.max(0, Math.floor((now - new Date(baseline).getTime()) / (1000 * 60 * 60 * 24)));
+      const daysRemaining = Math.max(0, 30 - inactiveDays);
+
+      let stage = 'active';
+      if (row.is_active === false && row.deactivation_reason === 'inactive_30_days') {
+        stage = 'deactivated';
+      } else if (inactiveDays >= 28) {
+        stage = 'warning_3_urgent';
+      } else if (inactiveDays >= 22) {
+        stage = 'warning_2';
+      } else if (inactiveDays >= 15) {
+        stage = 'warning_1';
+      }
+
+      return {
+        ...row,
+        inactiveDays,
+        daysRemaining,
+        stage,
+      };
+    });
+
+    return res.json({
+      total: tenantsStatus.length,
+      deactivatedCount: tenantsStatus.filter(t => t.stage === 'deactivated').length,
+      warningCount: tenantsStatus.filter(t => t.stage.startsWith('warning')).length,
+      tenants: tenantsStatus
+    });
+  } catch (err) {
+    console.error('Error getting inactivity status:', err);
+    return res.status(500).json({ error: 'Failed to get inactivity status', message: err.message });
+  }
+});
+
+// Reactivate a deactivated tenant
+router.post('/reactivate-tenant', requirePlatformAdmin, async (req, res) => {
+  try {
+    const { tenantId } = req.body;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'tenantId is required' });
+    }
+    const { reactivateTenant } = await import('../services/inactivityService.js');
+    const result = await reactivateTenant(tenantId);
+    return res.json(result);
+  } catch (err) {
+    console.error('Error reactivating tenant:', err);
+    return res.status(500).json({ error: 'Failed to reactivate tenant', message: err.message });
+  }
+});
+
 export default router;
 

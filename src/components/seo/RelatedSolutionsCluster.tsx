@@ -54,11 +54,26 @@ const solutions: SolutionItem[] = [
     title: 'Self-Hosted Database Integration',
     anchorText: 'Enterprise Real Estate Database Integration',
     description: 'Bring your own PostgreSQL or AWS RDS database for 100% data sovereignty behind your private firewall.'
+  },
+  {
+    path: '/pricing',
+    badge: 'Transparent Plans',
+    title: 'Fair, Predictable Pricing',
+    anchorText: 'Real Estate CRM Pricing & Plans',
+    description: 'Free forever starter tier with affordable scaling. Zero hidden per-seat fees or commission cuts.'
+  },
+  {
+    path: '/referral-program',
+    badge: 'Partner Program',
+    title: 'Referral & Partner Network',
+    anchorText: 'Earn ₹3,000 Real Estate CRM Referral',
+    description: 'Earn ₹3,000 cash for every real estate brokerage or builder you refer. Instant automated payouts.'
   }
 ];
 
 export function RelatedSolutionsCluster({ currentPath }: RelatedSolutionsClusterProps) {
-  const items = solutions.filter((item) => item.path !== currentPath);
+  // Always guarantee exactly 6 cards (3 cards in Line 1, 3 cards in Line 2 for perfect symmetry)
+  const items = solutions.filter((item) => item.path !== currentPath).slice(0, 6);
 
   return (
     <section className="section section--paper section--alt" style={{ padding: '80px 0', borderTop: '1px solid rgba(10,32,24,0.06)' }}>
@@ -76,9 +91,10 @@ export function RelatedSolutionsCluster({ currentPath }: RelatedSolutionsCluster
         </header>
 
         <div
+          className="related-solutions-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '24px'
           }}
         >

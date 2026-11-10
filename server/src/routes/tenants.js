@@ -79,8 +79,8 @@ export async function registerTenantHandler(req, res) {
 
     // 1. Create Tenant
     const tenantRes = await query(
-      `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active)
-       VALUES ($1, $2, '{"general": {"target_model": "area"}, "branding": {"primary_color": "#3B82F6"}}'::jsonb, 'active', 'free', true)
+      `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active, last_login_at)
+       VALUES ($1, $2, '{"general": {"target_model": "area"}, "branding": {"primary_color": "#3B82F6"}}'::jsonb, 'active', 'free', true, CURRENT_TIMESTAMP)
        RETURNING *`,
       [company_name.trim(), cleanSlug]
     );
@@ -93,9 +93,9 @@ export async function registerTenantHandler(req, res) {
     const profileUserId = userId ? String(userId).trim() : profileEmail;
 
     await query(
-      `INSERT INTO profiles (user_id, email, password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change)
-       VALUES ($1, $2, NULL, $3, $4, 'ADMIN-001', $5, 'super_admin', $6, true, false)`,
-      [profileUserId, profileEmail, passwordHash, user_full_name || 'Admin', contact_phone || null, tenant.id]
+      `INSERT INTO profiles (user_id, email, password, temp_login_password, password_hash, full_name, employee_id, phone, role, tenant_id, is_active, force_password_change, last_login_at)
+       VALUES ($1, $2, NULL, $3, $4, $5, 'ADMIN-001', $6, 'super_admin', $7, true, false, CURRENT_TIMESTAMP)`,
+      [profileUserId, profileEmail, rawPass, passwordHash, user_full_name || 'Admin', contact_phone || null, tenant.id]
     );
 
     // 3. Handle referral if present
@@ -238,7 +238,15 @@ router.patch('/:id', requireTenantAccess, requireRole('super_admin', 'admin'), a
     if (settings !== undefined) { fields.push(`settings = $${idx++}`); values.push(JSON.stringify(settings)); }
     if (subscription_status !== undefined) { fields.push(`subscription_status = $${idx++}`); values.push(subscription_status); }
     if (plan_tier !== undefined) { fields.push(`plan_tier = $${idx++}`); values.push(plan_tier); }
-    if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
+    if (is_active !== undefined) { 
+      fields.push(`is_active = $${idx++}`); 
+      values.push(is_active); 
+      if (is_active === true) {
+        fields.push(`deactivation_reason = NULL`);
+        fields.push(`inactivity_warning_count = 0`);
+        fields.push(`last_login_at = CURRENT_TIMESTAMP`);
+      }
+    }
 
     if (fields.length === 0) return res.json({ success: true });
 
@@ -246,6 +254,11 @@ router.patch('/:id', requireTenantAccess, requireRole('super_admin', 'admin'), a
     values.push(id);
 
     await query(`UPDATE tenants SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+
+    // If activating tenant, reactivate staff profiles as well
+    if (is_active === true) {
+      await query(`UPDATE profiles SET is_active = true WHERE tenant_id = $1`, [id]);
+    }
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });

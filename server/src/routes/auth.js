@@ -23,10 +23,10 @@ router.post('/login', authRateLimiter, async (req, res) => {
     const isSuperAdminEmail = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com');
 
     let result = await query(
-      `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+      `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status, t.is_active as tenant_is_active, t.deactivation_reason
        FROM profiles p
        LEFT JOIN tenants t ON p.tenant_id = t.id
-       WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2) AND p.is_active = true
+       WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2)
        LIMIT 1`,
       [cleanEmail, lookupEmail]
     );
@@ -53,7 +53,7 @@ router.post('/login', authRateLimiter, async (req, res) => {
           [cleanEmail, cleanEmail, passwordHash, tenantId]
         );
         result = await query(
-          `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+          `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status, t.is_active as tenant_is_active, t.deactivation_reason
            FROM profiles p
            LEFT JOIN tenants t ON p.tenant_id = t.id
            WHERE p.id = $1 LIMIT 1`,
@@ -68,6 +68,20 @@ router.post('/login', authRateLimiter, async (req, res) => {
     }
 
     let user = result.rows[0];
+
+    // Check if tenant was deactivated due to 30 days of inactivity
+    if (user.tenant_is_active === false && user.deactivation_reason === 'inactive_30_days') {
+      return res.status(403).json({
+        error: 'Your account has been deactivated due to 30 days of inactivity. Please contact support@realsalepro.com or WhatsApp +91 95252 30232 to reactivate your workspace.'
+      });
+    }
+
+    // Check if account/user is otherwise inactive
+    if (user.is_active === false || user.tenant_is_active === false) {
+      return res.status(403).json({
+        error: 'Your account is currently inactive or suspended. Please contact your company administrator or support@realsalepro.com.'
+      });
+    }
 
     // Strict Password validation logic:
     // Requires exact bcrypt comparison against password_hash (or verified legacy plaintext)
@@ -112,6 +126,23 @@ router.post('/login', authRateLimiter, async (req, res) => {
     if (user.email === 'kumaranujranchi@gmail.com' && user.role === 'platform_admin') {
       await query(`UPDATE profiles SET role = 'super_admin' WHERE id = $1`, [user.id]);
       user.role = 'super_admin';
+    }
+
+    // Track last login timestamp and reset tenant inactivity counters
+    try {
+      await query(`UPDATE profiles SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+      if (user.tenant_id) {
+        await query(
+          `UPDATE tenants 
+           SET last_login_at = CURRENT_TIMESTAMP, 
+               inactivity_warning_count = 0, 
+               last_inactivity_warning_at = NULL 
+           WHERE id = $1`,
+          [user.tenant_id]
+        );
+      }
+    } catch (trackErr) {
+      console.error('Failed to update last_login_at tracking:', trackErr.message);
     }
 
     // Return sanitized profile (never exposing plaintext password or hash)
@@ -295,9 +326,8 @@ router.post('/forgot-password', async (req, res) => {
     let emailError = null;
 
     // Send Security Code via SMTP
-    const verifiedPass = Buffer.from('UmVhbFNhbGVQcm9AMjAyNg==', 'base64').toString('utf8');
     const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
-    const emailPass = verifiedPass;
+    const emailPass = process.env.EMAIL_PASS || '';
     const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
     const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
     const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);

@@ -27,8 +27,10 @@ import {
   Calendar,
   Users,
   ArrowLeft,
-  CheckCircle2
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
+import { systemService } from '../../lib/services';
 
 const formatDate = (dateVal: any) => {
   if (!dateVal) return 'N/A';
@@ -95,6 +97,21 @@ export function TenantsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteSlugInput, setDeleteSlugInput] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isRunningInactivityCheck, setIsRunningInactivityCheck] = useState(false);
+
+  const handleRunInactivityCheck = async () => {
+    setIsRunningInactivityCheck(true);
+    try {
+      const res = await systemService.checkInactivity();
+      toast.success(
+        `Inactivity check complete: ${res.checked || 0} tenants evaluated, ${res.warningsSent || 0} warnings sent, ${res.deactivated || 0} deactivated.`
+      );
+    } catch (err: any) {
+      toast.error('Failed to run inactivity check: ' + (err.message || 'Error'));
+    } finally {
+      setIsRunningInactivityCheck(false);
+    }
+  };
 
   // Billing history via backend query
   const billingHistory = useQuery(api.tenants.listBillingHistory, 
@@ -270,6 +287,9 @@ export function TenantsPage() {
 
   const filteredTenants = (tenantsData || []).filter((t: any) => {
     if (filter === 'all') return true;
+    if (filter === 'inactive') {
+      return t.is_active === false || (t.inactivity_warning_count || 0) > 0 || t.deactivation_reason === 'inactive_30_days';
+    }
     return t.subscription_status === filter;
   });
 
@@ -331,9 +351,13 @@ export function TenantsPage() {
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">{currentTenant.name}</h1>
                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    currentTenant.is_active !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                    currentTenant.deactivation_reason === 'inactive_30_days'
+                      ? 'bg-red-500/30 text-red-200 border border-red-400/40'
+                      : currentTenant.is_active !== false 
+                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                   }`}>
-                    {currentTenant.is_active !== false ? 'Active' : 'Suspended'}
+                    {currentTenant.deactivation_reason === 'inactive_30_days' ? 'Deactivated (30 Days Inactive)' : (currentTenant.is_active !== false ? 'Suspended' : 'Active')}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
                     {currentTenant.plan_tier === 'pro' ? 'Pro Plan' : (currentTenant.plan_tier === 'enterprise' ? 'Enterprise' : 'Free Forever')}
@@ -346,7 +370,7 @@ export function TenantsPage() {
             </div>
 
             {/* Contact details */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 text-xs bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/15">
+            <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-3 xl:grid-cols-5 gap-3 text-xs bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/15">
               <div>
                 <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Admin Name</span>
                 <span className="font-semibold text-white truncate block">{currentTenant.adminName || 'Admin'}</span>
@@ -360,11 +384,41 @@ export function TenantsPage() {
                 <span className="font-semibold text-white truncate block">{currentTenant.contact_phone || 'N/A'}</span>
               </div>
               <div>
+                <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Last Active</span>
+                <span className="font-semibold text-white truncate block">{formatDate(currentTenant.last_login_at || currentTenant.created_at)}</span>
+              </div>
+              <div>
                 <span className="text-indigo-200 block text-[10px] uppercase font-bold tracking-wider">Joined Date</span>
                 <span className="font-semibold text-white truncate block">{formatDate(currentTenant._creationTime || currentTenant.created_at)}</span>
               </div>
             </div>
           </div>
+
+          {/* 30-Day Inactivity Warning or Deactivation Alert */}
+          {currentTenant.deactivation_reason === 'inactive_30_days' ? (
+            <div className="mt-4 p-4 rounded-xl bg-red-950/40 border border-red-500/30 flex items-center justify-between text-xs text-red-200">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>
+                  <strong>Workspace Deactivated:</strong> This account was automatically deactivated due to 30 days of inactivity. 3 warning emails were dispatched to {currentTenant.contact_email}.
+                </span>
+              </div>
+              <button
+                onClick={() => toggleTenantStatus(currentTenant)}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors ml-4 shrink-0"
+              >
+                Reactivate Workspace
+              </button>
+            </div>
+          ) : (currentTenant.inactivity_warning_count || 0) > 0 ? (
+            <div className="mt-4 p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-200">
+              <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>Inactivity Warning Sent:</strong> Notice {currentTenant.inactivity_warning_count} of 3 was sent to {currentTenant.contact_email}.
+                {currentTenant.last_inactivity_warning_at && ` (Last warning: ${formatDate(currentTenant.last_inactivity_warning_at)})`}
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {/* Usage & System Activity (6 Spacious KPI Cards) */}
@@ -1144,7 +1198,19 @@ export function TenantsPage() {
         {/* Header with Title and Tab Navigation */}
         <div className="p-6 border-b border-slate-200 dark:border-white/10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">All Tenants</h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">All Tenants</h2>
+              <p className="text-xs text-slate-500">Manage customer workspaces, subscriptions, and automated 30-day inactivity lifecycles</p>
+            </div>
+            <button
+              onClick={handleRunInactivityCheck}
+              disabled={isRunningInactivityCheck}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+              title="Runs automated check: 15d, 22d, 28d warnings with password, and 30d deactivation"
+            >
+              <Clock className={`w-3.5 h-3.5 ${isRunningInactivityCheck ? 'animate-spin text-amber-600' : 'text-amber-600'}`} />
+              {isRunningInactivityCheck ? 'Running Inactivity Check...' : 'Run 30-Day Inactivity Check'}
+            </button>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1167,6 +1233,12 @@ export function TenantsPage() {
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'active' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                 >
                   Active
+                </button>
+                <button
+                  onClick={() => setFilter('inactive')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${filter === 'inactive' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                >
+                  Inactive / Warnings
                 </button>
             </div>
           </div>
@@ -1322,13 +1394,24 @@ export function TenantsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                        ${tenant.subscription_status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                                tenant.subscription_status === 'trial' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
-                                  'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'}
-                      `}>
-                            {tenant.subscription_status}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                              ${tenant.deactivation_reason === 'inactive_30_days'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 font-bold'
+                                : tenant.is_active === false
+                                ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                                : tenant.subscription_status === 'active'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}
+                            `}>
+                              {tenant.deactivation_reason === 'inactive_30_days' ? 'Inactive (30d)' : (tenant.is_active === false ? 'Suspended' : tenant.subscription_status)}
+                            </span>
+                            {(tenant.inactivity_warning_count || 0) > 0 && tenant.is_active !== false && (
+                              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 inline" /> Warning {tenant.inactivity_warning_count}/3
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize font-medium">
                           <div className="flex flex-col">

@@ -1154,6 +1154,102 @@ body.landing-page-active .container {
   gap: 30px;
 }
 
+/* ============ SYMMETRIC FEATURE GRID (Balanced 3x2 Layout) ============ */
+.feature-grid-symmetric {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 22px !important;
+}
+
+.feature-card-clean {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: transform 0.4s var(--ease), border-color 0.4s var(--ease), background 0.4s var(--ease), box-shadow 0.4s var(--ease);
+  height: 100%;
+  overflow: hidden;
+}
+
+.feature-card-clean::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(320px circle at 50% 0%, rgba(0, 229, 118, 0.12), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.feature-card-clean:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 229, 118, 0.35);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(0, 229, 118, 0.1);
+}
+
+.feature-card-clean:hover::before {
+  opacity: 1;
+}
+
+.feature-card-clean__tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--mint-bright);
+  margin-bottom: 14px;
+}
+
+.feature-card-clean__h {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.25;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+}
+
+.feature-card-clean__p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted-dark);
+  margin: 0;
+  flex-grow: 1;
+}
+
+@media (max-width: 1024px) {
+  .feature-grid-symmetric {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 18px !important;
+  }
+  .related-solutions-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 18px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .feature-grid-symmetric {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .related-solutions-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .feature-card-clean {
+    padding: 24px 20px;
+  }
+}
+
 .card {
   position: relative;
   display: flex;

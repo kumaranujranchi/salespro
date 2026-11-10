@@ -293,56 +293,54 @@ export function FreeCRMPage() {
               </p>
             </header>
 
-            <div className="bento" data-reveal data-reveal-delay="180">
-              <article className="bento__card bento__card--wide">
-                <div className="bento__copy">
-                  <span className="bento__tag">Core Capacity</span>
-                  <h3 className="bento__h">Up to 1,000 active leads with zero expiry</h3>
-                  <p className="bento__p">
-                    Store complete contact cards, property requirements, budget brackets, and interaction histories. 
-                    Full cloud storage with zero time cutoff.
-                  </p>
-                </div>
+            <div className="feature-grid-symmetric" data-reveal data-reveal-delay="180">
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Core Capacity</span>
+                <h3 className="feature-card-clean__h">Up to 1,000 active leads with zero expiry</h3>
+                <p className="feature-card-clean__p">
+                  Store complete contact cards, property requirements, budget brackets, and interaction histories. 
+                  Full cloud storage with zero time cutoff.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Automation</span>
-                  <h3 className="bento__h">Meta &amp; WhatsApp webhooks</h3>
-                  <p className="bento__p">
-                    Inquiries from Facebook Ads, Instagram, and web portals arrive in your pipeline within 30 seconds. Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link>.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Automation</span>
+                <h3 className="feature-card-clean__h">Meta &amp; WhatsApp webhooks</h3>
+                <p className="feature-card-clean__p">
+                  Inquiries from Facebook Ads, Instagram, and web portals arrive in your pipeline within 30 seconds. Powered by our <Link to="/features/lead-management" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>real estate lead management engine</Link>.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Team Seats</span>
-                  <h3 className="bento__h">Up to 5 team member logins</h3>
-                  <p className="bento__p">
-                    Add telecallers, sales executives, and site staff with separate roles and permissions.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Visual Pipeline</span>
+                <h3 className="feature-card-clean__h">Drag-and-drop Kanban deal tracking</h3>
+                <p className="feature-card-clean__p">
+                  Move buyer inquiries seamlessly from New Lead to Site Visit to Token Advance. Monitor conversion drop-offs and sales team velocity at a glance.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Field Operations</span>
-                  <h3 className="bento__h">Site visit dispatching</h3>
-                  <p className="bento__p">
-                    Send Google route pins to clients, track driver status, and record on-site walkthrough feedback.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Team Seats</span>
+                <h3 className="feature-card-clean__h">Up to 5 team member logins</h3>
+                <p className="feature-card-clean__p">
+                  Add telecallers, sales executives, and site staff with separate roles, permission controls, and individual daily target tracking.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Data Security</span>
-                  <h3 className="bento__h">Staff phone number masking</h3>
-                  <p className="bento__p">
-                    Prevent telecallers from stealing your client database by hiding the last 5 digits — essential for <Link to="/crm-for-real-estate-brokers" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>brokers &amp; channel partners</Link>.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Field Operations</span>
+                <h3 className="feature-card-clean__h">Site visit dispatching &amp; route pins</h3>
+                <p className="feature-card-clean__p">
+                  Send Google route pins to clients via WhatsApp, track driver status, and record on-site walkthrough feedback in real time.
+                </p>
+              </article>
+
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Data Security</span>
+                <h3 className="feature-card-clean__h">Staff phone number masking</h3>
+                <p className="feature-card-clean__p">
+                  Prevent telecallers from stealing your client database by hiding the last 5 digits — essential protection for <Link to="/crm-for-real-estate-brokers" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>brokers &amp; channel partners</Link>.
+                </p>
               </article>
             </div>
           </div>

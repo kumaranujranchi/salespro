@@ -99,4 +99,33 @@ app.listen(PORT, async () => {
   } catch (err) {
     console.error('Initial profile role check error:', err.message);
   }
+
+  // Initialize Inactivity Schema & Automated 30-Day Inactivity Scheduler
+  try {
+    const { initInactivitySchema, checkAndProcessInactivity } = await import('./services/inactivityService.js');
+    await initInactivitySchema();
+    
+    // Initial run 15 seconds after server startup
+    setTimeout(async () => {
+      try {
+        await checkAndProcessInactivity();
+      } catch (cronErr) {
+        console.error('Initial inactivity check error:', cronErr.message);
+      }
+    }, 15000);
+
+    // Run every 6 hours automatically
+    const INACTIVITY_INTERVAL = 6 * 60 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        await checkAndProcessInactivity();
+      } catch (cronErr) {
+        console.error('Scheduled inactivity check error:', cronErr.message);
+      }
+    }, INACTIVITY_INTERVAL);
+
+    console.log('⏰ RealSalePro Automated 30-Day Inactivity Scheduler active (runs every 6 hours)');
+  } catch (err) {
+    console.error('Inactivity scheduler initialization error:', err.message);
+  }
 });

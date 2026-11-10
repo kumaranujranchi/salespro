@@ -497,6 +497,7 @@ function testCriticalFiles() {
     'server/src/services/capiService.js',
     'server/src/services/leadToSale.js',
     'server/src/services/whatsappService.js',
+    'server/src/services/inactivityService.js',
   ];
 
   let missingCount = 0;
@@ -514,7 +515,86 @@ function testCriticalFiles() {
 }
 
 // ---------------------------------------------------------
-// TEST 7: Backend Server & DB Health (Async Ping)
+// TEST 8: 30-Day Automated Inactivity & Deactivation Lifecycle
+// ---------------------------------------------------------
+function testInactivityLifecycle() {
+  printHeader('8. 30-Day Automated Inactivity, Warning Schedule & Password Delivery');
+
+  try {
+    const inactivitySource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/services/inactivityService.js'), 'utf8');
+
+    // A. 30-Day Inactivity Threshold and 3-Email Warning Schedule
+    const has30DayRule = inactivitySource.includes('inactiveDays >= 30');
+    const has28DayRule = inactivitySource.includes('inactiveDays >= 28');
+    const has22DayRule = inactivitySource.includes('inactiveDays >= 22');
+    const has15DayRule = inactivitySource.includes('inactiveDays >= 15');
+
+    if (has30DayRule && has28DayRule && has22DayRule && has15DayRule) {
+      logPass('30-day lifecycle with 3-email warning cadence verified (15d, 22d, 28d, 30d deactivation)');
+    } else {
+      logFail('Inactivity cadence thresholds missing in inactivityService.js', 'Expected 15d, 22d, 28d, 30d checks');
+    }
+
+    // B. Password inclusion in email template
+    const hasPasswordInEmail = inactivitySource.includes('loginPassword') && 
+                               inactivitySource.includes('Your Login Credentials') &&
+                               inactivitySource.includes('getOrGenerateLoginPassword');
+
+    if (hasPasswordInEmail) {
+      logPass('Automated email includes direct login credentials and password box');
+    } else {
+      logFail('Inactivity email missing login password inclusion', 'Must provide working login password on email');
+    }
+
+    // C. Schema & Database Auto-Deactivation Flagging
+    const hasDeactivation = inactivitySource.includes("deactivation_reason = 'inactive_30_days'") &&
+                            inactivitySource.includes('is_active = false');
+
+    if (hasDeactivation) {
+      logPass('Automatic 30-day deactivation sets is_active=false and reason=inactive_30_days');
+    } else {
+      logFail('Deactivation query missing is_active=false or reason=inactive_30_days', 'Check inactivityService.js');
+    }
+
+    // D. One-Click Reactivation Flow
+    const hasReactivation = inactivitySource.includes('export async function reactivateTenant') &&
+                            inactivitySource.includes('is_active = true') &&
+                            inactivitySource.includes('deactivation_reason = NULL');
+
+    if (hasReactivation) {
+      logPass('One-click tenant & profile reactivation resets warning counters and clears deactivation');
+    } else {
+      logFail('Reactivation function missing or incomplete in inactivityService.js', 'Check reactivateTenant');
+    }
+
+    // E. Auth Login Integration (Updates last_login_at and resets warning count)
+    const authSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/auth.js'), 'utf8');
+    const hasAuthLastLogin = authSource.includes('last_login_at = CURRENT_TIMESTAMP') &&
+                             authSource.includes('inactivity_warning_count = 0');
+
+    if (hasAuthLastLogin) {
+      logPass('User login successfully updates last_login_at and resets inactivity warning count');
+    } else {
+      logFail('server/src/routes/auth.js missing last_login_at tracking or warning reset', 'Check /api/auth/login');
+    }
+
+    // F. Automated Cron Scheduling in Server
+    const indexSource = fs.readFileSync(path.join(ROOT_DIR, 'server/src/index.js'), 'utf8');
+    const hasScheduler = indexSource.includes('checkAndProcessInactivity') &&
+                         indexSource.includes('setInterval');
+
+    if (hasScheduler) {
+      logPass('Server startup mounts automated recurring inactivity scheduler');
+    } else {
+      logFail('server/src/index.js missing automated recurring inactivity scheduler', 'Check server/src/index.js');
+    }
+  } catch (err) {
+    logFail('Inactivity lifecycle test crashed', err.message);
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 9: Backend Server & DB Health (Async Ping)
 // ---------------------------------------------------------
 async function testBackendHealth() {
   printHeader('7. Backend Server & Database Connection');
@@ -570,6 +650,7 @@ async function runSuite() {
   testLayoutAndNavigationRegressions();
   testLeadToSaleConversion();
   testMetaCapiIntegration();
+  testInactivityLifecycle();
   testCriticalFiles();
   await testBackendHealth();
 

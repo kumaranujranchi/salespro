@@ -220,57 +220,55 @@ export function BrokersCRMPage() {
               </p>
             </header>
 
-            <div className="bento" data-reveal data-reveal-delay="180">
-              <article className="bento__card bento__card--wide">
-                <div className="bento__copy">
-                  <span className="bento__tag">Lead Protection</span>
-                  <h3 className="bento__h">Stop staff from stealing your client book</h3>
-                  <p className="bento__p">
-                    When an employee leaves, your database walks out with them in spreadsheets. 
-                    RealSalePro's built-in phone number masking hides the last 5 digits so telecallers can dial out without ever copying customer numbers.
-                    Still using manual sheets? <Link to="/templates/real-estate-crm-excel-template" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>See why Excel leaks buyer data</Link>.
-                  </p>
-                </div>
+            <div className="feature-grid-symmetric" data-reveal data-reveal-delay="180">
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Lead Protection</span>
+                <h3 className="feature-card-clean__h">Stop staff from stealing your client book</h3>
+                <p className="feature-card-clean__p">
+                  When an employee leaves, your database walks out with them in spreadsheets. 
+                  RealSalePro's built-in phone number masking hides the last 5 digits so telecallers can dial out without ever copying customer numbers.
+                  Still using manual sheets? <Link to="/templates/real-estate-crm-excel-template" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>See why Excel leaks buyer data</Link>.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">WhatsApp Fast Dial</span>
-                  <h3 className="bento__h">1-Click WhatsApp follow-ups</h3>
-                  <p className="bento__p">
-                    Send floor plans, payment schedules, and site location pins directly to client WhatsApp numbers with pre-made broker scripts.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">WhatsApp Fast Dial</span>
+                <h3 className="feature-card-clean__h">1-Click WhatsApp follow-ups</h3>
+                <p className="feature-card-clean__p">
+                  Send floor plans, payment schedules, and site location pins directly to client WhatsApp numbers with pre-made broker scripts.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Site Visits</span>
-                  <h3 className="bento__h">Coordinated site walkthroughs</h3>
-                  <p className="bento__p">
-                    Log driver pickups, model apartment visits, and buyer reactions in real time so you always know which buyers are ready to close.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Site Visits</span>
+                <h3 className="feature-card-clean__h">Coordinated site walkthroughs</h3>
+                <p className="feature-card-clean__p">
+                  Log driver pickups, model apartment visits, and buyer reactions in real time so you always know which buyers are ready to close.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Developer Sync</span>
-                  <h3 className="bento__h">Proof of client registration</h3>
-                  <p className="bento__p">
-                    Timestamped logs provide instant proof when registering your client with developer sales galleries, protecting your brokerage fees.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Developer Sync</span>
+                <h3 className="feature-card-clean__h">Proof of client registration</h3>
+                <p className="feature-card-clean__p">
+                  Timestamped logs provide instant proof when registering your client with developer sales galleries, protecting your brokerage fees.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Free Forever</span>
-                  <h3 className="bento__h">Zero upfront cost for your agency</h3>
-                  <p className="bento__p">
-                    Start with up to 1,000 client contacts and 5 agent accounts for ₹0. Explore our <Link to="/free-real-estate-crm" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>100% Free CRM Plan</Link> with zero time limits.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Brokerage &amp; Splits</span>
+                <h3 className="feature-card-clean__h">Commission payout &amp; slab tracker</h3>
+                <p className="feature-card-clean__p">
+                  Track developer commission receivables, channel partner deal splits, and payout timelines in real time without manual notebook math.
+                </p>
+              </article>
+
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Free Forever</span>
+                <h3 className="feature-card-clean__h">Zero upfront cost for your agency</h3>
+                <p className="feature-card-clean__p">
+                  Start with up to 1,000 client contacts and 5 agent accounts for ₹0. Explore our <Link to="/free-real-estate-crm" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>100% Free CRM Plan</Link> with zero time limits.
+                </p>
               </article>
             </div>
           </div>

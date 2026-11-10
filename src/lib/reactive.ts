@@ -409,6 +409,15 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('system.getMetrics')) {
     return await systemService.getMetrics();
   }
+  if (key.includes('system.checkInactivity')) {
+    return await systemService.checkInactivity();
+  }
+  if (key.includes('system.getInactivityStatus')) {
+    return await systemService.getInactivityStatus();
+  }
+  if (key.includes('system.reactivateTenant')) {
+    return await systemService.reactivateTenant(args?.tenantId || args?.id);
+  }
   if (key.includes('capi.test') || key.includes('capi.sendTestEvent')) {
     return await capiService.test(args);
   }
@@ -445,7 +454,39 @@ function generateAiSalesCopilotResponse(args: any): string {
   const lastUserMsg = [...messages].reverse().find((m: any) => m?.role === 'user')?.content || '';
   const text = String(lastUserMsg).trim().toLowerCase();
 
-  // 1. Cold Call / Calling / Pitch / Script
+  // 1. Broad / Open-ended queries: "I want to know?", "Help", "What can you do?", "Tell me"
+  if (
+    text.includes('i want to know') ||
+    text.includes('want to know') ||
+    text.includes('tell me') ||
+    text.includes('what can you do') ||
+    text.includes('how to use') ||
+    text === 'help' ||
+    text === 'help me' ||
+    text === 'info' ||
+    text === 'know' ||
+    text === 'query'
+  ) {
+    return `I'd love to help! Here are the 4 key areas I can assist you with right now:
+
+1. 🎯 **Sales Scripts & Pitching**: Cold call openers, overcoming "price is too high" or "I'll think and tell", and booking site visits.
+2. 📱 **WhatsApp & Follow-up**: Instant post-inquiry messages, site visit confirmation templates, and dead-lead revival messages.
+3. 🏢 **CRM & Lead Operations**: How telecaller phone masking works, importing leads from Excel, and connecting Meta / Magicbricks webhooks.
+4. 💰 **Deals & Closings**: Asking for booking tokens without being pushy, locking inventory units, and tracking agent commissions.
+
+Tell me what specific property, client situation, or CRM tool you're working on, and I'll give you step-by-step guidance!`;
+  }
+
+  // 2. Greetings
+  if (text === 'hi' || text === 'hello' || text === 'hey' || text === 'namaste' || text.startsWith('hi ') || text.startsWith('hello ') || text.includes('good morning') || text.includes('good afternoon')) {
+    return `Namaste! 👋 I'm your RealSalePro AI Sales Copilot.
+
+I'm ready to help you handle client objections, draft high-converting WhatsApp pitches, or guide you through your sales pipeline. 
+
+What property deal, objection, or CRM feature are you working on today?`;
+  }
+
+  // 3. Cold Call / Calling / Pitch / Script
   if (text.includes('cold call') || text.includes('script') || text.includes('pitch') || text.includes('telecall') || text.includes('call') || text.includes('opener')) {
     return `Here is a high-converting **Real Estate Cold Calling Script** designed to book site visits without sounding pushy:
 
@@ -457,8 +498,8 @@ function generateAiSalesCopilotResponse(args: any): string {
 *Pro Tip:* Never ask "Are you free to visit?". Offer two concrete time slots so the decision is *when* to visit, not *if*.`;
   }
 
-  // 2. Objection Handling: Price / Budget / Too Expensive
-  if (text.includes('expensive') || text.includes('price') || text.includes('budget') || text.includes('discount') || text.includes('cost') || text.includes('mahnga') || text.includes('rate')) {
+  // 4. Objection Handling: Price / Budget / Too Expensive / Discount / Negotiation
+  if (text.includes('expensive') || text.includes('price') || text.includes('budget') || text.includes('discount') || text.includes('cost') || text.includes('mahnga') || text.includes('rate') || text.includes('negotiat') || text.includes('bargain')) {
     return `Here is how to effectively handle the **"Price is Too High / Over Budget"** objection:
 
 * **Step 1 - Acknowledge & Validate:** "I completely understand [Client Name]. Budget is the most crucial factor when investing in a home."
@@ -467,8 +508,17 @@ function generateAiSalesCopilotResponse(args: any): string {
 * **Step 4 - Lock with Scarcity:** "Let's visit the site once. If you love the layout and inventory, I will personally speak with the sales director to explore an exclusive spot-booking festival discount."`;
   }
 
-  // 3. Objection Handling: "Already have a CRM" / "Using another tool"
-  if (text.includes('already use') || text.includes('competitor') || text.includes('another crm') || text.includes('existing')) {
+  // 5. Objection Handling: "I will think about it" / "Family consultation" / Delays
+  if (text.includes('think') || text.includes('family') || text.includes('wife') || text.includes('husband') || text.includes('later') || text.includes('soch') || text.includes('delay')) {
+    return `When a prospect says **"I will think and tell you"** or **"Need to discuss with family"**:
+
+* **Why they say it:** It's usually a polite smokescreen for either (a) budget anxiety or (b) layout/amenity hesitation.
+* **The Winning Response:** "That's completely reasonable, [Client Name] — buying a home is a milestone family decision. Usually when buyers need time to think, it's either because the pricing is stretching beyond comfort, or there's a specific concern about the floor layout or delivery timeline. Which of those two is on your mind?"
+* **The Next Step:** "How about I send a 3-minute video walkthrough directly to your WhatsApp so you can show your family tonight? Would tomorrow evening at 6 PM be a good time for a 5-minute feedback call?"`;
+  }
+
+  // 6. Objection Handling: "Already have a CRM" / "Using Excel"
+  if (text.includes('already use') || text.includes('competitor') || text.includes('another crm') || text.includes('existing') || text.includes('excel')) {
     return `Here is your winning pitch when a prospect says **"We already use a CRM / Excel"**:
 
 * **Identify the Hidden Leakage:** Most standard CRMs only store contact numbers. They don't prevent lead leakage or speed up initial response time.
@@ -477,7 +527,38 @@ function generateAiSalesCopilotResponse(args: any): string {
 * **Floor-Ready Mobile Access:** Site executives log visits, token bookings, and floor inventory updates directly on-site rather than updating sheets at 9 PM.`;
   }
 
-  // 4. WhatsApp / SMS / Follow-up Templates
+  // 7. Phone Masking & Lead Theft Prevention
+  if (text.includes('mask') || text.includes('theft') || text.includes('security') || text.includes('steal') || text.includes('hide number')) {
+    return `**Phone Number Masking & Client Data Protection**:
+
+* **How it works:** RealSalePro masks the last 5 digits of buyer phone numbers (e.g. \`+91 98765 •••••\`) for telecallers, sales executives, and drivers.
+* **Dialing:** Team members can click the call button to trigger in-app or masked dialing without seeing or exporting customer contacts.
+* **Admin Control:** Only Tenant Admins and Super Admins can unmask numbers or download contact CSVs.
+* **Why it matters:** Eliminates staff database theft when brokers or sales executives leave your agency.`;
+  }
+
+  // 8. Lead Management & Capture (Meta, Webhooks, Portals)
+  if (text.includes('add lead') || text.includes('lead') || text.includes('capture') || text.includes('portal') || text.includes('magicbricks') || text.includes('99acres') || text.includes('webhook') || text.includes('import')) {
+    return `**RealSalePro Lead Management Engine**:
+
+* **Instant Webhook Capture:** Under **Settings > Integrations**, connect your Facebook Lead Ads, Magicbricks, 99acres, or Housing.com webhooks for sub-30 second automatic capture.
+* **Smart Deduplication:** If an inquiry arrives with the same phone number or email, RealSalePro appends the new activity to the existing lead history instead of creating duplicate records.
+* **Round-Robin Routing:** Automatically distributes incoming inquiries among active sales executives based on workload or property preferences.
+* **CSV Bulk Import:** Upload existing client sheets from **Leads > Import Leads** with instant validation.`;
+  }
+
+  // 9. Site Visit / Closing / Token / Booking / Convert to Sale
+  if (text.includes('site visit') || text.includes('visit') || text.includes('close') || text.includes('closing') || text.includes('token') || text.includes('booking') || text.includes('convert') || text.includes('sale')) {
+    return `Here are the top 4 rules to convert a **Site Visit into a Token Booking**:
+
+* **1. Confirm with a Cab / Route Pin:** Always send the Google Maps location pin and driver contact 2 hours prior to the scheduled visit. This cuts no-shows by over 40%.
+* **2. Experience Before Numbers:** Walk the prospect through the amenities, entrance lobby, and model flat first. Build emotional resonance before opening the cost sheet.
+* **3. The Unit Commitment Question:** "Between the 7th floor east-facing unit and the 12th floor pool-view, which layout felt more like home to your family?"
+* **4. Spot Booking Urgency:** "The current inaugural rate is locked only against an earnest token of ₹50,000, which is 100% refundable within 7 days if your family decides otherwise. Let's block unit #802 so no one else grabs it today."
+* **5. 1-Click Conversion in CRM:** Once token is logged, click **Convert to Sale** to automatically generate customer ledger, payment milestones, and broker commission splits!`;
+  }
+
+  // 10. WhatsApp / SMS / Follow-up Templates
   if (text.includes('whatsapp') || text.includes('sms') || text.includes('message') || text.includes('template') || text.includes('follow-up') || text.includes('followup') || text.includes('cadence')) {
     return `Here are two battle-tested **WhatsApp Follow-up Templates** with high reply rates:
 
@@ -488,17 +569,7 @@ function generateAiSalesCopilotResponse(args: any): string {
 "Hi [Client Name], quick update! The developer just released 4 high-floor 3BHK units with panoramic city views that match the budget you mentioned. Before they open to general brokers, I wanted to give you the first preview. Should I share the video walkthrough on WhatsApp?"`;
   }
 
-  // 5. Site Visit / Closing / Token / Booking
-  if (text.includes('site visit') || text.includes('visit') || text.includes('close') || text.includes('closing') || text.includes('token') || text.includes('booking')) {
-    return `Here are the top 4 rules to convert a **Site Visit into a Token Booking**:
-
-* **1. Confirm with a Cab / Route Pin:** Always send the Google Maps location pin and driver contact 2 hours prior to the scheduled visit. This cuts no-shows by over 40%.
-* **2. Experience Before Numbers:** Walk the prospect through the amenities, entrance lobby, and model flat first. Build emotional resonance before opening the cost sheet.
-* **3. The Unit Commitment Question:** "Between the 7th floor east-facing unit and the 12th floor pool-view, which layout felt more like home to your family?"
-* **4. Spot Booking Urgency:** "The current inaugural rate is locked only against an earnest token of ₹50,000, which is 100% refundable within 7 days if your family decides otherwise. Let's block unit #802 so no one else grabs it today."`;
-  }
-
-  // 6. Dead / Lost Leads Revival
+  // 11. Dead / Lost Leads Revival
   if (text.includes('dead') || text.includes('lost') || text.includes('re-engage') || text.includes('reengage') || text.includes('cold') || text.includes('inactive')) {
     return `Here is a 3-step cadence to **revive cold or lost real estate leads**:
 
@@ -507,18 +578,26 @@ function generateAiSalesCopilotResponse(args: any): string {
 * **Step 3 - The Polite Break-up Message:** "Hi [Name], since I haven't heard back, I assume you've already finalized a property or paused your search. Should I remove your number from our VIP priority list?" (This triggers FOMO and gets a 30%+ response rate!)`;
   }
 
-  // 7. General Help & Greetings
-  return `Welcome to **RealSalePro AI Sales Copilot**! I'm here to help you and your sales team close more real estate deals every single week.
+  // 12. Inventory, Units, Floor Plans & Pricing
+  if (text.includes('inventory') || text.includes('unit') || text.includes('flat') || text.includes('floor') || text.includes('bhk') || text.includes('tower')) {
+    return `**RealSalePro Inventory & Unit Management**:
 
-Here is what you can ask me right now:
+* **Real-Time Unit Matrix:** Navigate to **Inventory** to see color-coded unit statuses: Available (Green), Blocked/Token (Amber), and Sold (Red).
+* **Double-Booking Shield:** When a sales executive inputs a token receipt, the chosen unit is locked instantaneously across all devices.
+* **Unit Attributes:** Store facing direction, super built-up vs carpet area, floor rise tiers, and car parking slot allocations.`;
+  }
 
-* **Cold Calling Scripts:** "Give me a cold call script for luxury 3BHK apartments"
-* **Objection Handling:** "How to respond when client says 'I will think and tell you'?"
-* **WhatsApp Messages:** "Draft a quick WhatsApp follow-up for a client who completed a site visit"
-* **Closing Strategy:** "How do I ask for the booking token without being aggressive?"
-* **Lead Revival:** "How to re-engage 50 dead leads from last month?"
+  // 13. Dynamic Conversational Fallback (Never repeats the canned welcome block!)
+  const preview = lastUserMsg.length > 50 ? `${lastUserMsg.slice(0, 50)}...` : lastUserMsg;
+  return `I understand you're asking about **"${preview}"**.
 
-What specific sales challenge or deal are you working on today?`;
+Here are 3 ways I can help you with this right now:
+
+1. 🎯 **Sales Script & Objection Handling**: Give me your client's budget and preferred property, and I'll generate a tailored pitch.
+2. 📱 **WhatsApp Message Generator**: Tell me what you want to communicate, and I'll format an engaging WhatsApp template with call-to-actions.
+3. ⚙️ **CRM Workflow Assistance**: Ask how to configure pipelines, lead routing, commission splits, or reports for your agency.
+
+Which of these would you like to explore next?`;
 }
 
 async function generateAiOutreachTemplates(args: any) {

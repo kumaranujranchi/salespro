@@ -196,58 +196,56 @@ export function LeadManagementFeaturePage() {
               </p>
             </header>
 
-            <div className="bento" data-reveal data-reveal-delay="180">
-              <article className="bento__card bento__card--wide">
-                <div className="bento__copy">
-                  <span className="bento__tag">Step 1 · Instant Capture</span>
-                  <h3 className="bento__h">Sub-30-second webhook ingestion</h3>
-                  <p className="bento__p">
-                    Connect Facebook Lead Ads, Google Ads, Magicbricks, and WhatsApp. 
-                    The moment a user fills a form, their details populate your CRM with source tags, campaign names, and UTM parameters.
-                    Built natively for <Link to="/real-estate-crm-india" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>Indian real estate portals</Link>.
-                  </p>
-                </div>
+            <div className="feature-grid-symmetric" data-reveal data-reveal-delay="180">
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 1 · Instant Capture</span>
+                <h3 className="feature-card-clean__h">Sub-30-second webhook ingestion</h3>
+                <p className="feature-card-clean__p">
+                  Connect Facebook Lead Ads, Google Ads, Magicbricks, and WhatsApp. 
+                  The moment a user fills a form, their details populate your CRM with source tags, campaign names, and UTM parameters.
+                  Built natively for <Link to="/real-estate-crm-india" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>Indian real estate portals</Link>.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Step 2 · Deduplication</span>
-                  <h3 className="bento__h">Intelligent phone matching</h3>
-                  <p className="bento__p">
-                    Standardizes 10-digit Indian numbers. If a customer inquires via both Facebook and Magicbricks, 
-                    their history merges into one single card to prevent embarrassing duplicate calls.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 2 · Deduplication</span>
+                <h3 className="feature-card-clean__h">Intelligent phone matching</h3>
+                <p className="feature-card-clean__p">
+                  Standardizes 10-digit Indian numbers. If a customer inquires via both Facebook and Magicbricks, 
+                  their history merges into one single card to prevent embarrassing duplicate calls.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Step 3 · Smart Routing</span>
-                  <h3 className="bento__h">Round-robin assignment</h3>
-                  <p className="bento__p">
-                    Distribute incoming inquiries fairly among your sales executives and telecallers based on project specialty, budget, or active status.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 3 · Smart Routing</span>
+                <h3 className="feature-card-clean__h">Round-robin assignment</h3>
+                <p className="feature-card-clean__p">
+                  Distribute incoming inquiries fairly among your sales executives and telecallers based on project specialty, budget, or active status.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Step 4 · Follow-up Cadence</span>
-                  <h3 className="bento__h">Automated daily alerts</h3>
-                  <p className="bento__p">
-                    Never forget a promised callback. RealSalePro notifies executives each morning with their scheduled site visits and pending follow-ups.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 4 · Follow-up Cadence</span>
+                <h3 className="feature-card-clean__h">Automated daily alerts</h3>
+                <p className="feature-card-clean__p">
+                  Never forget a promised callback. RealSalePro notifies executives each morning with their scheduled site visits and pending follow-ups.
+                </p>
               </article>
 
-              <article className="bento__card">
-                <div className="bento__copy">
-                  <span className="bento__tag">Step 5 · Conversion</span>
-                  <h3 className="bento__h">1-Click sale creation</h3>
-                  <p className="bento__p">
-                    When a token deposit is logged, the lead automatically converts into an active sale record with commission and invoice calculation.
-                  </p>
-                </div>
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 5 · Site Visit Dispatch</span>
+                <h3 className="feature-card-clean__h">GPS Route Pins &amp; Cab Driver Sync</h3>
+                <p className="feature-card-clean__p">
+                  Schedule client walkthroughs, send Google Maps location pins directly on WhatsApp, and capture real-time visitor feedback on mobile.
+                </p>
+              </article>
+
+              <article className="feature-card-clean">
+                <span className="feature-card-clean__tag">Step 6 · Token Conversion</span>
+                <h3 className="feature-card-clean__h">1-Click sale &amp; invoice creation</h3>
+                <p className="feature-card-clean__p">
+                  When a token deposit is logged, the lead automatically converts into an active sale record with commission, unit locking, and invoice calculation.
+                </p>
               </article>
             </div>
           </div>

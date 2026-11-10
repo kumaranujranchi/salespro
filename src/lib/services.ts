@@ -234,6 +234,9 @@ export interface SystemMetrics {
 
 export const systemService = {
   getMetrics: () => api.get<SystemMetrics>('/system/metrics'),
+  checkInactivity: () => api.post<any>('/system/check-inactivity'),
+  getInactivityStatus: () => api.get<any>('/system/inactivity-status'),
+  reactivateTenant: (tenantId: string) => api.post<any>('/system/reactivate-tenant', { tenantId }),
 };
 
 export const capiService = {

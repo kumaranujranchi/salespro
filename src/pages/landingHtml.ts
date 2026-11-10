@@ -1019,7 +1019,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </p>
         </header>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        <div class="related-solutions-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
           <a href="/free-real-estate-crm" data-reveal style="display: flex; flex-direction: column; justify-content: space-between; padding: 28px 24px; background: #ffffff; border-radius: 20px; border: 1px solid rgba(10,32,24,0.08); box-shadow: 0 10px 30px rgba(10,32,24,0.04); text-decoration: none; color: inherit;">
             <div>
               <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.1); color: #059669; margin-bottom: 12px;">100% Free Forever</span>
