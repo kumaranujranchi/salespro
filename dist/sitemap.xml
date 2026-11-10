@@ -28,6 +28,30 @@
     <priority>0.90</priority>
   </url>
 
+  <!-- CRM for Real Estate Brokers & Agents -->
+  <url>
+    <loc>https://realsalepro.com/crm-for-real-estate-brokers</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Real Estate CRM India (Portals & Builders) -->
+  <url>
+    <loc>https://realsalepro.com/real-estate-crm-india</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Real Estate Lead Management Feature -->
+  <url>
+    <loc>https://realsalepro.com/features/lead-management</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
   <!-- Pricing -->
   <url>
     <loc>https://realsalepro.com/pricing</loc>

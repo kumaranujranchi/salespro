@@ -50,6 +50,9 @@ import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FreeCRMPage } from './pages/FreeCRMPage';
 import { ExcelTemplatePage } from './pages/ExcelTemplatePage';
+import { BrokersCRMPage } from './pages/BrokersCRMPage';
+import { IndiaCRMPage } from './pages/IndiaCRMPage';
+import { LeadManagementFeaturePage } from './pages/LeadManagementFeaturePage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -70,6 +73,9 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/free-real-estate-crm" element={<FreeCRMPage />} />
                 <Route path="/templates/real-estate-crm-excel-template" element={<ExcelTemplatePage />} />
+                <Route path="/crm-for-real-estate-brokers" element={<BrokersCRMPage />} />
+                <Route path="/real-estate-crm-india" element={<IndiaCRMPage />} />
+                <Route path="/features/lead-management" element={<LeadManagementFeaturePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterCompanyPage />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

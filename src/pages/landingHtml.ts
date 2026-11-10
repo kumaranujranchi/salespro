@@ -1112,6 +1112,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="footer__col">
           <h3>Platform</h3>
           <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free Real Estate CRM</a>
+          <a href="/crm-for-real-estate-brokers">CRM for Brokers</a>
+          <a href="/real-estate-crm-india">India Real Estate CRM</a>
+          <a href="/features/lead-management">Lead Management</a>
           <a href="/templates/real-estate-crm-excel-template">Free Excel Template</a>
           <a href="#features">Features</a>
           <a href="#product">Product tour</a>

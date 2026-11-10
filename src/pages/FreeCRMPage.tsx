@@ -640,6 +640,9 @@ export function FreeCRMPage() {
             <div className="footer__col">
               <h3>Platform</h3>
               <Link to="/free-real-estate-crm">Free Real Estate CRM</Link>
+              <Link to="/crm-for-real-estate-brokers">CRM for Brokers</Link>
+              <Link to="/real-estate-crm-india">India Real Estate CRM</Link>
+              <Link to="/features/lead-management">Lead Management</Link>
               <Link to="/templates/real-estate-crm-excel-template">Free Excel Template</Link>
               <Link to="/pricing">Pricing</Link>
               <Link to="/contact">Support</Link>
