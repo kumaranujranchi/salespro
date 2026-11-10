@@ -47,6 +47,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 import { ServerHealthPage } from './pages/admin/ServerHealthPage';
 import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -60,8 +61,9 @@ function App() {
         <ToastProvider>
           <DialogProvider>
             <TutorialProvider>
-              <AdminRoleSwitcherBar />
-              <Routes>
+              <ErrorBoundary>
+                <AdminRoleSwitcherBar />
+                <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -389,6 +391,7 @@ function App() {
                   }
                 />
               </Routes>
+              </ErrorBoundary>
             </TutorialProvider>
           </DialogProvider>
         </ToastProvider>

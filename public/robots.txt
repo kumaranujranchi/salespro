@@ -48,3 +48,4 @@ Disallow: /subscription/
 Disallow: /affiliate/dashboard
 
 Sitemap: https://realsalepro.com/sitemap.xml
+

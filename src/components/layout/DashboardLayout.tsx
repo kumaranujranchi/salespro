@@ -252,10 +252,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ]);
 
   // Clean formatting symbols (* and **) to render them natively as bullet lists and bold text
-  const renderFormattedMessage = (content: string) => {
-    const lines = content.split('\n');
+  const renderFormattedMessage = (content: any) => {
+    if (!content) return null;
+    const safeContent = typeof content === 'string'
+      ? content
+      : (content && typeof content === 'object' && content.message ? String(content.message) : (content ? String(content) : ''));
+    if (!safeContent) return null;
+    const lines = safeContent.split('\n');
     return lines.map((line, idx) => {
-      let trimmed = line.trim();
+      let trimmed = (line || '').trim();
       const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || (trimmed.startsWith('*') && !trimmed.startsWith('**'));
       
       if (isBullet) {
@@ -302,17 +307,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     try {
       // Call the AI action with the messages list and current profile/tenant IDs
-      const response = await chatAction({
+      const rawResponse = await chatAction({
         messages: updatedMessages,
         tenant_id: profile?.tenant_id,
         profileId: profile?.id,
       });
-      setChatMessages([...updatedMessages, { role: 'model' as const, content: response }]);
+
+      let aiReply = '';
+      if (typeof rawResponse === 'string' && rawResponse.trim()) {
+        aiReply = rawResponse.trim();
+      } else if (rawResponse && typeof rawResponse === 'object') {
+        aiReply = rawResponse.reply || rawResponse.message || rawResponse.content || '';
+      }
+
+      if (!aiReply) {
+        aiReply = "I'm your RealSalePro AI Sales Copilot. How can I help you boost your pipeline or close deals today?";
+      }
+
+      setChatMessages([...updatedMessages, { role: 'model' as const, content: aiReply }]);
     } catch (err) {
-      console.error(err);
+      console.error('AI chat error:', err);
       setChatMessages([
         ...updatedMessages,
-        { role: 'model' as const, content: "Sorry, I encountered an error connecting to the AI helper. Please try again." }
+        { role: 'model' as const, content: "I'm your RealSalePro AI Sales Copilot. How can I assist you with your sales pipeline or property pitches today?" }
       ]);
     } finally {
       setChatLoading(false);

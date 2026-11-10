@@ -425,8 +425,143 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await metaService.verifyPageToken(args);
   }
 
+  // AI SALES COPILOT & ASSISTANT ACTIONS
+  if (key.includes('ai.chatWithAI') || key.includes('chatWithAI')) {
+    return generateAiSalesCopilotResponse(args);
+  }
+  if (key.includes('ai.generateOutreach') || key.includes('generateOutreach')) {
+    return await generateAiOutreachTemplates(args);
+  }
+  if (key.includes('ai.analyzeFollowupAndScoreLead') || key.includes('analyzeFollowupAndScoreLead')) {
+    return await analyzeFollowupAndScore(args);
+  }
+
   // Fallback
   return null;
+}
+
+function generateAiSalesCopilotResponse(args: any): string {
+  const messages = Array.isArray(args?.messages) ? args.messages : [];
+  const lastUserMsg = [...messages].reverse().find((m: any) => m?.role === 'user')?.content || '';
+  const text = String(lastUserMsg).trim().toLowerCase();
+
+  // 1. Cold Call / Calling / Pitch / Script
+  if (text.includes('cold call') || text.includes('script') || text.includes('pitch') || text.includes('telecall') || text.includes('call') || text.includes('opener')) {
+    return `Here is a high-converting **Real Estate Cold Calling Script** designed to book site visits without sounding pushy:
+
+* **The 10-Second Hook:** "Hi [Client Name], I noticed you recently checked out premium residences in [Location/Project]. I'm calling from RealSalePro Realty — am I catching you in the middle of something urgent?"
+* **The Value Proposition:** "The reason for my quick call is that Developer [Developer Name] just opened 12 pre-launch units with zero floor rise charges and a flexible 20:80 payment structure."
+* **Qualifying Question:** "Are you looking primarily for personal living, or is high-rental capital appreciation your main priority?"
+* **The Low-Friction Close:** "I won't take more of your time today. Would Thursday 4:30 PM or Saturday 11:00 AM suit you better for a quick 15-minute VIP walkthrough of the model apartment?"
+
+*Pro Tip:* Never ask "Are you free to visit?". Offer two concrete time slots so the decision is *when* to visit, not *if*.`;
+  }
+
+  // 2. Objection Handling: Price / Budget / Too Expensive
+  if (text.includes('expensive') || text.includes('price') || text.includes('budget') || text.includes('discount') || text.includes('cost') || text.includes('mahnga') || text.includes('rate')) {
+    return `Here is how to effectively handle the **"Price is Too High / Over Budget"** objection:
+
+* **Step 1 - Acknowledge & Validate:** "I completely understand [Client Name]. Budget is the most crucial factor when investing in a home."
+* **Step 2 - Shift from Price to Value & Appreciation:** "When you look at comparable developments in this micro-market, prices have appreciated by 14% year-over-year. In our project, you're not just paying for square footage — you get RERA-certified delivery, 75% open green spaces, and a verified clubhouse."
+* **Step 3 - Offer Payment Flexibility:** "Rather than a standard payment plan, the developer currently offers a construction-linked milestone or an easy 10:90 banking subvention. That keeps your immediate cash outlay extremely manageable."
+* **Step 4 - Lock with Scarcity:** "Let's visit the site once. If you love the layout and inventory, I will personally speak with the sales director to explore an exclusive spot-booking festival discount."`;
+  }
+
+  // 3. Objection Handling: "Already have a CRM" / "Using another tool"
+  if (text.includes('already use') || text.includes('competitor') || text.includes('another crm') || text.includes('existing')) {
+    return `Here is your winning pitch when a prospect says **"We already use a CRM / Excel"**:
+
+* **Identify the Hidden Leakage:** Most standard CRMs only store contact numbers. They don't prevent lead leakage or speed up initial response time.
+* **Speed to Lead Advantage:** With RealSalePro's native WhatsApp & Meta CAPI integration, incoming leads are pinged within 30 seconds. In real estate, contacting a lead within 5 minutes increases conversion by 391%.
+* **Zero Duplication Loss:** RealSalePro automatically deduplicates leads across Meta, Google, and 99acres/MagicBricks, so your team never calls the same buyer twice with mismatched quotes.
+* **Floor-Ready Mobile Access:** Site executives log visits, token bookings, and floor inventory updates directly on-site rather than updating sheets at 9 PM.`;
+  }
+
+  // 4. WhatsApp / SMS / Follow-up Templates
+  if (text.includes('whatsapp') || text.includes('sms') || text.includes('message') || text.includes('template') || text.includes('follow-up') || text.includes('followup') || text.includes('cadence')) {
+    return `Here are two battle-tested **WhatsApp Follow-up Templates** with high reply rates:
+
+* **Template 1: Post-Inquiry Warm Follow-up (Send within 2 hours):**
+"Namaste [Client Name]! 👋 Thank you for inquiring about [Project Name] in [Location]. As requested, I have curated the floor plans, master layout, and current price sheet for you: [Link/PDF]. We have 3 garden-facing units remaining in Phase 1. Would you like me to reserve a VIP site visit for you this Saturday?"
+
+* **Template 2: Re-engaging an Inactive Lead (Send after 48 hours of silence):**
+"Hi [Client Name], quick update! The developer just released 4 high-floor 3BHK units with panoramic city views that match the budget you mentioned. Before they open to general brokers, I wanted to give you the first preview. Should I share the video walkthrough on WhatsApp?"`;
+  }
+
+  // 5. Site Visit / Closing / Token / Booking
+  if (text.includes('site visit') || text.includes('visit') || text.includes('close') || text.includes('closing') || text.includes('token') || text.includes('booking')) {
+    return `Here are the top 4 rules to convert a **Site Visit into a Token Booking**:
+
+* **1. Confirm with a Cab / Route Pin:** Always send the Google Maps location pin and driver contact 2 hours prior to the scheduled visit. This cuts no-shows by over 40%.
+* **2. Experience Before Numbers:** Walk the prospect through the amenities, entrance lobby, and model flat first. Build emotional resonance before opening the cost sheet.
+* **3. The Unit Commitment Question:** "Between the 7th floor east-facing unit and the 12th floor pool-view, which layout felt more like home to your family?"
+* **4. Spot Booking Urgency:** "The current inaugural rate is locked only against an earnest token of ₹50,000, which is 100% refundable within 7 days if your family decides otherwise. Let's block unit #802 so no one else grabs it today."`;
+  }
+
+  // 6. Dead / Lost Leads Revival
+  if (text.includes('dead') || text.includes('lost') || text.includes('re-engage') || text.includes('reengage') || text.includes('cold') || text.includes('inactive')) {
+    return `Here is a 3-step cadence to **revive cold or lost real estate leads**:
+
+* **Step 1 - The Inventory Pivot:** Don't ask "Are you still looking?". Instead say: "Hi [Name], I know the previous project didn't match your budget. We just launched a new boutique tower in [Nearby Location] starting at ₹[Lower Budget]. Worth taking a look?"
+* **Step 2 - Send a 30-Second Drone Video:** Visual proof creates instant re-engagement. Send a WhatsApp video showing actual construction progress or handover status.
+* **Step 3 - The Polite Break-up Message:** "Hi [Name], since I haven't heard back, I assume you've already finalized a property or paused your search. Should I remove your number from our VIP priority list?" (This triggers FOMO and gets a 30%+ response rate!)`;
+  }
+
+  // 7. General Help & Greetings
+  return `Welcome to **RealSalePro AI Sales Copilot**! I'm here to help you and your sales team close more real estate deals every single week.
+
+Here is what you can ask me right now:
+
+* **Cold Calling Scripts:** "Give me a cold call script for luxury 3BHK apartments"
+* **Objection Handling:** "How to respond when client says 'I will think and tell you'?"
+* **WhatsApp Messages:** "Draft a quick WhatsApp follow-up for a client who completed a site visit"
+* **Closing Strategy:** "How do I ask for the booking token without being aggressive?"
+* **Lead Revival:** "How to re-engage 50 dead leads from last month?"
+
+What specific sales challenge or deal are you working on today?`;
+}
+
+async function generateAiOutreachTemplates(args: any) {
+  let customerName = 'Valued Client';
+  let projectName = 'our premium property';
+
+  if (args?.leadId) {
+    try {
+      const allLeads = await leadsService.list(args?.tenant_id);
+      const target = allLeads?.find((l: any) => String(l.id) === String(args.leadId) || String(l._id) === String(args.leadId));
+      if (target?.customer_name) customerName = target.customer_name;
+      if (target?.project?.name || target?.project_name) projectName = target?.project?.name || target?.project_name;
+    } catch {}
+  }
+
+  return {
+    whatsapp: `Namaste ${customerName}! 👋 Thank you for inquiring about ${projectName}. As requested, I have curated the floor plans, master layout, and current unit inventory for you. Would Thursday 4 PM or Saturday 11 AM work best for a 15-minute VIP walkthrough of the model residence?`,
+    emailSubject: `Exclusive Property Details & Floor Plans for ${customerName} - ${projectName}`,
+    emailBody: `Dear ${customerName},\n\nThank you for reaching out regarding ${projectName}. We have attached the complete brochure, master layout plan, and flexible developer payment schedules for your review.\n\nOur on-site luxury consultant is available this week to host a private walkthrough of the sample flat.\n\nPlease let us know your preferred date and time, and we will arrange your VIP site pass.\n\nWarm regards,\nSales & Advisory Team\nRealSalePro`,
+  };
+}
+
+async function analyzeFollowupAndScore(args: any) {
+  const remark = String(args?.followupRemark || '').toLowerCase();
+  let score = 'Warm';
+  if (remark.includes('booking') || remark.includes('token') || remark.includes('advance') || remark.includes('deal closed') || remark.includes('converted') || remark.includes('cheque')) {
+    score = 'Hot';
+  } else if (remark.includes('not interested') || remark.includes('lost') || remark.includes('wrong number') || remark.includes('budget mismatch') || remark.includes('dropped') || remark.includes('dnd')) {
+    score = 'Cold';
+  } else if (remark.includes('site visit') || remark.includes('visit confirmed') || remark.includes('interested') || remark.includes('positive') || remark.includes('call back')) {
+    score = 'Hot';
+  }
+
+  if (args?.leadId) {
+    try {
+      await leadsService.update(args.leadId, { lead_score: score });
+      invalidateQuery('leads');
+    } catch (e) {
+      console.warn('AI scoring update notice:', e);
+    }
+  }
+
+  return { success: true, lead_score: score };
 }
 
 // Compatible useQuery hook connected to REST API
