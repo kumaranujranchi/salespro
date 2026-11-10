@@ -502,15 +502,26 @@ export function PricingPage() {
           <div className="container">
             <div className="price-grid">
               {/* CARD 1: FREE FOREVER */}
-              <article className="price" data-reveal style={{ padding: '36px 32px 42px' }}>
+              <article
+                className="price price--dark"
+                data-reveal
+                style={{
+                  padding: '36px 32px 42px',
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+                  color: '#f4faf6'
+                }}
+              >
                 <div className="price__top">
-                  <span className="price__name">Free Forever</span>
-                  <span className="price__badge">No card</span>
+                  <span className="price__name" style={{ color: '#ffffff' }}>Free Forever</span>
+                  <span className="price__badge" style={{ borderColor: 'rgba(255, 255, 255, 0.18)', background: 'rgba(255, 255, 255, 0.06)', color: 'var(--muted-dark)' }}>No card</span>
                 </div>
                 <div className="price__amount">
-                  <b>₹0</b><em>forever</em>
+                  <b style={{ color: '#ffffff' }}>₹0</b><em style={{ color: 'var(--muted-dark)' }}>forever</em>
                 </div>
-                <p className="price__desc">
+                <p className="price__desc" style={{ color: 'var(--muted-dark)' }}>
                   For small teams getting organised — full product, not a teaser. Manage up to 1,000 active client leads.
                 </p>
                 <button
@@ -518,56 +529,74 @@ export function PricingPage() {
                   onClick={() => handleSubscribe('Free Forever', 0)}
                   disabled={loading || isCurrentFreePlan}
                   className="btn btn--outline btn--block"
-                  style={{ marginTop: '24px', marginBottom: '28px' }}
+                  style={{
+                    marginTop: '24px',
+                    marginBottom: '28px',
+                    color: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.22)',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    fontWeight: 700
+                  }}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : isCurrentFreePlan ? 'Current Plan' : 'Get started free'}
                 </button>
                 <ul className="price__list">
-                  <li><svg className="icon"><use href="#i-check"/></svg> All pro CRM features included</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 1,000 active leads</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 5 team users</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Real-time deal pipeline &amp; analytics</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Meta &amp; WhatsApp webhooks</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Standard email support</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> All pro CRM features included</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Up to 1,000 active leads</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Up to 5 team users</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Real-time deal pipeline &amp; analytics</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Meta &amp; WhatsApp webhooks</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Standard email support</li>
                 </ul>
               </article>
 
               {/* CARD 2: PRO PLAN (FEATURED) */}
-              <article className="price price--pro" data-reveal data-reveal-delay="80" style={{ padding: '36px 32px 42px' }}>
+              <article
+                className="price price--pro"
+                data-reveal
+                data-reveal-delay="80"
+                style={{
+                  padding: '36px 32px 42px',
+                  background: 'radial-gradient(500px 280px at 100% 0%, rgba(16, 185, 129, 0.25), transparent 65%), linear-gradient(160deg, #0c3324, #051910)',
+                  border: '2px solid rgba(0, 229, 118, 0.45)',
+                  boxShadow: '0 30px 80px rgba(4, 18, 12, 0.6), 0 0 50px rgba(0, 229, 118, 0.15)',
+                  color: '#f4faf6'
+                }}
+              >
                 <div className="price__top">
-                  <span className="price__name">Pro Plan</span>
-                  <span className="price__badge price__badge--solid">Most Popular</span>
+                  <span className="price__name" style={{ color: '#ffffff' }}>Pro Plan</span>
+                  <span className="price__badge price__badge--solid" style={{ background: 'var(--mint-bright)', color: '#04120c', fontWeight: 800 }}>Most Popular</span>
                 </div>
                 
                 <div className="price__amount">
                   {billingCycle === 'monthly' && (
                     <>
-                      <b>₹{payableMonthly.toLocaleString('en-IN')}</b><em>/month</em>
+                      <b style={{ color: '#ffffff' }}>₹{payableMonthly.toLocaleString('en-IN')}</b><em style={{ color: 'var(--muted-dark)' }}>/month</em>
                     </>
                   )}
                   {billingCycle === 'semi_annual' && (
                     <>
-                      <b>₹{effectiveMonthlyForSemiAnnual.toLocaleString('en-IN')}</b><em>/month</em>
+                      <b style={{ color: '#ffffff' }}>₹{effectiveMonthlyForSemiAnnual.toLocaleString('en-IN')}</b><em style={{ color: 'var(--muted-dark)' }}>/month</em>
                     </>
                   )}
                   {billingCycle === 'yearly' && (
                     <>
-                      <b>₹{effectiveMonthlyForYearly.toLocaleString('en-IN')}</b><em>/month</em>
+                      <b style={{ color: '#ffffff' }}>₹{effectiveMonthlyForYearly.toLocaleString('en-IN')}</b><em style={{ color: 'var(--muted-dark)' }}>/month</em>
                     </>
                   )}
                 </div>
 
-                <p className="price__desc">
+                <p className="price__desc" style={{ color: 'var(--muted-dark)' }}>
                   {billingCycle === 'monthly' && 'Billed ₹1,500 monthly. Flexible month-to-month commitment.'}
                   {billingCycle === 'semi_annual' && (
                     <>
-                      Billed <strong>₹{payableSemiAnnual.toLocaleString('en-IN')} semi-annually</strong> — Save 20%.
+                      Billed <strong style={{ color: '#ffffff' }}>₹{payableSemiAnnual.toLocaleString('en-IN')} semi-annually</strong> — Save 20%.
                       {referralData && <span style={{ color: 'var(--mint-bright)', display: 'block', marginTop: '2px' }}>Includes {referralData.discount}% referral discount!</span>}
                     </>
                   )}
                   {billingCycle === 'yearly' && (
                     <>
-                      Billed <strong>₹{payableYearly.toLocaleString('en-IN')} annually</strong> — Best Value (Save 33%).
+                      Billed <strong style={{ color: '#ffffff' }}>₹{payableYearly.toLocaleString('en-IN')} annually</strong> — Best Value (Save 33%).
                       {referralData && <span style={{ color: 'var(--mint-bright)', display: 'block', marginTop: '2px' }}>Includes {referralData.discount}% referral discount!</span>}
                     </>
                   )}
@@ -578,7 +607,14 @@ export function PricingPage() {
                   onClick={() => handleSubscribe(currentPlanName, currentPayable)}
                   disabled={loading || isCurrentProPlan}
                   className="btn btn--primary btn--block"
-                  style={{ marginTop: '24px', marginBottom: '28px' }}
+                  style={{
+                    marginTop: '24px',
+                    marginBottom: '28px',
+                    background: 'var(--mint-bright)',
+                    color: '#04120c',
+                    fontWeight: 800,
+                    border: 'none'
+                  }}
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -593,25 +629,37 @@ export function PricingPage() {
                 </button>
 
                 <ul className="price__list">
-                  <li><svg className="icon"><use href="#i-check"/></svg> Everything in Free</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Up to 2,00,000 active leads</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Unlimited team members &amp; roles</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Meta CAPI &amp; Portal Webhooks (99acres, Magicbricks)</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Advanced telecaller phone masking</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Priority email &amp; WhatsApp support</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Everything in Free</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Up to 2,00,000 active leads</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Unlimited team members &amp; roles</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Meta CAPI &amp; Portal Webhooks (99acres, Magicbricks)</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Advanced telecaller phone masking</li>
+                  <li style={{ color: '#ffffff' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.25)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Priority email &amp; WhatsApp support</li>
                 </ul>
               </article>
 
               {/* CARD 3: CUSTOM / ENTERPRISE */}
-              <article className="price" data-reveal data-reveal-delay="160" style={{ padding: '36px 32px 42px' }}>
+              <article
+                className="price price--dark"
+                data-reveal
+                data-reveal-delay="160"
+                style={{
+                  padding: '36px 32px 42px',
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.4)',
+                  color: '#f4faf6'
+                }}
+              >
                 <div className="price__top">
-                  <span className="price__name">Custom</span>
-                  <span className="price__badge">Enterprise</span>
+                  <span className="price__name" style={{ color: '#ffffff' }}>Custom</span>
+                  <span className="price__badge" style={{ borderColor: 'rgba(255, 255, 255, 0.18)', background: 'rgba(255, 255, 255, 0.06)', color: 'var(--muted-dark)' }}>Enterprise</span>
                 </div>
                 <div className="price__amount price__amount--text">
-                  <b>Custom</b>
+                  <b style={{ color: '#ffffff' }}>Custom</b>
                 </div>
-                <p className="price__desc">
+                <p className="price__desc" style={{ color: 'var(--muted-dark)' }}>
                   Bespoke limits, integrations and terms for large developer groups and multi-city brokerage networks.
                 </p>
                 <button
@@ -619,17 +667,24 @@ export function PricingPage() {
                   onClick={handleContactSales}
                   disabled={loading}
                   className="btn btn--outline btn--block"
-                  style={{ marginTop: '24px', marginBottom: '28px' }}
+                  style={{
+                    marginTop: '24px',
+                    marginBottom: '28px',
+                    color: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.22)',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    fontWeight: 700
+                  }}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : <span>Contact sales</span>}
                 </button>
                 <ul className="price__list">
-                  <li><svg className="icon"><use href="#i-check"/></svg> Custom lead limits &amp; high-volume scale</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Bring-Your-Own-Database (BYOD) self-host</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Custom ERP &amp; accounting integration</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Dedicated account manager</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Custom SLA guarantee &amp; 99.9% uptime</li>
-                  <li><svg className="icon"><use href="#i-check"/></svg> Flexible invoice billing (NET-30)</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Custom lead limits &amp; high-volume scale</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Bring-Your-Own-Database (BYOD) self-host</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Custom ERP &amp; accounting integration</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Dedicated account manager</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Custom SLA guarantee &amp; 99.9% uptime</li>
+                  <li style={{ color: 'rgba(255, 255, 255, 0.9)' }}><svg className="icon" style={{ background: 'rgba(0, 229, 118, 0.16)', color: 'var(--mint-bright)' }}><use href="#i-check"/></svg> Flexible invoice billing (NET-30)</li>
                 </ul>
               </article>
             </div>
