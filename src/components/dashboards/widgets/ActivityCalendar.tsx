@@ -52,11 +52,11 @@ export function ActivityCalendar({ activities }: ActivityCalendarProps) {
     };
 
     const getActivityStyle = (action: string) => {
-        if (!action) return { label: 'Unknown', color: 'text-slate-400', bg: 'bg-slate-50', dot: 'bg-slate-300' };
+        if (!action || typeof action !== 'string') return { label: 'Unknown', color: 'text-slate-400', bg: 'bg-slate-50', dot: 'bg-slate-300' };
         const normalizedAction = action.toUpperCase();
         return ACTIVITY_CONFIG[normalizedAction] || {
             // Default styling for unknown actions
-            label: action.split('_').join(' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
+            label: (action || '').split('_').join(' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()),
             color: 'text-slate-600',
             bg: 'bg-slate-50',
             dot: 'bg-slate-400'

@@ -22,7 +22,7 @@ export function CompanyLogoAvatar({ className = '', size = 'md', fallbackName }:
   const rawName = tenant?.name || fallbackName || profile?.full_name || 'RSP';
 
   const getInitials = (nameStr: string): string => {
-    if (!nameStr) return 'SP';
+    if (!nameStr || typeof nameStr !== 'string') return 'SP';
     const words = nameStr.trim().split(/\s+/).filter(Boolean);
     if (words.length === 1) {
       const single = words[0];

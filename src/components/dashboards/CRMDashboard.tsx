@@ -136,8 +136,8 @@ export function CRMDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <Card className="rounded-3xl border-0 shadow-lg">
                         <CardHeader><CardTitle>Sales Trend</CardTitle></CardHeader>
-                        <CardContent className="h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <CardContent className="h-80 min-w-0">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <AreaChart data={salesAnalytics}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" />
@@ -151,8 +151,8 @@ export function CRMDashboard() {
 
                     <Card className="rounded-3xl border-0 shadow-lg">
                         <CardHeader><CardTitle>Payment Collections</CardTitle></CardHeader>
-                        <CardContent className="h-80">
-                            <ResponsiveContainer width="100%" height="100%">
+                        <CardContent className="h-80 min-w-0">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <AreaChart data={salesAnalytics}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" />

@@ -8,6 +8,7 @@ Allow: /templates/real-estate-crm-excel-template
 Allow: /pricing
 Allow: /integration
 Allow: /contact
+Allow: /sitemap
 Allow: /register
 Allow: /login
 Allow: /privacy

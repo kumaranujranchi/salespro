@@ -253,44 +253,48 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Clean formatting symbols (* and **) to render them natively as bullet lists and bold text
   const renderFormattedMessage = (content: any) => {
-    if (!content) return null;
-    const safeContent = typeof content === 'string'
-      ? content
-      : (content && typeof content === 'object' && content.message ? String(content.message) : (content ? String(content) : ''));
-    if (!safeContent) return null;
-    const lines = safeContent.split('\n');
-    return lines.map((line, idx) => {
-      let trimmed = (line || '').trim();
-      const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || (trimmed.startsWith('*') && !trimmed.startsWith('**'));
-      
-      if (isBullet) {
-        trimmed = trimmed.replace(/^[\*\-]\s*/, '');
-      }
-
-      // Parse bold elements inside the line
-      const parts = trimmed.split('**');
-      const formattedText = parts.map((part, i) => {
-        if (i % 2 === 1) {
-          return <strong key={i} className="font-extrabold text-slate-900 dark:text-white">{part}</strong>;
+    try {
+      if (!content) return null;
+      const safeContent = typeof content === 'string'
+        ? content
+        : (content && typeof content === 'object' && content.message ? String(content.message) : (content ? String(content) : ''));
+      if (!safeContent) return null;
+      const lines = safeContent.split('\n');
+      return lines.map((line, idx) => {
+        let trimmed = (line || '').trim();
+        const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || (trimmed.startsWith('*') && !trimmed.startsWith('**'));
+        
+        if (isBullet) {
+          trimmed = trimmed.replace(/^[\*\-]\s*/, '');
         }
-        return part;
-      });
 
-      if (isBullet) {
+        // Parse bold elements inside the line
+        const parts = (trimmed || '').split('**');
+        const formattedText = parts.map((part, i) => {
+          if (i % 2 === 1) {
+            return <strong key={i} className="font-extrabold text-slate-900 dark:text-white">{part}</strong>;
+          }
+          return part;
+        });
+
+        if (isBullet) {
+          return (
+            <div key={idx} className="flex items-start gap-2 ml-2 my-1.5 leading-relaxed">
+              <span className="text-emerald-500 dark:text-[#00E576] font-bold text-sm select-none">•</span>
+              <span className="flex-1">{formattedText}</span>
+            </div>
+          );
+        }
+
         return (
-          <div key={idx} className="flex items-start gap-2 ml-2 my-1.5 leading-relaxed">
-            <span className="text-emerald-500 dark:text-[#00E576] font-bold text-sm select-none">•</span>
-            <span className="flex-1">{formattedText}</span>
+          <div key={idx} className={trimmed ? "my-1.5 leading-relaxed min-h-[1em]" : "my-2.5 min-h-[0.5em]"}>
+            {formattedText}
           </div>
         );
-      }
-
-      return (
-        <div key={idx} className={trimmed ? "my-1.5 leading-relaxed min-h-[1em]" : "my-2.5 min-h-[0.5em]"}>
-          {formattedText}
-        </div>
-      );
-    });
+      });
+    } catch (e) {
+      return <div>{String(content || '')}</div>;
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {

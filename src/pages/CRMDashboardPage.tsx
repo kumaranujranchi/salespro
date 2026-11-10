@@ -96,8 +96,8 @@ export function CRMDashboardPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6 items-center">
             {/* Chart Area */}
-            <div className="relative flex justify-center items-center h-36">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="relative flex justify-center items-center h-36 min-w-0 w-full">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <PieChart>
                   <Pie
                     data={chartData}

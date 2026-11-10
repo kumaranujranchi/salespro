@@ -957,12 +957,13 @@ export function LeadsPage() {
             {executiveStats
               .sort((a, b) => b.total - a.total)
               .map((exec) => {
-                const initials = exec.name
+                const initials = (exec?.name || 'User')
                   .split(' ')
+                  .filter(Boolean)
                   .map((n: string) => n[0])
                   .join('')
                   .slice(0, 2)
-                  .toUpperCase();
+                  .toUpperCase() || 'U';
                 const isSelected = executiveFilter === exec.id;
                 return (
                   <motion.div

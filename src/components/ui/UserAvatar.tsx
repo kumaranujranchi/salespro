@@ -21,7 +21,7 @@ export function UserAvatar({
     setHasError(false);
   }
 
-  const rawName = (name || '').trim();
+  const rawName = (typeof name === 'string' ? name : '').trim();
   const initials = rawName
     ? rawName
         .split(/\s+/)
