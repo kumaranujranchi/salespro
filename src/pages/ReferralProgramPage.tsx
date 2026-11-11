@@ -114,7 +114,7 @@ export function ReferralProgramPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">10% Discount for Your Network</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Your referred agency contacts receive an exclusive 10% discount on all Pro plans, ensuring higher signup and activation conversion rates.
+                Your referred contacts and client companies receive an exclusive 10% discount on all Pro plans, ensuring higher signup and activation conversion rates.
               </p>
             </div>
 
@@ -186,7 +186,7 @@ export function ReferralProgramPage() {
             <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
               <h3 className="font-bold text-gray-900 dark:text-white text-base mb-2">Who is eligible to join?</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Real estate consultants, digital marketing agencies, proptech influencers, trainers, website developers, and active RealSalePro customers can all participate in the program.
+                Real estate consultants, digital marketing firms, proptech influencers, trainers, website developers, and active RealSalePro customers can all participate in the program.
               </p>
             </div>
             <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">

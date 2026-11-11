@@ -130,7 +130,7 @@ export function AffiliateRegistrationPage() {
     <>
       <SEOHead
         title="Affiliate Partner Registration | RealSalePro"
-        description="Register as an affiliate partner with RealSalePro and earn recurring revenue by referring real estate agencies."
+        description="Register as an affiliate partner with RealSalePro and earn recurring revenue by referring real estate companies."
         canonicalUrl="https://realsalepro.com/affiliate/register"
         noindex={true}
       />

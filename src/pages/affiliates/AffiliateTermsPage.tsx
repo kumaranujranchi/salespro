@@ -27,7 +27,7 @@ const termsSchema = {
       "@id": "https://realsalepro.com/affiliate/terms#webpage",
       "url": "https://realsalepro.com/affiliate/terms",
       "name": "Affiliate Program Terms & Agreement | RealSalePro",
-      "description": "Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, agency partners, and tech consultants.",
+      "description": "Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, channel partners, and tech consultants.",
       "isPartOf": { "@id": "https://realsalepro.com/#website" }
     }
   ]
@@ -40,7 +40,7 @@ export function AffiliateTermsPage() {
     <>
       <SEOHead
         title="Affiliate Program Terms & Agreement | RealSalePro"
-        description="Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, agency partners, and tech consultants."
+        description="Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, channel partners, and tech consultants."
         canonicalUrl="https://realsalepro.com/affiliate/terms"
         jsonLd={termsSchema}
       />

@@ -95,10 +95,10 @@ const routes = [
             },
             {
               "@type": "Question",
-              "name": "Can I customise the app for my agency?",
+              "name": "Can I customise the app for my company?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes. RealSalePro supports custom pipeline stages, lead sources, custom fields, user roles, branding and reports per agency. API access is available for advanced integrations."
+                "text": "Yes. RealSalePro supports custom pipeline stages, lead sources, custom fields, user roles, branding and reports per company. API access is available for advanced integrations."
               }
             },
             {
@@ -327,7 +327,7 @@ const routes = [
         <nav style="margin-bottom:24px;"><a href="/" style="color:#10b981;text-decoration:none;">&larr; Back to RealSalePro Home</a></nav>
         <span style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:16px;">Transparent Pricing</span>
         <h1 style="font-size:38px;line-height:1.2;margin:0 0 16px 0;font-weight:800;">RealSalePro Pricing &amp; Plans — Built for Indian Real Estate</h1>
-        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">Start with our 100% Free Forever plan (up to 1,000 active leads). When your agency scales, upgrade to our Pro plan at just ₹999/month with unlimited user seats.</p>
+        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">Start with our 100% Free Forever plan (up to 1,000 active leads). When your company scales, upgrade to our Pro plan at just ₹1,200/month with unlimited user seats.</p>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px;">
           <a href="/register" style="display:inline-block;background:#10b981;color:#000;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;">Start Free — No Card Required</a>
           <a href="/contact" style="display:inline-block;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Talk to Sales</a>
@@ -471,7 +471,7 @@ const routes = [
         <nav style="margin-bottom:24px;"><a href="/" style="color:#10b981;text-decoration:none;">&larr; Back to RealSalePro Home</a></nav>
         <span style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:16px;">Partner Network</span>
         <h1 style="font-size:38px;line-height:1.2;margin:0 0 16px 0;font-weight:800;">RealSalePro Partner &amp; Referral Program</h1>
-        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">Earn 20% recurring monthly commissions for every real estate builder, broker, or agency that subscribes to RealSalePro through your link.</p>
+        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">Earn 20% recurring monthly commissions for every real estate builder, broker, or company that subscribes to RealSalePro through your link.</p>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px;">
           <a href="/affiliate/register" style="display:inline-block;background:#10b981;color:#000;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;">Apply as Affiliate Partner</a>
           <a href="/affiliate/terms" style="display:inline-block;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Partner Terms</a>
@@ -496,7 +496,7 @@ const routes = [
   {
     path: '/affiliate/terms',
     title: 'Affiliate Program Terms & Agreement | RealSalePro',
-    description: 'Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, agency partners, and tech consultants.',
+    description: 'Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, channel partners, and tech consultants.',
     canonical: 'https://realsalepro.com/affiliate/terms',
     noindex: false,
     content: `
@@ -657,7 +657,7 @@ const routes = [
   {
     path: '/affiliate/register',
     title: 'Affiliate Partner Registration | RealSalePro',
-    description: 'Register as an affiliate partner with RealSalePro and earn recurring revenue by referring real estate agencies.',
+    description: 'Register as an affiliate partner with RealSalePro and earn recurring revenue by referring real estate companies.',
     canonical: 'https://realsalepro.com/affiliate/register',
     noindex: true,
     content: `<div style="text-align:center;padding:60px 20px;color:#fff;"><h1 style="font-size:28px;">Partner Program Application</h1><p>Join our partner network.</p></div>`
@@ -778,3 +778,4 @@ function generatePage(route) {
 console.log('🚀 Pre-rendering static HTML pages for SEO...');
 routes.forEach(generatePage);
 console.log(`✨ All ${routes.length} routes pre-rendered successfully in dist/!`);
+

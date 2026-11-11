@@ -65,10 +65,10 @@ const homeSchema = {
         },
         {
           "@type": "Question",
-          "name": "Can I customise the app for my agency?",
+          "name": "Can I customise the app for my company?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. RealSalePro supports custom pipeline stages, lead sources, custom fields, user roles, branding and reports per agency. API access is available for advanced integrations."
+            "text": "Yes. RealSalePro supports custom pipeline stages, lead sources, custom fields, user roles, branding and reports per company. API access is available for advanced integrations."
           }
         },
         {

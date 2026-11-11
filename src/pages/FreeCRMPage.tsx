@@ -380,7 +380,7 @@ export function FreeCRMPage() {
                 Free forever. Pro when you <em>scale</em>.
               </h2>
               <p className="sec-head__lede" data-reveal data-reveal-delay="120">
-                Why is RealSalePro free? Because small agencies shouldn't pay ₹15,000/month before closing their first deal.
+                Why is RealSalePro free? Because growing real estate companies shouldn't pay ₹15,000/month before closing their first deal.
               </p>
             </header>
 

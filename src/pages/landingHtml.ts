@@ -735,7 +735,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <div class="flow__copy">
             <p class="eyebrow eyebrow--mint">Lead flow automation</p>
             <h3>Watch your leads route <em>automatically</em>.</h3>
-            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds. Explore our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">lead management workflow</a> or our <a href="/crm-for-real-estate-brokers" style="color: var(--mint); text-decoration: underline;">broker agency features</a>.</p>
+            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds. Explore our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">lead management workflow</a> or our <a href="/crm-for-real-estate-brokers" style="color: var(--mint); text-decoration: underline;">broker & company features</a>.</p>
             <div class="flow__tags">
               <span><svg class="icon"><use href="#i-check"/></svg> Round-robin routing</span>
               <span><svg class="icon"><use href="#i-whatsapp"/></svg> Instant WhatsApp welcome</span>
@@ -860,7 +860,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Trusted by leading<br />real-estate <em>professionals</em>.</h2>
           </div>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
-            Join hundreds of agencies that have transformed their sales operations with RealSalePro.
+            Join hundreds of real estate companies that have transformed their sales operations with RealSalePro.
           </p>
         </header>
 
@@ -904,7 +904,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </div>
 
         <div class="stories-logos" data-reveal style="text-align: center !important; margin: 0 auto !important;">
-          <p style="text-align: center !important; margin: 0 auto 18px !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.16em !important; text-transform: uppercase !important; color: var(--muted-dark) !important;">Trusted by 50+ real-estate agencies</p>
+          <p style="text-align: center !important; margin: 0 auto 18px !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.16em !important; text-transform: uppercase !important; color: var(--muted-dark) !important;">Trusted by 50+ real estate companies</p>
           <div class="logo-row" style="display: flex !important; flex-wrap: wrap !important; justify-content: center !important; align-items: center !important; gap: 14px !important; margin-top: 18px !important;">
             <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 14px !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;"><img src="/assets/img/omav-logo-transparent.png" alt="Omav Group" loading="lazy" style="height: 54px !important; max-height: 54px !important; width: auto !important; max-width: 132px !important; object-fit: contain !important; display: block !important;" /></span>
             <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 14px !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;"><img src="/assets/img/mithila-realinfra-logo.png" alt="Mithila Realinfra" loading="lazy" style="height: 54px !important; max-height: 54px !important; width: auto !important; max-width: 132px !important; object-fit: contain !important; display: block !important;" /></span>
@@ -1110,7 +1110,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </div>
           <div class="faq__item" data-reveal data-reveal-delay="40">
             <button class="faq__q" aria-expanded="false" aria-controls="faq-a-2">
-              <span>Can I customise the app for my agency?</span>
+              <span>Can I customise the app for my company?</span>
               <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
             </button>
             <div class="faq__a" id="faq-a-2" aria-hidden="true"><p>Absolutely. RealSalePro supports custom fields, workflows, branding (logo and colours), role-based permissions and custom reports. A Business Customisation package (starting at ₹19,999) tailors the platform to your specific business, and API access is available for advanced integrations.</p></div>

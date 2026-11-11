@@ -421,7 +421,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'demo_trial',
-      reply: `Great to have you here${nameSalutation}! 🚀\n\nYou can start immediately with our *100% Free Forever Tier* (manage up to 1,000 active client leads with zero expiry, zero time limit, and no credit card required):\n\n👉 *Direct Signup Link:*\nhttps://realsalepro.com/register\n\nPrefer a 15-minute personalized screen walkthrough with our product specialist?\nReply with your *City & Agency Name*, and our team will schedule your VIP demo!`,
+      reply: `Great to have you here${nameSalutation}! 🚀\n\nYou can start immediately with our *100% Free Forever Tier* (manage up to 1,000 active client leads with zero expiry, zero time limit, and no credit card required):\n\n👉 *Direct Signup Link:*\nhttps://realsalepro.com/register\n\nPrefer a 15-minute personalized screen walkthrough with our product specialist?\nReply with your *City & Company Name*, and our team will schedule your VIP demo!`,
     };
   }
 
@@ -438,7 +438,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'pricing',
-      reply: `Here is our transparent pricing structure${nameSalutation}:\n\n🟢 *Free Forever Plan — ₹0/forever*\n• Up to 1,000 active leads\n• Up to 5 team members\n• Deal pipeline & WhatsApp script fast dial\n• Zero credit card required\n\n⚡ *Pro Plan — ₹1,200/month (billed semi-annually)*\n• Up to 2,00,000 active leads\n• Unlimited users & telecaller seats\n• Meta CAPI, 99acres & Magicbricks Webhooks\n• Advanced telecaller phone masking\n\n🏢 *Custom Enterprise*\n• Self-hosted PostgreSQL BYOD database & custom RERA SLA.\n\nCompare full plans: https://realsalepro.com/pricing\n\nReply *5* to speak with our sales manager for custom agency billing!`,
+      reply: `Here is our transparent pricing structure${nameSalutation}:\n\n🟢 *Free Forever Plan — ₹0/forever*\n• Up to 1,000 active leads\n• Up to 5 team members\n• Deal pipeline & WhatsApp script fast dial\n• Zero credit card required\n\n⚡ *Pro Plan — ₹1,200/month (billed semi-annually)*\n• Up to 2,00,000 active leads\n• Unlimited users & telecaller seats\n• Meta CAPI, 99acres & Magicbricks Webhooks\n• Advanced telecaller phone masking\n\n🏢 *Custom Enterprise*\n• Self-hosted PostgreSQL BYOD database & custom RERA SLA.\n\nCompare full plans: https://realsalepro.com/pricing\n\nReply *5* to speak with our sales manager for custom company billing!`,
     };
   }
 
@@ -504,7 +504,7 @@ export async function generateDeepSeekSalesReply({ messageText, customerName, co
 Your mission is to understand visitor queries, answer them accurately and persuasively like a top real estate SaaS sales advisor, and guide them to register for the free tier or speak with live support.
 
 🏢 About RealSalePro:
-RealSalePro is India's leading Real Estate CRM & Sales Automation platform built specifically for Indian real estate builders, brokers, and channel partner agencies.
+RealSalePro is India's leading Real Estate CRM & Sales Automation platform built specifically for Indian real estate builders, brokers, and channel partner firms & companies.
 
 ⭐ Key Features & Value Propositions:
 1. 100% Free Forever Tier:
@@ -541,7 +541,8 @@ Formatting & Tone Instructions for WhatsApp:
 - CRITICAL WHATSAPP FORMATTING RULE: Use single asterisk for bold (*like this*). NEVER use double asterisks (**like this**), because WhatsApp shows double asterisks as visible raw text!
 - Use bullet points and suitable emojis (🚀, 🛡️, 💰, 📱, 🏢) to make messages easy to scan on mobile.
 - Keep responses concise (under 120 words).
-- End with a helpful next step (e.g., asking about their agency/city or inviting them to start the 1,000-lead free tier at https://realsalepro.com/register).`;
+- End with a helpful next step (e.g., asking about their company/city or inviting them to start the 1,000-lead free tier at https://realsalepro.com/register).
+- CRITICAL TERMINOLOGY: Always refer to the user's business as a "company" or "real estate firm" (e.g., "Which city is your company in?"). NEVER use the word "agency", because Indian real estate professionals call themselves companies or firms, not agencies.`;
 
   try {
     const historyMessages = conversationHistory.slice(-6).map((m) => ({
@@ -587,6 +588,12 @@ Formatting & Tone Instructions for WhatsApp:
     let reply = data.choices[0].message.content.trim();
     // Safety cleaner: Replace any stray double asterisks with single asterisk for WhatsApp
     reply = reply.replace(/\*\*(.*?)\*\*/g, '*$1*');
+    // Safety cleaner: Ensure "agency" / "agencies" is replaced with "company" / "companies"
+    reply = reply
+      .replace(/\bAgencies\b/g, 'Companies')
+      .replace(/\bagencies\b/g, 'companies')
+      .replace(/\bAgency\b/g, 'Company')
+      .replace(/\bagency\b/g, 'company');
 
     return {
       intent: 'deepseek_ai_reply',

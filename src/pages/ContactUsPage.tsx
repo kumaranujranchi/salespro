@@ -51,7 +51,7 @@ export function ContactUsPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    agency: '',
+    company: '',
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
@@ -59,7 +59,7 @@ export function ContactUsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) return;
-    const text = `Hi RealSalePro Team, my name is ${formData.name} from ${formData.agency || 'Real Estate Agency'}. Phone: ${formData.phone}. Query: ${formData.message || 'I would like a product demo and onboarding walkthrough.'}`;
+    const text = `Hi RealSalePro Team, my name is ${formData.name} from ${formData.company || 'Real Estate Company'}. Phone: ${formData.phone}. Query: ${formData.message || 'I would like a product demo and onboarding walkthrough.'}`;
     window.open(`https://wa.me/917079737773?text=${encodeURIComponent(text)}`, '_blank');
     setSubmitted(true);
   };
@@ -100,7 +100,7 @@ export function ContactUsPage() {
                 Get in Touch with our Real Estate CRM Specialists
               </h1>
               <p className="text-base sm:text-lg text-emerald-100/70 mb-10 leading-relaxed">
-                Whether you want a personalized 15-minute screen walkthrough, need assistance migrating data from Excel spreadsheets, or want to integrate Meta Ads and WhatsApp Business API into your agency workflow — our team is ready to assist.
+                Whether you want a personalized 15-minute screen walkthrough, need assistance migrating data from Excel spreadsheets, or want to integrate Meta Ads and WhatsApp Business API into your company workflow — our team is ready to assist.
               </p>
             </div>
 
@@ -224,12 +224,12 @@ export function ContactUsPage() {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-emerald-200/80 uppercase tracking-wider mb-1.5">
-                          Agency / Builder Name
+                          Company / Builder Name
                         </label>
                         <input
                           type="text"
-                          value={formData.agency}
-                          onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
+                          value={formData.company}
+                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                           placeholder="e.g. Apex Realty"
                           className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-emerald-500 focus:outline-none text-white text-sm placeholder-gray-500"
                         />
@@ -304,7 +304,7 @@ export function ContactUsPage() {
               <div>
                 <h3 className="font-semibold text-emerald-300 mb-1">Can I book a personalized live Google Meet demo?</h3>
                 <p className="text-emerald-100/70 leading-relaxed">
-                  Yes! Message us on WhatsApp (+91 70797 37773) or submit the form above with your preferred date and time. Our product engineer will send a Google Meet link for a 15-minute screen-sharing session tailored to your agency.
+                  Yes! Message us on WhatsApp (+91 70797 37773) or submit the form above with your preferred date and time. Our product engineer will send a Google Meet link for a 15-minute screen-sharing session tailored to your company.
                 </p>
               </div>
               <div>

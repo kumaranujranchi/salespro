@@ -534,7 +534,7 @@ What property deal, objection, or CRM feature are you working on today?`;
 * **How it works:** RealSalePro masks the last 5 digits of buyer phone numbers (e.g. \`+91 98765 •••••\`) for telecallers, sales executives, and drivers.
 * **Dialing:** Team members can click the call button to trigger in-app or masked dialing without seeing or exporting customer contacts.
 * **Admin Control:** Only Tenant Admins and Super Admins can unmask numbers or download contact CSVs.
-* **Why it matters:** Eliminates staff database theft when brokers or sales executives leave your agency.`;
+* **Why it matters:** Eliminates staff database theft when brokers or sales executives leave your company.`;
   }
 
   // 8. Lead Management & Capture (Meta, Webhooks, Portals)
@@ -595,7 +595,7 @@ Here are 3 ways I can help you with this right now:
 
 1. 🎯 **Sales Script & Objection Handling**: Give me your client's budget and preferred property, and I'll generate a tailored pitch.
 2. 📱 **WhatsApp Message Generator**: Tell me what you want to communicate, and I'll format an engaging WhatsApp template with call-to-actions.
-3. ⚙️ **CRM Workflow Assistance**: Ask how to configure pipelines, lead routing, commission splits, or reports for your agency.
+3. ⚙️ **CRM Workflow Assistance**: Ask how to configure pipelines, lead routing, commission splits, or reports for your company.
 
 Which of these would you like to explore next?`;
 }

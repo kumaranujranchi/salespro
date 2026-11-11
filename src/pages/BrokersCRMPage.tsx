@@ -146,7 +146,7 @@ export function BrokersCRMPage() {
 
               <div className="hero__cta" data-reveal data-reveal-delay="240" style={{ marginTop: '34px', marginBottom: '24px' }}>
                 <Link className="btn btn--primary btn--lg" to="/register">
-                  <span>Start free for your agency</span><svg className="icon"><use href="#i-arrow"/></svg>
+                  <span>Start free for your company</span><svg className="icon"><use href="#i-arrow"/></svg>
                 </Link>
                 <a className="btn btn--ghost btn--lg" href="#broker-tools">
                   <span>See broker tools</span>
@@ -283,7 +283,7 @@ export function BrokersCRMPage() {
 
               <article className="feature-card-clean">
                 <span className="feature-card-clean__tag">Free Forever</span>
-                <h3 className="feature-card-clean__h">Zero upfront cost for your agency</h3>
+                <h3 className="feature-card-clean__h">Zero upfront cost for your company</h3>
                 <p className="feature-card-clean__p">
                   Start with up to 1,000 client contacts and 5 agent accounts for ₹0. Explore our <Link to="/free-real-estate-crm" style={{ color: 'var(--mint-bright)', textDecoration: 'underline' }}>100% Free CRM Plan</Link> with zero time limits.
                 </p>
@@ -353,14 +353,14 @@ export function BrokersCRMPage() {
                 <span className="eyebrow__dot"></span> Free forever plan
               </p>
               <h2 style={{ textAlign: 'center', marginTop: '22px' }}>
-                Ready to scale your<br /><em>brokerage agency?</em>
+                Ready to scale your<br /><em>real estate company?</em>
               </h2>
               <p className="cta__lede" style={{ textAlign: 'center', margin: '22px auto 0', maxWidth: '580px' }}>
                 Join thousands of Indian real estate brokers and channel partners who close deals faster with RealSalePro.
               </p>
               <div className="cta__actions" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '32px' }}>
                 <Link className="btn btn--primary btn--lg" to="/register">
-                  <span>Start free for your agency</span><svg className="icon"><use href="#i-arrow"/></svg>
+                  <span>Start free for your company</span><svg className="icon"><use href="#i-arrow"/></svg>
                 </Link>
                 <Link className="btn btn--ghost btn--lg" to="/templates/real-estate-crm-excel-template">
                   <span>Download Excel template</span>
