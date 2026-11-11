@@ -237,9 +237,16 @@ router.post('/check-inactivity', requirePlatformAdmin, async (req, res) => {
 router.get('/inactivity-status', requirePlatformAdmin, async (req, res) => {
   try {
     const result = await query(`
-      SELECT t.id, t.name, t.slug, t.created_at, t.last_login_at,
+      SELECT t.id, t.name, t.slug, t.plan_tier, t.subscription_status, t.created_at, t.last_login_at,
              t.is_active, t.deactivation_reason, t.inactivity_deactivated_at,
              t.inactivity_warning_count, t.last_inactivity_warning_at,
+             GREATEST(
+               t.last_login_at,
+               t.updated_at,
+               (SELECT MAX(p.last_login_at) FROM profiles p WHERE p.tenant_id = t.id),
+               (SELECT MAX(l.created_at) FROM leads l WHERE l.tenant_id = t.id),
+               (SELECT MAX(s.created_at) FROM sales s WHERE s.tenant_id = t.id)
+             ) AS true_last_activity,
              COALESCE(
                (SELECT email FROM profiles WHERE tenant_id = t.id AND role IN ('super_admin', 'admin') ORDER BY created_at ASC LIMIT 1),
                (SELECT email FROM profiles WHERE tenant_id = t.id ORDER BY created_at ASC LIMIT 1)
@@ -255,12 +262,16 @@ router.get('/inactivity-status', requirePlatformAdmin, async (req, res) => {
 
     const now = Date.now();
     const tenantsStatus = result.rows.map(row => {
-      const baseline = row.last_login_at || row.created_at || new Date();
+      const isPaidOrPro = (row.plan_tier && row.plan_tier.toLowerCase() !== 'free') || 
+                          ['paid', 'pro', 'active_paid'].includes(String(row.subscription_status || '').toLowerCase());
+      const baseline = row.true_last_activity || row.last_login_at || row.created_at || new Date();
       const inactiveDays = Math.max(0, Math.floor((now - new Date(baseline).getTime()) / (1000 * 60 * 60 * 24)));
       const daysRemaining = Math.max(0, 30 - inactiveDays);
 
       let stage = 'active';
-      if (row.is_active === false && row.deactivation_reason === 'inactive_30_days') {
+      if (isPaidOrPro) {
+        stage = 'paid_exempt';
+      } else if (row.is_active === false && row.deactivation_reason === 'inactive_30_days') {
         stage = 'deactivated';
       } else if (inactiveDays >= 28) {
         stage = 'warning_3_urgent';
@@ -272,6 +283,7 @@ router.get('/inactivity-status', requirePlatformAdmin, async (req, res) => {
 
       return {
         ...row,
+        isPaidOrPro,
         inactiveDays,
         daysRemaining,
         stage,
@@ -282,6 +294,7 @@ router.get('/inactivity-status', requirePlatformAdmin, async (req, res) => {
       total: tenantsStatus.length,
       deactivatedCount: tenantsStatus.filter(t => t.stage === 'deactivated').length,
       warningCount: tenantsStatus.filter(t => t.stage.startsWith('warning')).length,
+      exemptCount: tenantsStatus.filter(t => t.stage === 'paid_exempt').length,
       tenants: tenantsStatus
     });
   } catch (err) {
@@ -303,6 +316,18 @@ router.post('/reactivate-tenant', requirePlatformAdmin, async (req, res) => {
   } catch (err) {
     console.error('Error reactivating tenant:', err);
     return res.status(500).json({ error: 'Failed to reactivate tenant', message: err.message });
+  }
+});
+
+// Bulk restore all deactivated tenants
+router.post('/restore-inactivity', requirePlatformAdmin, async (req, res) => {
+  try {
+    const { restoreAllDeactivatedTenants } = await import('../services/inactivityService.js');
+    const result = await restoreAllDeactivatedTenants();
+    return res.json(result);
+  } catch (err) {
+    console.error('Error restoring deactivated tenants:', err);
+    return res.status(500).json({ error: 'Failed to restore tenants', message: err.message });
   }
 });
 

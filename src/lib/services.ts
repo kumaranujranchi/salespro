@@ -237,6 +237,7 @@ export const systemService = {
   checkInactivity: () => api.post<any>('/system/check-inactivity'),
   getInactivityStatus: () => api.get<any>('/system/inactivity-status'),
   reactivateTenant: (tenantId: string) => api.post<any>('/system/reactivate-tenant', { tenantId }),
+  restoreAllTenants: () => api.post<any>('/system/restore-inactivity'),
 };
 
 export const capiService = {

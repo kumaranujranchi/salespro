@@ -13,6 +13,12 @@ router.get('/', requirePlatformAdmin, async (req, res) => {
     const result = await query(
       `SELECT t.*, 
         COALESCE(
+          t.last_login_at,
+          (SELECT MAX(last_login_at) FROM profiles WHERE tenant_id = t.id),
+          (SELECT MAX(created_at) FROM leads WHERE tenant_id = t.id),
+          t.created_at
+        ) AS effective_last_login_at,
+        COALESCE(
           (SELECT email FROM profiles WHERE tenant_id = t.id AND role IN ('super_admin', 'admin') AND email IS NOT NULL AND email != '' ORDER BY created_at ASC LIMIT 1),
           (SELECT email FROM profiles WHERE tenant_id = t.id AND email IS NOT NULL AND email != '' ORDER BY created_at ASC LIMIT 1)
         ) AS contact_email,
@@ -38,6 +44,7 @@ router.get('/', requirePlatformAdmin, async (req, res) => {
       ...r,
       _id: r.id,
       _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+      last_login_at: r.effective_last_login_at || r.last_login_at || r.created_at,
       contact_email: r.contact_email || null,
       contact_phone: r.contact_phone || null,
       admin_name: r.admin_name || null,

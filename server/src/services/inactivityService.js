@@ -27,6 +27,21 @@ export async function initInactivitySchema() {
 
       ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
       ALTER TABLE profiles ADD COLUMN IF NOT EXISTS temp_login_password VARCHAR(255);
+
+      -- Auto-repair: restore any tenant that was falsely suspended by premature inactivity check
+      UPDATE tenants
+      SET is_active = true,
+          subscription_status = 'active',
+          deactivation_reason = NULL,
+          inactivity_warning_count = 0,
+          inactivity_deactivated_at = NULL,
+          last_login_at = CURRENT_TIMESTAMP
+      WHERE deactivation_reason = 'inactive_30_days';
+
+      UPDATE profiles p
+      SET is_active = true
+      FROM tenants t
+      WHERE p.tenant_id = t.id AND t.is_active = true AND p.is_active = false;
     `);
     schemaInitialized = true;
     console.log('✔ Inactivity tracking schema verified on PostgreSQL.');
@@ -257,10 +272,17 @@ export async function checkAndProcessInactivity() {
 
   console.log('\n[Inactivity Scheduler] Starting automated 30-day inactivity check...');
 
-  // Query all active tenants (exclude system 'SalesPro Core' demo tenant)
+  // Query only free-tier tenants (Paid / Pro subscriptions are 100% exempt from inactivity deactivation)
   const result = await query(`
-    SELECT t.id, t.name, t.slug, t.created_at, t.last_login_at,
+    SELECT t.id, t.name, t.slug, t.plan_tier, t.subscription_status, t.created_at, t.last_login_at,
            t.inactivity_warning_count, t.last_inactivity_warning_at,
+           GREATEST(
+             t.last_login_at,
+             t.updated_at,
+             (SELECT MAX(p.last_login_at) FROM profiles p WHERE p.tenant_id = t.id),
+             (SELECT MAX(l.created_at) FROM leads l WHERE l.tenant_id = t.id),
+             (SELECT MAX(s.created_at) FROM sales s WHERE s.tenant_id = t.id)
+           ) AS true_last_activity,
            (
              SELECT jsonb_build_object(
                'id', p.id,
@@ -276,11 +298,14 @@ export async function checkAndProcessInactivity() {
              LIMIT 1
            ) as admin_profile
     FROM tenants t
-    WHERE t.is_active = true AND LOWER(t.slug) != 'default-tenant'
+    WHERE t.is_active = true 
+      AND LOWER(t.slug) != 'default-tenant'
+      AND LOWER(COALESCE(t.plan_tier, 'free')) = 'free'
+      AND COALESCE(t.subscription_status, 'active') NOT IN ('paid', 'pro', 'active_paid')
   `);
 
   const tenants = result.rows;
-  console.log(`[Inactivity Scheduler] Evaluating ${tenants.length} active tenants...`);
+  console.log(`[Inactivity Scheduler] Evaluating ${tenants.length} active free-tier tenants (Paid accounts are exempt)...`);
 
   const summary = {
     checked: tenants.length,
@@ -297,58 +322,79 @@ export async function checkAndProcessInactivity() {
       continue;
     }
 
-    // Baseline: last_login_at OR created_at
-    const baseline = tenant.last_login_at || tenant.created_at || new Date();
+    // Calculate true multi-factor activity baseline
+    let baseline = tenant.true_last_activity || tenant.last_login_at;
+
+    // Safety guard: If an account has no recorded timestamp in newly added columns,
+    // seed their last_login_at to NOW so they receive the full 30-day lifecycle instead of abrupt deactivation
+    if (!baseline) {
+      await query(`UPDATE tenants SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`, [tenant.id]);
+      console.log(`ℹ️ [Inactivity] Initialized last_login_at for tenant "${tenant.name}" (${tenant.id}) to now.`);
+      continue;
+    }
+
     const inactiveMs = now - new Date(baseline).getTime();
     const inactiveDays = Math.max(0, Math.floor(inactiveMs / (1000 * 60 * 60 * 24)));
     const currentWarnings = parseInt(tenant.inactivity_warning_count || 0, 10);
 
-    // Rule 1: 30+ Days Inactive -> Deactivate
-    if (inactiveDays >= 30) {
-      console.log(`🚨 [Inactivity] Tenant "${tenant.name}" (${tenant.id}) inactive for ${inactiveDays} days. Deactivating...`);
-
-      // Deactivate tenant
-      await query(`
-        UPDATE tenants
-        SET is_active = false,
-            subscription_status = 'inactive',
-            deactivation_reason = 'inactive_30_days',
-            inactivity_deactivated_at = CURRENT_TIMESTAMP
-        WHERE id = $1
-      `, [tenant.id]);
-
-      // Deactivate profiles under this tenant (except platform admin)
-      await query(`
-        UPDATE profiles
-        SET is_active = false
-        WHERE tenant_id = $1 AND role != 'platform_admin'
-      `, [tenant.id]);
-
-      // Get or create login password for final notice
-      const loginPassword = await getOrGenerateLoginPassword(admin);
-
-      // Send Deactivation Email
-      await sendInactivityEmail({
-        adminEmail: admin.email,
-        adminName: admin.full_name,
-        companyName: tenant.name,
-        inactiveDays,
-        daysRemaining: 0,
-        warningNumber: 'deactivated',
-        loginPassword
-      });
-
-      summary.deactivated++;
-      summary.details.push({
-        tenantId: tenant.id,
-        tenantName: tenant.name,
-        action: 'deactivated',
-        inactiveDays
-      });
+    // If active within 14 days, reset any previous warning counters
+    if (inactiveDays < 15 && currentWarnings > 0) {
+      await query(`UPDATE tenants SET inactivity_warning_count = 0, last_inactivity_warning_at = NULL WHERE id = $1`, [tenant.id]);
       continue;
     }
 
-    // Rule 2: 28 Days Inactive -> Warning 3 (Final 48-Hour Notice)
+    // Rule 1: 30+ Days Inactive -> Deactivate (ONLY if they have received prior warnings!)
+    // If they have not received warnings yet, cascade down to dispatch Warning 3 first
+    if (inactiveDays >= 30) {
+      if (currentWarnings < 2) {
+        console.log(`⚠️ [Inactivity] Tenant "${tenant.name}" inactive for ${inactiveDays} days but warnings count < 2. Dispatching Warning 3 first.`);
+        // Allow execution to drop through to Warning 3
+      } else {
+        console.log(`🚨 [Inactivity] Tenant "${tenant.name}" (${tenant.id}) inactive for ${inactiveDays} days with ${currentWarnings} prior warnings. Deactivating...`);
+
+        // Deactivate tenant
+        await query(`
+          UPDATE tenants
+          SET is_active = false,
+              subscription_status = 'inactive',
+              deactivation_reason = 'inactive_30_days',
+              inactivity_deactivated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+        `, [tenant.id]);
+
+        // Deactivate profiles under this tenant (except platform admin)
+        await query(`
+          UPDATE profiles
+          SET is_active = false
+          WHERE tenant_id = $1 AND role != 'platform_admin'
+        `, [tenant.id]);
+
+        // Get or create login password for final notice
+        const loginPassword = await getOrGenerateLoginPassword(admin);
+
+        // Send Deactivation Email
+        await sendInactivityEmail({
+          adminEmail: admin.email,
+          adminName: admin.full_name,
+          companyName: tenant.name,
+          inactiveDays,
+          daysRemaining: 0,
+          warningNumber: 'deactivated',
+          loginPassword
+        });
+
+        summary.deactivated++;
+        summary.details.push({
+          tenantId: tenant.id,
+          tenantName: tenant.name,
+          action: 'deactivated',
+          inactiveDays
+        });
+        continue;
+      }
+    }
+
+    // Rule 2: 28 Days Inactive (or 30+ without warnings) -> Warning 3 (Final 48-Hour Notice)
     if (inactiveDays >= 28 && currentWarnings < 3) {
       console.log(`⚠️ [Inactivity] Tenant "${tenant.name}" inactive for ${inactiveDays} days. Sending Warning 3 (Final Notice)...`);
       const loginPassword = await getOrGenerateLoginPassword(admin);
@@ -475,5 +521,37 @@ export async function reactivateTenant(tenantId) {
   `, [tenantId]);
 
   return { success: true, message: 'Tenant and staff profiles successfully reactivated' };
+}
+
+/**
+ * Bulk restore all tenants falsely or automatically suspended by the inactivity engine.
+ */
+export async function restoreAllDeactivatedTenants() {
+  await initInactivitySchema();
+  const res = await query(`
+    UPDATE tenants
+    SET is_active = true,
+        subscription_status = 'active',
+        deactivation_reason = NULL,
+        inactivity_warning_count = 0,
+        inactivity_deactivated_at = NULL,
+        last_login_at = CURRENT_TIMESTAMP
+    WHERE deactivation_reason = 'inactive_30_days' OR is_active = false
+    RETURNING id, name, slug
+  `);
+
+  await query(`
+    UPDATE profiles p
+    SET is_active = true
+    FROM tenants t
+    WHERE p.tenant_id = t.id AND t.is_active = true AND p.is_active = false
+  `);
+
+  console.log(`✔ [Inactivity Service] Bulk restored ${res.rowCount} suspended tenants and their profiles.`);
+  return {
+    success: true,
+    restoredCount: res.rowCount,
+    tenants: res.rows
+  };
 }
 

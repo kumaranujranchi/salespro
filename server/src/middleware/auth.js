@@ -101,10 +101,12 @@ export function requireRole(...roles) {
 
 // In-memory live users tracker for real-time monitoring
 const liveUsersMap = new Map();
+const lastDbSyncMap = new Map();
 
 export function recordUserActivity(user, ip, userAgent) {
   if (!user || !user.email) return;
   const key = String(user.email).toLowerCase();
+  const now = Date.now();
   liveUsersMap.set(key, {
     id: user.id,
     email: user.email,
@@ -112,8 +114,27 @@ export function recordUserActivity(user, ip, userAgent) {
     tenant_id: user.tenant_id,
     ip: ip || 'client-ip',
     userAgent: userAgent ? String(userAgent).substring(0, 80) : undefined,
-    lastActive: Date.now(),
+    lastActive: now,
   });
+
+  // Throttle database last_login_at updates to once every 15 minutes per user/tenant
+  const lastSync = lastDbSyncMap.get(key) || 0;
+  if (now - lastSync > 15 * 60 * 1000) {
+    lastDbSyncMap.set(key, now);
+    import('../db/index.js').then(({ query }) => {
+      if (user.id) {
+        query('UPDATE profiles SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1', [user.id]).catch(() => {});
+      }
+      if (user.tenant_id) {
+        query(`UPDATE tenants 
+               SET last_login_at = CURRENT_TIMESTAMP, 
+                   inactivity_warning_count = 0,
+                   is_active = true,
+                   deactivation_reason = NULL
+               WHERE id = $1`, [user.tenant_id]).catch(() => {});
+      }
+    }).catch(() => {});
+  }
 }
 
 export function getLiveUsersList(windowMinutes = 15) {
