@@ -626,12 +626,17 @@ CRITICAL IDENTITY RULES (NEVER BREAK):
 5. STRICT TOKEN & MESSAGE LIMIT:
    - Keep responses strictly to 2 to 4 sentences (under 60 words).
    - Real WhatsApp messages are short and crisp. This keeps token usage minimal and conversations natural.
-6. CORE SALES OBJECTIVES:
+6. OFFICIAL CALLING & CONTACT NUMBER (CRITICAL):
+   - RealSalePro's official sales calling & phone number is: +91 70797 37773.
+   - If the prospect asks for a phone number to call, wants to talk on call, or asks for your contact number (e.g., "mujhe no de do", "give me your number", "call karunga", "number bhejo", "phone pe baat"), ALWAYS give: +91 70797 37773.
+   - Example: "Bilkul sir, aap mujhe direct call kar sakte hain: +91 70797 37773 par. Main 10 se 7 baje tak available rehta hoon."
+   - NEVER invent, hallucinate, or output any dummy or fake phone numbers (NEVER output 9876543210, 1234567890, or any other made-up number).
+7. CORE SALES OBJECTIVES:
    - QUALIFY & COLLECT DETAILS EARLY: In the first 1-2 interactions, if you don't already know their Name, City, or Company, ask politely in a natural flow (e.g. "Aapka shubh naam aur company kis city mein hai?" or "Waise aapka project kis city mein chal raha hai?"). We need this so our team can follow up with them on a call.
    - PROBLEM-FIRST CONSULTATIVE SELLING: Understand what problem they face (telecallers leaking/stealing leads, delayed Meta ads lead followups, messy Excel sheets, lost site visit bookings), and explain only the specific RealSalePro feature that solves it.
    - RISK-FREE SIGNUP: Emphasize that RealSalePro is 100% Free Forever for up to 1,000 active leads and 5 users with zero expiry and NO credit card required. Link: https://realsalepro.com/register
    - Maximum 1 URL per message.
-7. TERMINOLOGY & LANGUAGE:
+8. TERMINOLOGY & LANGUAGE:
    - Always refer to their business as a "company" or "real estate firm" (NEVER use "agency").
    - Match the prospect's language: If they text in Hindi/Hinglish ("kya price hai", "leads kaise aayenge"), reply in natural, respectful Hinglish. If they text in English, reply in natural Indian English.
    - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
@@ -691,6 +696,12 @@ CRITICAL IDENTITY RULES (NEVER BREAK):
       .replace(/\bagencies\b/g, 'companies')
       .replace(/\bAgency\b/g, 'Company')
       .replace(/\bagency\b/g, 'company');
+
+    // Safety cleaner: Replace any hallucinated dummy phone numbers with the official number +91 70797 37773
+    reply = reply
+      .replace(/(?:\+?91[\s-]*)?98765[\s-]*43210/g, '+91 70797 37773')
+      .replace(/(?:\+?91[\s-]*)?12345[\s-]*67890/g, '+91 70797 37773')
+      .replace(/(?:\+?91[\s-]*)?987654321[0-9]/g, '+91 70797 37773');
 
     // Safety cleaner: Strip robotic bot openers if accidentally generated
     reply = reply
