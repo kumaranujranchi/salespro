@@ -130,9 +130,19 @@ export async function initWhatsAppSchema() {
 
       CREATE INDEX IF NOT EXISTS idx_wa_otps_phone ON whatsapp_otps(phone, is_verified, expires_at);
 
-      INSERT INTO whatsapp_platform_config (id, webhook_verify_token, bot_enabled)
-      VALUES ('default', 'realsalepro_wa_secret', true)
-      ON CONFLICT (id) DO NOTHING;
+      INSERT INTO whatsapp_platform_config (id, waba_id, phone_number_id, access_token, webhook_verify_token, bot_enabled)
+      VALUES (
+        'default',
+        '1137788795833452',
+        '1435084146353236',
+        'EAAWX9a0ddvMBSwgCdjxoVIJwhANXRn15YKD2VMiVJwHnIpZBLZCo1lpa94HP3c4mZAI3Rd9km9cbk2swXVednikQ7fnkGGKZAJNA977isSZBEEkGbxXF3KMUtcUrovnmhGNKaU1zRaDt81akr9Y1GwHRPEbXdK8GOcEZCwXWI3YkysrnPhHbWrBGz9IT8cS62c5AZDZD',
+        'realsalepro_wa_secret',
+        true
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        waba_id = COALESCE(whatsapp_platform_config.waba_id, EXCLUDED.waba_id),
+        phone_number_id = COALESCE(whatsapp_platform_config.phone_number_id, EXCLUDED.phone_number_id),
+        access_token = COALESCE(whatsapp_platform_config.access_token, EXCLUDED.access_token);
     `);
     schemaInitialized = true;
   } catch (err) {
@@ -149,10 +159,10 @@ export async function getWhatsAppConfig() {
   const row = res.rows[0] || {};
 
   return {
-    wabaId: row.waba_id || process.env.META_WABA_ID || '',
-    phoneNumberId: row.phone_number_id || process.env.META_PHONE_NUMBER_ID || '',
-    accessToken: row.access_token || process.env.META_WA_ACCESS_TOKEN || '',
-    webhookVerifyToken: row.webhook_verify_token || process.env.META_WA_VERIFY_TOKEN || 'realsalepro_wa_secret',
+    wabaId: row.waba_id || process.env.META_WABA_ID || process.env.WHATSAPP_WABA_ID || '1137788795833452',
+    phoneNumberId: row.phone_number_id || process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID || '1435084146353236',
+    accessToken: row.access_token || process.env.META_WA_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN || 'EAAWX9a0ddvMBSwgCdjxoVIJwhANXRn15YKD2VMiVJwHnIpZBLZCo1lpa94HP3c4mZAI3Rd9km9cbk2swXVednikQ7fnkGGKZAJNA977isSZBEEkGbxXF3KMUtcUrovnmhGNKaU1zRaDt81akr9Y1GwHRPEbXdK8GOcEZCwXWI3YkysrnPhHbWrBGz9IT8cS62c5AZDZD',
+    webhookVerifyToken: row.webhook_verify_token || process.env.META_WA_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN || 'realsalepro_wa_secret',
     botEnabled: row.bot_enabled ?? true,
     welcomeMessage: row.welcome_message || '',
     agentNotifyEmail: row.agent_notify_email || 'support@realsalepro.com',
