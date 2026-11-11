@@ -353,7 +353,7 @@ export async function sendMetaOutboundMessage({ toPhone, text, templateName, lan
 }
 
 /**
- * Dispatch an automated Bot Reply to visitor
+ * Dispatch an automated Sales Advisor Reply to visitor
  */
 async function sendBotReply(conversation, text) {
   try {
@@ -365,7 +365,7 @@ async function sendBotReply(conversation, text) {
     await query(`
       INSERT INTO whatsapp_messages (
         conversation_id, direction, sender_type, sender_name, message_type, body, meta_message_id, status
-      ) VALUES ($1, 'outbound', 'bot', 'RealSalePro Bot', 'text', $2, $3, 'sent')
+      ) VALUES ($1, 'outbound', 'agent', 'Rahul (Sales Team)', 'text', $2, $3, 'sent')
     `, [conversation.id, text, metaRes.messageId]);
 
     await query(`
@@ -374,18 +374,124 @@ async function sendBotReply(conversation, text) {
       WHERE id = $2
     `, [text, conversation.id]);
   } catch (err) {
-    console.error(`Failed to send Bot reply to ${conversation.phone}:`, err.message);
+    console.error(`Failed to send Sales Advisor reply to ${conversation.phone}:`, err.message);
   }
 }
 
 /**
- * Intelligently generate Landing Page Visitor Bot responses
+ * Intelligent Lead Extractor:
+ * Detects Name, City, and Company/Firm from inbound WhatsApp conversation
+ * so sales executives can call the prospect with full context.
+ */
+export async function extractAndSaveLeadDetails({ conversation, messageText }) {
+  if (!conversation || !messageText) return;
+  const text = String(messageText).trim();
+
+  let detectedName = null;
+  let detectedCity = null;
+  let detectedCompany = null;
+
+  // 1. Detect Name patterns
+  const namePatterns = [
+    /(?:mera naam|my name is|i am|this is|naam)\s+([A-Za-z\s]{2,30})/i,
+    /(?:myself|im)\s+([A-Za-z\s]{2,30})/i,
+  ];
+  for (const pat of namePatterns) {
+    const match = text.match(pat);
+    if (match && match[1]) {
+      const candidate = match[1].replace(/(from|se|in|city|company|firm|builders|realty|properties).*$/i, '').trim();
+      if (candidate.length >= 2 && candidate.length <= 30 && !/^(here|hey|user|visitor|broker|agent)$/i.test(candidate)) {
+        detectedName = candidate;
+        break;
+      }
+    }
+  }
+
+  // 2. Detect City patterns (popular Indian real estate hubs)
+  const indianCities = [
+    'mumbai', 'delhi', 'noida', 'gurgaon', 'gurugram', 'ghaziabad', 'faridabad',
+    'bangalore', 'bengaluru', 'hyderabad', 'pune', 'kolkata', 'chennai',
+    'ahmedabad', 'jaipur', 'lucknow', 'patna', 'ranchi', 'indore', 'bhopal',
+    'chandigarh', 'kochi', 'surat', 'vadodara', 'nagpur', 'dehradun', 'varanasi',
+    'kanpur', 'agra', 'bhubaneswar', 'coimbatore', 'ludhiana', 'amritsar', 'nashik'
+  ];
+  for (const city of indianCities) {
+    const cityRegex = new RegExp(`\\b${city}\\b`, 'i');
+    if (cityRegex.test(text)) {
+      detectedCity = city.charAt(0).toUpperCase() + city.slice(1);
+      break;
+    }
+  }
+
+  // 3. Detect Company / Firm patterns
+  const companyPatterns = [
+    /(?:company|firm|brokerage|agency name|from)\s+(?:is\s+)?([A-Za-z0-9\s]{2,40})/i,
+    /([A-Za-z0-9\s]{2,30}\s+(?:realty|properties|developers|infra|infrastructures|builders|group|associates|estates|homes))/i,
+  ];
+  for (const pat of companyPatterns) {
+    const match = text.match(pat);
+    if (match && match[1]) {
+      const candidate = match[1].trim();
+      if (candidate.length >= 3 && candidate.length <= 40) {
+        detectedCompany = candidate;
+        break;
+      }
+    }
+  }
+
+  // Update conversation if new details found
+  const updates = [];
+  const params = [];
+  let pIdx = 1;
+
+  const currentMetadata = conversation.metadata || {};
+  let metadataChanged = false;
+  const newMetadata = { ...currentMetadata };
+
+  if (detectedCity && newMetadata.city !== detectedCity) {
+    newMetadata.city = detectedCity;
+    metadataChanged = true;
+  }
+  if (detectedCompany && newMetadata.company_name !== detectedCompany) {
+    newMetadata.company_name = detectedCompany;
+    metadataChanged = true;
+  }
+
+  const currentName = conversation.customer_name || '';
+  const isGenericName = !currentName || /^(website visitor|hey|visitor|user|\+)/i.test(currentName.trim());
+
+  if (detectedName && (isGenericName || currentName.length < 3)) {
+    updates.push(`customer_name = $${pIdx++}`);
+    params.push(detectedName);
+  }
+
+  if (metadataChanged) {
+    newMetadata.lead_captured_at = newMetadata.lead_captured_at || new Date().toISOString();
+    updates.push(`metadata = $${pIdx++}::jsonb`);
+    params.push(JSON.stringify(newMetadata));
+  }
+
+  if (updates.length > 0) {
+    params.push(conversation.id);
+    await query(`
+      UPDATE whatsapp_conversations
+      SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $${pIdx}
+    `, params);
+  }
+}
+
+/**
+ * Natural Human Sales Rule Engine (Fallback & Direct Numbers)
  */
 function evaluateVisitorIntent(messageText, customerName) {
   const text = String(messageText || '').trim().toLowerCase();
-  const nameSalutation = customerName ? ` ${customerName}` : '';
+  const validName = (customerName && !['hey', 'visitor', 'user', 'website visitor'].includes(customerName.toLowerCase().trim()))
+    ? customerName.trim()
+    : null;
+  const nameSalutation = validName ? ` ${validName} ji` : '';
 
-  // 1. Handover to Live Support / Agent / Human
+  // 1. Handover to Live Support / Call / Human
   if (
     text === '5' ||
     text.includes('support') ||
@@ -401,7 +507,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'agent_handover',
-      reply: `Connecting you with our Live Support team${nameSalutation}! 👤\n\nI have notified our on-duty team. Someone from RealSalePro will reply to you directly in this chat shortly.\n\n📞 Need immediate assistance? You can also call us directly at +91 70797 37773.`,
+      reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar raha hoon, wo thodi der mein aapse is chat par connect karenge.\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: +91 70797 37773.`,
     };
   }
 
@@ -421,7 +527,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'demo_trial',
-      reply: `Great to have you here${nameSalutation}! 🚀\n\nYou can start immediately with our *100% Free Forever Tier* (manage up to 1,000 active client leads with zero expiry, zero time limit, and no credit card required):\n\n👉 *Direct Signup Link:*\nhttps://realsalepro.com/register\n\nPrefer a 15-minute personalized screen walkthrough with our product specialist?\nReply with your *City & Company Name*, and our team will schedule your VIP demo!`,
+      reply: `Namaste${nameSalutation}! Aap hamara 100% Free Forever plan direct shuru kar sakte hain (1,000 leads tak lifetime free, koi credit card nahi chahiye):\n\n👉 https://realsalepro.com/register\n\nAgar aap 15-minute ka live screen walkthrough chahte hain, toh kripya apna Name aur City bata dijiye, main demo schedule karwa deta hoon!`,
     };
   }
 
@@ -438,7 +544,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'pricing',
-      reply: `Here is our transparent pricing structure${nameSalutation}:\n\n🟢 *Free Forever Plan — ₹0/forever*\n• Up to 1,000 active leads\n• Up to 5 team members\n• Deal pipeline & WhatsApp script fast dial\n• Zero credit card required\n\n⚡ *Pro Plan — ₹1,200/month (billed semi-annually)*\n• Up to 2,00,000 active leads\n• Unlimited users & telecaller seats\n• Meta CAPI, 99acres & Magicbricks Webhooks\n• Advanced telecaller phone masking\n\n🏢 *Custom Enterprise*\n• Self-hosted PostgreSQL BYOD database & custom RERA SLA.\n\nCompare full plans: https://realsalepro.com/pricing\n\nReply *5* to speak with our sales manager for custom company billing!`,
+      reply: `RealSalePro mein 1,000 leads aur 5 team logins tak bilkul Free Forever hai (₹0, zero credit card required). Badi teams ke liye Pro plan sirf ₹1,200/month hai unlimited users ke saath.\n\nAap bina kisi risk ke free tier try kar sakte hain: https://realsalepro.com/register\n\nAapki team mein kitne members hain?`,
     };
   }
 
@@ -455,7 +561,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'features',
-      reply: `RealSalePro is built specifically for Indian Real Estate builders & brokerages:\n\n🛡️ *Staff Phone Masking:* Hides the last 5 digits of buyer numbers from telecallers so your client database never leaks when staff leaves.\n\n⚡ *Sub-30s Portal Webhooks:* Direct integrations for Facebook Lead Ads, 99acres, Magicbricks, and Housing.com.\n\n📍 *Site Visit Dispatch:* Send Google Maps route pins to clients on WhatsApp, track drivers, and capture instant visitor feedback.\n\n💰 *Automatic Token Conversion:* 1-Click convert booked leads to sales records with brokerage commission calculation.\n\nExplore all features: https://realsalepro.com/features/lead-management`,
+      reply: `RealSalePro mein do sabse popular features hain:\n1. Staff Phone Masking — telecallers ko last 5 digits hide rehte hain taaki client data safe rahe.\n2. Sub-30s Webhooks — Meta Ads aur portals se leads instant sync hoti hain.\n\nAap 1,000 leads tak free mein test kar sakte hain: https://realsalepro.com/register\n\nAapka project kis city mein hai?`,
     };
   }
 
@@ -470,21 +576,22 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'excel_template',
-      reply: `Here is our free Indian Real Estate CRM spreadsheet template:\n\n📥 *Free Download Link:*\nhttps://realsalepro.com/templates/real-estate-crm-excel-template\n\nIt comes pre-formatted with Indian property stages (New, Follow-up, Site Visit, Token Paid), formula calculations, and follow-up cadences.\n\nWhenever you're ready to automate past manual Excel sheets, RealSalePro will import your sheet in under 60 seconds!`,
+      reply: `Ji, yeh raha hamara free Indian Real Estate CRM Excel template:\n\n👉 https://realsalepro.com/templates/real-estate-crm-excel-template\n\nJab bhi aap manual Excel sheet se automated CRM pe shift hona chahein, RealSalePro aapki sheet 1 minute mein import kar lega!`,
     };
   }
 
-  // Default Greeting / Menu
+  // Default Greeting (Completely human, asks for Name & City early)
   return {
-    intent: 'greeting_menu',
-    reply: `Namaste${nameSalutation}! 👋 Welcome to *RealSalePro* — India's Real Estate Sales & CRM Platform.\n\nHow can I help you today? Please reply with a number:\n\n1️⃣ *1,000 Leads Free Forever Account & Demo*\n2️⃣ *View Pricing & Compare Plans*\n3️⃣ *Explore Key Features (Phone Masking, Webhooks)*\n4️⃣ *Download Free Real Estate Excel Template*\n5️⃣ *Live Support Available*\n\n💬 Live support is also available — or feel free to type your question directly!`,
+    intent: 'greeting_human',
+    reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aapka shubh naam aur company kis city mein hai?`,
   };
 }
 
 /**
- * Intelligently generate dynamic Sales responses via DeepSeek AI
+ * Humanized Sales Advisor via DeepSeek AI
+ * Acts 100% as Rahul from RealSalePro Sales Team. Zero robotic giveaways.
  */
-export async function generateDeepSeekSalesReply({ messageText, customerName, conversationHistory = [] }) {
+export async function generateDeepSeekSalesReply({ messageText, customerName, conversationHistory = [], conversationMetadata = {} }) {
   const config = await getWhatsAppConfig();
   const apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
 
@@ -500,62 +607,52 @@ export async function generateDeepSeekSalesReply({ messageText, customerName, co
     return evaluateVisitorIntent(messageText, customerName);
   }
 
-  const systemPrompt = `You are the official RealSalePro AI Sales Copilot on WhatsApp for RealSalePro (https://realsalepro.com).
-Your mission is to understand visitor queries, answer them accurately and persuasively like a top real estate SaaS sales advisor, and guide them to register for the free tier or speak with live support.
+  const validName = (customerName && !['hey', 'visitor', 'user', 'website visitor'].includes(customerName.toLowerCase().trim()))
+    ? customerName.trim()
+    : null;
 
-🏢 About RealSalePro:
-RealSalePro is India's leading Real Estate CRM & Sales Automation platform built specifically for Indian real estate builders, brokers, and channel partner firms & companies.
+  const systemPrompt = `You are Rahul, a senior real estate sales executive at RealSalePro (https://realsalepro.com) chatting with an inbound prospect on WhatsApp.
 
-⭐ Key Features & Value Propositions:
-1. 100% Free Forever Tier:
-   - Manage up to 1,000 active client leads with ZERO expiry, zero time limits, and NO credit card required.
-   - Up to 5 team member logins (telecallers, sales executives, site staff).
-   - Deal pipeline, automated follow-up cadences, and WhatsApp script fast-dial.
-   - Direct Signup Link: https://realsalepro.com/register
-2. Pro Plan (₹1,200/month, billed semi-annually):
-   - Up to 2,00,000 active leads.
-   - Unlimited users & telecaller seats.
-   - Direct Webhooks for Meta Lead Ads (Facebook & Instagram), 99acres, Magicbricks, and Housing.com (sub-30 second lead capture).
-   - Meta Conversions API (CAPI) for lead ad optimization.
-   - Advanced staff phone number masking.
-   - Plan comparison: https://realsalepro.com/pricing
-3. Staff Phone Number Masking (Key Security Feature):
-   - Hides the last 5 digits of buyer phone numbers from telecallers (e.g. +91 98765 •••••).
-   - Telecallers click-to-dial through the app without ever seeing the buyer's full phone number.
-   - Completely prevents telecallers or ex-employees from stealing and selling your client database when they leave.
-4. Field Operations & Site Visits:
-   - Send Google Maps route pins to clients directly on WhatsApp.
-   - Track driver status and collect instant on-site walkthrough feedback.
-5. 1-Click Token-to-Sale Conversion:
-   - When a booking token is received, 1-click converts the lead to a sale with automatic brokerage commission calculation.
-6. Free Excel CRM Spreadsheet Template:
-   - Free pre-formatted sheet with Indian property stages (New, Followup, Site Visit, Token Paid) and formulas.
-   - Download link: https://realsalepro.com/templates/real-estate-crm-excel-template
-7. Support & Handover:
-   - Official WhatsApp Support: +91 70797 37773
-   - If the visitor wants human assistance or custom enterprise billing, offer Live Support or tell them to reply "5".
-
-Formatting & Tone Instructions for WhatsApp:
-- Be warm, professional, concise, and helpful.
-- Match the visitor's language: reply in English if they ask in English; reply in natural Hindi (in Devanagari or Hinglish) if they ask in Hindi/Hinglish.
-- CRITICAL WHATSAPP FORMATTING RULE: Use single asterisk for bold (*like this*). NEVER use double asterisks (**like this**), because WhatsApp shows double asterisks as visible raw text!
-- Use bullet points and suitable emojis (🚀, 🛡️, 💰, 📱, 🏢) to make messages easy to scan on mobile.
-- Keep responses concise (under 120 words).
-- End with a helpful next step (e.g., asking about their company/city or inviting them to start the 1,000-lead free tier at https://realsalepro.com/register).
-- CRITICAL TERMINOLOGY: Always refer to the user's business as a "company" or "real estate firm" (e.g., "Which city is your company in?"). NEVER use the word "agency", because Indian real estate professionals call themselves companies or firms, not agencies.`;
+CRITICAL IDENTITY RULES (NEVER BREAK):
+1. YOU ARE 100% HUMAN. You are Rahul from the RealSalePro sales team.
+2. NEVER mention or admit that you are an AI, bot, virtual assistant, algorithm, or automated response.
+3. If asked "Are you a bot?", "AI ho kya?", or "Are you real?", reply naturally:
+   - In Hindi: "Nahi sir, main RealSalePro sales team se Rahul baat kar raha hoon! Aap batayein kaise help kar sakta hoon?"
+   - In English: "Haha no, I'm Rahul from the RealSalePro team! How can I help you today?"
+4. ZERO BOT CLICHÉS:
+   - NEVER start with "Great question! 🚀", "Hello there!", "I would be happy to help with that!", "Here is a breakdown:", or "Hope this helps!".
+   - NEVER send bulleted lists of emojis (e.g. 💰📱🛡️🏢🚀👉). Real humans NEVER type 5 bullet points with 5 emojis on WhatsApp.
+   - At most 1 subtle emoji (like 🙏 or 👍) in the entire message.
+5. STRICT TOKEN & MESSAGE LIMIT:
+   - Keep responses strictly to 2 to 4 sentences (under 60 words).
+   - Real WhatsApp messages are short and crisp. This keeps token usage minimal and conversations natural.
+6. CORE SALES OBJECTIVES:
+   - QUALIFY & COLLECT DETAILS EARLY: In the first 1-2 interactions, if you don't already know their Name, City, or Company, ask politely in a natural flow (e.g. "Aapka shubh naam aur company kis city mein hai?" or "Waise aapka project kis city mein chal raha hai?"). We need this so our team can follow up with them on a call.
+   - PROBLEM-FIRST CONSULTATIVE SELLING: Understand what problem they face (telecallers leaking/stealing leads, delayed Meta ads lead followups, messy Excel sheets, lost site visit bookings), and explain only the specific RealSalePro feature that solves it.
+   - RISK-FREE SIGNUP: Emphasize that RealSalePro is 100% Free Forever for up to 1,000 active leads and 5 users with zero expiry and NO credit card required. Link: https://realsalepro.com/register
+   - Maximum 1 URL per message.
+7. TERMINOLOGY & LANGUAGE:
+   - Always refer to their business as a "company" or "real estate firm" (NEVER use "agency").
+   - Match the prospect's language: If they text in Hindi/Hinglish ("kya price hai", "leads kaise aayenge"), reply in natural, respectful Hinglish. If they text in English, reply in natural Indian English.
+   - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
 
   try {
-    const historyMessages = conversationHistory.slice(-6).map((m) => ({
+    const historyMessages = conversationHistory.slice(-5).map((m) => ({
       role: m.sender_type === 'visitor' ? 'user' : 'assistant',
       content: m.body,
     }));
+
+    let contextPrefix = '';
+    if (validName) contextPrefix += `[Prospect Name: ${validName}] `;
+    if (conversationMetadata.city) contextPrefix += `[City: ${conversationMetadata.city}] `;
+    if (conversationMetadata.company_name) contextPrefix += `[Company: ${conversationMetadata.company_name}] `;
 
     const messages = [
       { role: 'system', content: systemPrompt },
       ...historyMessages,
       {
         role: 'user',
-        content: customerName ? `[Visitor: ${customerName}] ${messageText}` : messageText,
+        content: contextPrefix ? `${contextPrefix}\n${messageText}` : messageText,
       },
     ];
 
@@ -571,8 +668,8 @@ Formatting & Tone Instructions for WhatsApp:
       body: JSON.stringify({
         model: config.aiModel || 'deepseek-chat',
         messages,
-        temperature: 0.6,
-        max_tokens: 450,
+        temperature: 0.5,
+        max_tokens: 180, // Enforces short, crisp, low-token responses!
       }),
       signal: controller.signal,
     });
@@ -594,6 +691,12 @@ Formatting & Tone Instructions for WhatsApp:
       .replace(/\bagencies\b/g, 'companies')
       .replace(/\bAgency\b/g, 'Company')
       .replace(/\bagency\b/g, 'company');
+
+    // Safety cleaner: Strip robotic bot openers if accidentally generated
+    reply = reply
+      .replace(/^great question!\s*🚀?/i, '')
+      .replace(/^hello there!\s*🚀?/i, '')
+      .trim();
 
     return {
       intent: 'deepseek_ai_reply',
@@ -641,7 +744,9 @@ export async function processIncomingWebhook(body) {
           const fromPhone = normalizeWhatsAppPhone(msg.from);
           const metaMessageId = msg.id;
           const contact = (value.contacts || []).find(c => normalizeWhatsAppPhone(c.wa_id) === fromPhone);
-          const customerName = contact?.profile?.name || 'Website Visitor';
+          const rawName = (contact?.profile?.name || '').trim();
+          const isGenericName = !rawName || /^(hey|visitor|user|website visitor)$/i.test(rawName);
+          const customerName = isGenericName ? null : rawName;
 
           // Extract text content (handles text, button reply, or interactive list reply)
           let messageText = '';
@@ -665,9 +770,20 @@ export async function processIncomingWebhook(body) {
           // Find or create conversation
           let convRes = await query(`
             INSERT INTO whatsapp_conversations (phone, customer_name, last_message, last_message_at, unread_count, updated_at)
-            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+            VALUES ($1, COALESCE($2, 'Website Visitor'), $3, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
             ON CONFLICT (phone) DO UPDATE SET
-              customer_name = COALESCE(whatsapp_conversations.customer_name, EXCLUDED.customer_name),
+              customer_name = CASE
+                WHEN whatsapp_conversations.customer_name IS NOT NULL 
+                     AND whatsapp_conversations.customer_name != '' 
+                     AND whatsapp_conversations.customer_name != 'Website Visitor' 
+                     AND whatsapp_conversations.customer_name != 'Hey'
+                THEN whatsapp_conversations.customer_name
+                WHEN EXCLUDED.customer_name IS NOT NULL 
+                     AND EXCLUDED.customer_name != '' 
+                     AND EXCLUDED.customer_name != 'Website Visitor'
+                THEN EXCLUDED.customer_name
+                ELSE 'Website Visitor'
+              END,
               last_message = EXCLUDED.last_message,
               last_message_at = CURRENT_TIMESTAMP,
               unread_count = whatsapp_conversations.unread_count + 1,
@@ -675,17 +791,30 @@ export async function processIncomingWebhook(body) {
             RETURNING *
           `, [fromPhone, customerName, messageText]);
 
-          const conversation = convRes.rows[0];
+          let conversation = convRes.rows[0];
 
           // Save message to history
           await query(`
             INSERT INTO whatsapp_messages (
               conversation_id, direction, sender_type, sender_name, message_type, body, meta_message_id, status, raw_payload
             ) VALUES ($1, 'inbound', 'visitor', $2, $3, $4, $5, 'delivered', $6)
-          `, [conversation.id, customerName, messageType, messageText, metaMessageId, JSON.stringify(msg)]);
+          `, [conversation.id, conversation.customer_name || 'Prospect', messageType, messageText, metaMessageId, JSON.stringify(msg)]);
+
+          // Extract & persist lead details (Name, City, Company) from message text for sales follow-up
+          await extractAndSaveLeadDetails({ conversation, messageText });
+
+          // Reload updated conversation (with newly extracted name/city/company)
+          const refreshedConvRes = await query('SELECT * FROM whatsapp_conversations WHERE id = $1', [conversation.id]);
+          if (refreshedConvRes.rows[0]) {
+            conversation = refreshedConvRes.rows[0];
+          }
 
           // Evaluate Visitor Intent & Generate Response (DeepSeek AI or Handover)
           const config = await getWhatsAppConfig();
+
+          const effectiveName = (conversation.customer_name && !['website visitor', 'hey', 'visitor', 'user'].includes(conversation.customer_name.toLowerCase().trim()))
+            ? conversation.customer_name
+            : null;
 
           // Check if user requested agent handover explicitly
           const normalized = String(messageText || '').trim().toLowerCase();
@@ -698,7 +827,7 @@ export async function processIncomingWebhook(body) {
             normalized.includes('talk to agent');
 
           if (isAgentRequest) {
-            const handover = evaluateVisitorIntent('5', customerName);
+            const handover = evaluateVisitorIntent('5', effectiveName);
             await query(`
               UPDATE whatsapp_conversations
               SET status = 'agent_requested', updated_at = CURRENT_TIMESTAMP
@@ -715,20 +844,21 @@ export async function processIncomingWebhook(body) {
             continue;
           }
 
-          // Fetch recent conversation history for DeepSeek context
+          // Fetch recent conversation history for DeepSeek context (last 5 messages)
           const historyRes = await query(`
             SELECT sender_type, body FROM whatsapp_messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
-            LIMIT 6
+            LIMIT 5
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
 
           // Generate dynamic response via DeepSeek AI (with rule engine fallback)
           const { reply } = await generateDeepSeekSalesReply({
             messageText,
-            customerName,
+            customerName: effectiveName,
             conversationHistory: history,
+            conversationMetadata: conversation.metadata || {},
           });
 
           // Send Bot Reply if enabled

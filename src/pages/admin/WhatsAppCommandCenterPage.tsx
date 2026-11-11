@@ -497,6 +497,8 @@ export function WhatsAppCommandCenterPage() {
 
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mb-1">
                           {conv.phone}
+                          {conv.metadata?.city ? ` • 📍 ${conv.metadata.city}` : ''}
+                          {conv.metadata?.company_name ? ` • 🏢 ${conv.metadata.company_name}` : ''}
                         </p>
 
                         <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
@@ -543,11 +545,21 @@ export function WhatsAppCommandCenterPage() {
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                         {selectedConv.customer_name || 'Website Visitor'}
                       </h3>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
                         <span className="font-mono">{selectedConv.phone}</span>
+                        {selectedConv.metadata?.city && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-100/60 dark:bg-emerald-950/60 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                            📍 {selectedConv.metadata.city}
+                          </span>
+                        )}
+                        {selectedConv.metadata?.company_name && (
+                          <span className="px-1.5 py-0.5 rounded bg-blue-100/60 dark:bg-blue-950/60 text-[11px] font-semibold text-blue-800 dark:text-blue-300">
+                            🏢 {selectedConv.metadata.company_name}
+                          </span>
+                        )}
                         <span>•</span>
                         <a href={`tel:${selectedConv.phone}`} className="text-emerald-600 hover:underline flex items-center gap-1 font-semibold">
-                          <Phone className="w-3 h-3" /> Call
+                          <Phone className="w-3 h-3" /> Call Prospect
                         </a>
                       </div>
                     </div>
