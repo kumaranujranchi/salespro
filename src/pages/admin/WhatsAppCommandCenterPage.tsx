@@ -363,7 +363,7 @@ export function WhatsAppCommandCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 md:p-6 space-y-4">
+    <div className="space-y-6 pb-12 pt-3 md:pt-4">
       {/* Top Header */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div>
@@ -488,7 +488,7 @@ export function WhatsAppCommandCenterPage() {
       {/* TAB 1: LIVE CHAT INBOX                                                    */}
       {/* ========================================================================= */}
       {activeTab === 'inbox' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 h-[calc(100vh-14rem)] min-h-[500px]">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 h-[calc(100vh-16.5rem)] min-h-[480px]">
           {/* Left: Conversation List */}
           <div className="md:col-span-4 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full min-h-0 bg-slate-50/50 dark:bg-slate-900/50 overflow-hidden">
             {/* Search & Filter */}
