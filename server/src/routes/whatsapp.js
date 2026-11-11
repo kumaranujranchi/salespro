@@ -131,9 +131,13 @@ router.post('/otp/verify', async (req, res) => {
 router.get('/config', requireAuth, async (req, res) => {
   try {
     const config = await getWhatsAppConfig();
-    // Mask token for display
+    // Mask tokens for display
     const maskedToken = config.accessToken
       ? `${config.accessToken.slice(0, 10)}••••••••••••••••••••${config.accessToken.slice(-6)}`
+      : '';
+
+    const maskedDeepseekKey = config.deepseekApiKey
+      ? `${config.deepseekApiKey.slice(0, 6)}••••••••••••••••••••${config.deepseekApiKey.slice(-4)}`
       : '';
 
     return res.json({
@@ -142,6 +146,8 @@ router.get('/config', requireAuth, async (req, res) => {
         ...config,
         accessTokenMasked: maskedToken,
         hasAccessToken: Boolean(config.accessToken),
+        deepseekApiKeyMasked: maskedDeepseekKey,
+        hasDeepseekKey: Boolean(config.deepseekApiKey),
       },
     });
   } catch (err) {

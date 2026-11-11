@@ -80,6 +80,9 @@ export function WhatsAppCommandCenterPage() {
     accessToken: '',
     webhookVerifyToken: 'realsalepro_wa_secret',
     botEnabled: true,
+    deepseekApiKey: '',
+    aiModel: 'deepseek-chat',
+    aiEnabled: true,
   });
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
@@ -1110,6 +1113,62 @@ export function WhatsAppCommandCenterPage() {
                     Enable Landing Page Automatic Prospect Bot
                   </span>
                 </label>
+              </div>
+
+              {/* DeepSeek AI Interactive Sales Copilot Settings */}
+              <div className="pt-5 border-t border-slate-200 dark:border-slate-800 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-purple-600" />
+                      DeepSeek AI Interactive Sales Copilot
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Answers visitor questions about RealSalePro, pricing, phone masking, and real estate CRM dynamically in Hindi, English & Hinglish.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.aiEnabled ?? true}
+                      onChange={(e) => setConfig({ ...config, aiEnabled: e.target.checked })}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Enable AI
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                    DeepSeek API Key
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="sk-..."
+                    value={config.deepseekApiKey || ''}
+                    onChange={(e) => setConfig({ ...config, deepseekApiKey: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Enter your API key from <code>platform.deepseek.com</code>. If not set, bot uses real-estate keyword intent engine.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                    DeepSeek Model
+                  </label>
+                  <select
+                    value={config.aiModel || 'deepseek-chat'}
+                    onChange={(e) => setConfig({ ...config, aiModel: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold"
+                  >
+                    <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Ultra Fast & Recommended)</option>
+                    <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Deep Thinking Model)</option>
+                  </select>
+                </div>
               </div>
             </div>
 

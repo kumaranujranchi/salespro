@@ -130,14 +130,20 @@ export async function initWhatsAppSchema() {
 
       CREATE INDEX IF NOT EXISTS idx_wa_otps_phone ON whatsapp_otps(phone, is_verified, expires_at);
 
-      INSERT INTO whatsapp_platform_config (id, waba_id, phone_number_id, access_token, webhook_verify_token, bot_enabled)
+      ALTER TABLE whatsapp_platform_config ADD COLUMN IF NOT EXISTS deepseek_api_key TEXT;
+      ALTER TABLE whatsapp_platform_config ADD COLUMN IF NOT EXISTS ai_model VARCHAR(100) DEFAULT 'deepseek-chat';
+      ALTER TABLE whatsapp_platform_config ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAULT true;
+
+      INSERT INTO whatsapp_platform_config (id, waba_id, phone_number_id, access_token, webhook_verify_token, bot_enabled, ai_enabled, ai_model)
       VALUES (
         'default',
         '1137788795833452',
         '1435084146353236',
         'EAAWX9a0ddvMBSwgCdjxoVIJwhANXRn15YKD2VMiVJwHnIpZBLZCo1lpa94HP3c4mZAI3Rd9km9cbk2swXVednikQ7fnkGGKZAJNA977isSZBEEkGbxXF3KMUtcUrovnmhGNKaU1zRaDt81akr9Y1GwHRPEbXdK8GOcEZCwXWI3YkysrnPhHbWrBGz9IT8cS62c5AZDZD',
         'realsalepro_wa_secret',
-        true
+        true,
+        true,
+        'deepseek-chat'
       )
       ON CONFLICT (id) DO UPDATE SET
         waba_id = COALESCE(whatsapp_platform_config.waba_id, EXCLUDED.waba_id),
@@ -164,6 +170,9 @@ export async function getWhatsAppConfig() {
     accessToken: row.access_token || process.env.META_WA_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN || 'EAAWX9a0ddvMBSwgCdjxoVIJwhANXRn15YKD2VMiVJwHnIpZBLZCo1lpa94HP3c4mZAI3Rd9km9cbk2swXVednikQ7fnkGGKZAJNA977isSZBEEkGbxXF3KMUtcUrovnmhGNKaU1zRaDt81akr9Y1GwHRPEbXdK8GOcEZCwXWI3YkysrnPhHbWrBGz9IT8cS62c5AZDZD',
     webhookVerifyToken: row.webhook_verify_token || process.env.META_WA_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN || 'realsalepro_wa_secret',
     botEnabled: row.bot_enabled ?? true,
+    deepseekApiKey: row.deepseek_api_key || process.env.DEEPSEEK_API_KEY || '',
+    aiModel: row.ai_model || process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    aiEnabled: row.ai_enabled ?? true,
     welcomeMessage: row.welcome_message || '',
     agentNotifyEmail: row.agent_notify_email || 'support@realsalepro.com',
     agentNotifyPhone: row.agent_notify_phone || '+917079737773',
@@ -172,7 +181,7 @@ export async function getWhatsAppConfig() {
 }
 
 /**
- * Update Meta WhatsApp Cloud API credentials
+ * Update Meta WhatsApp Cloud API credentials & DeepSeek AI Settings
  */
 export async function updateWhatsAppConfig({
   wabaId,
@@ -183,6 +192,9 @@ export async function updateWhatsAppConfig({
   welcomeMessage,
   agentNotifyEmail,
   agentNotifyPhone,
+  deepseekApiKey,
+  aiModel,
+  aiEnabled,
 }) {
   await initWhatsAppSchema();
 
@@ -193,11 +205,19 @@ export async function updateWhatsAppConfig({
     tokenToSave = existing.accessToken;
   }
 
+  // If DeepSeek API key is masked (e.g. sk-***), preserve existing key
+  let deepseekKeyToSave = deepseekApiKey;
+  if (deepseekApiKey && deepseekApiKey.includes('***')) {
+    const existing = await getWhatsAppConfig();
+    deepseekKeyToSave = existing.deepseekApiKey;
+  }
+
   await query(`
     INSERT INTO whatsapp_platform_config (
       id, waba_id, phone_number_id, access_token, webhook_verify_token,
-      bot_enabled, welcome_message, agent_notify_email, agent_notify_phone, updated_at
-    ) VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+      bot_enabled, welcome_message, agent_notify_email, agent_notify_phone,
+      deepseek_api_key, ai_model, ai_enabled, updated_at
+    ) VALUES ('default', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
     ON CONFLICT (id) DO UPDATE SET
       waba_id = COALESCE($1, whatsapp_platform_config.waba_id),
       phone_number_id = COALESCE($2, whatsapp_platform_config.phone_number_id),
@@ -207,6 +227,9 @@ export async function updateWhatsAppConfig({
       welcome_message = COALESCE($6, whatsapp_platform_config.welcome_message),
       agent_notify_email = COALESCE($7, whatsapp_platform_config.agent_notify_email),
       agent_notify_phone = COALESCE($8, whatsapp_platform_config.agent_notify_phone),
+      deepseek_api_key = CASE WHEN $9 IS NOT NULL AND $9 != '' THEN $9 ELSE whatsapp_platform_config.deepseek_api_key END,
+      ai_model = COALESCE($10, whatsapp_platform_config.ai_model),
+      ai_enabled = COALESCE($11, whatsapp_platform_config.ai_enabled),
       updated_at = CURRENT_TIMESTAMP
   `, [
     wabaId || null,
@@ -217,6 +240,9 @@ export async function updateWhatsAppConfig({
     welcomeMessage || null,
     agentNotifyEmail || null,
     agentNotifyPhone || null,
+    deepseekKeyToSave || null,
+    aiModel || 'deepseek-chat',
+    aiEnabled ?? true,
   ]);
 
   return await getWhatsAppConfig();
@@ -451,6 +477,123 @@ function evaluateVisitorIntent(messageText, customerName) {
 }
 
 /**
+ * Intelligently generate dynamic Sales responses via DeepSeek AI
+ */
+export async function generateDeepSeekSalesReply({ messageText, customerName, conversationHistory = [] }) {
+  const config = await getWhatsAppConfig();
+  const apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+
+  const text = String(messageText || '').trim().toLowerCase();
+
+  // If user explicitly clicks or types a direct option (1, 2, 3, 4, 5)
+  if (['1', '2', '3', '4', '5'].includes(text)) {
+    return evaluateVisitorIntent(messageText, customerName);
+  }
+
+  // If AI is disabled or no DeepSeek API key is configured yet, fall back to rule engine
+  if (!config.aiEnabled || !apiKey) {
+    return evaluateVisitorIntent(messageText, customerName);
+  }
+
+  const systemPrompt = `You are the official RealSalePro AI Sales Copilot on WhatsApp for RealSalePro (https://realsalepro.com).
+Your mission is to understand visitor queries, answer them accurately and persuasively like a top real estate SaaS sales advisor, and guide them to register for the free tier or speak with live support.
+
+🏢 About RealSalePro:
+RealSalePro is India's leading Real Estate CRM & Sales Automation platform built specifically for Indian real estate builders, brokers, and channel partner agencies.
+
+⭐ Key Features & Value Propositions:
+1. 100% Free Forever Tier:
+   - Manage up to 1,000 active client leads with ZERO expiry, zero time limits, and NO credit card required.
+   - Up to 5 team member logins (telecallers, sales executives, site staff).
+   - Deal pipeline, automated follow-up cadences, and WhatsApp script fast-dial.
+   - Direct Signup Link: https://realsalepro.com/register
+2. Pro Plan (₹1,200/month, billed semi-annually):
+   - Up to 2,00,000 active leads.
+   - Unlimited users & telecaller seats.
+   - Direct Webhooks for Meta Lead Ads (Facebook & Instagram), 99acres, Magicbricks, and Housing.com (sub-30 second lead capture).
+   - Meta Conversions API (CAPI) for lead ad optimization.
+   - Advanced staff phone number masking.
+   - Plan comparison: https://realsalepro.com/pricing
+3. Staff Phone Number Masking (Key Security Feature):
+   - Hides the last 5 digits of buyer phone numbers from telecallers (e.g. +91 98765 •••••).
+   - Telecallers click-to-dial through the app without ever seeing the buyer's full phone number.
+   - Completely prevents telecallers or ex-employees from stealing and selling your client database when they leave.
+4. Field Operations & Site Visits:
+   - Send Google Maps route pins to clients directly on WhatsApp.
+   - Track driver status and collect instant on-site walkthrough feedback.
+5. 1-Click Token-to-Sale Conversion:
+   - When a booking token is received, 1-click converts the lead to a sale with automatic brokerage commission calculation.
+6. Free Excel CRM Spreadsheet Template:
+   - Free pre-formatted sheet with Indian property stages (New, Followup, Site Visit, Token Paid) and formulas.
+   - Download link: https://realsalepro.com/templates/real-estate-crm-excel-template
+7. Support & Handover:
+   - Official WhatsApp Support: +91 70797 37773
+   - If the visitor wants human assistance or custom enterprise billing, offer Live Support or tell them to reply "5".
+
+Formatting & Tone Instructions for WhatsApp:
+- Be warm, professional, concise, and helpful.
+- Match the visitor's language: reply in English if they ask in English; reply in natural Hindi (in Devanagari or Hinglish) if they ask in Hindi/Hinglish.
+- CRITICAL WHATSAPP FORMATTING RULE: Use single asterisk for bold (*like this*). NEVER use double asterisks (**like this**), because WhatsApp shows double asterisks as visible raw text!
+- Use bullet points and suitable emojis (🚀, 🛡️, 💰, 📱, 🏢) to make messages easy to scan on mobile.
+- Keep responses concise (under 120 words).
+- End with a helpful next step (e.g., asking about their agency/city or inviting them to start the 1,000-lead free tier at https://realsalepro.com/register).`;
+
+  try {
+    const historyMessages = conversationHistory.slice(-6).map((m) => ({
+      role: m.sender_type === 'visitor' ? 'user' : 'assistant',
+      content: m.body,
+    }));
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...historyMessages,
+      {
+        role: 'user',
+        content: customerName ? `[Visitor: ${customerName}] ${messageText}` : messageText,
+      },
+    ];
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000); // 12-second safeguard
+
+    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.aiModel || 'deepseek-chat',
+        messages,
+        temperature: 0.6,
+        max_tokens: 450,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    const data = await res.json();
+
+    if (!res.ok || !data.choices?.[0]?.message?.content) {
+      console.warn('[DeepSeek AI] API response error:', data);
+      return evaluateVisitorIntent(messageText, customerName);
+    }
+
+    let reply = data.choices[0].message.content.trim();
+    // Safety cleaner: Replace any stray double asterisks with single asterisk for WhatsApp
+    reply = reply.replace(/\*\*(.*?)\*\*/g, '*$1*');
+
+    return {
+      intent: 'deepseek_ai_reply',
+      reply,
+    };
+  } catch (err) {
+    console.error('[DeepSeek AI] Call failed, fallback to rule engine:', err.message);
+    return evaluateVisitorIntent(messageText, customerName);
+  }
+}
+
+/**
  * Handle Inbound Webhooks from Meta Cloud API
  */
 export async function processIncomingWebhook(body) {
@@ -529,20 +672,28 @@ export async function processIncomingWebhook(body) {
             ) VALUES ($1, 'inbound', 'visitor', $2, $3, $4, $5, 'delivered', $6)
           `, [conversation.id, customerName, messageType, messageText, metaMessageId, JSON.stringify(msg)]);
 
-          // Evaluate Visitor Intent
+          // Evaluate Visitor Intent & Generate Response (DeepSeek AI or Handover)
           const config = await getWhatsAppConfig();
-          const { intent, reply } = evaluateVisitorIntent(messageText, customerName);
 
-          // Handle "Talk to Agent" Handover
-          if (intent === 'agent_handover') {
+          // Check if user requested agent handover explicitly
+          const normalized = String(messageText || '').trim().toLowerCase();
+          const isAgentRequest =
+            normalized === '5' ||
+            normalized.includes('agent') ||
+            normalized.includes('human') ||
+            normalized.includes('live support') ||
+            normalized.includes('support') ||
+            normalized.includes('talk to agent');
+
+          if (isAgentRequest) {
+            const handover = evaluateVisitorIntent('5', customerName);
             await query(`
               UPDATE whatsapp_conversations
               SET status = 'agent_requested', updated_at = CURRENT_TIMESTAMP
               WHERE id = $1
             `, [conversation.id]);
 
-            // Send handover notification to visitor
-            await sendBotReply(conversation, reply);
+            await sendBotReply(conversation, handover.reply);
             continue;
           }
 
@@ -552,8 +703,24 @@ export async function processIncomingWebhook(body) {
             continue;
           }
 
+          // Fetch recent conversation history for DeepSeek context
+          const historyRes = await query(`
+            SELECT sender_type, body FROM whatsapp_messages
+            WHERE conversation_id = $1
+            ORDER BY created_at DESC
+            LIMIT 6
+          `, [conversation.id]);
+          const history = (historyRes.rows || []).reverse();
+
+          // Generate dynamic response via DeepSeek AI (with rule engine fallback)
+          const { reply } = await generateDeepSeekSalesReply({
+            messageText,
+            customerName,
+            conversationHistory: history,
+          });
+
           // Send Bot Reply if enabled
-          if (config.botEnabled) {
+          if (config.botEnabled && reply) {
             await sendBotReply(conversation, reply);
           }
         }
