@@ -315,4 +315,8 @@ export const whatsappHubService = {
     api.get<{ success: boolean; broadcasts: any[] }>('/whatsapp/broadcasts'),
   createBroadcast: (data: { title: string; templateName?: string; customMessage?: string; targetAudience?: string; phones?: string[] }) =>
     api.post<{ success: boolean; campaign: any }>('/whatsapp/broadcasts', data),
+  labelConversation: (conversationId: string, label: string, notes?: string) =>
+    api.post<{ success: boolean; label: string; authenticityScore: number }>(`/whatsapp/conversations/${conversationId}/label`, { label, notes }),
+  getLearningPatterns: () =>
+    api.get<{ success: boolean; patterns: any[] }>('/whatsapp/learning-patterns'),
 };

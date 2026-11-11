@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from '../db/index.js';
 import { isPlatformRole, requirePlatformAdmin, requireRole, requireTenantAccess } from '../middleware/auth.js';
+import { handleRegistrationLearning } from '../services/leadIntelligenceService.js';
 
 const router = Router();
 
@@ -108,6 +109,15 @@ export async function registerTenantHandler(req, res) {
           [camp.rows[0].tenant_id, camp.rows[0].id, tenant.id]
         );
       }
+    }
+
+    // Trigger automated positive reinforcement learning if phone matches a WhatsApp conversation
+    if (contact_phone) {
+      handleRegistrationLearning({
+        phone: contact_phone,
+        company_name: company_name.trim(),
+        email: contact_email.trim(),
+      }).catch((e) => console.warn('[Lead Intelligence] Registration hook notice:', e.message));
     }
 
     return res.json({ success: true, tenant_id: tenant.id, tenant: { ...tenant, _id: tenant.id } });

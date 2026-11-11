@@ -1,5 +1,10 @@
 import { query } from '../db/index.js';
 import crypto from 'crypto';
+import {
+  initLeadIntelligenceSchema,
+  analyzeLeadAuthenticity,
+  getLearnedGuidanceForPrompt,
+} from './leadIntelligenceService.js';
 
 let schemaInitialized = false;
 
@@ -150,6 +155,10 @@ export async function initWhatsAppSchema() {
         phone_number_id = COALESCE(whatsapp_platform_config.phone_number_id, EXCLUDED.phone_number_id),
         access_token = COALESCE(whatsapp_platform_config.access_token, EXCLUDED.access_token);
     `);
+
+    // Initialize Lead Intelligence & Continuous Learning Schema
+    await initLeadIntelligenceSchema();
+
     schemaInitialized = true;
   } catch (err) {
     console.error('Error initializing WhatsApp schema:', err.message);
@@ -591,7 +600,14 @@ function evaluateVisitorIntent(messageText, customerName) {
  * Humanized Sales Advisor via DeepSeek AI
  * Acts 100% as Rahul from RealSalePro Sales Team. Zero robotic giveaways.
  */
-export async function generateDeepSeekSalesReply({ messageText, customerName, conversationHistory = [], conversationMetadata = {} }) {
+export async function generateDeepSeekSalesReply({
+  messageText,
+  customerName,
+  conversationHistory = [],
+  conversationMetadata = {},
+  learnedGuidance = '',
+  recommendedProbe = '',
+}) {
   const config = await getWhatsAppConfig();
   const apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
 
@@ -652,8 +668,18 @@ CRITICAL IDENTITY RULES (NEVER BREAK):
     if (conversationMetadata.city) contextPrefix += `[City: ${conversationMetadata.city}] `;
     if (conversationMetadata.company_name) contextPrefix += `[Company: ${conversationMetadata.company_name}] `;
 
+    // Ingest dynamic continuous learning insights & recommended qualification probe
+    let dynamicSystemPrompt = systemPrompt;
+    if (learnedGuidance) {
+      dynamicSystemPrompt += `\n${learnedGuidance}`;
+    }
+    if (recommendedProbe) {
+      dynamicSystemPrompt += `\n\nADAPTIVE CONTEXTUAL QUALIFICATION PROBE:
+If natural in the flow of conversation, ask this specific probing question to qualify the lead: "${recommendedProbe}"`;
+    }
+
     const messages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: dynamicSystemPrompt },
       ...historyMessages,
       {
         role: 'user',
@@ -864,12 +890,52 @@ export async function processIncomingWebhook(body) {
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
 
-          // Generate dynamic response via DeepSeek AI (with rule engine fallback)
+          // 1. Run Real-time Lead Authenticity & Threat Scoring
+          const leadAnalysis = await analyzeLeadAuthenticity({
+            messageText,
+            conversation,
+            conversationHistory: history,
+          });
+
+          // Persist updated intelligence metrics into conversation metadata
+          const currentMeta = conversation.metadata || {};
+          const updatedMeta = {
+            ...currentMeta,
+            authenticity_score: leadAnalysis.authenticityScore,
+            lead_classification: leadAnalysis.category,
+            threat_level: leadAnalysis.threatLevel,
+            token_shield_active: leadAnalysis.tokenShieldActive,
+            evasive_count: leadAnalysis.evasiveCount,
+            last_analyzed_at: new Date().toISOString(),
+          };
+
+          await query(`
+            UPDATE whatsapp_conversations
+            SET metadata = $1::jsonb, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+          `, [JSON.stringify(updatedMeta), conversation.id]);
+          conversation.metadata = updatedMeta;
+
+          // 2. Token Shield Circuit Breaker: If visitor is suspicious/competitor/spammer, send gatekeeper reply and SAVE LLM TOKENS!
+          if (leadAnalysis.tokenShieldActive && leadAnalysis.gatekeeperResponse) {
+            console.log(`🛡️ [Token Shield] Active for ${conversation.phone} (Score: ${leadAnalysis.authenticityScore}, Category: ${leadAnalysis.category}). Bypassing LLM.`);
+            if (config.botEnabled) {
+              await sendBotReply(conversation, leadAnalysis.gatekeeperResponse);
+            }
+            continue;
+          }
+
+          // 3. Fetch learned continuous patterns for dynamic prompt ingestion
+          const learnedGuidance = await getLearnedGuidanceForPrompt();
+
+          // 4. Generate dynamic response via DeepSeek AI (with rule engine fallback)
           const { reply } = await generateDeepSeekSalesReply({
             messageText,
             customerName: effectiveName,
             conversationHistory: history,
             conversationMetadata: conversation.metadata || {},
+            learnedGuidance,
+            recommendedProbe: leadAnalysis.recommendedProbe,
           });
 
           // Send Bot Reply if enabled

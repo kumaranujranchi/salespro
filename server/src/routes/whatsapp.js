@@ -17,6 +17,10 @@ import {
   createBroadcastCampaign,
   listBroadcasts,
 } from '../services/whatsappHubService.js';
+import {
+  recordConversationFeedback,
+  listLearningPatterns,
+} from '../services/leadIntelligenceService.js';
 
 const router = Router();
 
@@ -227,6 +231,41 @@ router.post('/conversations/:id/toggle-bot', requireAuth, async (req, res) => {
     const { status } = req.body;
     const updated = await toggleBotStatus({ conversationId: req.params.id, status });
     return res.json({ success: true, conversation: updated });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Lead Intelligence & Adaptive Continuous Learning Endpoints
+ */
+
+// POST /api/whatsapp/conversations/:id/label - Record feedback & reinforce ML pattern
+router.post('/conversations/:id/label', requireAuth, async (req, res) => {
+  try {
+    const { label, notes } = req.body;
+    if (!label) {
+      return res.status(400).json({ error: 'Classification label is required' });
+    }
+
+    const result = await recordConversationFeedback({
+      conversationId: req.params.id,
+      label,
+      notes,
+      adminId: req.user?.id || req.user?.email,
+    });
+
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/whatsapp/learning-patterns - List active learned patterns
+router.get('/learning-patterns', requireAuth, async (req, res) => {
+  try {
+    const data = await listLearningPatterns();
+    return res.json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

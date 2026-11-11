@@ -25,16 +25,26 @@ import {
   Key,
   Flame,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Brain,
+  Shield,
+  ShieldAlert,
+  Zap,
+  TrendingUp,
 } from 'lucide-react';
 import { whatsappHubService } from '../../lib/services';
 import { formatPhoneDisplay } from '../../../server/src/services/whatsappHubService';
 
 export function WhatsAppCommandCenterPage() {
-  const [activeTab, setActiveTab] = useState<'inbox' | 'broadcast' | 'templates' | 'otp' | 'settings'>('inbox');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'intelligence' | 'broadcast' | 'templates' | 'otp' | 'settings'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // Intelligence & Learning Patterns state
+  const [learningPatterns, setLearningPatterns] = useState<any[]>([]);
+  const [loadingPatterns, setLoadingPatterns] = useState(false);
+  const [labelingConv, setLabelingConv] = useState(false);
 
   // Inbox state
   const [conversations, setConversations] = useState<any[]>([]);
@@ -191,6 +201,43 @@ export function WhatsAppCommandCenterPage() {
       await loadConversations(true);
     } catch (err: any) {
       alert(`Error toggling bot status: ${err.message}`);
+    }
+  };
+
+  const loadLearningPatterns = async () => {
+    setLoadingPatterns(true);
+    try {
+      const res = await whatsappHubService.getLearningPatterns();
+      if (res?.patterns) {
+        setLearningPatterns(res.patterns);
+      }
+    } catch (err: any) {
+      console.error('Error fetching learning patterns:', err);
+    } finally {
+      setLoadingPatterns(false);
+    }
+  };
+
+  const handleLabelConversation = async (conversationId: string, label: string) => {
+    setLabelingConv(true);
+    try {
+      const res = await whatsappHubService.labelConversation(conversationId, label);
+      alert(`🎯 Continuous Learning Feedback Saved! Bot intelligence pattern updated for [${label.replace(/_/g, ' ')}]. Authenticity score updated to ${res.authenticityScore}/100.`);
+      await loadConversations(true);
+      if (selectedConv?.id === conversationId) {
+        setSelectedConv((prev: any) => ({
+          ...prev,
+          metadata: {
+            ...(prev?.metadata || {}),
+            lead_classification: label,
+            authenticity_score: res.authenticityScore,
+          },
+        }));
+      }
+    } catch (err: any) {
+      alert(`Error saving learning feedback: ${err.message}`);
+    } finally {
+      setLabelingConv(false);
     }
   };
 
@@ -365,6 +412,18 @@ export function WhatsAppCommandCenterPage() {
         </button>
 
         <button
+          onClick={() => { setActiveTab('intelligence'); loadLearningPatterns(); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'intelligence'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Brain className="w-4 h-4 text-purple-300" />
+          AI Learning & Patterns
+        </button>
+
+        <button
           onClick={() => { setActiveTab('broadcast'); loadBroadcasts(); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
             activeTab === 'broadcast'
@@ -517,11 +576,24 @@ export function WhatsAppCommandCenterPage() {
                             {isAgentNeeded ? 'Agent Needed' : conv.status === 'agent_chatting' ? 'Agent Active' : 'Bot Active'}
                           </span>
 
-                          {conv.unread_count > 0 && (
-                            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
-                              {conv.unread_count}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {conv.metadata?.authenticity_score !== undefined && (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                conv.metadata.authenticity_score >= 70
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                  : conv.metadata.authenticity_score >= 40
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                              }`} title="Authenticity & Threat Score">
+                                {conv.metadata.authenticity_score}%
+                              </span>
+                            )}
+                            {conv.unread_count > 0 && (
+                              <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                                {conv.unread_count}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -584,6 +656,72 @@ export function WhatsAppCommandCenterPage() {
                         <Play className="w-3.5 h-3.5" /> Resume Bot
                       </button>
                     )}
+                  </div>
+                </div>
+
+                {/* Lead Authenticity & Continuous Learning Banner */}
+                <div className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">Authenticity:</span>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold ${
+                      (selectedConv.metadata?.authenticity_score ?? 50) >= 70
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : (selectedConv.metadata?.authenticity_score ?? 50) >= 40
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                    }`}>
+                      {(selectedConv.metadata?.authenticity_score ?? 50) >= 70 ? (
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (selectedConv.metadata?.authenticity_score ?? 50) >= 40 ? (
+                        <Shield className="w-3.5 h-3.5 text-amber-600" />
+                      ) : (
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                      )}
+                      Score: {selectedConv.metadata?.authenticity_score ?? 50}/100
+                      {selectedConv.metadata?.token_shield_active && ' • 🛡️ Token Shield Active'}
+                    </span>
+                    {selectedConv.metadata?.lead_classification && (
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold uppercase text-[10px]">
+                        {selectedConv.metadata.lead_classification.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 1-Click Classification Feedback buttons (Train the Bot) */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 font-medium">Teach Bot:</span>
+                    <button
+                      onClick={() => handleLabelConversation(selectedConv.id, 'genuine_builder')}
+                      disabled={labelingConv}
+                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Reinforce as genuine builder pattern"
+                    >
+                      ✓ Builder
+                    </button>
+                    <button
+                      onClick={() => handleLabelConversation(selectedConv.id, 'genuine_broker')}
+                      disabled={labelingConv}
+                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Reinforce as genuine broker pattern"
+                    >
+                      ✓ Broker
+                    </button>
+                    <button
+                      onClick={() => handleLabelConversation(selectedConv.id, 'competitor_probe')}
+                      disabled={labelingConv}
+                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Flag competitor probing"
+                    >
+                      ⚠️ Competitor
+                    </button>
+                    <button
+                      onClick={() => handleLabelConversation(selectedConv.id, 'spammer_token_drain')}
+                      disabled={labelingConv}
+                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Flag spam / token drain"
+                    >
+                      🚫 Token Drain
+                    </button>
                   </div>
                 </div>
 
@@ -694,6 +832,164 @@ export function WhatsAppCommandCenterPage() {
                 <MessageSquare className="w-12 h-12 text-slate-300 stroke-1" />
                 <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Select a visitor conversation</p>
                 <p className="text-xs text-slate-400">All WhatsApp interactions from the landing page appear here in real time.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: AI LEAD INTELLIGENCE & CONTINUOUS LEARNING PATTERNS                  */}
+      {/* ========================================================================= */}
+      {activeTab === 'intelligence' && (
+        <div className="space-y-6">
+          {/* Top Engine Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Authenticity Engine</span>
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-600">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">Active & Live</div>
+              <p className="text-xs text-slate-500 mt-1">Evaluates 6 signal vectors per message</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Token Shield</span>
+                <div className="p-2 bg-purple-50 dark:bg-purple-950/40 rounded-xl text-purple-600">
+                  <Zap className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">Zero Token Drain</div>
+              <p className="text-xs text-slate-500 mt-1">Halts LLM on spammers & competitors</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Continuous Learning</span>
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-600">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">Online Reinforcement</div>
+              <p className="text-xs text-slate-500 mt-1">Self-learns from signups & admin tags</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Learned Patterns</span>
+                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600">
+                  <Brain className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">{learningPatterns.length} Signatures</div>
+              <p className="text-xs text-slate-500 mt-1">Persisted in Postgres pattern store</p>
+            </div>
+          </div>
+
+          {/* Explanation Banner */}
+          <div className="bg-gradient-to-r from-purple-900/10 via-emerald-900/10 to-blue-900/10 border border-purple-200/50 dark:border-purple-800/40 rounded-2xl p-5">
+            <div className="flex items-start gap-3">
+              <Brain className="w-6 h-6 text-purple-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">How Continuous Learning Works in RealSalePro</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                  Every time a prospect chats on WhatsApp, the model calculates their <strong>Authenticity Score (0-100)</strong> based on real estate domain signals (RERA, units, telecaller masking, lead portals). If a user registers their company or is verified by you in Live Chat, their linguistic signature is reinforced with positive reward weights. If a visitor asks evasive questions or acts like a competitor, the <strong>Token Shield</strong> switches to deterministic gatekeeping to eliminate API token costs.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Learned Patterns Knowledge Base */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  Active Learned Domain Signatures & Qualification Probes
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  These real estate intent patterns and dynamic qualification questions are actively injected into the DeepSeek AI prompt.
+                </p>
+              </div>
+              <button
+                onClick={loadLearningPatterns}
+                disabled={loadingPatterns}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingPatterns ? 'animate-spin' : ''}`} />
+                Refresh Patterns
+              </button>
+            </div>
+
+            {loadingPatterns && learningPatterns.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400">Loading pattern signatures...</div>
+            ) : learningPatterns.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400">No patterns recorded yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold uppercase text-[10px]">
+                      <th className="pb-3 pr-4">Pattern Category</th>
+                      <th className="pb-3 px-4">Sample Visitor Phrase</th>
+                      <th className="pb-3 px-4">Effective Qualification Probe</th>
+                      <th className="pb-3 px-4 text-center">Confidence</th>
+                      <th className="pb-3 px-4 text-center">Matches / Converted</th>
+                      <th className="pb-3 pl-4">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {learningPatterns.map((pat) => {
+                      const isGenuine = pat.pattern_type.startsWith('genuine');
+                      const isCompetitor = pat.pattern_type === 'competitor_probe';
+                      const isSpam = pat.pattern_type === 'spammer_token_drain';
+
+                      return (
+                        <tr key={pat.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                          <td className="py-3.5 pr-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                              isGenuine
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                : isCompetitor
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                : isSpam
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                : 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'
+                            }`}>
+                              {isGenuine ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : isCompetitor ? <AlertCircle className="w-3.5 h-3.5 text-amber-600" /> : <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />}
+                              {pat.pattern_type.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 max-w-xs truncate text-slate-700 dark:text-slate-300">
+                            "{pat.sample_phrase}"
+                          </td>
+                          <td className="py-3.5 px-4 max-w-sm text-slate-600 dark:text-slate-300 font-medium italic">
+                            "{pat.effective_probe_question || 'N/A'}"
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              {Math.round(Number(pat.confidence_score) * 100)}%
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center text-slate-500">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{pat.times_matched || 1}</span>
+                            {' / '}
+                            <span className="font-semibold text-emerald-600">{pat.times_converted || 0}</span>
+                          </td>
+                          <td className="py-3.5 pl-4 whitespace-nowrap text-slate-400 text-[10px]">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                              {pat.source}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
