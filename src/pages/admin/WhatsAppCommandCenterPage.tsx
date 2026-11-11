@@ -56,6 +56,16 @@ export function WhatsAppCommandCenterPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToChatBottom = (smooth = true) => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto',
+      });
+    }
+  };
 
   // Templates state
   const [templates, setTemplates] = useState<any[]>([]);
@@ -170,7 +180,7 @@ export function WhatsAppCommandCenterPage() {
       if (res?.messages) {
         setMessages(res.messages);
         if (!silent) {
-          setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+          setTimeout(() => scrollToChatBottom(false), 50);
         }
       }
     } catch (err) {
@@ -186,6 +196,7 @@ export function WhatsAppCommandCenterPage() {
       setReplyText('');
       await loadMessages(selectedConv.id);
       await loadConversations(true);
+      setTimeout(() => scrollToChatBottom(true), 100);
     } catch (err: any) {
       alert(`Failed to send message: ${err.message}`);
     } finally {
@@ -351,16 +362,16 @@ export function WhatsAppCommandCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 md:p-6 space-y-4">
       {/* Top Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
               <MessageSquare className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 WhatsApp Command Center
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                   Official +91 70797 37773
@@ -393,7 +404,7 @@ export function WhatsAppCommandCenterPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto shrink-0">
         <button
           onClick={() => setActiveTab('inbox')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -476,13 +487,13 @@ export function WhatsAppCommandCenterPage() {
       {/* TAB 1: LIVE CHAT INBOX                                                    */}
       {/* ========================================================================= */}
       {activeTab === 'inbox' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[640px] h-[75vh]">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 h-[calc(100vh-14rem)] min-h-[500px]">
           {/* Left: Conversation List */}
-          <div className="md:col-span-4 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="md:col-span-4 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full min-h-0 bg-slate-50/50 dark:bg-slate-900/50 overflow-hidden">
             {/* Search & Filter */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 space-y-2.5 shrink-0">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Search visitor phone or name..."
@@ -516,7 +527,7 @@ export function WhatsAppCommandCenterPage() {
             </div>
 
             {/* Conversation List Items */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-slate-800">
               {loading && conversations.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-400">Loading conversations...</div>
               ) : conversations.length === 0 ? (
@@ -604,11 +615,11 @@ export function WhatsAppCommandCenterPage() {
           </div>
 
           {/* Right: Active Chat Window */}
-          <div className="md:col-span-8 flex flex-col h-full bg-white dark:bg-slate-900">
+          <div className="md:col-span-8 flex flex-col h-full min-h-0 bg-white dark:bg-slate-900 overflow-hidden">
             {selectedConv ? (
               <>
                 {/* Chat Top Bar */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
                       {selectedConv.customer_name ? selectedConv.customer_name[0].toUpperCase() : 'V'}
@@ -660,7 +671,7 @@ export function WhatsAppCommandCenterPage() {
                 </div>
 
                 {/* Lead Authenticity & Continuous Learning Banner */}
-                <div className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2">
+                <div className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-slate-500 dark:text-slate-400">Authenticity:</span>
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold ${
@@ -726,7 +737,7 @@ export function WhatsAppCommandCenterPage() {
                 </div>
 
                 {/* Chat History Bubbles */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#e5ddd5]/20 dark:bg-slate-950/60">
+                <div ref={chatContainerRef} className="flex-1 min-h-0 p-4 overflow-y-auto overscroll-contain space-y-3 bg-[#e5ddd5]/20 dark:bg-slate-950/60">
                   {messages.map((m) => {
                     const isInbound = m.direction === 'inbound';
                     const isBot = m.sender_type === 'bot';
@@ -771,7 +782,7 @@ export function WhatsAppCommandCenterPage() {
                 </div>
 
                 {/* Message Input & Canned Actions */}
-                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+                <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shrink-0">
                   {/* Canned responses */}
                   <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
                     <span className="text-slate-400 text-[10px] font-semibold uppercase flex items-center gap-1">
