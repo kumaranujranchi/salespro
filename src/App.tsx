@@ -46,6 +46,7 @@ import { AffiliateTermsPage } from './pages/affiliates/AffiliateTermsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 import { ServerHealthPage } from './pages/admin/ServerHealthPage';
+import { WhatsAppCommandCenterPage } from './pages/admin/WhatsAppCommandCenterPage';
 import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FreeCRMPage } from './pages/FreeCRMPage';
@@ -166,6 +167,17 @@ function App() {
                     <ProtectedRoute allowedRoles={['platform_admin']}>
                       <DashboardLayout>
                         <ServerHealthPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/platform/whatsapp"
+                  element={
+                    <ProtectedRoute allowedRoles={['platform_admin', 'super_admin']}>
+                      <DashboardLayout>
+                        <WhatsAppCommandCenterPage />
                       </DashboardLayout>
                     </ProtectedRoute>
                   }

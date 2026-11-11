@@ -15,6 +15,7 @@ import webhookRoutes from './routes/webhooks.js';
 import systemRoutes from './routes/system.js';
 import capiRoutes from './routes/capi.js';
 import metaRoutes from './routes/meta.js';
+import whatsappRoutes from './routes/whatsapp.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -84,6 +85,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/capi', capiRoutes);
 app.use('/api/meta', metaRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -98,6 +100,15 @@ app.listen(PORT, async () => {
     await pool.query(`UPDATE profiles SET role = 'super_admin' WHERE LOWER(email) = 'kumaranujranchi@gmail.com' AND role = 'platform_admin'`);
   } catch (err) {
     console.error('Initial profile role check error:', err.message);
+  }
+
+  // Initialize In-House WhatsApp Hub Schema
+  try {
+    const { initWhatsAppSchema } = await import('./services/whatsappHubService.js');
+    await initWhatsAppSchema();
+    console.log('✔ RealSalePro In-House WhatsApp Cloud Engine & Schema initialized');
+  } catch (err) {
+    console.error('WhatsApp schema initialization error:', err.message);
   }
 
   // Initialize Inactivity Schema & Automated 30-Day Inactivity Scheduler

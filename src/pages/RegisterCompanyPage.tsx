@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useAction } from "../lib/reactive";
 import { api } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
+import { whatsappHubService } from '../lib/services';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -73,8 +74,16 @@ export function RegisterCompanyPage() {
         name: formData.fullName,
         data: { otp: newOtp }
       });
+
+      if (formData.phone) {
+        try {
+          await whatsappHubService.sendOtp(formData.phone, 'signup_verification');
+        } catch (waErr) {
+          console.warn('WhatsApp OTP resend warning:', waErr);
+        }
+      }
       
-      setSuccess('A new verification code has been sent to your email.');
+      setSuccess('A new verification code has been sent to your WhatsApp and Email.');
       setResendTimer(30);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend verification code');
@@ -105,9 +114,21 @@ export function RegisterCompanyPage() {
         data: { otp: newOtp }
       });
 
+      if (formData.phone) {
+        try {
+          await whatsappHubService.sendOtp(formData.phone, 'signup_verification');
+        } catch (waErr) {
+          console.warn('WhatsApp OTP send warning:', waErr);
+        }
+      }
+
       setVerificationStep(true);
       setResendTimer(30);
-      setSuccess('Verification code sent! Please check your email.');
+      setSuccess(
+        formData.phone
+          ? `Verification code sent to your WhatsApp (${formData.phone}) and Email!`
+          : 'Verification code sent to your email!'
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send verification code');
     } finally {
@@ -120,8 +141,22 @@ export function RegisterCompanyPage() {
     setLoading(true);
     setError(null);
 
-    if (otp !== generatedOtp) {
-      setError("Invalid verification code");
+    let isValid = (otp === generatedOtp);
+
+    // If local match fails, attempt verification via WhatsApp OTP backend service
+    if (!isValid && formData.phone) {
+      try {
+        const waVerify = await whatsappHubService.verifyOtp(formData.phone, otp, 'signup_verification');
+        if (waVerify?.data?.success) {
+          isValid = true;
+        }
+      } catch (waErr) {
+        console.warn('WhatsApp OTP verify check:', waErr);
+      }
+    }
+
+    if (!isValid) {
+      setError("Invalid verification code. Please check your WhatsApp or Email.");
       setLoading(false);
       return;
     }
@@ -311,7 +346,7 @@ export function RegisterCompanyPage() {
                   />
                 </div>
                 <p className="text-xs text-center text-gray-500 mt-2">
-                  Check your spam folder if you don't see the email.
+                  Check your WhatsApp or spam folder if you haven't received the code.
                 </p>
               </div>
 

@@ -1248,10 +1248,4 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       </div>
     </div>
   </footer>
-
-  <a class="wa-float" href="https://wa.me/917079737773" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
-    <svg class="icon"><use href="#i-whatsapp"/></svg>
-    <span class="wa-float__tip">Chat with us</span>
-  </a>
-
 `;

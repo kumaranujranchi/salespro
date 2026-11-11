@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { landingHtml } from './landingHtml';
 import { initLandingInteractions } from './landingInteractions';
+import { WebsiteWhatsAppWidget } from '../components/whatsapp/WebsiteWhatsAppWidget';
 import '../styles/landing.css';
 
 export function LandingPage() {
@@ -84,10 +85,13 @@ export function LandingPage() {
   }, [navigate]);
 
   return (
-    <div
-      ref={containerRef}
-      className="realsalepro-landing-wrapper"
-      dangerouslySetInnerHTML={{ __html: landingHtml }}
-    />
+    <>
+      <div
+        ref={containerRef}
+        className="realsalepro-landing-wrapper"
+        dangerouslySetInnerHTML={{ __html: landingHtml }}
+      />
+      <WebsiteWhatsAppWidget />
+    </>
   );
 }

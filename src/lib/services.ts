@@ -277,3 +277,42 @@ export const subscriptionService = {
   activateTestMode: (data: { tenantId?: string; planTier?: string; billingCycle?: string }) =>
     api.post<{ success: boolean; message: string; planTier: string; billingCycle: string }>('/subscriptions/activate-test-mode', data),
 };
+
+export const whatsappHubService = {
+  getConfig: () =>
+    api.get<{ success: boolean; config: any }>('/whatsapp/config'),
+  saveConfig: (data: {
+    wabaId?: string;
+    phoneNumberId?: string;
+    accessToken?: string;
+    webhookVerifyToken?: string;
+    botEnabled?: boolean;
+    welcomeMessage?: string;
+    agentNotifyEmail?: string;
+    agentNotifyPhone?: string;
+  }) => api.post<{ success: boolean; message: string; config: any }>('/whatsapp/config', data),
+  testConnection: () =>
+    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string }>('/whatsapp/test-connection'),
+  listConversations: (params?: { status?: string; search?: string; limit?: number; offset?: number }) =>
+    api.get<{ success: boolean; conversations: any[]; summary: any }>('/whatsapp/conversations', params),
+  getMessages: (conversationId: string) =>
+    api.get<{ success: boolean; messages: any[] }>(`/whatsapp/conversations/${conversationId}/messages`),
+  sendReply: (conversationId: string, text: string) =>
+    api.post<{ success: boolean; message: any }>(`/whatsapp/conversations/${conversationId}/reply`, { text }),
+  toggleBot: (conversationId: string, status: string) =>
+    api.post<{ success: boolean; conversation: any }>(`/whatsapp/conversations/${conversationId}/toggle-bot`, { status }),
+  sendOtp: (phone: string, purpose?: string) =>
+    api.post<{ success: boolean; message: string; phone: string; expiresAt: string }>('/whatsapp/otp/send', { phone, purpose }),
+  verifyOtp: (phone: string, otp: string, purpose?: string) =>
+    api.post<{ success: boolean; message: string }>('/whatsapp/otp/verify', { phone, otp, purpose }),
+  listTemplates: () =>
+    api.get<{ success: boolean; templates: any[]; metaConnected?: boolean; warning?: string }>('/whatsapp/templates'),
+  createTemplate: (data: { name: string; category: string; language?: string; components: any[] }) =>
+    api.post<{ success: boolean; templateId: string; status: string }>('/whatsapp/templates', data),
+  deleteTemplate: (name: string) =>
+    api.delete<{ success: boolean }>(`/whatsapp/templates/${name}`),
+  listBroadcasts: () =>
+    api.get<{ success: boolean; broadcasts: any[] }>('/whatsapp/broadcasts'),
+  createBroadcast: (data: { title: string; templateName?: string; customMessage?: string; targetAudience?: string; phones?: string[] }) =>
+    api.post<{ success: boolean; campaign: any }>('/whatsapp/broadcasts', data),
+};

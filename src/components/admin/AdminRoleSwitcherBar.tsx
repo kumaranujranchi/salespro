@@ -268,13 +268,23 @@ export function AdminRoleSwitcherBar() {
               </button>
 
               {currentActiveRole === 'platform_admin' && (
-                <button
-                  onClick={() => navigate('/platform/tenants')}
-                  className="px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 transition flex items-center gap-1 font-medium"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Tenants
-                </button>
+                <>
+                  <button
+                    onClick={() => navigate('/platform/tenants')}
+                    className="px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 transition flex items-center gap-1 font-medium"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Tenants
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/platform/whatsapp')}
+                    className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition flex items-center gap-1 font-medium"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    WhatsApp Hub
+                  </button>
+                </>
               )}
             </div>
           </div>

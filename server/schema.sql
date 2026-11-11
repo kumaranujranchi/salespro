@@ -500,3 +500,103 @@ CREATE TABLE IF NOT EXISTS capi_events_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_capi_events_tenant ON capi_events_log(tenant_id, created_at DESC);
+
+-- 23. WHATSAPP CONVERSATIONS TABLE (In-House Live Chat & Bot Engine)
+CREATE TABLE IF NOT EXISTS whatsapp_conversations (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    phone VARCHAR(50) NOT NULL UNIQUE,
+    customer_name VARCHAR(255),
+    status VARCHAR(50) NOT NULL DEFAULT 'bot_active', -- 'bot_active', 'agent_requested', 'agent_chatting', 'closed'
+    assigned_to VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
+    unread_count INT NOT NULL DEFAULT 0,
+    last_message TEXT,
+    last_message_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_conv_phone ON whatsapp_conversations(phone);
+CREATE INDEX IF NOT EXISTS idx_wa_conv_status ON whatsapp_conversations(status);
+CREATE INDEX IF NOT EXISTS idx_wa_conv_last_msg ON whatsapp_conversations(last_message_at DESC);
+
+-- 24. WHATSAPP MESSAGES TABLE (2-Way Chat History)
+CREATE TABLE IF NOT EXISTS whatsapp_messages (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    conversation_id VARCHAR(255) NOT NULL REFERENCES whatsapp_conversations(id) ON DELETE CASCADE,
+    direction VARCHAR(20) NOT NULL, -- 'inbound', 'outbound'
+    sender_type VARCHAR(30) NOT NULL, -- 'visitor', 'bot', 'agent', 'system'
+    sender_name VARCHAR(255),
+    message_type VARCHAR(30) NOT NULL DEFAULT 'text', -- 'text', 'template', 'interactive', 'image', 'document'
+    body TEXT NOT NULL,
+    meta_message_id VARCHAR(255),
+    status VARCHAR(30) NOT NULL DEFAULT 'sent', -- 'sent', 'delivered', 'read', 'failed'
+    error_message TEXT,
+    raw_payload JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_msg_conv ON whatsapp_messages(conversation_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_wa_msg_meta_id ON whatsapp_messages(meta_message_id);
+
+-- 25. WHATSAPP TEMPLATES TABLE (Direct Meta Sync & Approval Hub)
+CREATE TABLE IF NOT EXISTS whatsapp_templates (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    category VARCHAR(50) NOT NULL DEFAULT 'MARKETING', -- 'MARKETING', 'UTILITY', 'AUTHENTICATION'
+    language VARCHAR(20) NOT NULL DEFAULT 'en',
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING', -- 'APPROVED', 'PENDING', 'REJECTED', 'PAUSED'
+    meta_template_id VARCHAR(255),
+    components JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rejection_reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_tpl_status ON whatsapp_templates(status);
+
+-- 26. WHATSAPP BROADCASTS TABLE (Bulk Campaigns)
+CREATE TABLE IF NOT EXISTS whatsapp_broadcasts (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    title VARCHAR(255) NOT NULL,
+    template_name VARCHAR(255),
+    custom_message TEXT,
+    target_audience VARCHAR(100) NOT NULL DEFAULT 'all_leads',
+    total_recipients INT NOT NULL DEFAULT 0,
+    sent_count INT NOT NULL DEFAULT 0,
+    delivered_count INT NOT NULL DEFAULT 0,
+    read_count INT NOT NULL DEFAULT 0,
+    failed_count INT NOT NULL DEFAULT 0,
+    status VARCHAR(50) NOT NULL DEFAULT 'draft', -- 'draft', 'scheduled', 'processing', 'completed', 'failed'
+    created_by VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMPTZ
+);
+
+-- 27. WHATSAPP OTPS TABLE (Customer Verification via WhatsApp)
+CREATE TABLE IF NOT EXISTS whatsapp_otps (
+    id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    phone VARCHAR(50) NOT NULL,
+    otp_code VARCHAR(20) NOT NULL,
+    purpose VARCHAR(50) NOT NULL DEFAULT 'signup_verification', -- 'signup_verification', 'password_reset', 'login'
+    attempts INT NOT NULL DEFAULT 0,
+    is_verified BOOLEAN NOT NULL DEFAULT false,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_wa_otps_phone ON whatsapp_otps(phone, is_verified, expires_at);
+
+-- 28. WHATSAPP PLATFORM CONFIG TABLE (Meta Cloud API Official Setup)
+CREATE TABLE IF NOT EXISTS whatsapp_platform_config (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+    waba_id VARCHAR(255),
+    phone_number_id VARCHAR(255),
+    access_token TEXT,
+    webhook_verify_token VARCHAR(255) DEFAULT 'realsalepro_wa_secret',
+    bot_enabled BOOLEAN DEFAULT true,
+    welcome_message TEXT,
+    agent_notify_email VARCHAR(255) DEFAULT 'support@realsalepro.com',
+    agent_notify_phone VARCHAR(50) DEFAULT '+917079737773',
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);

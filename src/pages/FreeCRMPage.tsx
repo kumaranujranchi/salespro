@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
 import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
+import { WebsiteWhatsAppWidget } from '../components/whatsapp/WebsiteWhatsAppWidget';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -695,11 +696,8 @@ export function FreeCRMPage() {
         </div>
       </footer>
 
-      {/* Floating WhatsApp FAB */}
-      <a className="wa-float" href="https://wa.me/917079737773" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
-        <svg className="icon"><use href="#i-whatsapp"/></svg>
-        <span className="wa-float__tip">Chat with us</span>
-      </a>
+      {/* RealSalePro Official In-House WhatsApp Assistant */}
+      <WebsiteWhatsAppWidget />
     </>
   );
 }

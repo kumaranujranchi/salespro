@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
 import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
+import { WebsiteWhatsAppWidget } from '../components/whatsapp/WebsiteWhatsAppWidget';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
 
@@ -387,6 +388,9 @@ export function LeadManagementFeaturePage() {
           </div>
         </div>
       </footer>
+
+      {/* RealSalePro Official In-House WhatsApp Assistant */}
+      <WebsiteWhatsAppWidget />
     </>
   );
 }
