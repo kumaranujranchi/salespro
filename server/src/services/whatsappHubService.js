@@ -94,7 +94,8 @@ export async function initWhatsAppSchema() {
 
       CREATE TABLE IF NOT EXISTS whatsapp_conversations (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        phone VARCHAR(50) NOT NULL UNIQUE,
+        tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE,
+        phone VARCHAR(50) NOT NULL,
         customer_name VARCHAR(255),
         status VARCHAR(50) NOT NULL DEFAULT 'bot_active',
         assigned_to VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
@@ -106,6 +107,10 @@ export async function initWhatsAppSchema() {
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
+      ALTER TABLE whatsapp_conversations ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE;
+      ALTER TABLE whatsapp_conversations DROP CONSTRAINT IF EXISTS whatsapp_conversations_phone_key;
+      CREATE INDEX IF NOT EXISTS idx_wa_conv_tenant ON whatsapp_conversations(tenant_id);
+      CREATE INDEX IF NOT EXISTS idx_wa_conv_tenant_phone ON whatsapp_conversations(tenant_id, phone);
       CREATE INDEX IF NOT EXISTS idx_wa_conv_phone ON whatsapp_conversations(phone);
       CREATE INDEX IF NOT EXISTS idx_wa_conv_status ON whatsapp_conversations(status);
       CREATE INDEX IF NOT EXISTS idx_wa_conv_last_msg ON whatsapp_conversations(last_message_at DESC);
@@ -157,6 +162,9 @@ export async function initWhatsAppSchema() {
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMPTZ
       );
+
+      ALTER TABLE whatsapp_broadcasts ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE;
+      CREATE INDEX IF NOT EXISTS idx_wa_broadcasts_tenant ON whatsapp_broadcasts(tenant_id);
 
       CREATE TABLE IF NOT EXISTS whatsapp_otps (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -337,15 +345,33 @@ export async function testMetaConnection() {
 
 /**
  * Send raw outbound WhatsApp message via Meta Cloud API
+ * Supports multi-tenant routing: looks up tenant credentials if tenantId is provided.
  */
-export async function sendMetaOutboundMessage({ toPhone, text, templateName, languageCode = 'en', bodyParams = [] }) {
-  const config = await getWhatsAppConfig();
-  if (!config.phoneNumberId || !config.accessToken) {
+export async function sendMetaOutboundMessage({ toPhone, text, templateName, languageCode = 'en', bodyParams = [], tenantId = null }) {
+  let phoneNumberId = null;
+  let accessToken = null;
+
+  if (tenantId) {
+    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const wa = tRes.rows[0]?.settings?.integrations?.whatsapp;
+    if (wa?.phoneNumberId && wa?.accessToken) {
+      phoneNumberId = wa.phoneNumberId;
+      accessToken = wa.accessToken;
+    }
+  }
+
+  if (!phoneNumberId || !accessToken) {
+    const config = await getWhatsAppConfig();
+    phoneNumberId = config.phoneNumberId;
+    accessToken = config.accessToken;
+  }
+
+  if (!phoneNumberId || !accessToken) {
     throw new Error('Meta WhatsApp Cloud API is not configured. Missing Phone Number ID or Access Token.');
   }
 
   const normalizedTo = normalizeWhatsAppPhone(toPhone);
-  const url = `https://graph.facebook.com/v21.0/${config.phoneNumberId}/messages`;
+  const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
 
   let payload;
   if (templateName) {
@@ -379,7 +405,7 @@ export async function sendMetaOutboundMessage({ toPhone, text, templateName, lan
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(payload),
   });
@@ -405,6 +431,7 @@ async function sendBotReply(conversation, text) {
     const metaRes = await sendMetaOutboundMessage({
       toPhone: conversation.phone,
       text,
+      tenantId: conversation.tenant_id || null,
     });
 
     await query(`
@@ -609,6 +636,28 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
       SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
       WHERE id = $${pIdx}
     `, params);
+  }
+
+  // If this conversation belongs to a tenant, synchronize newly discovered profile info to tenant's CRM leads
+  if (conversation.tenant_id && (detectedName || detectedCity || detectedCompany)) {
+    try {
+      const last10 = String(conversation.phone || '').slice(-10);
+      await query(`
+        UPDATE leads
+        SET customer_name = COALESCE($1, customer_name),
+            city = COALESCE($2, city),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE tenant_id = $3 AND (mobile = $4 OR mobile LIKE $5)
+      `, [
+        detectedName || conversation.customer_name || null,
+        detectedCity || null,
+        conversation.tenant_id,
+        last10,
+        `%${last10}`
+      ]);
+    } catch (e) {
+      console.warn('[extractAndSaveLeadDetails] Tenant CRM lead sync warning:', e.message);
+    }
   }
 }
 
@@ -1030,31 +1079,58 @@ export async function processIncomingWebhook(body) {
 
           if (!fromPhone || !messageText) continue;
 
-          // Find or create conversation
-          let convRes = await query(`
-            INSERT INTO whatsapp_conversations (phone, customer_name, last_message, last_message_at, unread_count, updated_at)
-            VALUES ($1, COALESCE($2, 'Website Visitor'), $3, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
-            ON CONFLICT (phone) DO UPDATE SET
-              customer_name = CASE
-                WHEN whatsapp_conversations.customer_name IS NOT NULL 
-                     AND whatsapp_conversations.customer_name != '' 
-                     AND whatsapp_conversations.customer_name != 'Website Visitor' 
-                     AND whatsapp_conversations.customer_name != 'Hey'
-                THEN whatsapp_conversations.customer_name
-                WHEN EXCLUDED.customer_name IS NOT NULL 
-                     AND EXCLUDED.customer_name != '' 
-                     AND EXCLUDED.customer_name != 'Website Visitor'
-                THEN EXCLUDED.customer_name
-                ELSE 'Website Visitor'
-              END,
-              last_message = EXCLUDED.last_message,
-              last_message_at = CURRENT_TIMESTAMP,
-              unread_count = whatsapp_conversations.unread_count + 1,
-              updated_at = CURRENT_TIMESTAMP
-            RETURNING *
-          `, [fromPhone, customerName, messageText]);
+          // Multi-Tenant Routing: Check if incoming phone_number_id matches any registered tenant
+          const incomingPhoneNumberId = value.metadata?.phone_number_id;
+          let matchedTenantId = null;
+          let matchedTenant = null;
 
-          let conversation = convRes.rows[0];
+          if (incomingPhoneNumberId) {
+            const tenantMatchRes = await query(`
+              SELECT id, name, settings
+              FROM tenants
+              WHERE settings->'integrations'->'whatsapp'->>'phoneNumberId' = $1
+              LIMIT 1
+            `, [incomingPhoneNumberId]);
+
+            if (tenantMatchRes.rows[0]) {
+              matchedTenantId = tenantMatchRes.rows[0].id;
+              matchedTenant = tenantMatchRes.rows[0];
+            }
+          }
+
+          // Find or create conversation scoped to tenant (or platform if matchedTenantId is null)
+          let convRes = await query(`
+            SELECT * FROM whatsapp_conversations
+            WHERE phone = $1 AND (($2::text IS NULL AND tenant_id IS NULL) OR tenant_id = $2)
+            LIMIT 1
+          `, [fromPhone, matchedTenantId]);
+
+          let conversation;
+          if (convRes.rows[0]) {
+            conversation = convRes.rows[0];
+            const updatedCustomerName = (customerName && customerName !== 'Website Visitor')
+              ? customerName
+              : (conversation.customer_name || 'Website Visitor');
+
+            const updRes = await query(`
+              UPDATE whatsapp_conversations
+              SET customer_name = $1,
+                  last_message = $2,
+                  last_message_at = CURRENT_TIMESTAMP,
+                  unread_count = unread_count + 1,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE id = $3
+              RETURNING *
+            `, [updatedCustomerName, messageText, conversation.id]);
+            conversation = updRes.rows[0];
+          } else {
+            const insRes = await query(`
+              INSERT INTO whatsapp_conversations (tenant_id, phone, customer_name, last_message, last_message_at, unread_count, updated_at)
+              VALUES ($1, $2, COALESCE($3, 'Website Visitor'), $4, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+              RETURNING *
+            `, [matchedTenantId, fromPhone, customerName, messageText]);
+            conversation = insRes.rows[0];
+          }
 
           // Save message to history
           await query(`
@@ -1062,6 +1138,36 @@ export async function processIncomingWebhook(body) {
               conversation_id, direction, sender_type, sender_name, message_type, body, meta_message_id, status, raw_payload
             ) VALUES ($1, 'inbound', 'visitor', $2, $3, $4, $5, 'delivered', $6)
           `, [conversation.id, conversation.customer_name || 'Prospect', messageType, messageText, metaMessageId, JSON.stringify(msg)]);
+
+          // If tenant matched, automatically capture lead into tenant's CRM pipeline if not already present
+          if (matchedTenantId) {
+            try {
+              const last10Digits = fromPhone.slice(-10);
+              const leadCheckRes = await query(`
+                SELECT id, lead_id FROM leads
+                WHERE tenant_id = $1 AND (mobile = $2 OR mobile = $3 OR mobile LIKE $4)
+                LIMIT 1
+              `, [matchedTenantId, fromPhone, last10Digits, `%${last10Digits}`]);
+
+              if (!leadCheckRes.rows[0]) {
+                const leadCode = `WA-${Date.now().toString().slice(-6)}`;
+                await query(`
+                  INSERT INTO leads
+                    (tenant_id, lead_id, customer_name, mobile, lead_source, lead_status, lead_score, lead_date, metadata)
+                  VALUES ($1, $2, $3, $4, 'WhatsApp', 'New', 'Warm', CURRENT_DATE::text, $5::jsonb)
+                `, [
+                  matchedTenantId,
+                  leadCode,
+                  conversation.customer_name || 'WhatsApp Inquiry',
+                  last10Digits,
+                  JSON.stringify({ whatsapp_conversation_id: conversation.id, captured_via: 'meta_cloud_whatsapp' })
+                ]);
+                console.log(`[WhatsApp Lead Auto-Capture] Created new CRM lead for tenant ${matchedTenantId}: ${last10Digits}`);
+              }
+            } catch (leadSyncErr) {
+              console.warn('[WhatsApp Lead Auto-Capture] Error syncing lead:', leadSyncErr.message);
+            }
+          }
 
           // Extract & persist lead details (Name, City, Company) from message text for sales follow-up
           await extractAndSaveLeadDetails({ conversation, messageText });
@@ -1187,10 +1293,11 @@ export async function sendAgentReply({ conversationId, text, agentProfileId, age
   const conversation = convRes.rows[0];
   if (!conversation) throw new Error('Conversation not found');
 
-  // Dispatch outbound message via Meta Cloud API
+  // Dispatch outbound message via Meta Cloud API using tenant or platform credentials
   const metaRes = await sendMetaOutboundMessage({
     toPhone: conversation.phone,
     text,
+    tenantId: conversation.tenant_id || null,
   });
 
   // Record in database
@@ -1234,13 +1341,25 @@ export async function toggleBotStatus({ conversationId, status }) {
 }
 
 /**
- * List Conversations with filters and unread counts
+ * List Conversations with filters, tenant scoping, and unread counts
  */
-export async function listConversations({ status = 'all', search = '', limit = 50, offset = 0 } = {}) {
+export async function listConversations({ status = 'all', search = '', limit = 50, offset = 0, tenantId = null } = {}) {
   await initWhatsAppSchema();
 
   let sql = 'SELECT * FROM whatsapp_conversations WHERE 1=1';
   const params = [];
+  let summaryWhere = 'WHERE 1=1';
+  const summaryParams = [];
+
+  if (tenantId === 'platform') {
+    sql += ' AND tenant_id IS NULL';
+    summaryWhere += ' AND tenant_id IS NULL';
+  } else if (tenantId && tenantId !== 'all') {
+    params.push(tenantId);
+    sql += ` AND tenant_id = $${params.length}`;
+    summaryParams.push(tenantId);
+    summaryWhere += ` AND tenant_id = $${summaryParams.length}`;
+  }
 
   if (status && status !== 'all') {
     params.push(status);
@@ -1262,7 +1381,7 @@ export async function listConversations({ status = 'all', search = '', limit = 5
 
   const res = await query(sql, params);
 
-  // Summary counts
+  // Summary counts scoped to same tenant filter
   const countRes = await query(`
     SELECT
       COUNT(*) AS total,
@@ -1271,7 +1390,8 @@ export async function listConversations({ status = 'all', search = '', limit = 5
       COUNT(*) FILTER (WHERE status = 'agent_chatting') AS agent_chatting_count,
       COALESCE(SUM(unread_count), 0) AS total_unread
     FROM whatsapp_conversations
-  `);
+    ${summaryWhere}
+  `, summaryParams);
 
   return {
     conversations: res.rows,

@@ -55,6 +55,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <a href="#product">Platform</a>
         <a href="#integrations">Integrations</a>
         <a href="#security">Security</a>
+        <a href="#whatsapp-engine">WhatsApp Engine</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -75,6 +76,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <a href="#product">Platform</a>
       <a href="#integrations">Integrations</a>
       <a href="#security">Security</a>
+      <a href="#whatsapp-engine">WhatsApp Engine</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a href="https://realsalepro.com/login">Log in</a>
@@ -929,11 +931,178 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       </div>
     </section>
 
+    <!-- ============ IN-HOUSE WHATSAPP ENGINE & COMPARISON ============ -->
+    <section class="section section--dark" id="whatsapp-engine">
+      <div class="container">
+        <header class="sec-head sec-head--center">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">08</span> In-house WhatsApp Engine</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Stop paying ₹3,000–₹6,000/mo<br />for generic WhatsApp tools.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            RealSalePro connects directly to Meta WhatsApp Cloud API inside your CRM. Zero 3rd-party SaaS fees, zero per-agent seat markups, and direct official Meta billing.
+          </p>
+        </header>
+
+        <div class="wa-engine-wrap" data-reveal data-reveal-delay="180">
+          <div class="wa-compare-card">
+            <div class="wa-compare-header">
+              <div>
+                <strong style="color: #fff; font-size: 16px; font-family: var(--font-display); display: block;">RealSalePro vs Generic WhatsApp Tools</strong>
+                <span style="color: var(--muted-dark); font-size: 13px;">Compare in-house Meta Cloud direct architecture against third-party standalone tools</span>
+              </div>
+              <span class="wa-pill-badge wa-pill-badge--green">
+                <svg class="icon" style="width: 14px; height: 14px;"><use href="#i-check"/></svg> 100% In-House Engine
+              </span>
+            </div>
+
+            <div class="wa-compare-table-container">
+              <table class="wa-compare-table">
+                <thead>
+                  <tr>
+                    <th style="width: 26%;">Feature</th>
+                    <th style="width: 37%;">Generic 3rd-Party Tools (Others)</th>
+                    <th class="col-highlight" style="width: 37%;">RealSalePro Built-in WhatsApp Hub</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="col-feature">Monthly Subscription Cost</td>
+                    <td class="col-others">
+                      <strong style="color: #fca5a5; display: block; font-size: 15px;">₹2,500 se ₹6,000/month</strong>
+                      <span>Saal ka ₹30,000 – ₹70,000+ extra recurring tool expense</span>
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright); display: block; font-size: 15px;">₹0 Extra Cost</strong>
+                      <span>100% In-house Meta Direct Engine included in your CRM plan</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">Per Message Markup</td>
+                    <td class="col-others">
+                      <strong>Meta rate pe apna markup jodte hain</strong> (~₹1.10 – ₹1.30/msg). Hidden margins on every send.
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">Direct Meta Official Base Rates</strong> (Zero markup, ₹0 for first 1,000 service chats every month).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">Live Multi-Agent Team Inbox</td>
+                    <td class="col-others">
+                      <span class="wa-pill-badge wa-pill-badge--gray" style="margin-bottom: 6px;">Limited</span><br />
+                      Per-agent seat charges apply. Adding 10 telecallers skyrockets your monthly invoice.
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ Full 2-Way Live Chat Inbox</strong> with unlimited agent seats, canned quick actions &amp; 1-click human takeover.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">AI Sales Executive &amp; Memory</td>
+                    <td class="col-others">
+                      Basic rule-based bot ya generic ChatGPT add-on (jiska alag se heavy recurring charge lagta hai, context bhul jata hai).
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ DeepSeek AI Sales Executive (Rahul)</strong> — 100-message session memory, real estate pitch, pricing &amp; objection handling trained.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">Automatic Lead Capture Dossier</td>
+                    <td class="col-others">
+                      Sirf raw chat dikhata hai. Telecaller ko Name, Budget, City manually CRM me copy-paste karna padta hai.
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ Intelligent Entity Extractor</strong> — Chat se Naam, City, Company, Team Size &amp; Current CRM automatically extract karke lead create karta hai.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">Spam &amp; Competitor Protection</td>
+                    <td class="col-others">
+                      <span style="color: #f87171;">✕ Nahi hai</span> (har spam, rival agent ya testing message pe AI tokens aur paise waste hote hain).
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ AI Token Shield &amp; Authenticity Engine</strong> — Competitor aur evasive spammers ko detect karke token aur billing bacha leta hai.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">CRM Integration</td>
+                    <td class="col-others">
+                      Third-party Webhook ya Zapier se manual configure karna padta hai (frequently breaks and sync lags).
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ Deep Native Sync</strong> — Leads pipeline, site visit booking, telecaller phone masking aur broker incentives sab ek hi dashboard me.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">Bulk Broadcast &amp; Meta Templates</td>
+                    <td class="col-others">
+                      Basic broadcast with 3rd party delays and limited throttling control.
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ Direct Meta Templates Hub</strong> + High-converting broadcasts with smart anti-rate-limit dispatching.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="col-feature">WhatsApp OTP Engine</td>
+                    <td class="col-others">
+                      Alag se costly add-on ya third-party SMS gateway required.
+                    </td>
+                    <td class="col-highlight">
+                      <strong style="color: var(--mint-bright);">✔ Built-in In-house OTP Engine</strong> — Instant delivery for mobile logins, verification &amp; site visit validation.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- How Real Estate Companies Connect in 3 Simple Steps -->
+        <div class="wa-steps-section" data-reveal data-reveal-delay="200">
+          <header class="sec-head sec-head--center" style="margin-bottom: 0;">
+            <p class="eyebrow"><span class="eyebrow__dot"></span> Builder &amp; Broker Self-Serve Onboarding</p>
+            <h3 style="font-family: var(--font-display); font-size: clamp(22px, 3vw, 32px); font-weight: 700; color: #fff; margin-top: 12px;">
+              Connect your WhatsApp Business API in 3 simple steps
+            </h3>
+            <p style="color: var(--muted-dark); max-width: 600px; margin: 12px auto 0; font-size: 15px;">
+              No tech partner approval or waiting weeks. Connect your official Meta Cloud API directly and go live in minutes.
+            </p>
+          </header>
+
+          <div class="wa-steps-grid">
+            <article class="wa-step-card" data-reveal data-reveal-delay="80">
+              <span class="wa-step-badge">01</span>
+              <h3>Create Free Meta Cloud Account</h3>
+              <p>Register directly on Meta for Developers (<strong style="color:#fff;">developers.facebook.com</strong>) in 5 minutes. Get official WhatsApp Cloud API access with zero intermediary fees.</p>
+              <span class="wa-step-tag">Free Meta Developer Portal</span>
+            </article>
+
+            <article class="wa-step-card" data-reveal data-reveal-delay="160">
+              <span class="wa-step-badge">02</span>
+              <h3>Paste Credentials in RealSalePro</h3>
+              <p>Navigate to <strong style="color:#fff;">Admin &gt; Integrations &gt; WhatsApp Business API</strong>. Enter your Phone Number ID, WABA ID, and Permanent Access Token.</p>
+              <span class="wa-step-tag">Settings → Integrations → WhatsApp</span>
+            </article>
+
+            <article class="wa-step-card" data-reveal data-reveal-delay="240">
+              <span class="wa-step-badge">03</span>
+              <h3>Go Live with AI &amp; Team Inbox</h3>
+              <p>Your official number is connected! Incoming homebuyer queries automatically route into your CRM pipeline with AI Sales replies, live human takeover, and instant broadcasts.</p>
+              <span class="wa-step-tag">Auto-Sync Pipeline Active</span>
+            </article>
+          </div>
+
+          <div style="text-align: center; margin-top: 48px;" data-reveal data-reveal-delay="300">
+            <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
+              <span>Start free with built-in WhatsApp</span><svg class="icon"><use href="#i-arrow"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ PRICING ============ -->
     <section class="section section--paper" id="pricing">
       <div class="container">
         <header class="sec-head sec-head--center">
-          <p class="eyebrow" data-reveal><span class="eyebrow__no">08</span> Pricing</p>
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> Pricing</p>
           <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Free forever. Pro when you <em>scale</em>.</h2>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
             Start with the whole product. Upgrade only when your lead volume does.
@@ -1093,7 +1262,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
     <section class="section section--paper section--alt" id="faq">
       <div class="container faq-wrap">
         <header class="sec-head faq-head">
-          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> FAQ</p>
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">10</span> FAQ</p>
           <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Got questions?<br />Good <em>answers</em>.</h2>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
             Can't find what you're looking for? <a href="mailto:support@realsalepro.com">Contact our team</a> — a human replies.
@@ -1102,6 +1271,13 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
         <div class="faq" data-faq>
           <div class="faq__item" data-reveal>
+            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-0">
+              <span>Do I need to pay for an external WhatsApp tool?</span>
+              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+            </button>
+            <div class="faq__a" id="faq-a-0" aria-hidden="true"><p>No! RealSalePro has a built-in Meta WhatsApp Cloud Engine. You don't need third-party tools charging ₹3,000–₹6,000/month. You get an official 2-way live team inbox, trained AI sales bot (Rahul), automated lead capturing, and broadcast campaigns included right inside your CRM.</p></div>
+          </div>
+          <div class="faq__item" data-reveal data-reveal-delay="40">
             <button class="faq__q" aria-expanded="false" aria-controls="faq-a-1">
               <span>Is it really free?</span>
               <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>

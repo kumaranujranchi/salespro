@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, isPlatformRole } from '../middleware/auth.js';
+import { query } from '../db/index.js';
 import {
   getWhatsAppConfig,
   updateWhatsAppConfig,
@@ -188,8 +189,22 @@ router.post('/test-connection', requireAuth, async (req, res) => {
 
 router.get('/conversations', requireAuth, async (req, res) => {
   try {
-    const { status, search, limit, offset } = req.query;
-    const data = await listConversations({ status, search, limit, offset });
+    const { status, search, limit, offset, tenant_id } = req.query;
+    const isPlatform = isPlatformRole(req.user);
+    let effectiveTenantId = null;
+    if (isPlatform) {
+      effectiveTenantId = tenant_id || null;
+    } else {
+      effectiveTenantId = req.user?.tenant_id || null;
+    }
+
+    const data = await listConversations({
+      status,
+      search,
+      limit,
+      offset,
+      tenantId: effectiveTenantId,
+    });
     return res.json({ success: true, ...data });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -198,6 +213,13 @@ router.get('/conversations', requireAuth, async (req, res) => {
 
 router.get('/conversations/:id/messages', requireAuth, async (req, res) => {
   try {
+    const isPlatform = isPlatformRole(req.user);
+    if (!isPlatform && req.user?.tenant_id) {
+      const convCheck = await query('SELECT tenant_id FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+      if (convCheck.rows[0] && convCheck.rows[0].tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+    }
     const messages = await getConversationMessages(req.params.id);
     return res.json({ success: true, messages });
   } catch (err) {
@@ -210,6 +232,14 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
     const { text } = req.body;
     if (!text || !text.trim()) {
       return res.status(400).json({ error: 'Message text is required' });
+    }
+
+    const isPlatform = isPlatformRole(req.user);
+    if (!isPlatform && req.user?.tenant_id) {
+      const convCheck = await query('SELECT tenant_id FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+      if (convCheck.rows[0] && convCheck.rows[0].tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
     }
 
     const agentName = req.user?.full_name || 'RealSalePro Team';
@@ -229,6 +259,13 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
 router.post('/conversations/:id/toggle-bot', requireAuth, async (req, res) => {
   try {
     const { status } = req.body;
+    const isPlatform = isPlatformRole(req.user);
+    if (!isPlatform && req.user?.tenant_id) {
+      const convCheck = await query('SELECT tenant_id FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+      if (convCheck.rows[0] && convCheck.rows[0].tenant_id !== req.user.tenant_id) {
+        return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+    }
     const updated = await toggleBotStatus({ conversationId: req.params.id, status });
     return res.json({ success: true, conversation: updated });
   } catch (err) {
