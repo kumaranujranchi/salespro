@@ -959,3 +959,4 @@ export async function listBroadcasts() {
   const res = await query('SELECT * FROM whatsapp_broadcasts ORDER BY created_at DESC LIMIT 50');
   return res.rows;
 }
+

@@ -205,3 +205,4 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
     </>
   );
 }
+

@@ -69,6 +69,9 @@ app.use('/api/auth', authRoutes);
 // Public company registration (creates tenant and admin profile)
 app.post('/api/tenants/register', registerTenantHandler);
 
+// Public WhatsApp Webhook & OTP router (internal admin routes guard themselves with requireAuth)
+app.use('/api/whatsapp', whatsappRoutes);
+
 // Everything below requires a valid session token, and tenant-scoped
 // requests are pinned to the caller's own tenant.
 app.use('/api', requireAuth, enforceTenantScope);
@@ -85,7 +88,6 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/capi', capiRoutes);
 app.use('/api/meta', metaRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
