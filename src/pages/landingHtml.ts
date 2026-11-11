@@ -52,10 +52,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <nav class="nav__links" aria-label="Primary">
         <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
         <a href="#features">Features</a>
-        <a href="#product">Platform</a>
-        <a href="#integrations">Integrations</a>
-        <a href="#security">Security</a>
-        <a href="#whatsapp-engine">WhatsApp Engine</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -73,10 +69,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
       <a href="/templates/real-estate-crm-excel-template">Free Excel Template</a>
       <a href="#features">Features</a>
-      <a href="#product">Platform</a>
-      <a href="#integrations">Integrations</a>
-      <a href="#security">Security</a>
-      <a href="#whatsapp-engine">WhatsApp Engine</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a href="https://realsalepro.com/login">Log in</a>
