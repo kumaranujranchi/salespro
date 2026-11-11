@@ -167,6 +167,9 @@ export function AdminIntegrationsPage() {
     representativeName: 'Our Property Specialist',
     brochureUrl: '',
     customMessageBody: '',
+    aiProvider: 'built_in' as 'built_in' | 'openai' | 'anthropic' | 'custom',
+    aiApiKey: '',
+    aiCustomModel: '',
   });
   const [whatsappActiveTab, setWhatsappActiveTab] = useState<'api_setup' | 'auto_welcome' | 'test'>('api_setup');
   const [showWhatsAppToken, setShowWhatsAppToken] = useState(false);
@@ -280,6 +283,9 @@ export function AdminIntegrationsPage() {
         representativeName: wa.representativeName ?? 'Our Property Specialist',
         brochureUrl: wa.brochureUrl ?? '',
         customMessageBody: wa.customMessageBody ?? '',
+        aiProvider: wa.aiProvider ?? 'built_in',
+        aiApiKey: wa.aiApiKey ?? '',
+        aiCustomModel: wa.aiCustomModel ?? '',
       });
     }
     if ((tenant?.settings?.integrations as any)?.googleForm) {
@@ -810,6 +816,9 @@ export function AdminIntegrationsPage() {
             representativeName: whatsappSettings.representativeName,
             brochureUrl: whatsappSettings.brochureUrl,
             customMessageBody: whatsappSettings.customMessageBody,
+            aiProvider: whatsappSettings.aiProvider,
+            aiApiKey: whatsappSettings.aiApiKey,
+            aiCustomModel: whatsappSettings.aiCustomModel,
           }
         }
       };
@@ -2813,6 +2822,70 @@ export function AdminIntegrationsPage() {
                             { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
                           ]}
                         />
+                      </div>
+
+                      {/* Optional Bring Your Own AI Model (BYO-AI) */}
+                      <div className="p-4 bg-purple-50/40 dark:bg-purple-950/20 rounded-xl border border-purple-100 dark:border-purple-900/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-300">
+                            <Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
+                            AI Sales Bot &amp; Custom Model (Optional)
+                          </div>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                            BYO-AI
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                          By default, RealSalePro runs built-in property sales AI. To connect your company's own custom AI model, select your provider and enter your API key below.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              AI Provider
+                            </label>
+                            <Select
+                              value={whatsappSettings.aiProvider || 'built_in'}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, aiProvider: e.target.value as any })}
+                              options={[
+                                { label: 'RealSalePro Built-in Real Estate AI', value: 'built_in' },
+                                { label: 'OpenAI (GPT-4o / GPT-4o-mini)', value: 'openai' },
+                                { label: 'Anthropic (Claude 3.5)', value: 'anthropic' },
+                                { label: 'Custom / OpenAI-Compatible Endpoint', value: 'custom' },
+                              ]}
+                            />
+                          </div>
+
+                          {whatsappSettings.aiProvider && whatsappSettings.aiProvider !== 'built_in' && (
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Custom Model Name
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={whatsappSettings.aiProvider === 'openai' ? 'gpt-4o-mini' : whatsappSettings.aiProvider === 'anthropic' ? 'claude-3-5-sonnet-20241022' : 'model-name'}
+                                value={whatsappSettings.aiCustomModel || ''}
+                                onChange={(e) => setWhatsappSettings({ ...whatsappSettings, aiCustomModel: e.target.value.trim() })}
+                                className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {whatsappSettings.aiProvider && whatsappSettings.aiProvider !== 'built_in' && (
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                              Your AI API Key
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="sk-..."
+                              value={whatsappSettings.aiApiKey || ''}
+                              onChange={(e) => setWhatsappSettings({ ...whatsappSettings, aiApiKey: e.target.value.trim() })}
+                              className="w-full text-xs p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg font-mono"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Inbound Webhook Box */}

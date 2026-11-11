@@ -776,19 +776,40 @@ function evaluateVisitorIntent(messageText, customerName) {
 }
 
 /**
- * Humanized Sales Advisor via DeepSeek AI
+ * Humanized Sales Advisor (Supports Built-in & Bring-Your-Own-AI Model for Tenants)
  * Acts 100% as Rahul from RealSalePro Sales Team. Zero robotic giveaways.
  */
-export async function generateDeepSeekSalesReply({
+export async function generateSalesAiReply({
   messageText,
   customerName,
   conversationHistory = [],
   conversationMetadata = {},
   learnedGuidance = '',
   recommendedProbe = '',
+  tenantId = null,
 }) {
   const config = await getWhatsAppConfig();
-  const apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+  let apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+  let endpoint = 'https://api.deepseek.com/v1/chat/completions';
+  let model = config.aiModel || 'deepseek-chat';
+
+  // If this conversation belongs to a tenant with custom AI model credentials, use tenant's model!
+  if (tenantId) {
+    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const wa = tRes.rows[0]?.settings?.integrations?.whatsapp;
+    if (wa?.aiApiKey) {
+      apiKey = wa.aiApiKey;
+      if (wa.aiProvider === 'openai') {
+        endpoint = 'https://api.openai.com/v1/chat/completions';
+        model = wa.aiCustomModel || 'gpt-4o-mini';
+      } else if (wa.aiProvider === 'custom' && wa.aiCustomEndpoint) {
+        endpoint = wa.aiCustomEndpoint;
+        model = wa.aiCustomModel || 'custom-model';
+      } else if (wa.aiCustomModel) {
+        model = wa.aiCustomModel;
+      }
+    }
+  }
 
   const text = String(messageText || '').trim().toLowerCase();
 
@@ -797,7 +818,7 @@ export async function generateDeepSeekSalesReply({
     return evaluateVisitorIntent(messageText, customerName);
   }
 
-  // If AI is disabled or no DeepSeek API key is configured yet, fall back to rule engine
+  // If AI is disabled or no API key is configured yet, fall back to rule engine
   if (!config.aiEnabled || !apiKey) {
     return evaluateVisitorIntent(messageText, customerName);
   }
@@ -950,14 +971,14 @@ CRITICAL OFF-HOURS CALLING RULE:
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000); // 12-second safeguard
 
-    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: config.aiModel || 'deepseek-chat',
+        model,
         messages,
         temperature: 0.5,
         max_tokens: 180, // Enforces short, crisp, low-token responses!
@@ -1015,10 +1036,13 @@ CRITICAL OFF-HOURS CALLING RULE:
       reply,
     };
   } catch (err) {
-    console.error('[DeepSeek AI] Call failed, fallback to rule engine:', err.message);
+    console.error('[Sales AI] Call failed, fallback to rule engine:', err.message);
     return evaluateVisitorIntent(messageText, customerName);
   }
 }
+
+// Backward compatibility alias
+export const generateDeepSeekSalesReply = generateSalesAiReply;
 
 /**
  * Handle Inbound Webhooks from Meta Cloud API
@@ -1261,14 +1285,15 @@ export async function processIncomingWebhook(body) {
           // 3. Fetch learned continuous patterns for dynamic prompt ingestion
           const learnedGuidance = await getLearnedGuidanceForPrompt();
 
-          // 4. Generate dynamic response via DeepSeek AI (with rule engine fallback)
-          const { reply } = await generateDeepSeekSalesReply({
+          // 4. Generate dynamic response via Sales AI (with rule engine fallback & BYO-AI model support)
+          const { reply } = await generateSalesAiReply({
             messageText,
             customerName: effectiveName,
             conversationHistory: history,
             conversationMetadata: conversation.metadata || {},
             learnedGuidance,
             recommendedProbe: leadAnalysis.recommendedProbe,
+            tenantId: conversation.tenant_id || null,
           });
 
           // Send Bot Reply if enabled

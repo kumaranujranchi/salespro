@@ -995,12 +995,12 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
                     </td>
                   </tr>
                   <tr>
-                    <td class="col-feature">AI Sales Executive &amp; Memory</td>
+                    <td class="col-feature">AI Sales Executive &amp; Model Choice</td>
                     <td class="col-others">
-                      Basic keyword bot or generic ChatGPT wrapper that forgets context quickly and charges heavy monthly add-on fees.
+                      Locked to rigid keyword bots or proprietary third-party bots that forget context, offer zero model choice, and bill extra monthly add-ons.
                     </td>
                     <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ DeepSeek AI Sales Executive (Rahul)</strong> — 100-message session memory, pre-trained on property pitches, pricing, and buyer objections.
+                      <strong style="color: var(--mint-bright);">✔ Humanized Real Estate AI (BYO Model Option)</strong> — 100-message session memory, pre-trained on property pitches, pricing &amp; buyer objections. Tenants can use built-in AI or plug in their own preferred AI model.
                     </td>
                   </tr>
                   <tr>
@@ -1084,7 +1084,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <article class="wa-step-card" data-reveal data-reveal-delay="240">
               <span class="wa-step-badge">03</span>
               <h3>Go Live with AI &amp; Team Inbox</h3>
-              <p>Your official number is connected! Incoming homebuyer queries automatically route into your CRM pipeline with AI Sales replies, live human takeover, and instant broadcasts.</p>
+              <p>Your official number is connected! Incoming homebuyer queries automatically route into your CRM pipeline with humanized AI sales replies (built-in or using your own AI model), live human takeover, and instant broadcasts.</p>
               <span class="wa-step-tag">Auto-Sync Pipeline Active</span>
             </article>
           </div>
@@ -1275,7 +1275,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <span>Do I need to pay for an external WhatsApp tool?</span>
               <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
             </button>
-            <div class="faq__a" id="faq-a-0" aria-hidden="true"><p>No! RealSalePro has a built-in Meta WhatsApp Cloud Engine. You don't need third-party tools charging ₹3,000–₹6,000/month. You get an official 2-way live team inbox, trained AI sales bot (Rahul), automated lead capturing, and broadcast campaigns included right inside your CRM.</p></div>
+            <div class="faq__a" id="faq-a-0" aria-hidden="true"><p>No! RealSalePro has a built-in Meta WhatsApp Cloud Engine. You don't need third-party tools charging ₹3,000–₹6,000/month. You get an official 2-way live team inbox, trained AI sales executive, automated lead capturing, and broadcast campaigns included right inside your CRM — with the option to connect your own preferred AI model.</p></div>
           </div>
           <div class="faq__item" data-reveal data-reveal-delay="40">
             <button class="faq__q" aria-expanded="false" aria-controls="faq-a-1">
