@@ -36,6 +36,42 @@ export function formatPhoneDisplay(phone) {
 }
 
 /**
+ * Helper to get current Indian Standard Time (IST) details
+ * Used for time-aware smart conversational replies (Working Hours vs Night / Off-Hours)
+ */
+export function getIndiaTimeContext() {
+  const now = new Date();
+  const istFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+  });
+  const parts = istFormatter.formatToParts(now);
+  const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '12', 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+
+  const displayTime = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+  }).format(now);
+
+  // Business hours: 10:00 AM to 7:30 PM IST
+  const isWorkingHours = hour >= 10 && (hour < 19 || (hour === 19 && minute <= 30));
+  const isNight = !isWorkingHours;
+
+  return {
+    hour,
+    minute,
+    displayTime,
+    isWorkingHours,
+    isNight,
+  };
+}
+
+/**
  * Ensure database tables exist for WhatsApp Hub.
  * Safe and idempotent.
  */
@@ -514,10 +550,18 @@ function evaluateVisitorIntent(messageText, customerName) {
     text.includes('executive') ||
     text.includes('specialist')
   ) {
-    return {
-      intent: 'agent_handover',
-      reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar raha hoon, wo thodi der mein aapse is chat par connect karenge.\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: +91 70797 37773.`,
-    };
+    const timeCtx = getIndiaTimeContext();
+    if (timeCtx.isWorkingHours) {
+      return {
+        intent: 'agent_handover',
+        reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar raha hoon, wo thodi der mein aapse is chat par connect karenge.\n\nAgar immediate baat karni ho toh aap humein abhi direct call bhi kar sakte hain: +91 70797 37773.`,
+      };
+    } else {
+      return {
+        intent: 'agent_handover',
+        reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar diya hai.\n\nAbhi office timing close ho chuki hai, isliye hamari sales team kal subah 10:00 AM aapse direct connect karegi. Agar aapko kal baat karni ho toh aap humein kal subah 10 baje ke baad direct call kar sakte hain: +91 70797 37773 par.\n\nTab tak aap apna 100% Free CRM account setup karke explore kar sakte hain (1,000 leads tak lifetime free, no credit card required):\n👉 https://realsalepro.com/register`,
+      };
+    }
   }
 
   // 2. Demo / Free 1,000 Leads Account / Register
@@ -678,6 +722,19 @@ CRITICAL IDENTITY RULES (NEVER BREAK):
 If natural in the flow of conversation, ask this specific probing question to qualify the lead: "${recommendedProbe}"`;
     }
 
+    // Time-of-Day Context & Off-hours intelligence
+    const timeCtx = getIndiaTimeContext();
+    const timeDirective = timeCtx.isWorkingHours
+      ? `CURRENT TIME IN INDIA: ${timeCtx.displayTime} IST (OFFICE WORKING HOURS, 10:00 AM - 7:30 PM). If prospect asks for a call or phone number, let them know they can call right now at +91 70797 37773.`
+      : `CURRENT TIME IN INDIA: ${timeCtx.displayTime} IST (NIGHT / NON-WORKING HOURS). Office hours are 10:00 AM to 7:30 PM IST.
+CRITICAL OFF-HOURS CALLING RULE:
+- It is currently NIGHT / OFF-HOURS in India.
+- NEVER tell the prospect to call right now or say "main abhi call karta hoon / call me now".
+- If they ask for your number or want a phone call, state politely: "Abhi office hours close ho chuke hain, main kal subah 10 baje aapse connect karta hoon. Agar aapko kal baat karni ho toh aap humein kal subah 10 AM ke baad +91 70797 37773 par direct call bhi kar sakte hain."
+- Encourage them to try the free account tonight: https://realsalepro.com/register`;
+
+    dynamicSystemPrompt += `\n\n${timeDirective}`;
+
     const messages = [
       { role: 'system', content: dynamicSystemPrompt },
       ...historyMessages,
@@ -728,6 +785,14 @@ If natural in the flow of conversation, ask this specific probing question to qu
       .replace(/(?:\+?91[\s-]*)?98765[\s-]*43210/g, '+91 70797 37773')
       .replace(/(?:\+?91[\s-]*)?12345[\s-]*67890/g, '+91 70797 37773')
       .replace(/(?:\+?91[\s-]*)?987654321[0-9]/g, '+91 70797 37773');
+
+    // Safety cleaner: If night time / off-hours, prevent telling prospect to call right now
+    if (timeCtx.isNight) {
+      reply = reply
+        .replace(/abhi (?:aap )?call kar (?:sakte hain|lein|lo|lijiye)/gi, 'kal subah 10 baje call kar sakte hain')
+        .replace(/abhi direct call (?:bhi )?kar (?:sakte hain|lein|lo|lijiye)/gi, 'kal subah 10 baje ke baad direct call kar sakte hain')
+        .replace(/(?:main )?thodi der mein call karta hoon/gi, 'main kal subah 10 baje call karta hoon');
+    }
 
     // Safety cleaner: Strip robotic bot openers if accidentally generated
     reply = reply
