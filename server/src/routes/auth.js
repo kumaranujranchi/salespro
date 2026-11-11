@@ -72,7 +72,7 @@ router.post('/login', authRateLimiter, async (req, res) => {
     // Check if tenant was deactivated due to 30 days of inactivity
     if (user.tenant_is_active === false && user.deactivation_reason === 'inactive_30_days') {
       return res.status(403).json({
-        error: 'Your account has been deactivated due to 30 days of inactivity. Please contact support@realsalepro.com or WhatsApp +91 95252 30232 to reactivate your workspace.'
+        error: 'Your account has been deactivated due to 30 days of inactivity. Please contact support@realsalepro.com or WhatsApp +91 70797 37773 to reactivate your workspace.'
       });
     }
 

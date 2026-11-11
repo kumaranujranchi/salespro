@@ -555,7 +555,7 @@ export function ExcelTemplatePage() {
               <div className="footer__social">
                 <a href="https://www.facebook.com/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on Facebook"><svg className="icon icon--fill"><use href="#i-facebook"/></svg></a>
                 <a href="https://www.linkedin.com/company/realsalepro" target="_blank" rel="noopener noreferrer" aria-label="RealSalePro on LinkedIn"><svg className="icon icon--fill"><use href="#i-linkedin"/></svg></a>
-                <a href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp"><svg className="icon icon--fill"><use href="#i-whatsapp"/></svg></a>
+                <a href="https://wa.me/917079737773" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp"><svg className="icon icon--fill"><use href="#i-whatsapp"/></svg></a>
               </div>
             </div>
 
@@ -590,8 +590,8 @@ export function ExcelTemplatePage() {
             <div className="footer__col footer__col--contact">
               <h3>Talk to a human</h3>
               <a href="mailto:support@realsalepro.com">support@realsalepro.com</a>
-              <a href="tel:+919525230232">+91 95252 30232</a>
-              <a className="footer__wa" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer">
+              <a href="tel:+917079737773">+91 70797 37773</a>
+              <a className="footer__wa" href="https://wa.me/917079737773" target="_blank" rel="noopener noreferrer">
                 <svg className="icon"><use href="#i-whatsapp"/></svg> Chat on WhatsApp
               </a>
             </div>
@@ -613,7 +613,7 @@ export function ExcelTemplatePage() {
       </footer>
 
       {/* Floating WhatsApp FAB */}
-      <a className="wa-float" href="https://wa.me/919525230232" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
+      <a className="wa-float" href="https://wa.me/917079737773" target="_blank" rel="noopener noreferrer" aria-label="Chat with RealSalePro on WhatsApp">
         <svg className="icon"><use href="#i-whatsapp"/></svg>
         <span className="wa-float__tip">Chat with us</span>
       </a>

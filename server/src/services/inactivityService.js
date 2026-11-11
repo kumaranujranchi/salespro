@@ -206,7 +206,7 @@ export async function sendInactivityEmail({
         </div>
         <div class="footer">
           <p>RealSalePro CRM • High Performance Real Estate Software</p>
-          <p>Need help? Contact <a href="mailto:support@realsalepro.com">support@realsalepro.com</a> or WhatsApp <a href="https://wa.me/919525230232">+91 95252 30232</a></p>
+          <p>Need help? Contact <a href="mailto:support@realsalepro.com">support@realsalepro.com</a> or WhatsApp <a href="https://wa.me/917079737773">+91 70797 37773</a></p>
         </div>
       </div>
     </body>

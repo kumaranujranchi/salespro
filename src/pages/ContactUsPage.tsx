@@ -7,7 +7,7 @@ export function ContactUsPage() {
     <>
       <SEOHead
         title="Contact Us & Book a Demo | RealSalePro Real Estate CRM"
-        description="Get in touch with the RealSalePro team for sales inquiries, custom integrations, onboarding support, or product demos. WhatsApp: +91 95252 30232."
+        description="Get in touch with the RealSalePro team for sales inquiries, custom integrations, onboarding support, or product demos. WhatsApp: +91 70797 37773."
         canonicalUrl="https://realsalepro.com/contact"
       />
       <div className="min-h-screen bg-[#0E1A15] py-12 px-4 sm:px-6 lg:px-8 text-white">
@@ -40,8 +40,8 @@ export function ContactUsPage() {
               <Phone className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-semibold text-white mb-1">Phone</h3>
-                <a href="tel:+919525230232" className="text-green-500 hover:text-green-400">
-                  +91 95252 30232
+                <a href="tel:+917079737773" className="text-green-500 hover:text-green-400">
+                  +91 70797 37773
                 </a>
                 <p className="text-sm text-gray-400 mt-1">Monday - Friday, 9:00 AM - 6:00 PM IST</p>
               </div>
