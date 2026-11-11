@@ -160,9 +160,14 @@ export async function initWhatsAppSchema() {
  * Get active Meta WhatsApp Cloud API credentials
  */
 export async function getWhatsAppConfig() {
-  await initWhatsAppSchema();
-  const res = await query('SELECT * FROM whatsapp_platform_config WHERE id = $1', ['default']);
-  const row = res.rows[0] || {};
+  let row = {};
+  try {
+    await initWhatsAppSchema();
+    const res = await query('SELECT * FROM whatsapp_platform_config WHERE id = $1', ['default']);
+    row = res.rows[0] || {};
+  } catch (err) {
+    // If DB is offline or table initializing, gracefully use environment fallbacks
+  }
 
   return {
     wabaId: row.waba_id || process.env.META_WABA_ID || process.env.WHATSAPP_WABA_ID || '1137788795833452',
