@@ -6,9 +6,21 @@ interface SEOHeadProps {
   canonicalUrl: string;
   keywords?: string;
   jsonLd?: Record<string, any>;
+  noindex?: boolean;
+  ogImage?: string;
+  twitterCard?: 'summary' | 'summary_large_image';
 }
 
-export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: SEOHeadProps) {
+export function SEOHead({
+  title,
+  description,
+  canonicalUrl,
+  keywords,
+  jsonLd,
+  noindex = false,
+  ogImage = 'https://realsalepro.com/images/realsalepro-og-share.png',
+  twitterCard = 'summary',
+}: SEOHeadProps) {
   useEffect(() => {
     // 1. Title
     document.title = title;
@@ -22,7 +34,21 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
     }
     descMeta.setAttribute('content', description);
 
-    // 3. Meta keywords
+    // 3. Meta robots (Handle noindex vs index)
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta');
+      robotsMeta.setAttribute('name', 'robots');
+      document.head.appendChild(robotsMeta);
+    }
+    robotsMeta.setAttribute(
+      'content',
+      noindex
+        ? 'noindex, follow'
+        : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
+    );
+
+    // 4. Meta keywords
     if (keywords) {
       let kwMeta = document.querySelector('meta[name="keywords"]');
       if (!kwMeta) {
@@ -33,7 +59,7 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
       kwMeta.setAttribute('content', keywords);
     }
 
-    // 4. Canonical URL
+    // 5. Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');
@@ -42,7 +68,7 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
     }
     canonical.setAttribute('href', canonicalUrl);
 
-    // 5. OpenGraph
+    // 6. OpenGraph
     const updateOg = (prop: string, val: string) => {
       let el = document.querySelector(`meta[property="${prop}"]`);
       if (!el) {
@@ -56,8 +82,27 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
     updateOg('og:title', title);
     updateOg('og:description', description);
     updateOg('og:url', canonicalUrl);
+    updateOg('og:image', ogImage);
+    updateOg('og:image:secure_url', ogImage);
 
-    // 6. JSON-LD Structured Data
+    // 7. Twitter
+    const updateTwitter = (name: string, val: string) => {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('name', name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', val);
+    };
+
+    updateTwitter('twitter:card', twitterCard);
+    updateTwitter('twitter:title', title);
+    updateTwitter('twitter:description', description);
+    updateTwitter('twitter:image', ogImage);
+    updateTwitter('twitter:site', '@realsalepro');
+
+    // 8. JSON-LD Structured Data
     let scriptEl = document.getElementById('page-jsonld');
     if (jsonLd) {
       if (!scriptEl) {
@@ -78,7 +123,7 @@ export function SEOHead({ title, description, canonicalUrl, keywords, jsonLd }: 
       const el = document.getElementById('page-jsonld');
       if (el) el.remove();
     };
-  }, [title, description, canonicalUrl, keywords, jsonLd]);
+  }, [title, description, canonicalUrl, keywords, jsonLd, noindex, ogImage, twitterCard]);
 
   return null;
 }

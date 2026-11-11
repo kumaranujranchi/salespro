@@ -5,6 +5,7 @@ import { useBackend } from '../lib/reactive';
 import { api } from '../lib/api-endpoints';
 import { Input } from '../components/ui/Input';
 import { authService } from '../lib/services';
+import { SEOHead } from '../components/seo/SEOHead';
 import {
   ArrowLeft,
   CheckCircle,
@@ -205,7 +206,14 @@ export function LoginPage() {
   }, [user, profile, affiliate, loading, success, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">
+    <>
+      <SEOHead
+        title="Log In | RealSalePro Real Estate CRM"
+        description="Log in to your RealSalePro CRM workspace to manage real estate leads, customer pipelines, and site visits."
+        canonicalUrl="https://realsalepro.com/login"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0E1A15] via-[#113028] to-[#10B981] opacity-20 pointer-events-none"></div>
 
@@ -637,5 +645,6 @@ export function LoginPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

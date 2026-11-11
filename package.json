@@ -7,7 +7,7 @@
     "dev": "vite --config config/vite.config.ts",
     "server": "node --watch server/src/index.js",
     "server:migrate": "node server/src/db/migrate.js",
-    "build": "vite build --config config/vite.config.ts",
+    "build": "vite build --config config/vite.config.ts && node scripts/prerender.js",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --config config/vite.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",

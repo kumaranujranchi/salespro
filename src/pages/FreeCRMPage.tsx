@@ -71,14 +71,38 @@ export function FreeCRMPage() {
     ]
   };
 
+  const pageSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Free Real Estate CRM",
+            "item": "https://realsalepro.com/free-real-estate-crm"
+          }
+        ]
+      },
+      faqSchema
+    ]
+  };
+
   return (
     <>
       <SEOHead
-        title="Free Real Estate CRM Software | 1,000 Leads Free Forever | RealSalePro"
-        description="Looking for the best free CRM for real estate? RealSalePro gives you 1,000 leads free forever, Meta & WhatsApp auto-sync, site visit tracker & pipeline with no credit card required."
+        title="Free Real Estate CRM Software for Brokers | RealSalePro"
+        description="100% Free real estate CRM for Indian brokers and developers. Auto-sync Meta and WhatsApp leads, manage property pipeline and site visits with zero card."
         canonicalUrl="https://realsalepro.com/free-real-estate-crm"
         keywords="free crm for real estate, free crm for realtors, best free crm for real estate, free real estate crm software, crm for real estate agents free, cheap crm for real estate, real estate crm software free download, best crm for real estate free"
-        jsonLd={faqSchema}
+        jsonLd={pageSchema}
       />
 
       {/* SVG SPRITE */}

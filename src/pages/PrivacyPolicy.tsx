@@ -1,10 +1,49 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEOHead } from '../components/seo/SEOHead';
+
+const privacySchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://realsalepro.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Privacy Policy",
+          "item": "https://realsalepro.com/privacy"
+        }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://realsalepro.com/privacy#webpage",
+      "url": "https://realsalepro.com/privacy",
+      "name": "Privacy Policy | RealSalePro Real Estate CRM",
+      "description": "Learn how RealSalePro protects and processes your customer and property lead data. DPDP Act compliant privacy practices and data encryption standards.",
+      "isPartOf": { "@id": "https://realsalepro.com/#website" }
+    }
+  ]
+};
 
 export function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-gray-900">
+    <>
+      <SEOHead
+        title="Privacy Policy | RealSalePro Real Estate CRM"
+        description="Learn how RealSalePro protects and processes your customer and property lead data. DPDP Act compliant privacy practices and data encryption standards."
+        canonicalUrl="https://realsalepro.com/privacy"
+        jsonLd={privacySchema}
+      />
+      <div className="min-h-screen bg-slate-50 font-sans text-gray-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-8 transition-colors text-sm font-medium">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -236,5 +275,6 @@ export function PrivacyPolicy() {
         </div>
       </div>
     </div>
+    </>
   );
 }

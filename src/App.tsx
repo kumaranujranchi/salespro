@@ -55,6 +55,7 @@ import { BrokersCRMPage } from './pages/BrokersCRMPage';
 import { IndiaCRMPage } from './pages/IndiaCRMPage';
 import { LeadManagementFeaturePage } from './pages/LeadManagementFeaturePage';
 import { SitemapPage } from './pages/SitemapPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -414,6 +415,9 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
+                {/* 404 Catch-All Route for Unknown URLs */}
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
               </ErrorBoundary>
             </TutorialProvider>

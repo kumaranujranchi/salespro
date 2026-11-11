@@ -162,12 +162,44 @@ export function SitemapPage() {
     };
   }, []);
 
+  const sitemapSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Sitemap",
+            "item": "https://realsalepro.com/sitemap"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/sitemap#webpage",
+        "url": "https://realsalepro.com/sitemap",
+        "name": "RealSalePro Site Map — All Pages & Features",
+        "description": "Explore all pages, tools, and resources on RealSalePro: Free Real Estate CRM, Broker CRM, Lead Management, Excel Template, Pricing, and Integrations.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
+  };
+
   return (
     <>
       <SEOHead
-        title="RealSalePro Sitemap | Complete Index of Real Estate CRM Pages"
-        description="Explore the complete sitemap of RealSalePro. Direct links to our Free Real Estate CRM, Broker CRM, Lead Management Software, Pricing, and Excel Template."
+        title="RealSalePro Site Map — All Pages & Features"
+        description="Explore all pages, tools, and resources on RealSalePro: Free Real Estate CRM, Broker CRM, Lead Management, Excel Template, Pricing, and Integrations."
         canonicalUrl="https://realsalepro.com/sitemap"
+        jsonLd={sitemapSchema}
       />
 
       {/* SVG SPRITE */}

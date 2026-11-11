@@ -7,6 +7,7 @@ import { whatsappHubService } from '../lib/services';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { ArrowRight, Loader2 } from 'lucide-react';
+import { SEOHead } from '../components/seo/SEOHead';
 
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
@@ -191,19 +192,26 @@ export function RegisterCompanyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
-      <Link to="/" className="absolute top-8 left-8 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-colors">
-        <ArrowRight className="h-4 w-4 rotate-180" />
-        Back to Home
-      </Link>
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center flex-col items-center">
-          <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto dark:hidden" />
-          <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-12 w-auto hidden dark:block" />
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          {verificationStep ? 'Verify your Email' : 'Register your Company'}
-        </h2>
+    <>
+      <SEOHead
+        title="Create Your Free CRM Account | RealSalePro"
+        description="Sign up for RealSalePro. 100% Free Forever for up to 1,000 property leads. No credit card required."
+        canonicalUrl="https://realsalepro.com/register"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
+        <Link to="/" className="absolute top-8 left-8 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-colors">
+          <ArrowRight className="h-4 w-4 rotate-180" />
+          Back to Home
+        </Link>
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="flex justify-center flex-col items-center">
+            <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto dark:hidden" />
+            <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-12 w-auto hidden dark:block" />
+          </div>
+          <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            {verificationStep ? 'Verify your Email' : 'Create Your Free RealSalePro Account'}
+          </h1>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           {verificationStep
             ? `We've sent a 6-digit code to ${formData.email}`
@@ -427,5 +435,6 @@ export function RegisterCompanyPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

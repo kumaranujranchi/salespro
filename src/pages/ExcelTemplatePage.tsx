@@ -189,28 +189,51 @@ export function ExcelTemplatePage() {
     }
   };
 
-  const templateSchema = {
+  const templatePageSchema = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Real Estate CRM Excel Template 2026",
-    "operatingSystem": "All (Excel, Google Sheets, Numbers)",
-    "applicationCategory": "BusinessApplication",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    },
-    "description": "Free downloadable Real Estate CRM Excel Template & Google Sheets tracker with pre-built pipeline stages, site visit logs, and lead follow-up tracker."
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Templates",
+            "item": "https://realsalepro.com/templates/real-estate-crm-excel-template"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Real Estate CRM Excel Template",
+            "item": "https://realsalepro.com/templates/real-estate-crm-excel-template"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/templates/real-estate-crm-excel-template#webpage",
+        "url": "https://realsalepro.com/templates/real-estate-crm-excel-template",
+        "name": "Real Estate CRM Excel Template (Free Download) | RealSalePro",
+        "description": "Download free 2026 real estate CRM Excel template & Google Sheets tracker. Pre-built with Indian property pipeline stages, lead tracking and follow-up alerts.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
   };
 
   return (
     <>
       <SEOHead
-        title="Free Real Estate CRM Excel Template & Google Sheets Tracker (2026 Download) | RealSalePro"
-        description="Download our free 2026 Real Estate CRM Excel template & Google Sheets lead tracker. Pre-configured with pipeline stages, property inventory & site visit logs. 100% free download."
+        title="Real Estate CRM Excel Template (Free Download) | RealSalePro"
+        description="Download free 2026 real estate CRM Excel template & Google Sheets tracker. Pre-built with Indian property pipeline stages, lead tracking and follow-up alerts."
         canonicalUrl="https://realsalepro.com/templates/real-estate-crm-excel-template"
         keywords="real estate crm template, real estate crm excel template, free real estate crm template, real estate lead tracker sheet, property crm excel sheet download"
-        jsonLd={templateSchema}
+        jsonLd={templatePageSchema}
       />
 
       {/* SVG SPRITE */}

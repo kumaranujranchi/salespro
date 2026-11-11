@@ -6,6 +6,7 @@ import { Toast } from '../../components/ui/Toast';
 import { Input } from '../../components/ui/Input';
 import { useMutation, useAction } from "../../lib/reactive";
 import { api } from '../../lib/api-endpoints';
+import { SEOHead } from '../../components/seo/SEOHead';
 
 export function AffiliateRegistrationPage() {
   const navigate = useNavigate();
@@ -126,21 +127,28 @@ export function AffiliateRegistrationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
-       {/* Back Button */}
-       <button 
-         onClick={() => navigate('/')} 
-         className="absolute top-6 left-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
-       >
-         <ArrowLeft className="w-5 h-5" /> Back to Home
-       </button>
+    <>
+      <SEOHead
+        title="Affiliate Partner Registration | RealSalePro"
+        description="Register as an affiliate partner with RealSalePro and earn recurring revenue by referring real estate agencies."
+        canonicalUrl="https://realsalepro.com/affiliate/register"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate('/')} 
+          className="absolute top-6 left-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back to Home
+        </button>
 
-      <div className="max-w-xl w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
-        <div className="text-center">
-           <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto mx-auto mb-4" />
-          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            Partner Program Application
-          </h2>
+        <div className="max-w-xl w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+          <div className="text-center">
+            <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto mx-auto mb-4" />
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+              Partner Program Application
+            </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
              Join our network and earn 20% recurring commission.
           </p>
@@ -310,5 +318,6 @@ export function AffiliateRegistrationPage() {
         onClose={() => setShowToast(false)} 
       />
     </div>
+    </>
   );
 }

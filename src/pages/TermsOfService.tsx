@@ -1,9 +1,48 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEOHead } from '../components/seo/SEOHead';
+
+const termsSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://realsalepro.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Terms of Service",
+          "item": "https://realsalepro.com/terms"
+        }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://realsalepro.com/terms#webpage",
+      "url": "https://realsalepro.com/terms",
+      "name": "Terms of Service | RealSalePro Real Estate CRM",
+      "description": "Review the Terms of Service for using RealSalePro real estate CRM software, lead tracking tools, subscription plans, and API integrations.",
+      "isPartOf": { "@id": "https://realsalepro.com/#website" }
+    }
+  ]
+};
 
 export function TermsOfService() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-gray-900">
+    <>
+      <SEOHead
+        title="Terms of Service | RealSalePro Real Estate CRM"
+        description="Review the Terms of Service for using RealSalePro real estate CRM software, lead tracking tools, subscription plans, and API integrations."
+        canonicalUrl="https://realsalepro.com/terms"
+        jsonLd={termsSchema}
+      />
+      <div className="min-h-screen bg-slate-50 font-sans text-gray-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -89,5 +128,6 @@ export function TermsOfService() {
         </div>
       </div>
     </div>
+    </>
   );
 }

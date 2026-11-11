@@ -17,28 +17,45 @@ export function BrokersCRMPage() {
     };
   }, []);
 
-  const brokerSchema = {
+  const brokerPageSchema = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "RealSalePro for Real Estate Brokers & Agents",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web, Mobile (PWA)",
-    "description": "Real estate CRM software designed for property dealers, independent brokers, and channel partners in India. Track client inquiries, site visits, and commissions.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "CRM for Brokers",
+            "item": "https://realsalepro.com/crm-for-real-estate-brokers"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/crm-for-real-estate-brokers#webpage",
+        "url": "https://realsalepro.com/crm-for-real-estate-brokers",
+        "name": "CRM for Real Estate Brokers & Agents | RealSalePro",
+        "description": "Built for Indian real estate brokers and channel partners. Manage buyer leads, site visits, WhatsApp follow-ups and deals. Manage up to 1,000 leads free.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
   };
 
   return (
     <>
       <SEOHead
-        title="Real Estate Broker CRM Software for Agents & Channel Partners | RealSalePro"
-        description="The #1 CRM built for real estate brokers, channel partners & property agents in India. Track site visits, WhatsApp follow-ups, and commissions. Free up to 1,000 leads."
+        title="CRM for Real Estate Brokers & Agents | RealSalePro"
+        description="Built for Indian real estate brokers and channel partners. Manage buyer leads, site visits, WhatsApp follow-ups and deals. Manage up to 1,000 leads free."
         canonicalUrl="https://realsalepro.com/crm-for-real-estate-brokers"
         keywords="real estate broker crm, crm for real estate agents, real estate agent management software, best crm for real estate brokers, best crm for real estate agents, channel partner crm real estate"
-        jsonLd={brokerSchema}
+        jsonLd={brokerPageSchema}
       />
 
       {/* SVG SPRITE */}

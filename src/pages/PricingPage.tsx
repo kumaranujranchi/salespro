@@ -249,12 +249,68 @@ export function PricingPage() {
   const isCurrentProPlan = user && tenant?.plan_tier === 'pro' && tenant?.billing_cycle === billingCycle;
   const isCurrentFreePlan = user && tenant?.plan_tier === 'free';
 
+  const pricingSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Pricing",
+            "item": "https://realsalepro.com/pricing"
+          }
+        ]
+      },
+      {
+        "@type": "Product",
+        "name": "RealSalePro Real Estate CRM",
+        "description": "Real estate sales & CRM platform with lead management, site visits, and WhatsApp integration.",
+        "brand": {
+          "@type": "Brand",
+          "name": "RealSalePro"
+        },
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free Forever Plan",
+            "price": "0",
+            "priceCurrency": "INR",
+            "description": "Up to 1,000 active client leads, 5 users, pipeline tracking, and WhatsApp support."
+          },
+          {
+            "@type": "Offer",
+            "name": "Pro Plan",
+            "price": "999",
+            "priceCurrency": "INR",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "999",
+              "priceCurrency": "INR",
+              "unitCode": "MON"
+            },
+            "description": "Up to 2,00,000 leads, unlimited users, role-based phone masking, and priority support."
+          }
+        ]
+      }
+    ]
+  };
+
   return (
     <>
       <SEOHead
-        title="RealSalePro Pricing | Transparent Real Estate CRM Plans"
-        description="Transparent pricing for Indian real estate developers and brokers. Free forever plan up to 1,000 leads, Pro plan with unlimited users, and custom enterprise deployments."
+        title="Real Estate CRM Pricing & Plans | RealSalePro"
+        description="Transparent real estate CRM pricing for Indian builders and brokers. Free forever tier up to 1,000 leads, Pro plan at ₹999/mo with unlimited team access."
         canonicalUrl="https://realsalepro.com/pricing"
+        keywords="real estate crm pricing, free real estate crm cost, crm plans india, property dealer crm price"
+        jsonLd={pricingSchema}
       />
 
       {/* SVG SPRITE */}

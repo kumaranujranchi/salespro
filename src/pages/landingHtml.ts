@@ -101,7 +101,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </p>
 
           <h1 class="hero__title" data-reveal data-reveal-delay="80">
-            Turn every<br />enquiry into<br />a <em>booking</em>.
+            Free Real Estate CRM.<br />Turn every enquiry into a <em>booking</em>.
           </h1>
 
           <p class="hero__lede" data-reveal data-reveal-delay="160">
@@ -669,47 +669,47 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </div>
 
         <div class="int-grid" data-int-grid>
-          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal>
-            <span class="int__logo"><img src="/assets/img/facebook_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="ads" href="/integration" data-reveal>
+            <span class="int__logo"><img src="/assets/img/facebook_ads.webp" alt="Meta Facebook Ads Lead Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Meta Ads</strong><em>Facebook &amp; Instagram leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="30">
-            <span class="int__logo"><img src="/assets/img/google_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="ads" href="/integration" data-reveal data-reveal-delay="30">
+            <span class="int__logo"><img src="/assets/img/google_ads.webp" alt="Google Ads Lead Generation" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Ads</strong><em>Search, Maps &amp; display</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="60">
-            <span class="int__logo"><img src="/assets/img/magicbricks.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="60">
+            <span class="int__logo"><img src="/assets/img/magicbricks.webp" alt="Magicbricks Real Estate Lead Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Magicbricks</strong><em>Property portal leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="90">
-            <span class="int__logo"><img src="/assets/img/99acres.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="90">
+            <span class="int__logo"><img src="/assets/img/99acres.webp" alt="99acres Property Portal Integration" width="22" height="22" loading="lazy" /></span>
             <div><strong>99acres</strong><em>Listings &amp; buyer enquiries</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="120">
-            <span class="int__logo"><img src="/assets/img/hosing.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="120">
+            <span class="int__logo"><img src="/assets/img/hosing.webp" alt="Housing.com Lead Webhook Integration" width="22" height="22" loading="lazy" /></span>
             <div><strong>Housing.com</strong><em>Property page leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="chat" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="150">
-            <span class="int__logo"><img src="/assets/img/whatsApp.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="chat" href="/integration" data-reveal data-reveal-delay="150">
+            <span class="int__logo"><img src="/assets/img/whatsApp.webp" alt="WhatsApp Business API Automation" width="22" height="22" loading="lazy" /></span>
             <div><strong>WhatsApp Business</strong><em>Chatbots &amp; auto-welcome</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="80">
-            <span class="int__logo"><img src="/assets/img/Googlesheet.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="80">
+            <span class="int__logo"><img src="/assets/img/Googlesheet.webp" alt="Google Sheets 2-Way CRM Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Sheets</strong><em>Offline &amp; walk-in data</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="110">
-            <span class="int__logo"><img src="/assets/img/google_form.webp" alt="" width="22" height="22" loading="lazy" /></span>
+          <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="110">
+            <span class="int__logo"><img src="/assets/img/google_form.webp" alt="Google Forms Auto Lead Ingestion" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Forms</strong><em>Contact &amp; survey forms</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
-          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="140">
+          <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="140">
             <span class="int__logo"><svg class="icon"><use href="#i-globe"/></svg></span>
             <div><strong>WordPress</strong><em>Website forms · webhook</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
@@ -746,9 +746,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <div class="flow__viz" aria-hidden="true">
             <div class="flow__col">
               <span class="flow__label">Lead sources</span>
-              <span class="flow__item"><img src="/assets/img/facebook_ads.webp" alt="" width="16" height="16" loading="lazy" />Meta Ads</span>
-              <span class="flow__item"><img src="/assets/img/magicbricks.webp" alt="" width="16" height="16" loading="lazy" />Magicbricks</span>
-              <span class="flow__item"><img src="/assets/img/whatsApp.webp" alt="" width="16" height="16" loading="lazy" />WhatsApp</span>
+              <span class="flow__item"><img src="/assets/img/facebook_ads.webp" alt="Meta Lead Ads Capture" width="16" height="16" loading="lazy" />Meta Ads</span>
+              <span class="flow__item"><img src="/assets/img/magicbricks.webp" alt="Magicbricks Lead Ingestion" width="16" height="16" loading="lazy" />Magicbricks</span>
+              <span class="flow__item"><img src="/assets/img/whatsApp.webp" alt="WhatsApp Cloud Messaging" width="16" height="16" loading="lazy" />WhatsApp</span>
             </div>
 
             <div class="flow__hub">
@@ -1218,10 +1218,10 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="footer__col">
           <h3>Company</h3>
           <a href="#stories">About us</a>
-          <a href="https://realsalepro.com/referral-program">Refer &amp; earn</a>
-          <a href="https://realsalepro.com/contact">Careers</a>
-          <a href="https://realsalepro.com/contact">Contact</a>
-          <a href="https://realsalepro.com/pricing">Pricing</a>
+          <a href="/referral-program">Refer &amp; earn</a>
+          <a href="/affiliate/terms">Affiliate Program</a>
+          <a href="/contact">Contact Support</a>
+          <a href="/pricing">Plans &amp; Pricing</a>
         </div>
 
         <div class="footer__col footer__col--contact">
@@ -1237,13 +1237,14 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <div class="footer__wordmark" aria-hidden="true">RealSalePro</div>
 
       <div class="footer__bottom">
-        <p>© <span id="year">2025</span> RealSalePro. All rights reserved.</p>
+        <p>© <span id="year">2026</span> RealSalePro. All rights reserved.</p>
         <div class="footer__legal">
-          <a href="https://realsalepro.com/privacy">Privacy Policy</a>
-          <a href="https://realsalepro.com/terms">Terms of Service</a>
-          <a href="https://realsalepro.com/refund-policy">Refund Policy</a>
-          <a href="https://realsalepro.com/shipping-policy">Shipping Policy</a>
-          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
+          <a href="/refund-policy">Refund Policy</a>
+          <a href="/shipping-policy">Shipping Policy</a>
+          <a href="/sitemap">Site Map</a>
+          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">XML Sitemap</a>
         </div>
       </div>
     </div>

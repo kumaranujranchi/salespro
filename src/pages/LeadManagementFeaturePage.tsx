@@ -17,28 +17,51 @@ export function LeadManagementFeaturePage() {
     };
   }, []);
 
-  const featureSchema = {
+  const featurePageSchema = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "RealSalePro Lead Management Software",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web & Mobile PWA",
-    "description": "Real estate lead management software with instant webhook capture, automatic lead distribution, pipeline visualization, and follow-up tracking.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Features",
+            "item": "https://realsalepro.com/features/lead-management"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Lead Management",
+            "item": "https://realsalepro.com/features/lead-management"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/features/lead-management#webpage",
+        "url": "https://realsalepro.com/features/lead-management",
+        "name": "Real Estate Lead Management System | RealSalePro",
+        "description": "Capture and assign property leads in under 30 seconds. Real estate lead management software with instant WhatsApp alerts, round-robin rules and tracking.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
   };
 
   return (
     <>
       <SEOHead
-        title="Real Estate Lead Management Software & Sales CRM | RealSalePro"
-        description="Supercharge lead capture and follow-ups with RealSalePro's real estate lead management software. Auto-sync Meta, Google & portal leads, track pipeline stages and close faster."
+        title="Real Estate Lead Management System | RealSalePro"
+        description="Capture and assign property leads in under 30 seconds. Real estate lead management software with instant WhatsApp alerts, round-robin rules and tracking."
         canonicalUrl="https://realsalepro.com/features/lead-management"
         keywords="real estate lead management software, real estate sales crm, real estate client management software, real estate crm features, lead management for real estate"
-        jsonLd={featureSchema}
+        jsonLd={featurePageSchema}
       />
 
       {/* SVG SPRITE */}

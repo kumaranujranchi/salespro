@@ -1,11 +1,50 @@
 import { ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SEOHead } from '../../components/seo/SEOHead';
+
+const termsSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://realsalepro.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Affiliate Terms",
+          "item": "https://realsalepro.com/affiliate/terms"
+        }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://realsalepro.com/affiliate/terms#webpage",
+      "url": "https://realsalepro.com/affiliate/terms",
+      "name": "Affiliate Program Terms & Agreement | RealSalePro",
+      "description": "Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, agency partners, and tech consultants.",
+      "isPartOf": { "@id": "https://realsalepro.com/#website" }
+    }
+  ]
+};
 
 export function AffiliateTermsPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-[#0E1A15] py-12 px-4 sm:px-6 lg:px-8">
+    <>
+      <SEOHead
+        title="Affiliate Program Terms & Agreement | RealSalePro"
+        description="Official partner terms and commission agreement for RealSalePro real estate CRM affiliates, agency partners, and tech consultants."
+        canonicalUrl="https://realsalepro.com/affiliate/terms"
+        jsonLd={termsSchema}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-[#0E1A15] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-8">
@@ -188,5 +227,6 @@ export function AffiliateTermsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

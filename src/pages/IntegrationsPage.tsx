@@ -3,12 +3,45 @@ import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
 
 export function IntegrationsPage() {
+  const integrationSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Enterprise BYOD Integration",
+            "item": "https://realsalepro.com/integration"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/integration#webpage",
+        "url": "https://realsalepro.com/integration",
+        "name": "Enterprise BYOD Database Integration | RealSalePro",
+        "description": "Host your real estate CRM database on your private PostgreSQL or cloud infrastructure with RealSalePro's Bring Your Own Database (BYOD) architecture.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
+  };
+
   return (
     <>
       <SEOHead
-        title="Enterprise BYOD Database Integration & Self-Hosting | RealSalePro"
-        description="Host your real estate CRM database on your own private PostgreSQL or cloud infrastructure with RealSalePro's Bring Your Own Database (BYOD) enterprise architecture."
+        title="Enterprise BYOD Database Integration | RealSalePro"
+        description="Host your real estate CRM database on your private PostgreSQL or cloud infrastructure with RealSalePro's Bring Your Own Database (BYOD) architecture."
         canonicalUrl="https://realsalepro.com/integration"
+        keywords="byod crm database, self hosted real estate crm, postgresql real estate crm, enterprise real estate crm"
+        jsonLd={integrationSchema}
       />
       <div className="min-h-screen bg-[#0E1A15] text-white font-sans">
       {/* Navbar / Header Placeholder - Or just back link */}

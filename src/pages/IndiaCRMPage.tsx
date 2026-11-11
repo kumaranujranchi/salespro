@@ -17,28 +17,45 @@ export function IndiaCRMPage() {
     };
   }, []);
 
-  const indiaSchema = {
+  const indiaPageSchema = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "RealSalePro India Real Estate CRM",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "All (Cloud & Mobile PWA)",
-    "description": "Real estate CRM software tailored for the Indian real estate market. Connects with Magicbricks, 99acres, Housing.com, Meta Ads and WhatsApp API with INR ₹ pricing.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://realsalepro.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Real Estate CRM India",
+            "item": "https://realsalepro.com/real-estate-crm-india"
+          }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://realsalepro.com/real-estate-crm-india#webpage",
+        "url": "https://realsalepro.com/real-estate-crm-india",
+        "name": "Real Estate CRM India — Builders & Brokers | RealSalePro",
+        "description": "India's real estate CRM for developers and brokers. Auto-sync Magicbricks, 99acres, Meta & WhatsApp leads. Localized pipeline with 1,000 leads free.",
+        "isPartOf": { "@id": "https://realsalepro.com/#website" }
+      }
+    ]
   };
 
   return (
     <>
       <SEOHead
-        title="Real Estate CRM Software in India | Builders, Brokers & Developers | RealSalePro"
-        description="India's #1 Real Estate CRM software. Built for Indian builders, developers & brokers with Magicbricks, 99acres, WhatsApp API & Meta lead sync. Free up to 1,000 leads."
+        title="Real Estate CRM India — Builders & Brokers | RealSalePro"
+        description="India's real estate CRM for developers and brokers. Auto-sync Magicbricks, 99acres, Meta & WhatsApp leads. Localized pipeline with 1,000 leads free."
         canonicalUrl="https://realsalepro.com/real-estate-crm-india"
         keywords="real estate crm software in india, property crm, housing crm, real estate software india, builder crm software india, magicbricks 99acres crm integration"
-        jsonLd={indiaSchema}
+        jsonLd={indiaPageSchema}
       />
 
       {/* SVG SPRITE */}
