@@ -430,58 +430,104 @@ async function sendBotReply(conversation, text) {
  */
 export async function extractAndSaveLeadDetails({ conversation, messageText }) {
   if (!conversation || !messageText) return;
-  const text = String(messageText).trim();
+  const rawText = String(messageText).trim();
+  const lowerText = rawText.toLowerCase();
 
   let detectedName = null;
   let detectedCity = null;
   let detectedCompany = null;
+  let detectedTeamSize = null;
+  let detectedCurrentTool = null;
+  let detectedPlanInterest = null;
 
-  // 1. Detect Name patterns
+  // 1. Detect Real Customer Name
+  // Matches "Name: Aditya", "Naam: Rahul", "mera naam Aditya hai", "my name is Aditya", "myself Aditya", "Aditya from RJ Builders"
   const namePatterns = [
-    /(?:mera naam|my name is|i am|this is|naam)\s+([A-Za-z\s]{2,30})/i,
-    /(?:myself|im)\s+([A-Za-z\s]{2,30})/i,
+    /(?:^|\n|\b)(?:name|naam|mera naam|my name is|i am|this is|myself|im)\s*[:=\-]?\s*([A-Za-z][A-Za-z\s]{1,25})/im,
   ];
   for (const pat of namePatterns) {
-    const match = text.match(pat);
+    const match = rawText.match(pat);
     if (match && match[1]) {
-      const candidate = match[1].replace(/(from|se|in|city|company|firm|builders|realty|properties).*$/i, '').trim();
-      if (candidate.length >= 2 && candidate.length <= 30 && !/^(here|hey|user|visitor|broker|agent)$/i.test(candidate)) {
+      let candidate = match[1].split(/\r?\n/)[0].trim();
+      candidate = candidate.replace(/(?:from|se|in|city|company|firm|builders|realty|properties|developers|hai).*$/i, '').trim();
+      if (
+        candidate.length >= 2 &&
+        candidate.length <= 25 &&
+        !/^(here|hey|user|visitor|broker|agent|admin|pricing|yes|haan|nahi|no|ok|thik|none|not|patna|delhi|mumbai)$/i.test(candidate)
+      ) {
         detectedName = candidate;
         break;
       }
     }
   }
 
-  // 2. Detect City patterns (popular Indian real estate hubs)
-  const indianCities = [
-    'mumbai', 'delhi', 'noida', 'gurgaon', 'gurugram', 'ghaziabad', 'faridabad',
-    'bangalore', 'bengaluru', 'hyderabad', 'pune', 'kolkata', 'chennai',
-    'ahmedabad', 'jaipur', 'lucknow', 'patna', 'ranchi', 'indore', 'bhopal',
-    'chandigarh', 'kochi', 'surat', 'vadodara', 'nagpur', 'dehradun', 'varanasi',
-    'kanpur', 'agra', 'bhubaneswar', 'coimbatore', 'ludhiana', 'amritsar', 'nashik'
-  ];
-  for (const city of indianCities) {
-    const cityRegex = new RegExp(`\\b${city}\\b`, 'i');
-    if (cityRegex.test(text)) {
-      detectedCity = city.charAt(0).toUpperCase() + city.slice(1);
-      break;
-    }
-  }
-
-  // 3. Detect Company / Firm patterns
+  // 2. Detect Company / Firm patterns
+  // Matches "Company name: RJ Builders", "RJ Builders", "DLF Properties", "Shree Ram Realty"
   const companyPatterns = [
-    /(?:company|firm|brokerage|agency name|from)\s+(?:is\s+)?([A-Za-z0-9\s]{2,40})/i,
-    /([A-Za-z0-9\s]{2,30}\s+(?:realty|properties|developers|infra|infrastructures|builders|group|associates|estates|homes))/i,
+    /(?:^|\n|\b)(?:company(?:\s*name)?|firm(?:\s*name)?|agency(?:\s*name)?|developer(?:\s*name)?|brokerage)\s*[:=\-]?\s*([A-Za-z0-9\s&.]{2,40})/im,
+    /([A-Za-z0-9\s&.]{2,30}\s+(?:realty|properties|developers|infra|infrastructures|builders|group|associates|estates|homes|realtors|promoters))/i,
   ];
   for (const pat of companyPatterns) {
-    const match = text.match(pat);
+    const match = rawText.match(pat);
     if (match && match[1]) {
-      const candidate = match[1].trim();
-      if (candidate.length >= 3 && candidate.length <= 40) {
+      let candidate = match[1].split(/\r?\n/)[0].trim();
+      if (candidate.length >= 3 && candidate.length <= 40 && !/^(is|are|name|patna|delhi|mumbai|salesforce|crm)$/i.test(candidate)) {
         detectedCompany = candidate;
         break;
       }
     }
+  }
+
+  // 3. Detect City patterns (popular Indian real estate hubs)
+  const indianCities = [
+    'patna', 'ranchi', 'jamshedpur', 'dhanbad', 'kolkata', 'bhubaneswar', 'muzaffarpur', 'gaya',
+    'varanasi', 'lucknow', 'kanpur', 'gorakhpur', 'prayagraj', 'agra', 'meerut', 'noida', 'greater noida',
+    'gurgaon', 'gurugram', 'delhi', 'new delhi', 'faridabad', 'ghaziabad', 'jaipur', 'udaipur', 'jodhpur', 'kota',
+    'indore', 'bhopal', 'gwalior', 'jabalpur', 'ahmedabad', 'surat', 'vadodara', 'rajkot', 'mumbai', 'pune',
+    'nagpur', 'nashik', 'thane', 'navi mumbai', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'coimbatore',
+    'kochi', 'trivandrum', 'chandigarh', 'mohali', 'ludhiana', 'amritsar', 'dehradun', 'guwahati'
+  ];
+  for (const city of indianCities) {
+    const cityRegex = new RegExp(`\\b${city}\\b`, 'i');
+    if (cityRegex.test(lowerText)) {
+      detectedCity = city.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      break;
+    }
+  }
+
+  // 4. Detect Team Size / Users
+  // Matches "10+", "10 members", "team size 15", "5 log", "20 users"
+  const teamPatterns = [
+    /(?:team(?:\s*size)?|users?|members?|logins?|staff|telecallers?|agents?)\s*[:=\-]?\s*(\d{1,4}\+?)/i,
+    /(\d{1,4}\+?)\s*(?:users?|members?|people|logins?|staff|telecallers?|agents?|log\b)/i,
+    /^(\d{1,3}\+?)$/,
+  ];
+  for (const pat of teamPatterns) {
+    const match = rawText.match(pat);
+    if (match && match[1]) {
+      detectedTeamSize = match[1].trim();
+      break;
+    }
+  }
+
+  // 5. Detect Current CRM / Tool
+  // Matches "Salesforce", "HubSpot", "Zoho", "LeadSquared", "Sell.do", "Excel", "Google Sheets"
+  const toolPatterns = [
+    /\b(salesforce|hubspot|zoho|leadsquared|leadsqquared|sell\.?do|selldo|excel|google sheets|sheets|bitrix24|freshsales|kylas)\b/i,
+  ];
+  for (const pat of toolPatterns) {
+    const match = lowerText.match(pat);
+    if (match && match[1]) {
+      detectedCurrentTool = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+      break;
+    }
+  }
+
+  // 6. Detect Plan Interest
+  if (/\b(?:paid|pro plan|pro\b|unlimited)\b/i.test(lowerText)) {
+    detectedPlanInterest = 'Pro Plan (Paid / Unlimited Users)';
+  } else if (/\b(?:free|trial|zero cost|1000 leads)\b/i.test(lowerText)) {
+    detectedPlanInterest = 'Free Forever Plan (1,000 Leads)';
   }
 
   // Update conversation if new details found
@@ -501,19 +547,41 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
     newMetadata.company_name = detectedCompany;
     metadataChanged = true;
   }
+  if (detectedTeamSize && newMetadata.team_size !== detectedTeamSize) {
+    newMetadata.team_size = detectedTeamSize;
+    metadataChanged = true;
+  }
+  if (detectedCurrentTool && newMetadata.current_tool !== detectedCurrentTool) {
+    newMetadata.current_tool = detectedCurrentTool;
+    metadataChanged = true;
+  }
+  if (detectedPlanInterest && newMetadata.plan_interest !== detectedPlanInterest) {
+    newMetadata.plan_interest = detectedPlanInterest;
+    metadataChanged = true;
+  }
 
-  const currentName = conversation.customer_name || '';
-  const isGenericName = !currentName || /^(website visitor|hey|visitor|user|\+)/i.test(currentName.trim());
+  const currentName = (conversation.customer_name || '').trim();
+  const isGenericOrHandle = !currentName ||
+    /^(website visitor|hey|visitor|user|\+|mydigitalera)/i.test(currentName) ||
+    currentName.length < 3;
 
-  if (detectedName && (isGenericName || currentName.length < 3)) {
-    updates.push(`customer_name = $${pIdx++}`);
-    params.push(detectedName);
+  if (detectedName) {
+    newMetadata.stated_name = detectedName;
+    metadataChanged = true;
+
+    // Update customer_name in DB if currently generic/handle or explicitly specified
+    if (isGenericOrHandle || currentName.toLowerCase() !== detectedName.toLowerCase()) {
+      updates.push(`customer_name = $${pIdx++}`);
+      params.push(detectedName);
+      conversation.customer_name = detectedName;
+    }
   }
 
   if (metadataChanged) {
     newMetadata.lead_captured_at = newMetadata.lead_captured_at || new Date().toISOString();
     updates.push(`metadata = $${pIdx++}::jsonb`);
     params.push(JSON.stringify(newMetadata));
+    conversation.metadata = newMetadata;
   }
 
   if (updates.length > 0) {
@@ -597,7 +665,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'pricing',
-      reply: `RealSalePro mein 1,000 leads aur 5 team logins tak bilkul Free Forever hai (₹0, zero credit card required). Badi teams ke liye Pro plan sirf ₹1,200/month hai unlimited users ke saath.\n\nAap bina kisi risk ke free tier try kar sakte hain: https://realsalepro.com/register\n\nAapki team mein kitne members hain?`,
+      reply: `RealSalePro do simple plans offer karta hai:\n1. *Free Forever*: ₹0 (1,000 active leads aur 5 team users tak bilkul free, no credit card required).\n2. *Pro Plan*: ₹1,000/month (yearly) ya ₹1,200/month (6-month) — isme *UNLIMITED team members* aur 2,00,000 leads milte hain (per user koi charge nahi)!\n\nAap abhi free start kar sakte hain: https://realsalepro.com/register`,
     };
   }
 
@@ -667,57 +735,116 @@ export async function generateDeepSeekSalesReply({
     return evaluateVisitorIntent(messageText, customerName);
   }
 
-  const validName = (customerName && !['hey', 'visitor', 'user', 'website visitor'].includes(customerName.toLowerCase().trim()))
-    ? customerName.trim()
-    : null;
+  const statedName = conversationMetadata.stated_name;
+  const isGeneric = (name) => !name || /^(hey|visitor|user|website visitor|mydigitalera)$/i.test(name.trim());
+  const effectiveName = statedName || (!isGeneric(customerName) ? customerName.trim() : null);
 
   const systemPrompt = `You are Rahul, a senior real estate sales executive at RealSalePro (https://realsalepro.com) chatting with an inbound prospect on WhatsApp.
 
-CRITICAL IDENTITY RULES (NEVER BREAK):
-1. YOU ARE 100% HUMAN. You are Rahul from the RealSalePro sales team.
+CRITICAL IDENTITY & HUMAN CONVERSATION RULES:
+1. YOU ARE 100% HUMAN. You are Rahul from the RealSalePro sales team based in India.
 2. NEVER mention or admit that you are an AI, bot, virtual assistant, algorithm, or automated response.
-3. If asked "Are you a bot?", "AI ho kya?", or "Are you real?", reply naturally:
-   - In Hindi: "Nahi sir, main RealSalePro sales team se Rahul baat kar raha hoon! Aap batayein kaise help kar sakta hoon?"
-   - In English: "Haha no, I'm Rahul from the RealSalePro team! How can I help you today?"
+3. If asked "Are you a bot?", "AI ho kya?", "Are you real?", or "bot lag raha hai", reply naturally, warmly, and with human charm:
+   - In Hindi: "Haha nahi sir, main RealSalePro sales team se Rahul baat kar raha hoon! Aap batayein demo kab schedule karein ya pricing mein koi specific doubt hai?"
+   - In English: "Haha no, I'm Rahul from the RealSalePro sales team! How can I help you today?"
 4. ZERO BOT CLICHÉS:
    - NEVER start with "Great question! 🚀", "Hello there!", "I would be happy to help with that!", "Here is a breakdown:", or "Hope this helps!".
-   - NEVER send bulleted lists of emojis (e.g. 💰📱🛡️🏢🚀👉). Real humans NEVER type 5 bullet points with 5 emojis on WhatsApp.
+   - NEVER send bulleted lists of emojis (e.g. 💰📱🛡️🏢🚀👉). Real human sales reps NEVER type bullet lists with emojis on WhatsApp.
    - At most 1 subtle emoji (like 🙏 or 👍) in the entire message.
 5. STRICT TOKEN & MESSAGE LIMIT:
-   - Keep responses strictly to 2 to 4 sentences (under 60 words).
-   - Real WhatsApp messages are short and crisp. This keeps token usage minimal and conversations natural.
-6. OFFICIAL CALLING & CONTACT NUMBER (CRITICAL):
+   - Keep responses strictly to 2 to 4 sentences (under 65 words).
+   - Real WhatsApp messages are short, human, and conversational.
+6. OFFICIAL CALLING & CONTACT NUMBER:
    - RealSalePro's official sales calling & phone number is: +91 70797 37773.
-   - If the prospect asks for a phone number to call, wants to talk on call, or asks for your contact number (e.g., "mujhe no de do", "give me your number", "call karunga", "number bhejo", "phone pe baat"), ALWAYS give: +91 70797 37773.
-   - Example: "Bilkul sir, aap mujhe direct call kar sakte hain: +91 70797 37773 par. Main 10 se 7 baje tak available rehta hoon."
-   - NEVER invent, hallucinate, or output any dummy or fake phone numbers (NEVER output 9876543210, 1234567890, or any other made-up number).
-7. CORE SALES OBJECTIVES:
-   - QUALIFY & COLLECT DETAILS EARLY: In the first 1-2 interactions, if you don't already know their Name, City, or Company, ask politely in a natural flow (e.g. "Aapka shubh naam aur company kis city mein hai?" or "Waise aapka project kis city mein chal raha hai?"). We need this so our team can follow up with them on a call.
-   - PROBLEM-FIRST CONSULTATIVE SELLING: Understand what problem they face (telecallers leaking/stealing leads, delayed Meta ads lead followups, messy Excel sheets, lost site visit bookings), and explain only the specific RealSalePro feature that solves it.
-   - RISK-FREE SIGNUP: Emphasize that RealSalePro is 100% Free Forever for up to 1,000 active leads and 5 users with zero expiry and NO credit card required. Link: https://realsalepro.com/register
-   - Maximum 1 URL per message.
-8. TERMINOLOGY & LANGUAGE:
+   - If the prospect asks for a phone number or wants to talk on call:
+     * During office working hours (10:00 AM - 7:30 PM IST): Give them +91 70797 37773.
+     * During night/off-hours: State that office hours are 10:00 AM to 7:30 PM, you will connect at 10 AM tomorrow, or they can call tomorrow after 10 AM at +91 70797 37773.
+   - NEVER invent, hallucinate, or output dummy numbers (never output 9876543210, etc.).
+
+ANTI-REPETITION & MEMORY RULES (CRITICAL):
+1. NEVER REPEAT A QUESTION THAT WAS ALREADY ASKED OR ANSWERED!
+   - Look at the PROSPECT PROFILE DOSSIER and conversation history below.
+   - If the prospect already told you their Name, City, Company, Team Size, or Current CRM, NEVER ASK FOR IT AGAIN!
+   - If they already told you their team size (e.g. 10+), DO NOT ask "Aapki team mein kitne members hain?".
+   - If they already told you their company or city (e.g. RJ Builders, Patna), DO NOT ask "Aapka shubh naam aur company kis city mein hai?".
+2. PROSPECT NAME USAGE:
+   - If their real name is known (e.g., "${effectiveName || 'Aditya'}"), address them respectfully as "${effectiveName ? effectiveName + ' ji' : 'sir'}".
+   - NEVER address them by their WhatsApp username/handle (e.g. NEVER call them "MyDigitalEra" or "MyDigitalEra ji").
+3. ANSWER QUESTIONS DIRECTLY:
+   - When the prospect asks about pricing ("pricing", "after that", "kitna lagega"), ANSWER THE PRICING DIRECTLY with exact numbers from the knowledge base below!
+   - When the prospect says "i will go with paid plans", acknowledge that enthusiastically, share the Pro Plan details, and guide them to schedule a demo or call!
+
+COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
+1. PLANS & PRICING:
+   - FREE FOREVER PLAN:
+     * Price: ₹0 forever (zero cost, zero expiry, NO credit card required).
+     * Leads: Up to 1,000 active leads.
+     * Users: Up to 5 team member logins.
+     * Features: Full deal pipeline, automated followups, WhatsApp fast-dial, basic staff phone masking.
+     * Signup link: https://realsalepro.com/register
+   - PRO PLAN (MOST POPULAR — BEST FOR GROWING TEAMS & 10+ MEMBERS):
+     * UNLIMITED TEAM MEMBERS & ROLES! We DO NOT charge per user! A team of 10, 20, or 50 users pays the EXACT SAME flat monthly price!
+     * Leads: Up to 2,00,000 active leads.
+     * Pricing options:
+       - Yearly billing: ₹1,000/month (billed ₹12,000 annually — Best Value, Save 33%).
+       - 6 Months billing: ₹1,200/month (billed ₹7,200 semi-annually — Save 20%).
+       - Monthly billing: ₹1,500/month (billed monthly).
+     * Features included in Pro:
+       - Advanced telecaller phone masking: Telecallers only see "98765 •••••", preventing staff and brokers from stealing your buyer database.
+       - Meta Ads CAPI (Conversions API) & Portal Webhooks: Instant auto-sync for leads from Facebook/Instagram ads, Google, Magicbricks, 99acres, and Housing.com in under 5 seconds.
+       - WhatsApp automated site visit passes, PDF booking receipts & deal pipeline.
+       - Priority WhatsApp & email support.
+     * Pricing link: https://realsalepro.com/pricing
+   - CUSTOM / ENTERPRISE PLAN:
+     * For large developer groups & multi-city broker networks.
+     * Bring-Your-Own-Database (BYOD self-hosted on private AWS/PostgreSQL), custom ERP/SAP integrations, dedicated account manager, custom SLA.
+   - PAYMENT MODES: UPI (Google Pay, PhonePe, Paytm), RuPay, Credit/Debit cards, Net Banking, and NEFT/RTGS invoice.
+
+2. WHY REALSALEPRO VS SALESFORCE / HUBSPOT / ZOHO:
+   - Salesforce/HubSpot charge $25 to $150 per user per month! A 10-person team pays ₹25,000 to ₹1,20,000 EVERY MONTH just for software licenses, plus lakhs in consultant fees.
+   - Salesforce does NOT have Indian real estate integrations (no 99acres/Magicbricks sync), no telecaller phone masking to stop lead theft, and no WhatsApp site visit passes.
+   - RealSalePro is built exclusively for Indian real estate builders and brokers:
+     * Just ₹1,000/month flat for the ENTIRE team of 10+ users (Unlimited users on Pro Plan).
+     * Instant 1-click sync for Meta Ads, 99acres, and Magicbricks leads.
+     * Complete telecaller phone masking so staff cannot steal buyers' phone numbers.
+     * Real-time unit-by-unit inventory tracking so units are never double-booked.
+
+3. CORE SALES GOAL:
+   - Encourage them to try the Free Forever account or book a live 10-minute demo.
+   - Free account signup link: https://realsalepro.com/register
+   - Pricing page link: https://realsalepro.com/pricing
+   - Maximum 1 link per message.
    - Always refer to their business as a "company" or "real estate firm" (NEVER use "agency").
-   - Match the prospect's language: If they text in Hindi/Hinglish ("kya price hai", "leads kaise aayenge"), reply in natural, respectful Hinglish. If they text in English, reply in natural Indian English.
+   - Match language: If user speaks Hindi/Hinglish, reply in natural, respectful Hinglish. If English, reply in Indian English.
    - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
 
   try {
-    const historyMessages = conversationHistory.slice(-5).map((m) => ({
+    // Rich multi-turn memory: take up to 20 recent messages (10 conversation turns)
+    const historyMessages = conversationHistory.slice(-20).map((m) => ({
       role: m.sender_type === 'visitor' ? 'user' : 'assistant',
       content: m.body,
     }));
 
-    let contextPrefix = '';
-    if (validName) contextPrefix += `[Prospect Name: ${validName}] `;
-    if (conversationMetadata.city) contextPrefix += `[City: ${conversationMetadata.city}] `;
-    if (conversationMetadata.company_name) contextPrefix += `[Company: ${conversationMetadata.company_name}] `;
+    // Build the dynamic Prospect Profile Dossier
+    const dossierItems = [];
+    if (effectiveName) dossierItems.push(`- Prospect Real Name: ${effectiveName}`);
+    if (conversationMetadata.company_name) dossierItems.push(`- Real Estate Company: ${conversationMetadata.company_name}`);
+    if (conversationMetadata.city) dossierItems.push(`- City: ${conversationMetadata.city}`);
+    if (conversationMetadata.team_size) dossierItems.push(`- Team Size: ${conversationMetadata.team_size} users/members`);
+    if (conversationMetadata.current_tool) dossierItems.push(`- Current CRM/Tracking Tool: ${conversationMetadata.current_tool}`);
+    if (conversationMetadata.plan_interest) dossierItems.push(`- Plan Preference: ${conversationMetadata.plan_interest}`);
 
-    // Ingest dynamic continuous learning insights & recommended qualification probe
-    let dynamicSystemPrompt = systemPrompt;
-    if (learnedGuidance) {
-      dynamicSystemPrompt += `\n${learnedGuidance}`;
+    let dossierPrompt = '';
+    if (dossierItems.length > 0) {
+      dossierPrompt = `\n\nPROSPECT PROFILE DOSSIER (ALREADY COLLECTED & REMEMBERED - NEVER ASK FOR THESE AGAIN!):\n${dossierItems.join('\n')}\n\n*CRITICAL*: Since you already know the above details, NEVER ask for them again. Always call the prospect "${effectiveName ? effectiveName + ' ji' : 'sir'}" (NEVER by any WhatsApp handle like MyDigitalEra).`;
     }
-    if (recommendedProbe) {
+
+    let dynamicSystemPrompt = systemPrompt + dossierPrompt;
+
+    if (learnedGuidance) {
+      dynamicSystemPrompt += `\n\n${learnedGuidance}`;
+    }
+    if (recommendedProbe && !conversationMetadata.team_size && !conversationMetadata.current_tool) {
       dynamicSystemPrompt += `\n\nADAPTIVE CONTEXTUAL QUALIFICATION PROBE:
 If natural in the flow of conversation, ask this specific probing question to qualify the lead: "${recommendedProbe}"`;
     }
@@ -740,7 +867,7 @@ CRITICAL OFF-HOURS CALLING RULE:
       ...historyMessages,
       {
         role: 'user',
-        content: contextPrefix ? `${contextPrefix}\n${messageText}` : messageText,
+        content: messageText,
       },
     ];
 
@@ -799,6 +926,13 @@ CRITICAL OFF-HOURS CALLING RULE:
       .replace(/^great question!\s*🚀?/i, '')
       .replace(/^hello there!\s*🚀?/i, '')
       .trim();
+
+    // Safety cleaner: If prospect's real name is known (e.g. "Aditya"), replace any accidental usage of WhatsApp handle "MyDigitalEra" with real name
+    if (effectiveName) {
+      reply = reply
+        .replace(/\bMyDigitalEra\b/gi, effectiveName)
+        .replace(/\bmydigitalera\b/gi, effectiveName);
+    }
 
     return {
       intent: 'deepseek_ai_reply',
@@ -914,9 +1048,10 @@ export async function processIncomingWebhook(body) {
           // Evaluate Visitor Intent & Generate Response (DeepSeek AI or Handover)
           const config = await getWhatsAppConfig();
 
-          const effectiveName = (conversation.customer_name && !['website visitor', 'hey', 'visitor', 'user'].includes(conversation.customer_name.toLowerCase().trim()))
+          const statedName = conversation.metadata?.stated_name;
+          const effectiveName = statedName || ((conversation.customer_name && !['website visitor', 'hey', 'visitor', 'user', 'mydigitalera'].includes(conversation.customer_name.toLowerCase().trim()))
             ? conversation.customer_name
-            : null;
+            : null);
 
           // Check if user requested agent handover explicitly
           const normalized = String(messageText || '').trim().toLowerCase();
@@ -946,12 +1081,12 @@ export async function processIncomingWebhook(body) {
             continue;
           }
 
-          // Fetch recent conversation history for DeepSeek context (last 5 messages)
+          // Fetch rich conversation history for DeepSeek context (last 25 messages for complete multi-turn memory)
           const historyRes = await query(`
             SELECT sender_type, body FROM whatsapp_messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
-            LIMIT 5
+            LIMIT 25
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
 
