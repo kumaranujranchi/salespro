@@ -19,8 +19,6 @@ import {
   FileText,
   Menu,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
@@ -861,14 +859,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 )}
               </div>
             )}
-
-            <button
-              onClick={toggleCollapse}
-              className="hidden lg:flex w-7 h-7 items-center justify-center rounded-full bg-white dark:bg-surface-highlight border border-slate-200 dark:border-white/10 text-slate-500 hover:text-emerald-600 hover:border-emerald-300 hover:shadow-lg shadow-md transition-all absolute -right-3.5 top-8 z-50 cursor-pointer"
-              title={isCollapsed ? "Expand Sidebar (Ctrl+B)" : "Hide Sidebar (Ctrl+B)"}
-            >
-              {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-            </button>
           </div>
 
           {/* Navigation Items */}
