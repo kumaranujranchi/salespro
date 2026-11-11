@@ -82,6 +82,7 @@ export function WhatsAppCommandCenterPage() {
   const [broadcasts, setBroadcasts] = useState<any[]>([]);
   const [newBroadcast, setNewBroadcast] = useState({
     title: '',
+    templateName: '',
     customMessage: '',
     targetAudience: 'all_leads',
   });
@@ -321,7 +322,7 @@ export function WhatsAppCommandCenterPage() {
     try {
       await whatsappHubService.createBroadcast(newBroadcast);
       alert('Broadcast campaign queued for delivery!');
-      setNewBroadcast({ title: '', customMessage: '', targetAudience: 'all_leads' });
+      setNewBroadcast({ title: '', templateName: '', customMessage: '', targetAudience: 'all_leads' });
       await loadBroadcasts();
     } catch (err: any) {
       alert(`Error creating broadcast: ${err.message}`);
@@ -435,7 +436,7 @@ export function WhatsAppCommandCenterPage() {
         </button>
 
         <button
-          onClick={() => { setActiveTab('broadcast'); loadBroadcasts(); }}
+          onClick={() => { setActiveTab('broadcast'); loadBroadcasts(); loadTemplates(); }}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
             activeTab === 'broadcast'
               ? 'bg-emerald-600 text-white shadow-sm'
@@ -1048,6 +1049,50 @@ export function WhatsAppCommandCenterPage() {
                   <option value="all_leads">All Captured Leads & Website Visitors</option>
                   <option value="recent_visitors">Visitors from Last 7 Days</option>
                   <option value="inactive_trials">Inactive Free Trials</option>
+                </select>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1">
+                  <span>📍 <strong>Contact Sources:</strong> Unified auto-sync from CRM Leads (Meta Ads, Google, 99acres, Magicbricks) + WhatsApp Landing Inquiries.</span>
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Use Pre-Approved Meta Template (Recommended for 100% Delivery)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('templates'); loadTemplates(); }}
+                    className="text-[11px] text-emerald-600 hover:underline font-semibold"
+                  >
+                    + Create / Approve Template in Meta Hub
+                  </button>
+                </div>
+                <select
+                  value={newBroadcast.templateName}
+                  onChange={(e) => {
+                    const selName = e.target.value;
+                    const matched = templates.find((t) => t.name === selName);
+                    const bodyText = matched?.components?.find((c: any) => c.type === 'BODY')?.text || '';
+                    setNewBroadcast({
+                      ...newBroadcast,
+                      templateName: selName,
+                      customMessage: bodyText || newBroadcast.customMessage,
+                    });
+                  }}
+                  className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">None (Send as Custom Text Message)</option>
+                  {templates.filter((t) => t.status === 'APPROVED').map((t) => (
+                    <option key={t.name} value={t.name}>
+                      ✓ {t.name} ({t.category} - {t.language})
+                    </option>
+                  ))}
+                  {templates.filter((t) => t.status !== 'APPROVED').map((t) => (
+                    <option key={t.name} value={t.name} disabled>
+                      ⏳ {t.name} ({t.status})
+                    </option>
+                  ))}
                 </select>
               </div>
 
