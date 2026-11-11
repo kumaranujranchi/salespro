@@ -530,14 +530,32 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
     detectedPlanInterest = 'Free Forever Plan (1,000 Leads)';
   }
 
+  // 7. Track key session milestones & topics covered
+  const currentMetadata = conversation.metadata || {};
+  let metadataChanged = false;
+  const newMetadata = { ...currentMetadata };
+
+  if (/\b(?:price|pricing|cost|rate|kitna|charges|quote)\b/i.test(lowerText) && !newMetadata.discussed_pricing) {
+    newMetadata.discussed_pricing = true;
+    metadataChanged = true;
+  }
+  if (/\b(?:demo|walkthrough|screen|presentation|schedule)\b/i.test(lowerText) && !newMetadata.requested_demo) {
+    newMetadata.requested_demo = true;
+    metadataChanged = true;
+  }
+  if (/\b(?:call|phone|number|baat|connect)\b/i.test(lowerText) && !newMetadata.requested_call) {
+    newMetadata.requested_call = true;
+    metadataChanged = true;
+  }
+  if (/\b(?:bot|ai|robot|real|human)\b/i.test(lowerText) && !newMetadata.asked_if_bot) {
+    newMetadata.asked_if_bot = true;
+    metadataChanged = true;
+  }
+
   // Update conversation if new details found
   const updates = [];
   const params = [];
   let pIdx = 1;
-
-  const currentMetadata = conversation.metadata || {};
-  let metadataChanged = false;
-  const newMetadata = { ...currentMetadata };
 
   if (detectedCity && newMetadata.city !== detectedCity) {
     newMetadata.city = detectedCity;
@@ -819,13 +837,13 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
    - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
 
   try {
-    // Rich multi-turn memory: take up to 20 recent messages (10 conversation turns)
-    const historyMessages = conversationHistory.slice(-20).map((m) => ({
+    // Complete Session Memory: take up to 100 recent messages of the ongoing conversation
+    const historyMessages = conversationHistory.slice(-100).map((m) => ({
       role: m.sender_type === 'visitor' ? 'user' : 'assistant',
       content: m.body,
     }));
 
-    // Build the dynamic Prospect Profile Dossier
+    // Build the dynamic Prospect Profile Dossier & Session Milestones
     const dossierItems = [];
     if (effectiveName) dossierItems.push(`- Prospect Real Name: ${effectiveName}`);
     if (conversationMetadata.company_name) dossierItems.push(`- Real Estate Company: ${conversationMetadata.company_name}`);
@@ -834,9 +852,18 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
     if (conversationMetadata.current_tool) dossierItems.push(`- Current CRM/Tracking Tool: ${conversationMetadata.current_tool}`);
     if (conversationMetadata.plan_interest) dossierItems.push(`- Plan Preference: ${conversationMetadata.plan_interest}`);
 
+    const topicsDiscussed = [];
+    if (conversationMetadata.requested_demo) topicsDiscussed.push('Requested demo');
+    if (conversationMetadata.discussed_pricing) topicsDiscussed.push('Pricing discussed');
+    if (conversationMetadata.requested_call) topicsDiscussed.push('Asked for direct call/number');
+    if (conversationMetadata.asked_if_bot) topicsDiscussed.push('Asked about AI/bot (confirmed Rahul is human)');
+    if (topicsDiscussed.length > 0) {
+      dossierItems.push(`- Key Topics Already Handled: ${topicsDiscussed.join(', ')}`);
+    }
+
     let dossierPrompt = '';
     if (dossierItems.length > 0) {
-      dossierPrompt = `\n\nPROSPECT PROFILE DOSSIER (ALREADY COLLECTED & REMEMBERED - NEVER ASK FOR THESE AGAIN!):\n${dossierItems.join('\n')}\n\n*CRITICAL*: Since you already know the above details, NEVER ask for them again. Always call the prospect "${effectiveName ? effectiveName + ' ji' : 'sir'}" (NEVER by any WhatsApp handle like MyDigitalEra).`;
+      dossierPrompt = `\n\nPROSPECT PROFILE DOSSIER (PERMANENT SESSION MEMORY - NEVER ASK FOR THESE AGAIN!):\n${dossierItems.join('\n')}\n\n*CRITICAL*: Since you already know the above details from earlier in this session, NEVER ask for them again. Always call the prospect "${effectiveName ? effectiveName + ' ji' : 'sir'}" (NEVER by any WhatsApp handle like MyDigitalEra).`;
     }
 
     let dynamicSystemPrompt = systemPrompt + dossierPrompt;
@@ -1081,12 +1108,12 @@ export async function processIncomingWebhook(body) {
             continue;
           }
 
-          // Fetch rich conversation history for DeepSeek context (last 25 messages for complete multi-turn memory)
+          // Fetch full session conversation history for DeepSeek context (last 100 messages for complete session memory)
           const historyRes = await query(`
             SELECT sender_type, body FROM whatsapp_messages
             WHERE conversation_id = $1
             ORDER BY created_at DESC
-            LIMIT 25
+            LIMIT 100
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
 
