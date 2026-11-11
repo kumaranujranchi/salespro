@@ -26,9 +26,9 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
     {
       id: 'demo',
       icon: Rocket,
-      title: 'Book Live Demo & Free Trial',
-      desc: '1-on-1 walkthrough + 1,000 lead free account',
-      text: "Hi RealSalePro! I'd like to book a 1-on-1 demo and start our 14-day free trial."
+      title: '1,000 Leads Free Account & Demo',
+      desc: 'Zero expiry + 1-on-1 personalized walkthrough',
+      text: "Hi RealSalePro! I would like to get our free 1,000 leads account and book a live demo."
     },
     {
       id: 'pricing',
@@ -54,9 +54,9 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
     {
       id: 'agent',
       icon: UserCheck,
-      title: 'Talk to a Human Specialist',
-      desc: 'Connect directly with our sales onboarding team',
-      text: 'Hi RealSalePro! I would like to speak directly with an on-duty sales specialist.'
+      title: 'Live Support Available',
+      desc: 'Chat directly with our support & sales team',
+      text: 'Hi RealSalePro! I need live support with RealSalePro.'
     }
   ];
 

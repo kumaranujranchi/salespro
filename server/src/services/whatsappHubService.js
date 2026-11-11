@@ -354,12 +354,15 @@ function evaluateVisitorIntent(messageText, customerName) {
   const text = String(messageText || '').trim().toLowerCase();
   const nameSalutation = customerName ? ` ${customerName}` : '';
 
-  // 1. Handover to Agent / Human
+  // 1. Handover to Live Support / Agent / Human
   if (
     text === '5' ||
+    text.includes('support') ||
+    text.includes('live support') ||
     text.includes('agent') ||
     text.includes('human') ||
-    text.includes('talk to agent') ||
+    text.includes('talk') ||
+    text.includes('help') ||
     text.includes('representative') ||
     text.includes('call me') ||
     text.includes('executive') ||
@@ -367,16 +370,18 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'agent_handover',
-      reply: `Connecting you with our sales expert${nameSalutation}! 👤\n\nI have notified our on-duty team specialist. Someone from RealSalePro will reply to you directly in this chat shortly.\n\n📞 Need immediate assistance? You can also call us directly at +91 70797 37773.`,
+      reply: `Connecting you with our Live Support team${nameSalutation}! 👤\n\nI have notified our on-duty team. Someone from RealSalePro will reply to you directly in this chat shortly.\n\n📞 Need immediate assistance? You can also call us directly at +91 70797 37773.`,
     };
   }
 
-  // 2. Demo / Free Trial / Register
+  // 2. Demo / Free 1,000 Leads Account / Register
   if (
     text === '1' ||
     text.includes('demo') ||
+    text.includes('1000') ||
+    text.includes('1,000') ||
+    text.includes('free account') ||
     text.includes('trial') ||
-    text.includes('free trial') ||
     text.includes('signup') ||
     text.includes('sign up') ||
     text.includes('register') ||
@@ -385,7 +390,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'demo_trial',
-      reply: `Great to have you here${nameSalutation}! 🚀\n\nYou can start immediately with our **100% Free Forever Tier** (manage up to 1,000 active client leads with zero credit card required):\n\n👉 **Direct Signup Link:**\nhttps://realsalepro.com/register\n\nPrefer a 15-minute personalized screen walkthrough with our product specialist?\nReply with your **City & Agency Name**, and our team will schedule your VIP demo!`,
+      reply: `Great to have you here${nameSalutation}! 🚀\n\nYou can start immediately with our *100% Free Forever Tier* (manage up to 1,000 active client leads with zero expiry, zero time limit, and no credit card required):\n\n👉 *Direct Signup Link:*\nhttps://realsalepro.com/register\n\nPrefer a 15-minute personalized screen walkthrough with our product specialist?\nReply with your *City & Agency Name*, and our team will schedule your VIP demo!`,
     };
   }
 
@@ -402,7 +407,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'pricing',
-      reply: `Here is our transparent pricing structure${nameSalutation}:\n\n🟢 **Free Forever Plan — ₹0/forever**\n• Up to 1,000 active leads\n• Up to 5 team members\n• Deal pipeline & WhatsApp script fast dial\n• Zero credit card required\n\n⚡ **Pro Plan — ₹1,200/month (billed semi-annually)**\n• Up to 2,00,000 active leads\n• Unlimited users & telecaller seats\n• Meta CAPI, 99acres & Magicbricks Webhooks\n• Advanced telecaller phone masking\n\n🏢 **Custom Enterprise**\n• Self-hosted PostgreSQL BYOD database & custom RERA SLA.\n\nCompare full plans: https://realsalepro.com/pricing\n\nReply **5** to speak with our sales manager for custom agency billing!`,
+      reply: `Here is our transparent pricing structure${nameSalutation}:\n\n🟢 *Free Forever Plan — ₹0/forever*\n• Up to 1,000 active leads\n• Up to 5 team members\n• Deal pipeline & WhatsApp script fast dial\n• Zero credit card required\n\n⚡ *Pro Plan — ₹1,200/month (billed semi-annually)*\n• Up to 2,00,000 active leads\n• Unlimited users & telecaller seats\n• Meta CAPI, 99acres & Magicbricks Webhooks\n• Advanced telecaller phone masking\n\n🏢 *Custom Enterprise*\n• Self-hosted PostgreSQL BYOD database & custom RERA SLA.\n\nCompare full plans: https://realsalepro.com/pricing\n\nReply *5* to speak with our sales manager for custom agency billing!`,
     };
   }
 
@@ -419,7 +424,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'features',
-      reply: `RealSalePro is built specifically for Indian Real Estate builders & brokerages:\n\n🛡️ **Staff Phone Masking:** Hides the last 5 digits of buyer numbers from telecallers so your client database never leaks when staff leaves.\n\n⚡ **Sub-30s Portal Webhooks:** Direct integrations for Facebook Lead Ads, 99acres, Magicbricks, and Housing.com.\n\n📍 **Site Visit Dispatch:** Send Google Maps route pins to clients on WhatsApp, track drivers, and capture instant visitor feedback.\n\n💰 **Automatic Token Conversion:** 1-Click convert booked leads to sales records with brokerage commission calculation.\n\nExplore all features: https://realsalepro.com/features/lead-management`,
+      reply: `RealSalePro is built specifically for Indian Real Estate builders & brokerages:\n\n🛡️ *Staff Phone Masking:* Hides the last 5 digits of buyer numbers from telecallers so your client database never leaks when staff leaves.\n\n⚡ *Sub-30s Portal Webhooks:* Direct integrations for Facebook Lead Ads, 99acres, Magicbricks, and Housing.com.\n\n📍 *Site Visit Dispatch:* Send Google Maps route pins to clients on WhatsApp, track drivers, and capture instant visitor feedback.\n\n💰 *Automatic Token Conversion:* 1-Click convert booked leads to sales records with brokerage commission calculation.\n\nExplore all features: https://realsalepro.com/features/lead-management`,
     };
   }
 
@@ -434,14 +439,14 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'excel_template',
-      reply: `Here is our free Indian Real Estate CRM spreadsheet template:\n\n📥 **Free Download Link:**\nhttps://realsalepro.com/templates/real-estate-crm-excel-template\n\nIt comes pre-formatted with Indian property stages (New, Follow-up, Site Visit, Token Paid), formula calculations, and follow-up cadences.\n\nWhenever you're ready to automate past manual Excel sheets, RealSalePro will import your sheet in under 60 seconds!`,
+      reply: `Here is our free Indian Real Estate CRM spreadsheet template:\n\n📥 *Free Download Link:*\nhttps://realsalepro.com/templates/real-estate-crm-excel-template\n\nIt comes pre-formatted with Indian property stages (New, Follow-up, Site Visit, Token Paid), formula calculations, and follow-up cadences.\n\nWhenever you're ready to automate past manual Excel sheets, RealSalePro will import your sheet in under 60 seconds!`,
     };
   }
 
   // Default Greeting / Menu
   return {
     intent: 'greeting_menu',
-    reply: `Namaste${nameSalutation}! 👋 Welcome to **RealSalePro** — India's Real Estate Sales & CRM Platform.\n\nHow can I help you today? Please reply with a number:\n\n1️⃣ **Book Live Demo & Free 14-Day Trial**\n2️⃣ **View Pricing & Compare Plans**\n3️⃣ **Explore Key Features (Phone Masking, Webhooks)**\n4️⃣ **Download Free Real Estate Excel Template**\n5️⃣ **Talk to a Human Specialist**\n\nOr feel free to type your question directly!`,
+    reply: `Namaste${nameSalutation}! 👋 Welcome to *RealSalePro* — India's Real Estate Sales & CRM Platform.\n\nHow can I help you today? Please reply with a number:\n\n1️⃣ *1,000 Leads Free Forever Account & Demo*\n2️⃣ *View Pricing & Compare Plans*\n3️⃣ *Explore Key Features (Phone Masking, Webhooks)*\n4️⃣ *Download Free Real Estate Excel Template*\n5️⃣ *Live Support Available*\n\n💬 Live support is also available — or feel free to type your question directly!`,
   };
 }
 
