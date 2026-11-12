@@ -314,8 +314,8 @@ export const whatsappHubService = {
     api.post<{ success: boolean; message: any }>(`/whatsapp/conversations/${conversationId}/reply`, { text }),
   toggleBot: (conversationId: string, status: string) =>
     api.post<{ success: boolean; conversation: any }>(`/whatsapp/conversations/${conversationId}/toggle-bot`, { status }),
-  sendOtp: (phone: string, purpose?: string) =>
-    api.post<{ success: boolean; message: string; phone: string; expiresAt: string }>('/whatsapp/otp/send', { phone, purpose }),
+  sendOtp: (phone: string, purpose?: string, code?: string) =>
+    api.post<{ success: boolean; message: string; phone: string; expiresAt: string }>('/whatsapp/otp/send', { phone, purpose, code }),
   verifyOtp: (phone: string, otp: string, purpose?: string) =>
     api.post<{ success: boolean; message: string }>('/whatsapp/otp/verify', { phone, otp, purpose }),
   listTemplates: (params?: { tenant_id?: string }) =>

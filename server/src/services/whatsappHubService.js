@@ -561,22 +561,48 @@ export async function sendMetaOutboundMessage({ toPhone, text, templateName, lan
 
   let payload;
   if (templateName) {
-    payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: normalizedTo,
-      type: 'template',
-      template: {
-        name: templateName,
-        language: { code: languageCode },
-        components: bodyParams && bodyParams.length > 0 ? [
-          {
-            type: 'body',
-            parameters: bodyParams.map(p => ({ type: 'text', text: String(p) })),
-          },
-        ] : undefined,
-      },
-    };
+    if (templateName === 'realsalepro_auth_otp') {
+      const otpVal = String(bodyParams[0] || '');
+      payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: normalizedTo,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode || 'en' },
+          components: [
+            {
+              type: 'body',
+              parameters: [{ type: 'text', text: otpVal }],
+            },
+            {
+              type: 'button',
+              sub_type: 'url',
+              index: '0',
+              parameters: [{ type: 'text', text: otpVal }],
+            },
+          ],
+        },
+      };
+    } else {
+      payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: normalizedTo,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: bodyParams && bodyParams.length > 0 ? [
+            {
+              type: 'body',
+              parameters: bodyParams.map(p => ({ type: 'text', text: String(p) })),
+            },
+          ] : undefined,
+        },
+      };
+    }
   } else {
     payload = {
       messaging_product: 'whatsapp',
@@ -1670,15 +1696,15 @@ export async function getConversationMessages(conversationId) {
 /**
  * Dispatch a 6-digit WhatsApp OTP
  */
-export async function sendWhatsAppOtp({ phone, purpose = 'signup_verification' }) {
+export async function sendWhatsAppOtp({ phone, code = null, purpose = 'signup_verification' }) {
   await initWhatsAppSchema();
   const normalizedPhone = normalizeWhatsAppPhone(phone);
   if (!normalizedPhone || normalizedPhone.length < 10) {
     throw new Error('Valid phone number is required to send WhatsApp OTP');
   }
 
-  // Generate 6-digit numeric OTP
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  // Use provided code or generate 6-digit numeric OTP
+  const otpCode = code ? String(code).trim() : Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   await query(`
@@ -1689,15 +1715,27 @@ export async function sendWhatsAppOtp({ phone, purpose = 'signup_verification' }
   const messageText = `🔒 *RealSalePro Verification Code*\n\nYour security OTP is: *${otpCode}*\n\nThis code is valid for 10 minutes. Please do not share this code with anyone.\n\n— RealSalePro Security Team`;
 
   try {
-    const metaRes = await sendMetaOutboundMessage({
-      toPhone: normalizedPhone,
-      text: messageText,
-    });
+    let metaRes;
+    try {
+      // First attempt to send using official approved Authentication template
+      metaRes = await sendMetaOutboundMessage({
+        toPhone: normalizedPhone,
+        templateName: 'realsalepro_auth_otp',
+        languageCode: 'en',
+        bodyParams: [otpCode],
+      });
+    } catch (authErr) {
+      console.warn('Authentication template delivery warning, trying direct text fallback:', authErr.message);
+      metaRes = await sendMetaOutboundMessage({
+        toPhone: normalizedPhone,
+        text: messageText,
+      });
+    }
 
     return {
       success: true,
       phone: normalizedPhone,
-      messageId: metaRes.messageId,
+      messageId: metaRes?.messageId,
       expiresAt,
     };
   } catch (err) {

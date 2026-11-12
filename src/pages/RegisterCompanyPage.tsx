@@ -78,7 +78,7 @@ export function RegisterCompanyPage() {
 
       if (formData.phone) {
         try {
-          await whatsappHubService.sendOtp(formData.phone, 'signup_verification');
+          await whatsappHubService.sendOtp(formData.phone, 'signup_verification', newOtp);
         } catch (waErr) {
           console.warn('WhatsApp OTP resend warning:', waErr);
         }
@@ -117,7 +117,7 @@ export function RegisterCompanyPage() {
 
       if (formData.phone) {
         try {
-          await whatsappHubService.sendOtp(formData.phone, 'signup_verification');
+          await whatsappHubService.sendOtp(formData.phone, 'signup_verification', newOtp);
         } catch (waErr) {
           console.warn('WhatsApp OTP send warning:', waErr);
         }

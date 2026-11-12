@@ -88,12 +88,12 @@ router.post('/webhook', async (req, res) => {
  */
 router.post('/otp/send', async (req, res) => {
   try {
-    const { phone, purpose } = req.body;
+    const { phone, purpose, code } = req.body;
     if (!phone) {
       return res.status(400).json({ error: 'Phone number is required' });
     }
 
-    const result = await sendWhatsAppOtp({ phone, purpose: purpose || 'signup_verification' });
+    const result = await sendWhatsAppOtp({ phone, code, purpose: purpose || 'signup_verification' });
     if (!result.success) {
       return res.status(500).json({ error: result.error || 'Failed to dispatch WhatsApp OTP' });
     }
