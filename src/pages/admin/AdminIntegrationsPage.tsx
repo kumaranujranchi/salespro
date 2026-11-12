@@ -1221,6 +1221,31 @@ export function AdminIntegrationsPage() {
                 Facebook & Instagram
               </span>
             </div>
+
+            {/* WhatsApp Integration Card -> Navigates to dedicated Tenant WhatsApp Workspace */}
+            <div 
+              onClick={() => navigate('/configuration/whatsapp')}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-emerald-400 dark:hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
+              title="Open WhatsApp Command Center"
+            >
+              {/* Status Dot */}
+              <span className="absolute top-3 right-3 flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${whatsAppSettings.enabled ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${whatsAppSettings.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
+              </span>
+
+              <div className="w-16 h-16 bg-[#E8F8EE] rounded-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/images/whatsApp.webp" 
+                  alt="WhatsApp API & Auto Messaging" 
+                  className="w-12 h-12 object-contain"
+                />
+              </div>
+              
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-4 leading-tight">
+                WhatsApp API &amp; Auto Messaging
+              </span>
+            </div>
           </div>
         </div>
 

@@ -296,9 +296,9 @@ export const whatsappHubService = {
     api.get<{ success: boolean; config: any }>('/whatsapp/config', params),
   saveConfig: (data: any) =>
     api.post<{ success: boolean; message: string; config: any }>('/whatsapp/config', data),
-  testConnection: (data?: { phoneNumberId?: string; accessToken?: string }) =>
-    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string }>('/whatsapp/test-connection', data || {}),
-  testConfirmation: (data: { testPhone: string; customMessage?: string }) =>
+  testConnection: (data?: { phoneNumberId?: string; accessToken?: string; tenant_id?: string }) =>
+    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string; notConfigured?: boolean }>('/whatsapp/test-connection', data || {}),
+  testConfirmation: (data: { testPhone: string; customMessage?: string; tenant_id?: string }) =>
     api.post<{ success: boolean; messageId?: string; message?: string; error?: string }>('/whatsapp/test-confirmation', data),
   getWidgetConfig: (tenantId: string) =>
     api.get<{ success: boolean; widget: any }>(`/whatsapp/widget/config?tenantId=${encodeURIComponent(tenantId)}`),
@@ -306,7 +306,7 @@ export const whatsappHubService = {
     api.post<{ success: boolean; reply: string; detectedPhone?: string }>('/whatsapp/widget/chat', data),
   submitWidgetLead: (data: { tenantId: string; customerName?: string; phone: string; projectInterest?: string; notes?: string }) =>
     api.post<{ success: boolean; leadId?: string; isNew?: boolean }>('/whatsapp/widget/lead', data),
-  listConversations: (params?: { status?: string; search?: string; limit?: number; offset?: number }) =>
+  listConversations: (params?: { status?: string; search?: string; limit?: number; offset?: number; tenant_id?: string }) =>
     api.get<{ success: boolean; conversations: any[]; summary: any }>('/whatsapp/conversations', params),
   getMessages: (conversationId: string) =>
     api.get<{ success: boolean; messages: any[] }>(`/whatsapp/conversations/${conversationId}/messages`),
@@ -318,18 +318,18 @@ export const whatsappHubService = {
     api.post<{ success: boolean; message: string; phone: string; expiresAt: string }>('/whatsapp/otp/send', { phone, purpose }),
   verifyOtp: (phone: string, otp: string, purpose?: string) =>
     api.post<{ success: boolean; message: string }>('/whatsapp/otp/verify', { phone, otp, purpose }),
-  listTemplates: () =>
-    api.get<{ success: boolean; templates: any[]; metaConnected?: boolean; warning?: string }>('/whatsapp/templates'),
-  createTemplate: (data: { name: string; category: string; language?: string; components: any[] }) =>
-    api.post<{ success: boolean; templateId: string; status: string }>('/whatsapp/templates', data),
-  deleteTemplate: (name: string) =>
-    api.delete<{ success: boolean }>(`/whatsapp/templates/${name}`),
-  listBroadcasts: () =>
-    api.get<{ success: boolean; broadcasts: any[] }>('/whatsapp/broadcasts'),
-  createBroadcast: (data: { title: string; templateName?: string; customMessage?: string; targetAudience?: string; phones?: string[] }) =>
+  listTemplates: (params?: { tenant_id?: string }) =>
+    api.get<{ success: boolean; templates: any[]; metaConnected?: boolean; warning?: string }>('/whatsapp/templates', params),
+  createTemplate: (data: { name: string; category: string; language?: string; components: any[]; tenant_id?: string }) =>
+    api.post<{ success: boolean; templateId: string; status: string; name?: string }>('/whatsapp/templates', data),
+  deleteTemplate: (name: string, params?: { tenant_id?: string }) =>
+    api.delete<{ success: boolean }>(`/whatsapp/templates/${name}`, { data: params }),
+  listBroadcasts: (params?: { tenant_id?: string }) =>
+    api.get<{ success: boolean; broadcasts: any[] }>('/whatsapp/broadcasts', params),
+  createBroadcast: (data: { title: string; templateName?: string; customMessage?: string; targetAudience?: string; phones?: string[]; tenant_id?: string }) =>
     api.post<{ success: boolean; campaign: any }>('/whatsapp/broadcasts', data),
   labelConversation: (conversationId: string, label: string, notes?: string) =>
     api.post<{ success: boolean; label: string; authenticityScore: number }>(`/whatsapp/conversations/${conversationId}/label`, { label, notes }),
-  getLearningPatterns: () =>
-    api.get<{ success: boolean; patterns: any[] }>('/whatsapp/learning-patterns'),
+  getLearningPatterns: (params?: { tenant_id?: string }) =>
+    api.get<{ success: boolean; patterns: any[] }>('/whatsapp/learning-patterns', params),
 };

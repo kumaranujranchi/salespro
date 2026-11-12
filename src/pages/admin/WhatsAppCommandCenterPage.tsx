@@ -168,7 +168,7 @@ export function WhatsAppCommandCenterPage() {
 
   const loadConfig = async () => {
     try {
-      const res = await whatsappHubService.getConfig();
+      const res = await whatsappHubService.getConfig({ tenant_id: tenant?.id });
       if (res?.config) {
         setConfig((prev: any) => ({
           ...prev,
@@ -250,9 +250,21 @@ export function WhatsAppCommandCenterPage() {
   };
 
   const checkConnection = async () => {
+    if (!config.phoneNumberId || !config.accessToken) {
+      setConnectionStatus({
+        success: false,
+        notConfigured: true,
+        error: 'Please enter and save your Phone Number ID and Permanent Access Token in API Setup first.',
+      });
+      return;
+    }
     setTestingConnection(true);
     try {
-      const res = await whatsappHubService.testConnection();
+      const res = await whatsappHubService.testConnection({
+        phoneNumberId: config.phoneNumberId,
+        accessToken: config.accessToken,
+        tenant_id: tenant?.id,
+      });
       setConnectionStatus(res);
     } catch (err: any) {
       setConnectionStatus({ success: false, error: err.message });
@@ -267,12 +279,16 @@ export function WhatsAppCommandCenterPage() {
       const res = await whatsappHubService.listConversations({
         status: statusFilter,
         search: searchQuery,
+        tenant_id: tenant?.id,
       });
       if (res?.conversations) {
         setConversations(res.conversations);
         setSummary(res.summary || {});
-        // Auto-select first conversation if none selected
-        if (!selectedConv && res.conversations.length > 0) {
+        // If conversations are empty, clear selected conversation
+        if (res.conversations.length === 0) {
+          setSelectedConv(null);
+          setMessages([]);
+        } else if (!selectedConv || !res.conversations.some(c => c.id === selectedConv.id)) {
           selectConversation(res.conversations[0]);
         }
       }
@@ -332,7 +348,7 @@ export function WhatsAppCommandCenterPage() {
   const loadLearningPatterns = async () => {
     setLoadingPatterns(true);
     try {
-      const res = await whatsappHubService.getLearningPatterns();
+      const res = await whatsappHubService.getLearningPatterns({ tenant_id: tenant?.id });
       if (res?.patterns) {
         setLearningPatterns(res.patterns);
       }
@@ -370,7 +386,7 @@ export function WhatsAppCommandCenterPage() {
     e.preventDefault();
     setSavingConfig(true);
     try {
-      await whatsappHubService.saveConfig(config);
+      await whatsappHubService.saveConfig({ ...config, tenant_id: tenant?.id });
       alert('WhatsApp Cloud API configuration saved successfully!');
       await checkConnection();
     } catch (err: any) {
@@ -383,7 +399,7 @@ export function WhatsAppCommandCenterPage() {
   const loadTemplates = async () => {
     setLoadingTemplates(true);
     try {
-      const res = await whatsappHubService.listTemplates();
+      const res = await whatsappHubService.listTemplates({ tenant_id: tenant?.id });
       if (res?.templates) {
         setTemplates(res.templates);
       }
@@ -407,6 +423,7 @@ export function WhatsAppCommandCenterPage() {
             text: newTemplate.bodyText,
           },
         ],
+        tenant_id: tenant?.id,
       });
       alert('Template submitted to Meta for review!');
       setIsTemplateModalOpen(false);
@@ -419,7 +436,7 @@ export function WhatsAppCommandCenterPage() {
 
   const loadBroadcasts = async () => {
     try {
-      const res = await whatsappHubService.listBroadcasts();
+      const res = await whatsappHubService.listBroadcasts({ tenant_id: tenant?.id });
       if (res?.broadcasts) {
         setBroadcasts(res.broadcasts);
       }
@@ -433,7 +450,7 @@ export function WhatsAppCommandCenterPage() {
     if (!newBroadcast.title || !newBroadcast.customMessage) return;
     setCreatingBroadcast(true);
     try {
-      await whatsappHubService.createBroadcast(newBroadcast);
+      await whatsappHubService.createBroadcast({ ...newBroadcast, tenant_id: tenant?.id });
       alert('Broadcast campaign queued for delivery!');
       setNewBroadcast({ title: '', templateName: '', customMessage: '', targetAudience: 'all_leads' });
       await loadBroadcasts();
@@ -485,14 +502,20 @@ export function WhatsAppCommandCenterPage() {
               <MessageSquare className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                 WhatsApp Command Center
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                  Official +91 70797 37773
-                </span>
+                {config.phoneNumberId && config.accessToken ? (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                    {config.displayPhone ? `Connected: ${config.displayPhone}` : 'Meta Cloud API Connected'}
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    API Setup Required
+                  </span>
+                )}
               </h1>
               <p className="text-xs text-slate-500">
-                100% In-House Meta WhatsApp Cloud Engine · Landing Page Bot · Live 2-Way Chat · Broadcasts · OTPs
+                {tenant?.name || 'Workspace'} WhatsApp Engine · Live 2-Way Chat · Website AI Widget · Lead Automations
               </p>
             </div>
           </div>
@@ -509,9 +532,25 @@ export function WhatsAppCommandCenterPage() {
           </button>
 
           {connectionStatus && (
-            <div className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${connectionStatus.success ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800' : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400'}`}>
-              {connectionStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-rose-600" />}
-              {connectionStatus.success ? `Connected: ${connectionStatus.displayPhoneNumber}` : 'Disconnected'}
+            <div className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${
+              connectionStatus.success
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+                : connectionStatus.notConfigured
+                ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400'
+            }`}>
+              {connectionStatus.success ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              ) : connectionStatus.notConfigured ? (
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              ) : (
+                <XCircle className="w-4 h-4 text-rose-600" />
+              )}
+              {connectionStatus.success
+                ? `Connected: ${connectionStatus.displayPhoneNumber || 'Verified'}`
+                : connectionStatus.notConfigured
+                ? 'Setup Pending'
+                : 'Disconnected'}
             </div>
           )}
         </div>
@@ -923,30 +962,65 @@ export function WhatsAppCommandCenterPage() {
                 <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shrink-0">
                   {/* Canned responses */}
                   <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
-                    <span className="text-slate-400 text-[10px] font-semibold uppercase flex items-center gap-1">
+                    <span className="text-slate-400 text-[10px] font-semibold uppercase flex items-center gap-1 shrink-0">
                       <Sparkles className="w-3 h-3 text-amber-500" /> Quick Replies:
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setReplyText('Hi! You can start immediately with our 100% Free Forever Tier (up to 1,000 leads). Sign up here: https://realsalepro.com/register')}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
-                    >
-                      🚀 Send Free Trial Link
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReplyText('Our Pro Plan is ₹1,200/month (billed semi-annually) and gives you up to 2,00,000 leads, unlimited user seats, and Meta CAPI webhooks. See full breakdown: https://realsalepro.com/pricing')}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
-                    >
-                      💰 Send Pricing Details
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReplyText('Would tomorrow at 11:30 AM or 4:00 PM work for a quick 15-minute Google Meet walkthrough of RealSalePro?')}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
-                    >
-                      📅 Propose Demo Call
-                    </button>
+                    {tenant?.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Namaste! We would be delighted to schedule a guided site visit for you. Which day and time works best for you?')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          🏡 Schedule Site Visit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Here is the latest project pricing sheet, floor plans, and master layout. Would you like me to share the PDF brochure?')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          📄 Send Pricing & Brochure
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('We currently have 2 BHK and 3 BHK unit options available with premium amenities. May I know your preferred budget range or possession timeline?')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          🏢 Units & Availability
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Our senior property advisor can connect with you for 5 minutes to guide you on available inventory and payment plans. Would now be a good time?')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          📞 Propose Advisor Call
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Hi! You can start immediately with our 100% Free Forever Tier (up to 1,000 leads). Sign up here: https://realsalepro.com/register')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          🚀 Send Free Trial Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Our Pro Plan is ₹1,200/month (billed semi-annually) and gives you up to 2,00,000 leads, unlimited user seats, and Meta CAPI webhooks. See full breakdown: https://realsalepro.com/pricing')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          💰 Send Pricing Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReplyText('Would tomorrow at 11:30 AM or 4:00 PM work for a quick 15-minute Google Meet walkthrough of RealSalePro?')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                        >
+                          📅 Propose Demo Call
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -979,8 +1053,10 @@ export function WhatsAppCommandCenterPage() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 space-y-2">
                 <MessageSquare className="w-12 h-12 text-slate-300 stroke-1" />
-                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Select a visitor conversation</p>
-                <p className="text-xs text-slate-400">All WhatsApp interactions from the landing page appear here in real time.</p>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">No conversation selected</p>
+                <p className="text-xs text-slate-400 max-w-sm text-center">
+                  Incoming WhatsApp messages from your website widget, Meta Ads, and prospective buyers will appear here in real time.
+                </p>
               </div>
             )}
           </div>
@@ -1545,11 +1621,11 @@ export function WhatsAppCommandCenterPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">VERIFIED BUSINESS NAME</span>
-                      <strong className="font-semibold">{connectionStatus.verifiedName || 'RealSalePro Properties'}</strong>
+                      <strong className="font-semibold">{connectionStatus.verifiedName || tenant?.name || 'Verified Business Account'}</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">DISPLAY PHONE NUMBER</span>
-                      <strong className="font-mono">{connectionStatus.displayPhoneNumber || '+91 70797 37773'}</strong>
+                      <strong className="font-mono">{connectionStatus.displayPhoneNumber || config.displayPhone || '+91 ••••• •••••'}</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">META QUALITY RATING</span>
@@ -1783,7 +1859,7 @@ export function WhatsAppCommandCenterPage() {
                   <input
                     type="text"
                     value={config.widget?.displayPhone || ''}
-                    placeholder="e.g. 917079737773"
+                    placeholder="e.g. 919876543210"
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), displayPhone: e.target.value }

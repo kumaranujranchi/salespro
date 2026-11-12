@@ -20,6 +20,7 @@ export async function initLeadIntelligenceSchema() {
     await query(`
       CREATE TABLE IF NOT EXISTS whatsapp_learning_patterns (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE,
         pattern_type VARCHAR(50) NOT NULL,
         trigger_keywords JSONB NOT NULL DEFAULT '[]'::jsonb,
         sample_phrase TEXT NOT NULL,
@@ -32,6 +33,8 @@ export async function initLeadIntelligenceSchema() {
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
 
+      ALTER TABLE whatsapp_learning_patterns ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE;
+      CREATE INDEX IF NOT EXISTS idx_wa_learn_tenant ON whatsapp_learning_patterns(tenant_id);
       CREATE INDEX IF NOT EXISTS idx_wa_learn_type ON whatsapp_learning_patterns(pattern_type);
       CREATE INDEX IF NOT EXISTS idx_wa_learn_conf ON whatsapp_learning_patterns(confidence_score DESC);
     `);
@@ -373,13 +376,14 @@ export async function recordConversationFeedback({
 
     const topKeywords = Array.from(new Set(words)).slice(0, 10);
 
-    // Check if matching pattern already exists
+    // Check if matching pattern already exists for this tenant
+    const convTenantId = conversation.tenant_id || null;
     const matchRes = await query(`
       SELECT * FROM whatsapp_learning_patterns
-      WHERE pattern_type = $1
+      WHERE pattern_type = $1 AND (($2::text IS NULL AND tenant_id IS NULL) OR tenant_id = $2)
       ORDER BY times_matched DESC
       LIMIT 1
-    `, [label]);
+    `, [label, convTenantId]);
 
     if (matchRes.rows.length > 0) {
       const existing = matchRes.rows[0];
@@ -397,8 +401,8 @@ export async function recordConversationFeedback({
     } else {
       await query(`
         INSERT INTO whatsapp_learning_patterns (
-          pattern_type, trigger_keywords, sample_phrase, effective_probe_question, confidence_score, times_matched, times_converted, source
-        ) VALUES ($1, $2::jsonb, $3, $4, $5, 1, $6, 'admin_labeled')
+          pattern_type, trigger_keywords, sample_phrase, effective_probe_question, confidence_score, times_matched, times_converted, source, tenant_id
+        ) VALUES ($1, $2::jsonb, $3, $4, $5, 1, $6, 'admin_labeled', $7)
       `, [
         label,
         JSON.stringify(topKeywords),
@@ -406,6 +410,7 @@ export async function recordConversationFeedback({
         isGenuine ? 'Aapki company kis city mein hai aur team size kya hai?' : 'Aapki real estate firm ka naam kya hai?',
         0.88,
         isGenuine ? 1 : 0,
+        convTenantId,
       ]);
     }
   }
@@ -417,13 +422,27 @@ export async function recordConversationFeedback({
 /**
  * List all Learned Intelligence Patterns for Admin Insights
  */
-export async function listLearningPatterns() {
+export async function listLearningPatterns(tenantId = null) {
   await initLeadIntelligenceSchema();
 
-  const res = await query(`
-    SELECT * FROM whatsapp_learning_patterns
-    ORDER BY confidence_score DESC, times_converted DESC, times_matched DESC
-  `);
+  let sql, params;
+  if (tenantId) {
+    sql = `
+      SELECT * FROM whatsapp_learning_patterns
+      WHERE tenant_id = $1 OR (tenant_id IS NULL AND source = 'system_seed')
+      ORDER BY confidence_score DESC, times_converted DESC, times_matched DESC
+    `;
+    params = [tenantId];
+  } else {
+    sql = `
+      SELECT * FROM whatsapp_learning_patterns
+      WHERE tenant_id IS NULL
+      ORDER BY confidence_score DESC, times_converted DESC, times_matched DESC
+    `;
+    params = [];
+  }
+
+  const res = await query(sql, params);
 
   return {
     success: true,

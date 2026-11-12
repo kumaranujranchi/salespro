@@ -59,7 +59,11 @@ export function signAuthToken(profile) {
 }
 
 export function isPlatformRole(user) {
-  return !!user && PLATFORM_ROLES.includes(normalizeRole(user.role));
+  if (!user) return false;
+  // Any user belonging to a tenant workspace is strictly a tenant member and cannot cross tenant boundaries
+  if (user.tenant_id) return false;
+  const role = normalizeRole(user.role);
+  return role === 'platform_admin' || role === 'super_admin';
 }
 
 export function requireAuth(req, res, next) {

@@ -135,16 +135,22 @@ export async function initWhatsAppSchema() {
 
       CREATE TABLE IF NOT EXISTS whatsapp_templates (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-        name VARCHAR(255) NOT NULL UNIQUE,
+        name VARCHAR(255) NOT NULL,
         category VARCHAR(50) NOT NULL DEFAULT 'MARKETING',
         language VARCHAR(20) NOT NULL DEFAULT 'en',
         status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
         meta_template_id VARCHAR(255),
         components JSONB NOT NULL DEFAULT '[]'::jsonb,
         rejection_reason TEXT,
+        tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE whatsapp_templates ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(255) REFERENCES tenants(id) ON DELETE CASCADE;
+      ALTER TABLE whatsapp_templates DROP CONSTRAINT IF EXISTS whatsapp_templates_name_key;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_wa_templates_tenant_name ON whatsapp_templates((COALESCE(tenant_id, '__platform__')), name);
+      CREATE INDEX IF NOT EXISTS idx_wa_templates_tenant ON whatsapp_templates(tenant_id);
 
       CREATE TABLE IF NOT EXISTS whatsapp_broadcasts (
         id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -238,34 +244,49 @@ export async function getWhatsAppConfig(tenantId = null) {
   };
 
   if (!tenantId) {
-    return platformConfig;
-  }
-
-  try {
-    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
-    const tenantSettings = tRes.rows[0]?.settings || {};
-    const tenantWa = tenantSettings.integrations?.whatsapp || {};
-
     return {
       ...platformConfig,
-      ...tenantWa,
-      wabaId: tenantWa.wabaId || platformConfig.wabaId,
-      phoneNumberId: tenantWa.phoneNumberId || platformConfig.phoneNumberId,
-      accessToken: tenantWa.accessToken || platformConfig.accessToken,
-      webhookVerifyToken: tenantWa.webhookVerifyToken || platformConfig.webhookVerifyToken,
-      botEnabled: tenantWa.botEnabled ?? platformConfig.botEnabled,
+      displayPhone: formatPhoneDisplay(platformConfig.agentNotifyPhone || '917079737773'),
+      businessName: 'RealSalePro',
+      isTenantConfig: false,
+      isConfigured: Boolean(platformConfig.phoneNumberId && platformConfig.accessToken),
+    };
+  }
+
+  // Tenant configuration - STRICTLY ISOLATED. Never fall back to platform credentials or phone numbers!
+  try {
+    const tRes = await query('SELECT id, name, phone, email, settings FROM tenants WHERE id = $1', [tenantId]);
+    const tenant = tRes.rows[0] || {};
+    const tenantSettings = tenant.settings || {};
+    const tenantWa = tenantSettings.integrations?.whatsapp || {};
+
+    const isConfigured = Boolean(tenantWa.phoneNumberId && tenantWa.accessToken);
+    const tenantPhoneFormatted = tenantWa.displayPhone || (tenant.phone ? formatPhoneDisplay(tenant.phone) : '');
+
+    return {
+      wabaId: tenantWa.wabaId || '',
+      phoneNumberId: tenantWa.phoneNumberId || '',
+      accessToken: tenantWa.accessToken || '',
+      webhookVerifyToken: tenantWa.webhookVerifyToken || 'realsalepro_wa_secret',
+      botEnabled: tenantWa.botEnabled ?? true,
       aiProvider: tenantWa.aiProvider || 'builtin',
-      aiApiKey: tenantWa.aiApiKey || tenantWa.deepseekApiKey || platformConfig.deepseekApiKey,
-      aiModel: tenantWa.aiModel || platformConfig.aiModel,
-      aiEnabled: tenantWa.aiEnabled ?? platformConfig.aiEnabled,
+      aiApiKey: tenantWa.aiApiKey || tenantWa.deepseekApiKey || '',
+      deepseekApiKey: tenantWa.aiApiKey || tenantWa.deepseekApiKey || '',
+      aiModel: tenantWa.aiModel || 'deepseek-chat',
+      aiEnabled: tenantWa.aiEnabled ?? true,
+      welcomeMessage: tenantWa.welcomeMessage || '',
+      agentNotifyEmail: tenantWa.agentNotifyEmail || tenant.email || '',
+      agentNotifyPhone: tenantWa.agentNotifyPhone || tenant.phone || '',
+      displayPhone: tenantPhoneFormatted,
+      businessName: tenantWa.businessName || tenant.name || 'Workspace',
       widget: tenantWa.widget || {
         enabled: true,
         position: 'bottom-right',
         primaryColor: '#25D366',
         welcomeMessage: 'Hi there! 👋 How can we help you find your dream property today?',
-        businessName: 'RealSalePro Properties',
+        businessName: tenant.name || 'Real Estate Inquiries',
         agentName: 'AI Property Advisor',
-        displayPhone: '917079737773',
+        displayPhone: tenantPhoneFormatted,
         knowledgeBase: '',
       },
       leadConfirmation: tenantWa.leadConfirmation || {
@@ -273,15 +294,36 @@ export async function getWhatsAppConfig(tenantId = null) {
         autoConfirmGoogleAds: true,
         autoConfirmWebsiteForms: true,
         templateType: 'custom_message',
-        customMessage: 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}. Our senior property specialist {sales_rep} will connect with you shortly.',
+        customMessage: 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}. Our senior property specialist will connect with you shortly.',
         metaTemplateName: 'lead_welcome_v1',
         excludeManualLeads: true,
       },
-      isTenantConfig: Boolean(tenantSettings.integrations?.whatsapp),
+      isTenantConfig: true,
+      isConfigured,
+      updatedAt: tenantWa.updatedAt || null,
     };
   } catch (err) {
-    console.warn('[getWhatsAppConfig] Failed to fetch tenant WhatsApp config, fallback to platform:', err.message);
-    return platformConfig;
+    console.warn('[getWhatsAppConfig] Error fetching tenant config:', err.message);
+    return {
+      wabaId: '',
+      phoneNumberId: '',
+      accessToken: '',
+      webhookVerifyToken: 'realsalepro_wa_secret',
+      botEnabled: true,
+      aiProvider: 'builtin',
+      aiApiKey: '',
+      deepseekApiKey: '',
+      aiModel: 'deepseek-chat',
+      aiEnabled: true,
+      welcomeMessage: '',
+      agentNotifyEmail: '',
+      agentNotifyPhone: '',
+      displayPhone: '',
+      businessName: 'Workspace',
+      isTenantConfig: true,
+      isConfigured: false,
+      updatedAt: null,
+    };
   }
 }
 
@@ -431,8 +473,19 @@ export async function testMetaConnection({ phoneNumberId = null, accessToken = n
     }
   }
 
-  if (!targetPhoneId || !targetToken) {
-    const config = await getWhatsAppConfig();
+  // Strictly enforce: If testing in a tenant scope and tenant has NOT configured credentials,
+  // NEVER fall back to platform credentials!
+  if (tenantId && (!targetPhoneId || !targetToken)) {
+    return {
+      success: false,
+      notConfigured: true,
+      error: 'WhatsApp Cloud API is not configured for your workspace. Please enter your Phone Number ID and Permanent Access Token in the API Setup tab.',
+    };
+  }
+
+  // Only fall back to platform credentials if tenantId is null (platform admin testing platform)
+  if (!tenantId && (!targetPhoneId || !targetToken)) {
+    const config = await getWhatsAppConfig(null);
     targetPhoneId = targetPhoneId || config.phoneNumberId;
     targetToken = targetToken || config.accessToken;
   }
@@ -486,8 +539,15 @@ export async function sendMetaOutboundMessage({ toPhone, text, templateName, lan
     }
   }
 
-  if (!phoneNumberId || !accessToken) {
-    const config = await getWhatsAppConfig();
+  // If sending on behalf of a tenant but tenant has not configured credentials,
+  // DO NOT send from the platform's WhatsApp account! Throw a clear error!
+  if (tenantId && (!phoneNumberId || !accessToken)) {
+    throw new Error('Tenant WhatsApp Cloud API is not configured. Please enter your Phone Number ID and Access Token in WhatsApp Settings.');
+  }
+
+  // Only fall back to platform credentials if tenantId is null (platform outbound messages)
+  if (!tenantId && (!phoneNumberId || !accessToken)) {
+    const config = await getWhatsAppConfig(null);
     phoneNumberId = config.phoneNumberId;
     accessToken = config.accessToken;
   }
@@ -560,11 +620,13 @@ async function sendBotReply(conversation, text) {
       tenantId: conversation.tenant_id || null,
     });
 
+    const botSenderName = conversation.tenant_id ? 'AI Property Advisor' : 'Rahul (Sales Team)';
+
     await query(`
       INSERT INTO whatsapp_messages (
         conversation_id, direction, sender_type, sender_name, message_type, body, meta_message_id, status
-      ) VALUES ($1, 'outbound', 'agent', 'Rahul (Sales Team)', 'text', $2, $3, 'sent')
-    `, [conversation.id, text, metaRes.messageId]);
+      ) VALUES ($1, 'outbound', 'agent', $2, 'text', $3, $4, 'sent')
+    `, [conversation.id, botSenderName, text, metaRes.messageId]);
 
     await query(`
       UPDATE whatsapp_conversations
@@ -1329,7 +1391,7 @@ export async function processIncomingWebhook(body) {
           }
 
           // Evaluate Visitor Intent & Generate Response (DeepSeek AI or Handover)
-          const config = await getWhatsAppConfig();
+          const config = await getWhatsAppConfig(matchedTenantId);
 
           const statedName = conversation.metadata?.stated_name;
           const effectiveName = statedName || ((conversation.customer_name && !['website visitor', 'hey', 'visitor', 'user', 'mydigitalera'].includes(conversation.customer_name.toLowerCase().trim()))
@@ -1347,14 +1409,22 @@ export async function processIncomingWebhook(body) {
             normalized.includes('talk to agent');
 
           if (isAgentRequest) {
-            const handover = evaluateVisitorIntent('5', effectiveName);
+            let handoverReply;
+            if (matchedTenantId) {
+              const agentPhone = config.agentNotifyPhone || config.displayPhone || '';
+              handoverReply = `Ji bilkul${effectiveName ? ` ${effectiveName} ji` : ''}! Main hamari property sales team ko notify kar diya hai, hamare advisor jald hi aapse is chat par connect karenge.${agentPhone ? `\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: ${agentPhone}.` : ''}`;
+            } else {
+              const handover = evaluateVisitorIntent('5', effectiveName);
+              handoverReply = handover.reply;
+            }
+
             await query(`
               UPDATE whatsapp_conversations
               SET status = 'agent_requested', updated_at = CURRENT_TIMESTAMP
               WHERE id = $1
             `, [conversation.id]);
 
-            await sendBotReply(conversation, handover.reply);
+            await sendBotReply(conversation, handoverReply);
             continue;
           }
 
@@ -1408,23 +1478,42 @@ export async function processIncomingWebhook(body) {
             continue;
           }
 
-          // 3. Fetch learned continuous patterns for dynamic prompt ingestion
-          const learnedGuidance = await getLearnedGuidanceForPrompt();
-
-          // 4. Generate dynamic response via Sales AI (with rule engine fallback & BYO-AI model support)
-          const { reply } = await generateSalesAiReply({
-            messageText,
-            customerName: effectiveName,
-            conversationHistory: history,
-            conversationMetadata: conversation.metadata || {},
-            learnedGuidance,
-            recommendedProbe: leadAnalysis.recommendedProbe,
-            tenantId: conversation.tenant_id || null,
-          });
+          // 3. Generate dynamic response via Sales AI
+          let replyText = '';
+          if (conversation.tenant_id) {
+            // For tenant, use the tenant's AI chatbot trained on their property projects & business info
+            try {
+              const widgetRes = await generateWidgetChatReply({
+                tenantId: conversation.tenant_id,
+                message: messageText,
+                conversationHistory: history.map(h => ({
+                  role: h.sender_type === 'visitor' ? 'user' : 'assistant',
+                  content: h.body,
+                })),
+              });
+              replyText = widgetRes?.reply;
+            } catch (err) {
+              console.warn('[WhatsApp Bot] Tenant AI error, using fallback:', err.message);
+              replyText = `Namaste${effectiveName ? ` ${effectiveName} ji` : ''}! Thank you for messaging ${config.businessName || 'us'}. Our property consultant will connect with you shortly.`;
+            }
+          } else {
+            // Platform landing page AI
+            const learnedGuidance = await getLearnedGuidanceForPrompt();
+            const aiRes = await generateSalesAiReply({
+              messageText,
+              customerName: effectiveName,
+              conversationHistory: history,
+              conversationMetadata: conversation.metadata || {},
+              learnedGuidance,
+              recommendedProbe: leadAnalysis.recommendedProbe,
+              tenantId: null,
+            });
+            replyText = aiRes?.reply;
+          }
 
           // Send Bot Reply if enabled
-          if (config.botEnabled && reply) {
-            await sendBotReply(conversation, reply);
+          if (config.botEnabled && replyText) {
+            await sendBotReply(conversation, replyText);
           }
         }
       }
@@ -1437,7 +1526,7 @@ export async function processIncomingWebhook(body) {
 /**
  * Send reply as human agent from Admin Dashboard
  */
-export async function sendAgentReply({ conversationId, text, agentProfileId, agentName = 'RealSalePro Team' }) {
+export async function sendAgentReply({ conversationId, text, agentProfileId, agentName = 'Agent' }) {
   await initWhatsAppSchema();
 
   const convRes = await query('SELECT * FROM whatsapp_conversations WHERE id = $1', [conversationId]);
@@ -1502,7 +1591,10 @@ export async function listConversations({ status = 'all', search = '', limit = 5
   let summaryWhere = 'WHERE 1=1';
   const summaryParams = [];
 
-  if (tenantId === 'platform') {
+  if (tenantId === 'none') {
+    sql += ' AND 1=0';
+    summaryWhere += ' AND 1=0';
+  } else if (tenantId === 'platform') {
     sql += ' AND tenant_id IS NULL';
     summaryWhere += ' AND tenant_id IS NULL';
   } else if (tenantId && tenantId !== 'all') {
@@ -1510,6 +1602,13 @@ export async function listConversations({ status = 'all', search = '', limit = 5
     sql += ` AND tenant_id = $${params.length}`;
     summaryParams.push(tenantId);
     summaryWhere += ` AND tenant_id = $${summaryParams.length}`;
+  } else if (tenantId === 'all') {
+    // All tenants - Super platform admin audit only
+  } else {
+    // When tenantId is null or omitted, DEFAULT TO PLATFORM CONVERSATIONS (tenant_id IS NULL)
+    // NEVER EVER leak other tenants' data when tenantId is omitted!
+    sql += ' AND tenant_id IS NULL';
+    summaryWhere += ' AND tenant_id IS NULL';
   }
 
   if (status && status !== 'all') {
@@ -1650,16 +1749,18 @@ export async function verifyWhatsAppOtp({ phone, otp, purpose = 'signup_verifica
 /**
  * Fetch WhatsApp Message Templates from Meta Graph API
  */
-export async function listMetaTemplates() {
-  const config = await getWhatsAppConfig();
+export async function listMetaTemplates(tenantId = null) {
+  const config = await getWhatsAppConfig(tenantId);
   if (!config.wabaId || !config.accessToken) {
-    // Return locally stored templates if Meta credentials not yet entered
-    const local = await query('SELECT * FROM whatsapp_templates ORDER BY created_at DESC');
+    // Return locally stored templates for this tenant (or platform if tenantId is null)
+    const local = tenantId
+      ? await query('SELECT * FROM whatsapp_templates WHERE tenant_id = $1 ORDER BY created_at DESC', [tenantId])
+      : await query('SELECT * FROM whatsapp_templates WHERE tenant_id IS NULL ORDER BY created_at DESC');
     return {
       success: true,
       templates: local.rows,
       metaConnected: false,
-      warning: 'WABA ID or Access Token not configured. Showing cached/local templates.',
+      warning: 'WABA ID or Access Token not configured for this workspace. Showing cached/local templates.',
     };
   }
 
@@ -1674,12 +1775,12 @@ export async function listMetaTemplates() {
 
     const metaTemplates = data.data || [];
 
-    // Sync Meta templates to local DB
+    // Sync Meta templates to local DB scoped to this tenant
     for (const tpl of metaTemplates) {
       await query(`
-        INSERT INTO whatsapp_templates (name, category, language, status, meta_template_id, components, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
-        ON CONFLICT (name) DO UPDATE SET
+        INSERT INTO whatsapp_templates (name, category, language, status, meta_template_id, components, tenant_id, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+        ON CONFLICT (COALESCE(tenant_id, '__platform__'), name) DO UPDATE SET
           category = EXCLUDED.category,
           language = EXCLUDED.language,
           status = EXCLUDED.status,
@@ -1693,6 +1794,7 @@ export async function listMetaTemplates() {
         tpl.status,
         tpl.id,
         JSON.stringify(tpl.components || []),
+        tenantId || null,
       ]);
     }
 
@@ -1703,7 +1805,9 @@ export async function listMetaTemplates() {
     };
   } catch (err) {
     console.error('Error fetching Meta templates:', err.message);
-    const local = await query('SELECT * FROM whatsapp_templates ORDER BY created_at DESC');
+    const local = tenantId
+      ? await query('SELECT * FROM whatsapp_templates WHERE tenant_id = $1 ORDER BY created_at DESC', [tenantId])
+      : await query('SELECT * FROM whatsapp_templates WHERE tenant_id IS NULL ORDER BY created_at DESC');
     return {
       success: false,
       error: err.message,
@@ -1715,15 +1819,16 @@ export async function listMetaTemplates() {
 /**
  * Submit New Message Template to Meta for instant review
  */
-export async function createMetaTemplate({ name, category, language = 'en', components }) {
-  const config = await getWhatsAppConfig();
+export async function createMetaTemplate({ name, category, language = 'en', components, tenantId = null }) {
+  const config = await getWhatsAppConfig(tenantId);
   if (!config.wabaId || !config.accessToken) {
     throw new Error('WABA ID and Permanent Access Token are required to submit templates to Meta.');
   }
 
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
   const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(config.wabaId)}/message_templates`;
   const payload = {
-    name: name.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+    name: cleanName,
     category,
     language,
     components,
@@ -1744,25 +1849,25 @@ export async function createMetaTemplate({ name, category, language = 'en', comp
   }
 
   await query(`
-    INSERT INTO whatsapp_templates (name, category, language, status, meta_template_id, components)
-    VALUES ($1, $2, $3, 'PENDING', $4, $5)
-    ON CONFLICT (name) DO UPDATE SET
+    INSERT INTO whatsapp_templates (name, category, language, status, meta_template_id, components, tenant_id)
+    VALUES ($1, $2, $3, 'PENDING', $4, $5, $6)
+    ON CONFLICT (COALESCE(tenant_id, '__platform__'), name) DO UPDATE SET
       category = EXCLUDED.category,
       language = EXCLUDED.language,
       status = 'PENDING',
       meta_template_id = EXCLUDED.meta_template_id,
       components = EXCLUDED.components,
       updated_at = CURRENT_TIMESTAMP
-  `, [payload.name, category, language, data.id, JSON.stringify(components)]);
+  `, [cleanName, category, language, data.id, JSON.stringify(components), tenantId || null]);
 
-  return { success: true, templateId: data.id, status: 'PENDING' };
+  return { success: true, templateId: data.id, status: 'PENDING', name: cleanName };
 }
 
 /**
  * Delete Template from Meta
  */
-export async function deleteMetaTemplate(name) {
-  const config = await getWhatsAppConfig();
+export async function deleteMetaTemplate(name, tenantId = null) {
+  const config = await getWhatsAppConfig(tenantId);
   if (!config.wabaId || !config.accessToken) {
     throw new Error('WABA ID and Access Token required');
   }
@@ -1778,7 +1883,7 @@ export async function deleteMetaTemplate(name) {
     throw new Error(data.error?.message || 'Failed to delete template from Meta');
   }
 
-  await query('DELETE FROM whatsapp_templates WHERE name = $1', [name]);
+  await query('DELETE FROM whatsapp_templates WHERE name = $1 AND (($2::text IS NULL AND tenant_id IS NULL) OR tenant_id = $2)', [name, tenantId || null]);
   return { success: true };
 }
 
@@ -1792,30 +1897,46 @@ export async function createBroadcastCampaign({
   targetAudience = 'all_leads',
   phones = [],
   createdBy,
+  tenantId = null,
 }) {
   await initWhatsAppSchema();
 
-  // If phones not explicitly supplied, pull prospective leads from DB
+  // If phones not explicitly supplied, pull prospective leads from DB strictly scoped to tenant
   let recipientPhones = phones.map(p => normalizeWhatsAppPhone(p)).filter(Boolean);
 
   if (recipientPhones.length === 0) {
-    const leadsRes = await query(`
-      SELECT DISTINCT phone FROM (
-        SELECT mobile AS phone FROM leads WHERE mobile IS NOT NULL AND mobile != ''
-        UNION
-        SELECT phone FROM whatsapp_conversations WHERE phone IS NOT NULL AND phone != ''
-      ) AS unified_prospects
-      LIMIT 500
-    `);
+    let leadsSql, leadsParams;
+    if (tenantId) {
+      leadsSql = `
+        SELECT DISTINCT phone FROM (
+          SELECT mobile AS phone FROM leads WHERE tenant_id = $1 AND mobile IS NOT NULL AND mobile != ''
+          UNION
+          SELECT phone FROM whatsapp_conversations WHERE tenant_id = $1 AND phone IS NOT NULL AND phone != ''
+        ) AS unified_prospects
+        LIMIT 500
+      `;
+      leadsParams = [tenantId];
+    } else {
+      leadsSql = `
+        SELECT DISTINCT phone FROM (
+          SELECT mobile AS phone FROM leads WHERE tenant_id IS NULL AND mobile IS NOT NULL AND mobile != ''
+          UNION
+          SELECT phone FROM whatsapp_conversations WHERE tenant_id IS NULL AND phone IS NOT NULL AND phone != ''
+        ) AS unified_prospects
+        LIMIT 500
+      `;
+      leadsParams = [];
+    }
+    const leadsRes = await query(leadsSql, leadsParams);
     recipientPhones = leadsRes.rows.map(r => normalizeWhatsAppPhone(r.phone)).filter(Boolean);
   }
 
   const broadcastRes = await query(`
     INSERT INTO whatsapp_broadcasts (
-      title, template_name, custom_message, target_audience, total_recipients, status, created_by
-    ) VALUES ($1, $2, $3, $4, $5, 'processing', $6)
+      title, template_name, custom_message, target_audience, total_recipients, status, created_by, tenant_id
+    ) VALUES ($1, $2, $3, $4, $5, 'processing', $6, $7)
     RETURNING *
-  `, [title, templateName || null, customMessage || null, targetAudience, recipientPhones.length, createdBy || null]);
+  `, [title, templateName || null, customMessage || null, targetAudience, recipientPhones.length, createdBy || null, tenantId || null]);
 
   const broadcast = broadcastRes.rows[0];
 
@@ -1827,9 +1948,9 @@ export async function createBroadcastCampaign({
     for (const phone of recipientPhones) {
       try {
         if (templateName) {
-          await sendMetaOutboundMessage({ toPhone: phone, templateName });
+          await sendMetaOutboundMessage({ toPhone: phone, templateName, tenantId });
         } else if (customMessage) {
-          await sendMetaOutboundMessage({ toPhone: phone, text: customMessage });
+          await sendMetaOutboundMessage({ toPhone: phone, text: customMessage, tenantId });
         }
         sent++;
       } catch (e) {
@@ -1853,9 +1974,23 @@ export async function createBroadcastCampaign({
 /**
  * List Broadcast Campaigns
  */
-export async function listBroadcasts() {
+export async function listBroadcasts(tenantId = null) {
   await initWhatsAppSchema();
-  const res = await query('SELECT * FROM whatsapp_broadcasts ORDER BY created_at DESC LIMIT 50');
+  let sql, params;
+  if (tenantId === 'platform') {
+    sql = 'SELECT * FROM whatsapp_broadcasts WHERE tenant_id IS NULL ORDER BY created_at DESC LIMIT 50';
+    params = [];
+  } else if (tenantId && tenantId !== 'all') {
+    sql = 'SELECT * FROM whatsapp_broadcasts WHERE tenant_id = $1 ORDER BY created_at DESC LIMIT 50';
+    params = [tenantId];
+  } else if (tenantId === 'all') {
+    sql = 'SELECT * FROM whatsapp_broadcasts ORDER BY created_at DESC LIMIT 50';
+    params = [];
+  } else {
+    sql = 'SELECT * FROM whatsapp_broadcasts WHERE tenant_id IS NULL ORDER BY created_at DESC LIMIT 50';
+    params = [];
+  }
+  const res = await query(sql, params);
   return res.rows;
 }
 
