@@ -524,7 +524,7 @@ export function WhatsAppCommandCenterPage() {
                 )}
               </h1>
               <p className="text-xs text-slate-500">
-                {tenant?.name || 'Workspace'} WhatsApp Engine · Live 2-Way Chat · Website AI Widget · Lead Automations
+                Official WhatsApp Business API · Live 2-Way Chat · Website AI Widget · Lead Automations
               </p>
             </div>
           </div>
@@ -1777,7 +1777,7 @@ export function WhatsAppCommandCenterPage() {
                   <input
                     type="text"
                     value={config.widget?.businessName || ''}
-                    placeholder={`e.g. ${tenant?.name || 'Acme Realty'}`}
+                    placeholder="e.g. Acme Realty"
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), businessName: e.target.value }
@@ -1971,7 +1971,7 @@ export function WhatsAppCommandCenterPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold text-white truncate">
-                      {config.widget?.businessName || tenant?.name || 'Property Inquiries'}
+                      {config.widget?.businessName || 'Property Inquiries'}
                     </div>
                     <div className="text-[10px] text-white/80 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
