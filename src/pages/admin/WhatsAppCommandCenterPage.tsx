@@ -42,7 +42,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
 
 export function WhatsAppCommandCenterPage() {
-  const { tenant, profile } = useAuth();
+  const { tenant, profile, isActualPlatformAdmin } = useAuth();
+  const isPlatformAdmin = !tenant?.id && Boolean(isActualPlatformAdmin || profile?.role === 'platform_admin' || profile?.role === 'super_admin');
   const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
@@ -150,6 +151,12 @@ export function WhatsAppCommandCenterPage() {
   });
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  useEffect(() => {
+    if (!isPlatformAdmin && activeTab === 'intelligence') {
+      setActiveTab('inbox');
+    }
+  }, [isPlatformAdmin, activeTab]);
 
   // Load Initial Data
   useEffect(() => {
@@ -568,7 +575,7 @@ export function WhatsAppCommandCenterPage() {
           { id: 'automations', label: 'Lead Automations', icon: Zap },
           { id: 'broadcast', label: 'Bulk Broadcasts', icon: Radio, onClick: () => { loadBroadcasts(); loadTemplates(); } },
           { id: 'otp', label: 'OTP Engine', icon: Key },
-          { id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() },
+          ...(isPlatformAdmin ? [{ id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() }] : []),
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id || (tab.id === 'api_setup' && activeTab === 'settings');
@@ -702,7 +709,7 @@ export function WhatsAppCommandCenterPage() {
                           </span>
 
                           <div className="flex items-center gap-1.5">
-                            {conv.metadata?.authenticity_score !== undefined && (
+                            {isPlatformAdmin && conv.metadata?.authenticity_score !== undefined && (
                               <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                 conv.metadata.authenticity_score >= 70
                                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
@@ -784,7 +791,8 @@ export function WhatsAppCommandCenterPage() {
                   </div>
                 </div>
 
-                {/* Lead Authenticity & Continuous Learning Banner */}
+                {/* Lead Authenticity & Continuous Learning Banner (Platform Admin Only) */}
+                {isPlatformAdmin && (
                 <div className="px-4 py-2 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs flex-wrap gap-2 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-slate-500 dark:text-slate-400">Authenticity:</span>
@@ -849,6 +857,7 @@ export function WhatsAppCommandCenterPage() {
                     </button>
                   </div>
                 </div>
+                )}
 
                 {/* Chat History Bubbles */}
                 <div ref={chatContainerRef} className="flex-1 min-h-0 p-4 overflow-y-auto overscroll-contain space-y-3 bg-[#e5ddd5]/20 dark:bg-slate-950/60">
@@ -1003,7 +1012,7 @@ export function WhatsAppCommandCenterPage() {
       {/* ========================================================================= */}
       {/* TAB: AI LEAD INTELLIGENCE & CONTINUOUS LEARNING PATTERNS                  */}
       {/* ========================================================================= */}
-      {activeTab === 'intelligence' && (
+      {isPlatformAdmin && activeTab === 'intelligence' && (
         <div className="space-y-6">
           {/* Top Engine Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
