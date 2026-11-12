@@ -103,7 +103,6 @@ export async function registerTenantHandler(req, res) {
     // 2. Create Super Admin Profile
     const rawPass = password || 'Admin@123';
     const passwordHash = await bcrypt.hash(rawPass, 10);
-    const profileEmail = contact_email.toLowerCase().trim();
     const profileUserId = userId ? String(userId).trim() : profileEmail;
 
     await query(
