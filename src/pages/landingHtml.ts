@@ -102,7 +102,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
           <h1 class="hero__title" data-reveal data-reveal-delay="80">
             Turn every<br />enquiry into<br />a <em>booking</em>.
-            Free Real Estate CRM.<br />Turn every enquiry into a <em>booking</em>.
           </h1>
 
           <p class="hero__lede" data-reveal data-reveal-delay="160">

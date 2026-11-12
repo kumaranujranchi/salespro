@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 import { landingHtml } from './landingHtml';
 import { initLandingInteractions } from './landingInteractions';
 import { WebsiteWhatsAppWidget } from '../components/whatsapp/WebsiteWhatsAppWidget';
@@ -117,10 +119,33 @@ export function LandingPage() {
     document.body.classList.add('landing-page-active');
     document.documentElement.classList.add('js');
 
-    // 2. Initialize all interactive UI components
+    // 2. Initialize ultra-smooth momentum inertial scrolling (Lenis)
+    let lenis: Lenis | null = null;
+    let rafId: number | null = null;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      lenis = new Lenis({
+        duration: 1.25,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1.0,
+        touchMultiplier: 1.4,
+      });
+
+      function raf(time: number) {
+        lenis?.raf(time);
+        rafId = requestAnimationFrame(raf);
+      }
+      rafId = requestAnimationFrame(raf);
+    }
+
+    // 3. Initialize all interactive UI components
     const cleanupInteractions = initLandingInteractions();
 
-    // 3. Intercept internal navigation links for seamless SPA routing
+    // 4. Intercept internal navigation links for seamless SPA routing
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement)?.closest('a');
       if (!target) return;
@@ -130,15 +155,22 @@ export function LandingPage() {
 
       // Smooth scroll for anchor links
       if (href.startsWith('#')) {
+        e.preventDefault();
         if (href === '#top') {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (lenis) {
+            lenis.scrollTo(0, { duration: 1.2 });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
           return;
         }
         const targetEl = document.querySelector(href);
         if (targetEl) {
-          e.preventDefault();
-          targetEl.scrollIntoView({ behavior: 'smooth' });
+          if (lenis) {
+            lenis.scrollTo(targetEl as HTMLElement, { offset: -90, duration: 1.2 });
+          } else {
+            targetEl.scrollIntoView({ behavior: 'smooth' });
+          }
         }
         return;
       }
@@ -178,6 +210,10 @@ export function LandingPage() {
     }
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (lenis) {
+        lenis.destroy();
+      }
       cleanupInteractions();
       if (container) {
         container.removeEventListener('click', handleLinkClick);

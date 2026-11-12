@@ -44,6 +44,11 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+html.lenis,
+html.lenis body {
+  scroll-behavior: auto !important;
+}
+
 /* ---------- Reset (Scoped to Landing Page) ---------- */
 body.landing-page-active {
   margin: 0;
