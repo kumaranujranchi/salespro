@@ -59,7 +59,7 @@ export function MobileLayout({ children, navItems, activeModule, onModuleChange,
             />
 
             {/* Top Header */}
-            <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10 pt-[env(safe-area-inset-top,0px)]">
+            <header className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-surface-dark/90 dark:backdrop-blur-md border-b border-slate-200 dark:border-white/10 pt-[env(safe-area-inset-top,0px)]">
                 <div className="h-16 px-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 shrink-0">
                         {tenant?.settings?.appearance?.resolved_logo_url || tenant?.settings?.appearance?.logo_url ? (

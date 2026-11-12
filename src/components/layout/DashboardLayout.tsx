@@ -534,9 +534,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         forceChange={profile?.force_password_change}
       />
 
-      {/* Top Header - Glassmorphism */}
+      {/* Top Header - Clean White in Light Theme, Glassmorphism in Dark Theme */}
       <div
-        className="fixed top-0 right-0 z-30 border-b border-gray-200/50 dark:border-white/10 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]"
+        className="fixed top-0 right-0 z-30 border-b border-slate-200/80 dark:border-white/10 bg-white dark:bg-surface-dark/80 dark:backdrop-blur-xl pt-[env(safe-area-inset-top)]"
         style={{
           left: isMobile ? 0 : (isCollapsed ? '80px' : `${sidebarWidth}px`),
           transition: isDragging ? 'none' : 'left 300ms cubic-bezier(0.4,0,0.2,1)'
