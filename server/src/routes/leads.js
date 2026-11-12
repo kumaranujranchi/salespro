@@ -407,13 +407,8 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Asynchronously trigger automated WhatsApp welcome if enabled
-    sendLeadWelcomeWhatsApp({
-      tenantId: tenant_id,
-      lead,
-    }).catch(waErr => {
-      console.warn('[Leads] WhatsApp auto-welcome async warning:', waErr.message);
-    });
+    // NOTE: Manual leads entered by CRM users are strictly excluded from automated WhatsApp messages
+    // Automated WhatsApp confirmations trigger exclusively for digitally generated leads (Meta Ads, Google Ads, Webhooks)
 
     return res.status(201).json({ ...lead, _id: lead.id });
   } catch (err) {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useMutation, useAction } from "../../lib/reactive";
@@ -19,6 +20,7 @@ export function AdminIntegrationsPage() {
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
   const toast = useToast();
+  const navigate = useNavigate();
   const [savingMeta, setSavingMeta] = useState(false);
   const [savingGoogle, setSavingGoogle] = useState(false);
   const [savingNineNine, setSavingNineNine] = useState(false);
@@ -1222,7 +1224,7 @@ export function AdminIntegrationsPage() {
 
             {/* WhatsApp Integration Card */}
             <div 
-              onClick={isFreePlan ? () => handleLockedFeatureClick('WhatsApp Business API & Auto Messaging') : () => setActiveModal('whatsapp')}
+              onClick={isFreePlan ? () => handleLockedFeatureClick('WhatsApp Business API & Auto Messaging') : () => navigate('/configuration/whatsapp')}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
             >
               {/* Status Dot */}

@@ -212,7 +212,7 @@ export async function initWhatsAppSchema() {
 /**
  * Get active Meta WhatsApp Cloud API credentials
  */
-export async function getWhatsAppConfig() {
+export async function getWhatsAppConfig(tenantId = null) {
   let row = {};
   try {
     await initWhatsAppSchema();
@@ -222,7 +222,7 @@ export async function getWhatsAppConfig() {
     // If DB is offline or table initializing, gracefully use environment fallbacks
   }
 
-  return {
+  const platformConfig = {
     wabaId: row.waba_id || process.env.META_WABA_ID || process.env.WHATSAPP_WABA_ID || '1137788795833452',
     phoneNumberId: row.phone_number_id || process.env.META_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID || '1435084146353236',
     accessToken: row.access_token || process.env.META_WA_ACCESS_TOKEN || process.env.WHATSAPP_ACCESS_TOKEN || 'EAAWX9a0ddvMBSwgCdjxoVIJwhANXRn15YKD2VMiVJwHnIpZBLZCo1lpa94HP3c4mZAI3Rd9km9cbk2swXVednikQ7fnkGGKZAJNA977isSZBEEkGbxXF3KMUtcUrovnmhGNKaU1zRaDt81akr9Y1GwHRPEbXdK8GOcEZCwXWI3YkysrnPhHbWrBGz9IT8cS62c5AZDZD',
@@ -236,36 +236,144 @@ export async function getWhatsAppConfig() {
     agentNotifyPhone: row.agent_notify_phone || '+917079737773',
     updatedAt: row.updated_at,
   };
+
+  if (!tenantId) {
+    return platformConfig;
+  }
+
+  try {
+    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const tenantSettings = tRes.rows[0]?.settings || {};
+    const tenantWa = tenantSettings.integrations?.whatsapp || {};
+
+    return {
+      ...platformConfig,
+      ...tenantWa,
+      wabaId: tenantWa.wabaId || platformConfig.wabaId,
+      phoneNumberId: tenantWa.phoneNumberId || platformConfig.phoneNumberId,
+      accessToken: tenantWa.accessToken || platformConfig.accessToken,
+      webhookVerifyToken: tenantWa.webhookVerifyToken || platformConfig.webhookVerifyToken,
+      botEnabled: tenantWa.botEnabled ?? platformConfig.botEnabled,
+      aiProvider: tenantWa.aiProvider || 'builtin',
+      aiApiKey: tenantWa.aiApiKey || tenantWa.deepseekApiKey || platformConfig.deepseekApiKey,
+      aiModel: tenantWa.aiModel || platformConfig.aiModel,
+      aiEnabled: tenantWa.aiEnabled ?? platformConfig.aiEnabled,
+      widget: tenantWa.widget || {
+        enabled: true,
+        position: 'bottom-right',
+        primaryColor: '#25D366',
+        welcomeMessage: 'Hi there! 👋 How can we help you find your dream property today?',
+        businessName: 'RealSalePro Properties',
+        agentName: 'AI Property Advisor',
+        displayPhone: '917079737773',
+        knowledgeBase: '',
+      },
+      leadConfirmation: tenantWa.leadConfirmation || {
+        autoConfirmMetaAds: true,
+        autoConfirmGoogleAds: true,
+        autoConfirmWebsiteForms: true,
+        templateType: 'custom_message',
+        customMessage: 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}. Our senior property specialist {sales_rep} will connect with you shortly.',
+        metaTemplateName: 'lead_welcome_v1',
+        excludeManualLeads: true,
+      },
+      isTenantConfig: Boolean(tenantSettings.integrations?.whatsapp),
+    };
+  } catch (err) {
+    console.warn('[getWhatsAppConfig] Failed to fetch tenant WhatsApp config, fallback to platform:', err.message);
+    return platformConfig;
+  }
 }
 
 /**
  * Update Meta WhatsApp Cloud API credentials & DeepSeek AI Settings
  */
-export async function updateWhatsAppConfig({
-  wabaId,
-  phoneNumberId,
-  accessToken,
-  webhookVerifyToken,
-  botEnabled,
-  welcomeMessage,
-  agentNotifyEmail,
-  agentNotifyPhone,
-  deepseekApiKey,
-  aiModel,
-  aiEnabled,
-}) {
+export async function updateWhatsAppConfig(payload, tenantId = null) {
+  const {
+    wabaId,
+    phoneNumberId,
+    accessToken,
+    webhookVerifyToken,
+    botEnabled,
+    welcomeMessage,
+    agentNotifyEmail,
+    agentNotifyPhone,
+    deepseekApiKey,
+    aiModel,
+    aiEnabled,
+    aiProvider,
+    aiApiKey,
+    widget,
+    leadConfirmation,
+  } = payload;
+
+  if (tenantId) {
+    // Save to tenant settings JSONB
+    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const currentSettings = tRes.rows[0]?.settings || {};
+    const existingWa = currentSettings.integrations?.whatsapp || {};
+
+    let tokenToSave = accessToken;
+    if (accessToken && accessToken.includes('••')) {
+      tokenToSave = existingWa.accessToken;
+    }
+
+    let keyToSave = aiApiKey || deepseekApiKey;
+    if (keyToSave && keyToSave.includes('••')) {
+      keyToSave = existingWa.aiApiKey || existingWa.deepseekApiKey;
+    }
+
+    const updatedWa = {
+      ...existingWa,
+      wabaId: wabaId ?? existingWa.wabaId,
+      phoneNumberId: phoneNumberId ?? existingWa.phoneNumberId,
+      accessToken: tokenToSave ?? existingWa.accessToken,
+      webhookVerifyToken: webhookVerifyToken ?? existingWa.webhookVerifyToken,
+      botEnabled: botEnabled ?? existingWa.botEnabled ?? true,
+      welcomeMessage: welcomeMessage ?? existingWa.welcomeMessage,
+      agentNotifyEmail: agentNotifyEmail ?? existingWa.agentNotifyEmail,
+      agentNotifyPhone: agentNotifyPhone ?? existingWa.agentNotifyPhone,
+      aiProvider: aiProvider ?? existingWa.aiProvider ?? 'builtin',
+      aiApiKey: keyToSave ?? existingWa.aiApiKey,
+      deepseekApiKey: keyToSave ?? existingWa.deepseekApiKey,
+      aiModel: aiModel ?? existingWa.aiModel ?? 'deepseek-chat',
+      aiEnabled: aiEnabled ?? existingWa.aiEnabled ?? true,
+      widget: widget ?? existingWa.widget,
+      leadConfirmation: {
+        ...(existingWa.leadConfirmation || {}),
+        ...(leadConfirmation || {}),
+        excludeManualLeads: true, // ALWAYS strictly true
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    const newIntegrations = {
+      ...(currentSettings.integrations || {}),
+      whatsapp: updatedWa,
+    };
+
+    await query(`
+      UPDATE tenants
+      SET settings = jsonb_set(COALESCE(settings, '{}'::jsonb), '{integrations}', $2::jsonb, true),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `, [tenantId, JSON.stringify(newIntegrations)]);
+
+    return updatedWa;
+  }
+
   await initWhatsAppSchema();
 
-  // If token is masked (e.g. EAAB...***), preserve existing token
+  // If token is masked (e.g. EAAB...*** or ••), preserve existing token
   let tokenToSave = accessToken;
-  if (accessToken && accessToken.includes('***')) {
+  if (accessToken && (accessToken.includes('***') || accessToken.includes('••'))) {
     const existing = await getWhatsAppConfig();
     tokenToSave = existing.accessToken;
   }
 
-  // If DeepSeek API key is masked (e.g. sk-***), preserve existing key
-  let deepseekKeyToSave = deepseekApiKey;
-  if (deepseekApiKey && deepseekApiKey.includes('***')) {
+  // If DeepSeek API key is masked, preserve existing key
+  let deepseekKeyToSave = deepseekApiKey || aiApiKey;
+  if (deepseekKeyToSave && (deepseekKeyToSave.includes('***') || deepseekKeyToSave.includes('••'))) {
     const existing = await getWhatsAppConfig();
     deepseekKeyToSave = existing.deepseekApiKey;
   }
@@ -308,18 +416,36 @@ export async function updateWhatsAppConfig({
 
 /**
  * Test Connection with Meta Graph API
+ * Supports checking custom/tenant credentials or falling back to saved platform credentials.
  */
-export async function testMetaConnection() {
-  const config = await getWhatsAppConfig();
-  if (!config.phoneNumberId || !config.accessToken) {
+export async function testMetaConnection({ phoneNumberId = null, accessToken = null, tenantId = null } = {}) {
+  let targetPhoneId = phoneNumberId;
+  let targetToken = accessToken;
+
+  if (tenantId && (!targetPhoneId || !targetToken)) {
+    const tRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const wa = tRes.rows[0]?.settings?.integrations?.whatsapp;
+    if (wa?.phoneNumberId && wa?.accessToken) {
+      targetPhoneId = targetPhoneId || wa.phoneNumberId;
+      targetToken = targetToken || wa.accessToken;
+    }
+  }
+
+  if (!targetPhoneId || !targetToken) {
+    const config = await getWhatsAppConfig();
+    targetPhoneId = targetPhoneId || config.phoneNumberId;
+    targetToken = targetToken || config.accessToken;
+  }
+
+  if (!targetPhoneId || !targetToken) {
     return {
       success: false,
-      error: 'Missing Phone Number ID or Permanent Access Token. Please configure them in Settings.',
+      error: 'Missing Phone Number ID or Permanent Access Token. Please enter your Meta credentials in Settings.',
     };
   }
 
   try {
-    const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(config.phoneNumberId)}?fields=verified_name,display_phone_number,quality_rating,code_verification_status&access_token=${encodeURIComponent(config.accessToken)}`;
+    const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(targetPhoneId)}?fields=verified_name,display_phone_number,quality_rating,code_verification_status&access_token=${encodeURIComponent(targetToken)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -333,8 +459,8 @@ export async function testMetaConnection() {
 
     return {
       success: true,
-      verifiedName: data.verified_name || 'RealSalePro',
-      displayPhoneNumber: data.display_phone_number || '+91 70797 37773',
+      verifiedName: data.verified_name || 'WhatsApp Business Account',
+      displayPhoneNumber: data.display_phone_number || '+91 ••••• •••••',
       qualityRating: data.quality_rating || 'GREEN',
       codeVerificationStatus: data.code_verification_status || 'VERIFIED',
     };
@@ -1732,4 +1858,294 @@ export async function listBroadcasts() {
   const res = await query('SELECT * FROM whatsapp_broadcasts ORDER BY created_at DESC LIMIT 50');
   return res.rows;
 }
+
+/**
+ * =========================================================================
+ * 7. WEBSITE WHATSAPP WIDGET & AI CHATBOT KNOWLEDGE BASE ENGINE
+ * =========================================================================
+ */
+
+/**
+ * Get Public Widget Configuration for Tenant
+ */
+export async function getWidgetConfigForTenant(tenantId) {
+  if (!tenantId) return null;
+
+  const tRes = await query(`
+    SELECT id, name, slug, settings
+    FROM tenants
+    WHERE id = $1 OR slug = $1
+    LIMIT 1
+  `, [tenantId]);
+
+  if (!tRes.rows[0]) return null;
+
+  const tenant = tRes.rows[0];
+  const settings = tenant.settings || {};
+  const wa = settings.integrations?.whatsapp || {};
+  const widget = wa.widget || {};
+
+  return {
+    tenantId: tenant.id,
+    tenantName: tenant.name,
+    enabled: widget.enabled ?? true,
+    displayPhone: widget.displayPhone || wa.displayPhone || wa.agentNotifyPhone || '917079737773',
+    brandColor: widget.brandColor || '#25D366',
+    greeting: widget.greeting || `Hi there! Welcome to ${tenant.name}. How can we assist you with our properties today?`,
+    agentName: widget.agentName || 'Property Consultant',
+    agentRole: widget.agentRole || 'Sales & Support',
+    position: widget.position || 'bottom-right',
+    promptChips: (widget.promptChips && widget.promptChips.length > 0)
+      ? widget.promptChips
+      : [
+          'Schedule a Site Visit',
+          'Get Price Sheet & Brochure',
+          'Floor Plans & Unit Availability',
+          'Talk to a Property Advisor'
+        ],
+    aiChatEnabled: widget.aiChatEnabled ?? true,
+    hasCustomAi: Boolean(widget.aiApiKey),
+    aiProvider: widget.aiProvider || 'realsalepro',
+  };
+}
+
+/**
+ * Process Visitor Message in Website AI Chatbot trained on Tenant Business Knowledge
+ */
+export async function generateWidgetChatReply({ tenantId, message, conversationHistory = [] }) {
+  if (!tenantId || !message) {
+    throw new Error('Tenant ID and message are required');
+  }
+
+  const tRes = await query(`
+    SELECT id, name, slug, settings
+    FROM tenants
+    WHERE id = $1 OR slug = $1
+    LIMIT 1
+  `, [tenantId]);
+
+  if (!tRes.rows[0]) {
+    throw new Error('Tenant workspace not found');
+  }
+
+  const tenant = tRes.rows[0];
+  const settings = tenant.settings || {};
+  const wa = settings.integrations?.whatsapp || {};
+  const widget = wa.widget || {};
+  const kb = widget.knowledgeBase || {};
+
+  // Fetch tenant's active property projects from CRM database
+  let projectsListText = 'No specific project listings available at this moment.';
+  try {
+    const pRes = await query(`
+      SELECT name, address, project_type, status, metadata
+      FROM projects
+      WHERE tenant_id = $1 AND (is_active IS NULL OR is_active = true)
+      LIMIT 10
+    `, [tenant.id]);
+
+    if (pRes.rows.length > 0) {
+      projectsListText = pRes.rows.map(p => {
+        const details = [
+          `• ${p.name} (${p.project_type || 'Residential'})`,
+          p.address ? `Location: ${p.address}` : null,
+          p.status ? `Status: ${p.status}` : null,
+        ].filter(Boolean).join(' - ');
+        return details;
+      }).join('\n');
+    }
+  } catch (err) {
+    console.warn('[Widget AI] Could not query projects table:', err.message);
+  }
+
+  const businessOverview = kb.businessOverview || `${tenant.name} is a premier real estate development and property advisory firm in India.`;
+  const pricingNotes = kb.pricingNotes || 'Competitive market pricing with flexible bank financing and customized payment schedule options.';
+  const websiteUrls = kb.websiteUrls || '';
+  const faqsText = (Array.isArray(kb.faqList) && kb.faqList.length > 0)
+    ? kb.faqList.map(item => `Q: ${item.question}\nA: ${item.answer}`).join('\n\n')
+    : 'No additional FAQs specified.';
+
+  // Build real-estate domain prompt
+  const systemPrompt = `You are a helpful, professional, polite real estate advisor representing "${tenant.name}" on their official website chat.
+Your goal is to answer visitor questions accurately, build trust, explain property features, and gently encourage them to schedule a site visit or provide their phone number for WhatsApp brochure delivery.
+
+=== BUSINESS KNOWLEDGE BASE ===
+Company Name: ${tenant.name}
+About the Company: ${businessOverview}
+
+=== PROPERTY PROJECTS & INVENTORY ===
+${projectsListText}
+
+=== PRICING & PAYMENT PLANS ===
+${pricingNotes}
+
+=== FREQUENTLY ASKED QUESTIONS ===
+${faqsText}
+${websiteUrls ? `Reference Website: ${websiteUrls}` : ''}
+
+=== CHAT GUIDELINES ===
+1. Keep replies concise (2-4 sentences max), conversational, and friendly.
+2. If the visitor asks about prices, units, or location, answer directly from the knowledge base above.
+3. If they ask something outside the knowledge base, politely say our property team will share exact specifics during the call or site visit.
+4. Encourage them to share their WhatsApp number so we can instantly send the project brochure, floor plans, and site photos.
+5. Never invent false property prices or fabricated amenities.`;
+
+  // Determine which AI Provider to use
+  const aiProvider = widget.aiProvider || 'realsalepro';
+  const customApiKey = widget.aiApiKey || '';
+  const customModel = widget.aiCustomModel || '';
+
+  const messagesPayload = [
+    { role: 'system', content: systemPrompt },
+    ...conversationHistory.slice(-8).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'assistant',
+      content: String(m.text || ''),
+    })),
+    { role: 'user', content: String(message) },
+  ];
+
+  let replyText = '';
+
+  try {
+    if (aiProvider === 'openai' && customApiKey) {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${customApiKey}`,
+        },
+        body: JSON.stringify({
+          model: customModel || 'gpt-4o-mini',
+          messages: messagesPayload,
+          max_tokens: 250,
+          temperature: 0.7,
+        }),
+      });
+      const data = await res.json();
+      replyText = data.choices?.[0]?.message?.content || '';
+    } else if (aiProvider === 'gemini' && customApiKey) {
+      const modelName = customModel || 'gemini-1.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${customApiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: messagesPayload.map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }],
+          })),
+        }),
+      });
+      const data = await res.json();
+      replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else if (aiProvider === 'deepseek' && customApiKey) {
+      const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${customApiKey}`,
+        },
+        body: JSON.stringify({
+          model: customModel || 'deepseek-chat',
+          messages: messagesPayload,
+          max_tokens: 250,
+        }),
+      });
+      const data = await res.json();
+      replyText = data.choices?.[0]?.message?.content || '';
+    } else {
+      // Use built-in RealSalePro AI Engine (DeepSeek platform token)
+      const config = await getWhatsAppConfig();
+      const apiKey = config.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+
+      if (apiKey) {
+        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: config.aiModel || 'deepseek-chat',
+            messages: messagesPayload,
+            max_tokens: 250,
+          }),
+        });
+        const data = await res.json();
+        replyText = data.choices?.[0]?.message?.content || '';
+      }
+    }
+  } catch (apiErr) {
+    console.error('[Widget AI Chat Engine Error]:', apiErr.message);
+  }
+
+  // Fallback if AI provider is unconfigured or failed
+  if (!replyText || !replyText.trim()) {
+    replyText = `Thank you for reaching out to ${tenant.name}! Our team would be delighted to assist you with floor plans, site visits, and pricing. You can also connect with our property specialist directly on WhatsApp.`;
+  }
+
+  // Detect if user provided a phone number in the message for lead capture
+  const phoneMatch = message.match(/(?:\+91|91|0)?[6-9]\d{9}/);
+  const detectedPhone = phoneMatch ? phoneMatch[0] : null;
+
+  return {
+    success: true,
+    reply: replyText.trim(),
+    detectedPhone,
+    tenantName: tenant.name,
+    displayPhone: widget.displayPhone || wa.displayPhone || '917079737773',
+  };
+}
+
+/**
+ * Capture Lead from Website WhatsApp Widget
+ */
+export async function captureWidgetLead({ tenantId, customerName, phone, projectInterest, notes }) {
+  if (!tenantId || !phone) {
+    throw new Error('Tenant ID and customer phone are required');
+  }
+
+  const normalizedPhone = normalizeWhatsAppPhone(phone);
+
+  // Check if lead already exists
+  const existing = await query(`
+    SELECT id, lead_id FROM leads
+    WHERE tenant_id = $1 AND mobile = $2
+    LIMIT 1
+  `, [tenantId, normalizedPhone]);
+
+  if (existing.rows[0]) {
+    return {
+      success: true,
+      isExisting: true,
+      leadId: existing.rows[0].id,
+      leadCode: existing.rows[0].lead_id,
+    };
+  }
+
+  // Insert lead into CRM
+  const leadCode = `WIDGET-${Math.floor(100000 + Math.random() * 900000)}`;
+  const insertRes = await query(`
+    INSERT INTO leads (
+      tenant_id, lead_id, customer_name, mobile, lead_source,
+      project_name, internal_notes, lead_status, lead_score
+    ) VALUES ($1, $2, $3, $4, 'website_widget', $5, $6, 'New', 75)
+    RETURNING id, lead_id
+  `, [
+    tenantId,
+    leadCode,
+    customerName || 'Website Inquirer',
+    normalizedPhone,
+    projectInterest || null,
+    notes || 'Lead submitted via Website WhatsApp AI Widget',
+  ]);
+
+  return {
+    success: true,
+    isNew: true,
+    leadId: insertRes.rows[0].id,
+    leadCode: insertRes.rows[0].lead_id,
+  };
+}
+
 

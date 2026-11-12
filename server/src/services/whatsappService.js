@@ -134,11 +134,19 @@ export async function sendWatiMessage({ endpoint, apiKey, toPhone, templateName,
 }
 
 /**
- * Automatically trigger WhatsApp Welcome message to a new CRM lead
+ * Automatically trigger WhatsApp Welcome confirmation message to a new digitally generated CRM lead.
+ * STRICT POLICY: Applies ONLY to digital leads (Meta Ads, Google Ads, digital webhooks).
+ * Manual leads entered by CRM users are strictly excluded.
  */
 export async function sendLeadWelcomeWhatsApp({ tenantId, lead }) {
   try {
     if (!tenantId || !lead || !lead.mobile) return null;
+
+    // Strict Rule: Manual leads entered by CRM staff/users must NEVER trigger automated WhatsApp confirmation
+    if (lead.is_manual === true || lead.isManual === true || lead.source_type === 'manual') {
+      console.log(`[WhatsApp Auto-Confirmation] Skipped for lead ${lead.lead_id || lead.id}: Manual lead excluded.`);
+      return null;
+    }
 
     // Fetch tenant settings
     const tenantRes = await query('SELECT id, name, settings FROM tenants WHERE id = $1', [tenantId]);
@@ -152,12 +160,31 @@ export async function sendLeadWelcomeWhatsApp({ tenantId, lead }) {
       return null; // Not enabled or auto-welcome is toggled off
     }
 
+    // Channel filtering: Verify digital channel toggle
+    const source = String(lead.lead_source || lead.source || '').toLowerCase();
+    const isMeta = source.includes('meta') || source.includes('facebook') || source.includes('instagram');
+    const isGoogle = source.includes('google');
+    const isWebsite = source.includes('website') || source.includes('form') || source.includes('webhook');
+
+    if (isMeta && whatsapp.autoConfirmMetaAds === false) {
+      console.log(`[WhatsApp Auto-Confirmation] Skipped for lead ${lead.lead_id || lead.id}: Meta Ads confirmation toggled off.`);
+      return null;
+    }
+    if (isGoogle && whatsapp.autoConfirmGoogleAds === false) {
+      console.log(`[WhatsApp Auto-Confirmation] Skipped for lead ${lead.lead_id || lead.id}: Google Ads confirmation toggled off.`);
+      return null;
+    }
+    if (isWebsite && whatsapp.autoConfirmWebsiteForms === false) {
+      console.log(`[WhatsApp Auto-Confirmation] Skipped for lead ${lead.lead_id || lead.id}: Website form confirmation toggled off.`);
+      return null;
+    }
+
     const provider = whatsapp.provider || 'meta_cloud';
     const customerName = lead.customer_name || 'Valued Customer';
     const companyName = whatsapp.companyDisplayName || tenant.name || 'Our Team';
     const projectName = lead.project_name || lead.city || 'our residential project';
     const repName = whatsapp.representativeName || 'Our Property Specialist';
-    const brochureUrl = whatsapp.brochureUrl || 'https://realsalepro.in';
+    const brochureUrl = whatsapp.brochureUrl || 'https://realsalepro.com';
 
     // Default parameters for standard welcome template
     const bodyParams = [
@@ -168,7 +195,20 @@ export async function sendLeadWelcomeWhatsApp({ tenantId, lead }) {
       brochureUrl,    // {{5}}
     ];
 
-    const fallbackText =
+    // Compute dynamic message text replacing variables
+    let messageText = whatsapp.customMessageBody || '';
+    if (messageText) {
+      messageText = messageText
+        .replace(/\{customer_name\}/gi, customerName)
+        .replace(/\{company_name\}/gi, companyName)
+        .replace(/\{project_name\}/gi, projectName)
+        .replace(/\{sales_rep\}/gi, repName)
+        .replace(/\{representative_name\}/gi, repName)
+        .replace(/\{brochure_url\}/gi, brochureUrl)
+        .replace(/\{lead_source\}/gi, lead.lead_source || 'Digital Ads');
+    }
+
+    const fallbackText = messageText ||
 `Namaste *${customerName}*!
 Thank you for your interest in *${projectName}* by *${companyName}*.
 
@@ -181,8 +221,19 @@ Warm regards,
 *${companyName}*`;
 
     if (provider === 'meta_cloud') {
-      if (!whatsapp.phoneNumberId || !whatsapp.accessToken) {
-        console.warn(`[WhatsApp Auto-Welcome] Skipped for tenant ${tenantId}: Missing phoneNumberId or accessToken.`);
+      let phoneNumberId = whatsapp.phoneNumberId;
+      let accessToken = whatsapp.accessToken;
+
+      // Fallback to platform credentials if not configured on tenant level
+      if (!phoneNumberId || !accessToken) {
+        const { getWhatsAppConfig } = await import('./whatsappHubService.js');
+        const config = await getWhatsAppConfig();
+        phoneNumberId = config.phoneNumberId;
+        accessToken = config.accessToken;
+      }
+
+      if (!phoneNumberId || !accessToken) {
+        console.warn(`[WhatsApp Auto-Confirmation] Skipped for tenant ${tenantId}: Missing Phone Number ID or Access Token.`);
         return null;
       }
 
@@ -190,8 +241,8 @@ Warm regards,
 
       try {
         const result = await sendMetaCloudMessage({
-          phoneNumberId: whatsapp.phoneNumberId,
-          accessToken: whatsapp.accessToken,
+          phoneNumberId,
+          accessToken,
           toPhone: lead.mobile,
           templateName,
           languageCode: whatsapp.templateLanguage || 'en',
@@ -199,14 +250,13 @@ Warm regards,
           fallbackText,
         });
 
-        console.log(`[WhatsApp Auto-Welcome] Sent successfully to ${lead.mobile} (Lead ID: ${lead.lead_id || lead.id}):`, result.messageId);
+        console.log(`[WhatsApp Auto-Confirmation] Sent successfully to ${lead.mobile} (Lead ID: ${lead.lead_id || lead.id}):`, result.messageId);
         return result;
       } catch (templateErr) {
-        console.warn(`[WhatsApp Auto-Welcome] Template failed (${templateErr.message}). Attempting session text fallback...`);
-        // If template fails, attempt direct text message
+        console.warn(`[WhatsApp Auto-Confirmation] Template failed (${templateErr.message}). Attempting session text fallback...`);
         return await sendMetaCloudMessage({
-          phoneNumberId: whatsapp.phoneNumberId,
-          accessToken: whatsapp.accessToken,
+          phoneNumberId,
+          accessToken,
           toPhone: lead.mobile,
           fallbackText,
         });
@@ -223,7 +273,70 @@ Warm regards,
 
     return null;
   } catch (err) {
-    console.error(`[WhatsApp Auto-Welcome Error] Tenant: ${tenantId}, Lead: ${lead?.mobile}:`, err.message);
+    console.error(`[WhatsApp Auto-Confirmation Error] Tenant: ${tenantId}, Lead: ${lead?.mobile}:`, err.message);
     return { error: err.message };
   }
+}
+
+/**
+ * Send a Live Test Confirmation to a target phone number with sample lead data
+ */
+export async function testLeadConfirmationWhatsApp({ tenantId, toPhone, templateName, customMessage, languageCode = 'en' }) {
+  if (!toPhone) throw new Error('Phone number is required for test send');
+
+  const tenantRes = await query('SELECT id, name, settings FROM tenants WHERE id = $1', [tenantId]);
+  const tenant = tenantRes.rows[0] || {};
+  const settings = tenant.settings || {};
+  const whatsapp = settings.integrations?.whatsapp || {};
+
+  let phoneNumberId = whatsapp.phoneNumberId;
+  let accessToken = whatsapp.accessToken;
+
+  if (!phoneNumberId || !accessToken) {
+    const { getWhatsAppConfig } = await import('./whatsappHubService.js');
+    const config = await getWhatsAppConfig();
+    phoneNumberId = config.phoneNumberId;
+    accessToken = config.accessToken;
+  }
+
+  if (!phoneNumberId || !accessToken) {
+    throw new Error('Meta WhatsApp Cloud API is not configured. Missing Phone Number ID or Access Token.');
+  }
+
+  const customerName = 'Rahul Sharma (Test Lead)';
+  const companyName = whatsapp.companyDisplayName || tenant.name || 'RealSalePro Realty';
+  const projectName = 'Emerald Sky Greens';
+  const repName = whatsapp.representativeName || 'Pooja Verma';
+  const brochureUrl = whatsapp.brochureUrl || 'https://realsalepro.com';
+
+  const bodyParams = [customerName, companyName, projectName, repName, brochureUrl];
+
+  let textToSend = customMessage || whatsapp.customMessageBody ||
+`Namaste *${customerName}*!
+Thank you for your interest in *${projectName}* by *${companyName}*.
+
+Our property consultant (*${repName}*) will call you shortly to assist with project details, floor plans, and site visit arrangements.
+
+Brochure Link: ${brochureUrl}
+[TEST CONFIRMATION MESSAGE]`;
+
+  textToSend = textToSend
+    .replace(/\{customer_name\}/gi, customerName)
+    .replace(/\{company_name\}/gi, companyName)
+    .replace(/\{project_name\}/gi, projectName)
+    .replace(/\{sales_rep\}/gi, repName)
+    .replace(/\{representative_name\}/gi, repName)
+    .replace(/\{brochure_url\}/gi, brochureUrl);
+
+  const tpl = templateName || whatsapp.welcomeTemplateName;
+
+  return await sendMetaCloudMessage({
+    phoneNumberId,
+    accessToken,
+    toPhone,
+    templateName: tpl,
+    languageCode,
+    bodyParams,
+    fallbackText: textToSend,
+  });
 }

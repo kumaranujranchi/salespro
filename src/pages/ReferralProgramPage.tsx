@@ -1,4 +1,4 @@
-import { Mail, ArrowRight, Gift, Percent, Share2, ArrowLeft, CheckCircle2, HelpCircle } from 'lucide-react';
+import { Mail, ArrowRight, Gift, Percent, Share2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
 
@@ -62,7 +62,7 @@ export function ReferralProgramPage() {
           </div>
         </nav>
 
-        {/* Hero */}
+        {/* Hero Section */}
         <section className="relative py-20 bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950/20 dark:to-gray-900 border-b border-emerald-900/10">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 mb-4">
@@ -86,7 +86,7 @@ export function ReferralProgramPage() {
           </div>
         </section>
 
-        {/* Key Benefits */}
+        {/* Benefits Section */}
         <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
@@ -114,7 +114,7 @@ export function ReferralProgramPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">10% Discount for Your Network</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Your referred contacts and client companies receive an exclusive 10% discount on all Pro plans, ensuring higher signup and activation conversion rates.
+                Your referred agency contacts receive an exclusive 10% discount on all Pro plans, ensuring higher signup and activation conversion rates.
               </p>
             </div>
 
@@ -130,13 +130,13 @@ export function ReferralProgramPage() {
           </div>
         </section>
 
-        {/* How It Works */}
+        {/* How It Works Section */}
         <section className="bg-gray-50 dark:bg-gray-800/40 py-20 border-y border-gray-100 dark:border-gray-800">
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-center text-gray-900 dark:text-white mb-12">
               Three Simple Steps to Get Started
             </h2>
-            
+
             <div className="space-y-8">
               <div className="flex gap-6 items-start bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div className="flex-shrink-0 w-12 h-12 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold text-lg">1</div>
@@ -186,7 +186,7 @@ export function ReferralProgramPage() {
             <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
               <h3 className="font-bold text-gray-900 dark:text-white text-base mb-2">Who is eligible to join?</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Real estate consultants, digital marketing firms, proptech influencers, trainers, website developers, and active RealSalePro customers can all participate in the program.
+                Real estate consultants, digital marketing agencies, proptech influencers, trainers, website developers, and active RealSalePro customers can all participate in the program.
               </p>
             </div>
             <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">

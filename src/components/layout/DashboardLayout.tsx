@@ -68,7 +68,7 @@ const navGroups: NavGroup[] = [
       { label: 'Platform Overview', path: '/platform/dashboard', icon: TrendingUp, roles: ['platform_admin'] },
       { label: 'Tenants', path: '/platform/tenants', icon: Building2, roles: ['platform_admin'] },
       { label: 'Referrals', path: '/referral-management', icon: Users, roles: ['platform_admin'] },
-      { label: 'WhatsApp Hub', path: '/platform/whatsapp', icon: MessageSquare, roles: ['platform_admin', 'super_admin'] },
+      { label: 'WhatsApp Hub', path: '/configuration/whatsapp', icon: MessageSquare, roles: ['platform_admin', 'super_admin'] },
       { label: 'AWS & Server Health', path: '/platform/server-health', icon: Server, roles: ['platform_admin'] },
       { label: 'Support Tickets', path: '/platform/support', icon: HelpCircle, roles: ['platform_admin'] },
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
@@ -105,6 +105,7 @@ const navGroups: NavGroup[] = [
       { label: 'Departments', path: '/departments', icon: Briefcase, roles: ['super_admin', 'admin', 'director'] },
       { label: 'Roles', path: '/roles', icon: Shield, roles: ['super_admin'] },
       { label: 'Users', path: '/users', icon: Users, roles: ['super_admin', 'admin', 'director'] },
+      { label: 'WhatsApp', path: '/configuration/whatsapp', icon: MessageSquare, roles: ['super_admin', 'admin', 'director', 'platform_admin', 'team_leader', 'sales_manager', 'sales_executive', 'crm_staff'] },
       { label: 'Integrations', path: '/settings/integrations', icon: Plug, roles: ['super_admin', 'admin', 'director'] },
     ]
   }

@@ -183,6 +183,17 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/configuration/whatsapp"
+                  element={
+                    <ProtectedRoute allowedRoles={['super_admin', 'admin', 'director', 'platform_admin', 'team_leader', 'sales_manager', 'sales_executive', 'crm_staff']}>
+                      <DashboardLayout>
+                        <WhatsAppCommandCenterPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/settings/whatsapp" element={<Navigate to="/configuration/whatsapp" replace />} />
                 <Route path="/platform/aws" element={<Navigate to="/platform/server-health" replace />} />
 
                 <Route

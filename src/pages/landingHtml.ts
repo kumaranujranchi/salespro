@@ -52,6 +52,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <nav class="nav__links" aria-label="Primary">
         <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
         <a href="#features">Features</a>
+        <a href="#product">Platform</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#security">Security</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
       </nav>
@@ -69,6 +72,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <a href="/free-real-estate-crm" style="color: var(--mint) !important; font-weight: 600;">Free CRM</a>
       <a href="/templates/real-estate-crm-excel-template">Free Excel Template</a>
       <a href="#features">Features</a>
+      <a href="#product">Platform</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#security">Security</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a href="https://realsalepro.com/login">Log in</a>
@@ -95,6 +101,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </p>
 
           <h1 class="hero__title" data-reveal data-reveal-delay="80">
+            Turn every<br />enquiry into<br />a <em>booking</em>.
             Free Real Estate CRM.<br />Turn every enquiry into a <em>booking</em>.
           </h1>
 
@@ -663,46 +670,63 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </div>
 
         <div class="int-grid" data-int-grid>
+          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal>
+            <span class="int__logo"><img src="/assets/img/facebook_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="ads" href="/integration" data-reveal>
             <span class="int__logo"><img src="/assets/img/facebook_ads.webp" alt="Meta Facebook Ads Lead Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Meta Ads</strong><em>Facebook &amp; Instagram leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="ads" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="30">
+            <span class="int__logo"><img src="/assets/img/google_ads.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="ads" href="/integration" data-reveal data-reveal-delay="30">
             <span class="int__logo"><img src="/assets/img/google_ads.webp" alt="Google Ads Lead Generation" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Ads</strong><em>Search, Maps &amp; display</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="60">
+            <span class="int__logo"><img src="/assets/img/magicbricks.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="60">
             <span class="int__logo"><img src="/assets/img/magicbricks.webp" alt="Magicbricks Real Estate Lead Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Magicbricks</strong><em>Property portal leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="90">
+            <span class="int__logo"><img src="/assets/img/99acres.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="90">
             <span class="int__logo"><img src="/assets/img/99acres.webp" alt="99acres Property Portal Integration" width="22" height="22" loading="lazy" /></span>
             <div><strong>99acres</strong><em>Listings &amp; buyer enquiries</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="portals" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="120">
+            <span class="int__logo"><img src="/assets/img/hosing.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="portals" href="/integration" data-reveal data-reveal-delay="120">
             <span class="int__logo"><img src="/assets/img/hosing.webp" alt="Housing.com Lead Webhook Integration" width="22" height="22" loading="lazy" /></span>
             <div><strong>Housing.com</strong><em>Property page leads</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="chat" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="150">
+            <span class="int__logo"><img src="/assets/img/whatsApp.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="chat" href="/integration" data-reveal data-reveal-delay="150">
             <span class="int__logo"><img src="/assets/img/whatsApp.webp" alt="WhatsApp Business API Automation" width="22" height="22" loading="lazy" /></span>
             <div><strong>WhatsApp Business</strong><em>Chatbots &amp; auto-welcome</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="80">
+            <span class="int__logo"><img src="/assets/img/Googlesheet.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="80">
             <span class="int__logo"><img src="/assets/img/Googlesheet.webp" alt="Google Sheets 2-Way CRM Sync" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Sheets</strong><em>Offline &amp; walk-in data</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="110">
+            <span class="int__logo"><img src="/assets/img/google_form.webp" alt="" width="22" height="22" loading="lazy" /></span>
           <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="110">
             <span class="int__logo"><img src="/assets/img/google_form.webp" alt="Google Forms Auto Lead Ingestion" width="22" height="22" loading="lazy" /></span>
             <div><strong>Google Forms</strong><em>Contact &amp; survey forms</em></div>
             <svg class="icon int__go"><use href="#i-arrow-ur"/></svg>
           </a>
+          <a class="int" data-cat="forms" href="https://realsalepro.com/integration" data-reveal data-reveal-delay="140">
           <a class="int" data-cat="forms" href="/integration" data-reveal data-reveal-delay="140">
             <span class="int__logo"><svg class="icon"><use href="#i-globe"/></svg></span>
             <div><strong>WordPress</strong><em>Website forms · webhook</em></div>
@@ -729,7 +753,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <div class="flow__copy">
             <p class="eyebrow eyebrow--mint">Lead flow automation</p>
             <h3>Watch your leads route <em>automatically</em>.</h3>
-            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds. Explore our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">lead management workflow</a> or our <a href="/crm-for-real-estate-brokers" style="color: var(--mint); text-decoration: underline;">broker & company features</a>.</p>
+            <p>Someone submits a Meta or Magicbricks form. RealSalePro parses the details, logs the lead, assigns a salesperson and fires the WhatsApp welcome — in under five seconds. Explore our <a href="/features/lead-management" style="color: var(--mint); text-decoration: underline;">lead management workflow</a> or our <a href="/crm-for-real-estate-brokers" style="color: var(--mint); text-decoration: underline;">broker agency features</a>.</p>
             <div class="flow__tags">
               <span><svg class="icon"><use href="#i-check"/></svg> Round-robin routing</span>
               <span><svg class="icon"><use href="#i-whatsapp"/></svg> Instant WhatsApp welcome</span>
@@ -740,6 +764,9 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <div class="flow__viz" aria-hidden="true">
             <div class="flow__col">
               <span class="flow__label">Lead sources</span>
+              <span class="flow__item"><img src="/assets/img/facebook_ads.webp" alt="" width="16" height="16" loading="lazy" />Meta Ads</span>
+              <span class="flow__item"><img src="/assets/img/magicbricks.webp" alt="" width="16" height="16" loading="lazy" />Magicbricks</span>
+              <span class="flow__item"><img src="/assets/img/whatsApp.webp" alt="" width="16" height="16" loading="lazy" />WhatsApp</span>
               <span class="flow__item"><img src="/assets/img/facebook_ads.webp" alt="Meta Lead Ads Capture" width="16" height="16" loading="lazy" />Meta Ads</span>
               <span class="flow__item"><img src="/assets/img/magicbricks.webp" alt="Magicbricks Lead Ingestion" width="16" height="16" loading="lazy" />Magicbricks</span>
               <span class="flow__item"><img src="/assets/img/whatsApp.webp" alt="WhatsApp Cloud Messaging" width="16" height="16" loading="lazy" />WhatsApp</span>
@@ -854,7 +881,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Trusted by leading<br />real-estate <em>professionals</em>.</h2>
           </div>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
-            Join hundreds of real estate companies that have transformed their sales operations with RealSalePro.
+            Join hundreds of agencies that have transformed their sales operations with RealSalePro.
           </p>
         </header>
 
@@ -898,7 +925,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </div>
 
         <div class="stories-logos" data-reveal style="text-align: center !important; margin: 0 auto !important;">
-          <p style="text-align: center !important; margin: 0 auto 18px !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.16em !important; text-transform: uppercase !important; color: var(--muted-dark) !important;">Trusted by 50+ real estate companies</p>
+          <p style="text-align: center !important; margin: 0 auto 18px !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.16em !important; text-transform: uppercase !important; color: var(--muted-dark) !important;">Trusted by 50+ real-estate agencies</p>
           <div class="logo-row" style="display: flex !important; flex-wrap: wrap !important; justify-content: center !important; align-items: center !important; gap: 14px !important; margin-top: 18px !important;">
             <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 14px !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;"><img src="/assets/img/omav-logo-transparent.png" alt="Omav Group" loading="lazy" style="height: 54px !important; max-height: 54px !important; width: auto !important; max-width: 132px !important; object-fit: contain !important; display: block !important;" /></span>
             <span class="logo-chip" style="overflow: hidden !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 168px !important; height: 84px !important; padding: 10px 16px !important; background: #fff !important; border-radius: 14px !important; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18) !important;"><img src="/assets/img/mithila-realinfra-logo.png" alt="Mithila Realinfra" loading="lazy" style="height: 54px !important; max-height: 54px !important; width: auto !important; max-width: 132px !important; object-fit: contain !important; display: block !important;" /></span>
@@ -923,178 +950,11 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       </div>
     </section>
 
-    <!-- ============ IN-HOUSE WHATSAPP ENGINE & COMPARISON ============ -->
-    <section class="section section--dark" id="whatsapp-engine">
-      <div class="container">
-        <header class="sec-head sec-head--center">
-          <p class="eyebrow" data-reveal><span class="eyebrow__no">08</span> In-house WhatsApp Engine</p>
-          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Stop paying ₹3,000–₹6,000/mo<br />for generic WhatsApp tools.</h2>
-          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
-            RealSalePro connects directly to Meta WhatsApp Cloud API inside your CRM. Zero 3rd-party SaaS fees, zero per-agent seat markups, and direct official Meta billing.
-          </p>
-        </header>
-
-        <div class="wa-engine-wrap" data-reveal data-reveal-delay="180">
-          <div class="wa-compare-card">
-            <div class="wa-compare-header">
-              <div>
-                <strong style="color: #fff; font-size: 16px; font-family: var(--font-display); display: block;">RealSalePro vs Generic WhatsApp Tools</strong>
-                <span style="color: var(--muted-dark); font-size: 13px;">Compare in-house Meta Cloud direct architecture against third-party standalone tools</span>
-              </div>
-              <span class="wa-pill-badge wa-pill-badge--green">
-                <svg class="icon" style="width: 14px; height: 14px;"><use href="#i-check"/></svg> 100% In-House Engine
-              </span>
-            </div>
-
-            <div class="wa-compare-table-container">
-              <table class="wa-compare-table">
-                <thead>
-                  <tr>
-                    <th style="width: 26%;">Feature</th>
-                    <th style="width: 37%;">Generic 3rd-Party Tools (Others)</th>
-                    <th class="col-highlight" style="width: 37%;">RealSalePro Built-in WhatsApp Hub</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="col-feature">Monthly Subscription Cost</td>
-                    <td class="col-others">
-                      <strong style="color: #fca5a5; display: block; font-size: 15px;">₹2,500 to ₹6,000 / month</strong>
-                      <span>₹30,000 – ₹70,000+ extra recurring software bill per year</span>
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright); display: block; font-size: 15px;">₹0 Extra Cost</strong>
-                      <span>100% In-house Meta Direct Engine included in your CRM plan</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">Per-Message Markup</td>
-                    <td class="col-others">
-                      <strong>Heavy markup added on Meta base rates</strong> (~₹1.10 to ₹1.30 per message). Hidden margins on every outbound send.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">Direct Meta Official Base Rates</strong> (Zero markup, ₹0 for the first 1,000 service conversations every month).
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">Live Multi-Agent Team Inbox</td>
-                    <td class="col-others">
-                      <span class="wa-pill-badge wa-pill-badge--gray" style="margin-bottom: 6px;">Limited</span><br />
-                      Steep per-agent seat charges. Adding 10 telecallers quickly multiplies your monthly bill.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Full 2-Way Live Chat Inbox</strong> with unlimited agent seats, canned quick replies, and 1-click human takeover.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">AI Sales Executive &amp; Model Choice</td>
-                    <td class="col-others">
-                      Locked to rigid keyword bots or proprietary third-party bots that forget context, offer zero model choice, and bill extra monthly add-ons.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Humanized Real Estate AI (BYO Model Option)</strong> — 100-message session memory, pre-trained on property pitches, pricing &amp; buyer objections. Tenants can use built-in AI or plug in their own preferred AI model.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">Automatic Lead Capture Dossier</td>
-                    <td class="col-others">
-                      Displays raw chat text only. Telecallers must manually copy-paste names, budgets, and cities into the CRM.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Intelligent Entity Extractor</strong> — Automatically extracts Name, City, Company, Team Size, and Current CRM from chat to create rich CRM leads.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">Spam &amp; Competitor Protection</td>
-                    <td class="col-others">
-                      <span style="color: #f87171;">✕ Not Available</span> (Every spam, rival broker, or test inquiry wastes costly AI tokens and message credits).
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ AI Token Shield &amp; Authenticity Engine</strong> — Detects competitors and evasive spammers early to safeguard your AI tokens and budget.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">CRM Integration</td>
-                    <td class="col-others">
-                      Requires complex third-party webhooks or Zapier zaps that frequently disconnect and delay lead handoffs.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Deep Native Sync</strong> — Unified pipeline, site visit bookings, telecaller phone masking, and broker commissions all in one dashboard.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">Bulk Broadcast &amp; Meta Templates</td>
-                    <td class="col-others">
-                      Basic broadcast engine with 3rd-party throttling delays and cumbersome template syncing.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Direct Meta Templates Hub</strong> + High-converting broadcasts with intelligent anti-rate-limit dispatching.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="col-feature">WhatsApp OTP Engine</td>
-                    <td class="col-others">
-                      Expensive standalone add-on or requires purchasing an external SMS gateway.
-                    </td>
-                    <td class="col-highlight">
-                      <strong style="color: var(--mint-bright);">✔ Built-in In-house OTP Engine</strong> — Sub-3 second verification for login security, buyer validation, and site visit confirmations.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- How Real Estate Companies Connect in 3 Simple Steps -->
-        <div class="wa-steps-section" data-reveal data-reveal-delay="200">
-          <header class="sec-head sec-head--center" style="margin-bottom: 0;">
-            <p class="eyebrow"><span class="eyebrow__dot"></span> Builder &amp; Broker Self-Serve Onboarding</p>
-            <h3 style="font-family: var(--font-display); font-size: clamp(22px, 3vw, 32px); font-weight: 700; color: #fff; margin-top: 12px;">
-              Connect your WhatsApp Business API in 3 simple steps
-            </h3>
-            <p style="color: var(--muted-dark); max-width: 600px; margin: 12px auto 0; font-size: 15px;">
-              No tech partner approval or waiting weeks. Connect your official Meta Cloud API directly and go live in minutes.
-            </p>
-          </header>
-
-          <div class="wa-steps-grid">
-            <article class="wa-step-card" data-reveal data-reveal-delay="80">
-              <span class="wa-step-badge">01</span>
-              <h3>Create Free Meta Cloud Account</h3>
-              <p>Register directly on Meta for Developers (<strong style="color:#fff;">developers.facebook.com</strong>) in 5 minutes. Get official WhatsApp Cloud API access with zero intermediary fees.</p>
-              <span class="wa-step-tag">Free Meta Developer Portal</span>
-            </article>
-
-            <article class="wa-step-card" data-reveal data-reveal-delay="160">
-              <span class="wa-step-badge">02</span>
-              <h3>Paste Credentials in RealSalePro</h3>
-              <p>Navigate to <strong style="color:#fff;">Admin &gt; Integrations &gt; WhatsApp Business API</strong>. Enter your Phone Number ID, WABA ID, and Permanent Access Token.</p>
-              <span class="wa-step-tag">Settings → Integrations → WhatsApp</span>
-            </article>
-
-            <article class="wa-step-card" data-reveal data-reveal-delay="240">
-              <span class="wa-step-badge">03</span>
-              <h3>Go Live with AI &amp; Team Inbox</h3>
-              <p>Your official number is connected! Incoming homebuyer queries automatically route into your CRM pipeline with humanized AI sales replies (built-in or using your own AI model), live human takeover, and instant broadcasts.</p>
-              <span class="wa-step-tag">Auto-Sync Pipeline Active</span>
-            </article>
-          </div>
-
-          <div style="text-align: center; margin-top: 48px;" data-reveal data-reveal-delay="300">
-            <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
-              <span>Start free with built-in WhatsApp</span><svg class="icon"><use href="#i-arrow"/></svg>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ============ PRICING ============ -->
     <section class="section section--paper" id="pricing">
       <div class="container">
         <header class="sec-head sec-head--center">
-          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> Pricing</p>
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">08</span> Pricing</p>
           <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Free forever. Pro when you <em>scale</em>.</h2>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
             Start with the whole product. Upgrade only when your lead volume does.
@@ -1258,7 +1118,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
     <section class="section section--paper section--alt" id="faq">
       <div class="container faq-wrap">
         <header class="sec-head faq-head">
-          <p class="eyebrow" data-reveal><span class="eyebrow__no">10</span> FAQ</p>
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> FAQ</p>
           <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Got questions?<br />Good <em>answers</em>.</h2>
           <p class="sec-head__lede" data-reveal data-reveal-delay="120">
             Can't find what you're looking for? <a href="mailto:support@realsalepro.com">Contact our team</a> — a human replies.
@@ -1267,13 +1127,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
         <div class="faq" data-faq>
           <div class="faq__item" data-reveal>
-            <button class="faq__q" aria-expanded="false" aria-controls="faq-a-0">
-              <span>Do I need to pay for an external WhatsApp tool?</span>
-              <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
-            </button>
-            <div class="faq__a" id="faq-a-0" aria-hidden="true"><p>No! RealSalePro has a built-in Meta WhatsApp Cloud Engine. You don't need third-party tools charging ₹3,000–₹6,000/month. You get an official 2-way live team inbox, trained AI sales executive, automated lead capturing, and broadcast campaigns included right inside your CRM — with the option to connect your own preferred AI model.</p></div>
-          </div>
-          <div class="faq__item" data-reveal data-reveal-delay="40">
             <button class="faq__q" aria-expanded="false" aria-controls="faq-a-1">
               <span>Is it really free?</span>
               <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
@@ -1282,7 +1135,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           </div>
           <div class="faq__item" data-reveal data-reveal-delay="40">
             <button class="faq__q" aria-expanded="false" aria-controls="faq-a-2">
-              <span>Can I customise the app for my company?</span>
+              <span>Can I customise the app for my agency?</span>
               <span class="faq__icon"><svg class="icon"><use href="#i-plus"/></svg></span>
             </button>
             <div class="faq__a" id="faq-a-2" aria-hidden="true"><p>Absolutely. RealSalePro supports custom fields, workflows, branding (logo and colours), role-based permissions and custom reports. A Business Customisation package (starting at ₹19,999) tailors the platform to your specific business, and API access is available for advanced integrations.</p></div>
@@ -1390,6 +1243,10 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="footer__col">
           <h3>Company</h3>
           <a href="#stories">About us</a>
+          <a href="https://realsalepro.com/referral-program">Refer &amp; earn</a>
+          <a href="https://realsalepro.com/contact">Careers</a>
+          <a href="https://realsalepro.com/contact">Contact</a>
+          <a href="https://realsalepro.com/pricing">Pricing</a>
           <a href="/referral-program">Refer &amp; earn</a>
           <a href="/affiliate/terms">Affiliate Program</a>
           <a href="/contact">Contact Support</a>
@@ -1409,8 +1266,14 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <div class="footer__wordmark" aria-hidden="true">RealSalePro</div>
 
       <div class="footer__bottom">
+        <p>© <span id="year">2025</span> RealSalePro. All rights reserved.</p>
         <p>© <span id="year">2026</span> RealSalePro. All rights reserved.</p>
         <div class="footer__legal">
+          <a href="https://realsalepro.com/privacy">Privacy Policy</a>
+          <a href="https://realsalepro.com/terms">Terms of Service</a>
+          <a href="https://realsalepro.com/refund-policy">Refund Policy</a>
+          <a href="https://realsalepro.com/shipping-policy">Shipping Policy</a>
+          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/refund-policy">Refund Policy</a>

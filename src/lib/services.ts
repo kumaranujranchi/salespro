@@ -279,21 +279,33 @@ export const subscriptionService = {
     api.post<{ success: boolean; message: string; planTier: string; billingCycle: string }>('/subscriptions/activate-test-mode', data),
 };
 
+export function formatPhoneDisplay(phone: string): string {
+  if (!phone) return '';
+  const digits = String(phone).replace(/\D/g, '');
+  let norm = digits;
+  if (digits.length === 10) norm = `91${digits}`;
+  else if (digits.length === 11 && digits.startsWith('0')) norm = `91${digits.slice(1)}`;
+  if (norm.length === 12 && norm.startsWith('91')) {
+    return `+91 ${norm.slice(2, 7)} ${norm.slice(7)}`;
+  }
+  return phone;
+}
+
 export const whatsappHubService = {
-  getConfig: () =>
-    api.get<{ success: boolean; config: any }>('/whatsapp/config'),
-  saveConfig: (data: {
-    wabaId?: string;
-    phoneNumberId?: string;
-    accessToken?: string;
-    webhookVerifyToken?: string;
-    botEnabled?: boolean;
-    welcomeMessage?: string;
-    agentNotifyEmail?: string;
-    agentNotifyPhone?: string;
-  }) => api.post<{ success: boolean; message: string; config: any }>('/whatsapp/config', data),
-  testConnection: () =>
-    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string }>('/whatsapp/test-connection'),
+  getConfig: (params?: { tenant_id?: string }) =>
+    api.get<{ success: boolean; config: any }>('/whatsapp/config', params),
+  saveConfig: (data: any) =>
+    api.post<{ success: boolean; message: string; config: any }>('/whatsapp/config', data),
+  testConnection: (data?: { phoneNumberId?: string; accessToken?: string }) =>
+    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string }>('/whatsapp/test-connection', data || {}),
+  testConfirmation: (data: { testPhone: string; customMessage?: string }) =>
+    api.post<{ success: boolean; messageId?: string; message?: string; error?: string }>('/whatsapp/test-confirmation', data),
+  getWidgetConfig: (tenantId: string) =>
+    api.get<{ success: boolean; widget: any }>(`/whatsapp/widget/config?tenantId=${encodeURIComponent(tenantId)}`),
+  sendWidgetChat: (data: { tenantId: string; message: string; conversationHistory?: any[] }) =>
+    api.post<{ success: boolean; reply: string; detectedPhone?: string }>('/whatsapp/widget/chat', data),
+  submitWidgetLead: (data: { tenantId: string; customerName?: string; phone: string; projectInterest?: string; notes?: string }) =>
+    api.post<{ success: boolean; leadId?: string; isNew?: boolean }>('/whatsapp/widget/lead', data),
   listConversations: (params?: { status?: string; search?: string; limit?: number; offset?: number }) =>
     api.get<{ success: boolean; conversations: any[]; summary: any }>('/whatsapp/conversations', params),
   getMessages: (conversationId: string) =>

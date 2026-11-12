@@ -31,15 +31,22 @@ import {
   ShieldAlert,
   Zap,
   TrendingUp,
+  Globe,
+  Code,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import { whatsappHubService } from '../../lib/services';
-import { formatPhoneDisplay } from '../../../server/src/services/whatsappHubService';
+import { useAuth } from '../../contexts/AuthContext';
+import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
 
 export function WhatsAppCommandCenterPage() {
-  const [activeTab, setActiveTab] = useState<'inbox' | 'intelligence' | 'broadcast' | 'templates' | 'otp' | 'settings'>('inbox');
+  const { tenant, profile } = useAuth();
+  const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const [showAiKey, setShowAiKey] = useState(false);
 
   // Intelligence & Learning Patterns state
   const [learningPatterns, setLearningPatterns] = useState<any[]>([]);
@@ -94,6 +101,20 @@ export function WhatsAppCommandCenterPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerifyResult, setOtpVerifyResult] = useState<any>(null);
 
+  // Website Widget Simulator state
+  const [simulatorMessages, setSimulatorMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
+    { role: 'assistant', text: 'Namaste! 👋 Welcome to our website. Which property type or location are you looking for today?' }
+  ]);
+  const [simulatorInput, setSimulatorInput] = useState('');
+  const [simulatorLoading, setSimulatorLoading] = useState(false);
+  const [simulatorLeadCaptured, setSimulatorLeadCaptured] = useState<string | null>(null);
+  const [copiedWidgetSnippet, setCopiedWidgetSnippet] = useState(false);
+
+  // Lead Confirmations state
+  const [testConfirmPhone, setTestConfirmPhone] = useState('');
+  const [testingConfirm, setTestingConfirm] = useState(false);
+  const [testConfirmResult, setTestConfirmResult] = useState<any>(null);
+
   // Config state
   const [config, setConfig] = useState<any>({
     wabaId: '',
@@ -101,9 +122,29 @@ export function WhatsAppCommandCenterPage() {
     accessToken: '',
     webhookVerifyToken: 'realsalepro_wa_secret',
     botEnabled: true,
-    deepseekApiKey: '',
+    aiProvider: 'builtin',
+    aiApiKey: '',
     aiModel: 'deepseek-chat',
     aiEnabled: true,
+    widget: {
+      enabled: true,
+      position: 'bottom-right',
+      primaryColor: '#25D366',
+      welcomeMessage: 'Hi there! 👋 How can we help you find your dream property today?',
+      businessName: tenant?.name || 'RealSalePro Properties',
+      agentName: 'AI Property Advisor',
+      displayPhone: '917079737773',
+      knowledgeBase: '',
+    },
+    leadConfirmation: {
+      autoConfirmMetaAds: true,
+      autoConfirmGoogleAds: true,
+      autoConfirmWebsiteForms: true,
+      templateType: 'custom_message',
+      customMessage: 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}. Our senior property specialist {sales_rep} will connect with you shortly. You can also view project details here: {brochure_url}',
+      metaTemplateName: 'lead_welcome_v1',
+      excludeManualLeads: true,
+    },
   });
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
@@ -129,10 +170,82 @@ export function WhatsAppCommandCenterPage() {
     try {
       const res = await whatsappHubService.getConfig();
       if (res?.config) {
-        setConfig(res.config);
+        setConfig((prev: any) => ({
+          ...prev,
+          ...res.config,
+          widget: {
+            ...(prev.widget || {}),
+            ...(res.config.widget || {}),
+            businessName: res.config.widget?.businessName || tenant?.name || prev.widget?.businessName,
+          },
+          leadConfirmation: {
+            ...(prev.leadConfirmation || {}),
+            ...(res.config.leadConfirmation || {}),
+            excludeManualLeads: true,
+          },
+        }));
       }
     } catch (err) {
       console.warn('Failed loading WhatsApp config:', err);
+    }
+  };
+
+  const handleSimulatorSend = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!simulatorInput.trim() || simulatorLoading) return;
+    const userText = simulatorInput.trim();
+    setSimulatorInput('');
+    const newHistory = [...simulatorMessages, { role: 'user' as const, text: userText }];
+    setSimulatorMessages(newHistory);
+    setSimulatorLoading(true);
+
+    const phoneMatch = userText.match(/(?:\+91|91|0)?[6-9]\d{9}/);
+    if (phoneMatch) {
+      setSimulatorLeadCaptured(phoneMatch[0]);
+    }
+
+    try {
+      const res = await whatsappHubService.sendWidgetChat({
+        tenantId: tenant?.id || config.tenantId || 'default',
+        message: userText,
+        conversationHistory: newHistory.map(m => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.text,
+        })),
+      });
+      if (res?.reply) {
+        setSimulatorMessages([...newHistory, { role: 'assistant' as const, text: res.reply }]);
+      }
+      if (res?.detectedPhone) {
+        setSimulatorLeadCaptured(res.detectedPhone);
+      }
+    } catch (err: any) {
+      setSimulatorMessages([
+        ...newHistory,
+        { role: 'assistant' as const, text: 'Bot response: ' + (err.message || 'Please check your AI API key & connection.') },
+      ]);
+    } finally {
+      setSimulatorLoading(false);
+    }
+  };
+
+  const handleTestConfirmation = async () => {
+    if (!testConfirmPhone.trim()) {
+      alert('Please enter a test mobile number with country code (e.g. 919876543210)');
+      return;
+    }
+    setTestingConfirm(true);
+    setTestConfirmResult(null);
+    try {
+      const res = await whatsappHubService.testConfirmation({
+        testPhone: testConfirmPhone.trim(),
+        customMessage: config.leadConfirmation?.customMessage,
+      });
+      setTestConfirmResult(res);
+    } catch (err: any) {
+      setTestConfirmResult({ success: false, error: err.message });
+    } finally {
+      setTestingConfirm(false);
     }
   };
 
@@ -408,14 +521,14 @@ export function WhatsAppCommandCenterPage() {
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto shrink-0">
         <button
           onClick={() => setActiveTab('inbox')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
             activeTab === 'inbox'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
           }`}
         >
           <MessageSquare className="w-4 h-4" />
-          Live Chat Inbox
+          Live Chat
           {summary.agent_requested_count > 0 && (
             <span className="px-1.5 py-0.5 text-xs bg-amber-400 text-slate-950 font-bold rounded-full animate-pulse">
               {summary.agent_requested_count}
@@ -424,20 +537,56 @@ export function WhatsAppCommandCenterPage() {
         </button>
 
         <button
-          onClick={() => { setActiveTab('intelligence'); loadLearningPatterns(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'intelligence'
-              ? 'bg-purple-600 text-white shadow-sm'
+          onClick={() => setActiveTab('api_setup')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
+            activeTab === 'api_setup' || activeTab === 'settings'
+              ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
           }`}
         >
-          <Brain className="w-4 h-4 text-purple-300" />
-          AI Learning & Patterns
+          <Settings className="w-4 h-4" />
+          API Setup
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('templates'); loadTemplates(); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
+            activeTab === 'templates'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          Templates
+        </button>
+
+        <button
+          onClick={() => setActiveTab('widget')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
+            activeTab === 'widget'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          Website Widget & AI Bot
+        </button>
+
+        <button
+          onClick={() => setActiveTab('automations')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
+            activeTab === 'automations'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Zap className="w-4 h-4 text-amber-300" />
+          Lead Automations
         </button>
 
         <button
           onClick={() => { setActiveTab('broadcast'); loadBroadcasts(); loadTemplates(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
             activeTab === 'broadcast'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -448,39 +597,27 @@ export function WhatsAppCommandCenterPage() {
         </button>
 
         <button
-          onClick={() => { setActiveTab('templates'); loadTemplates(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'templates'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Meta Templates Hub
-        </button>
-
-        <button
           onClick={() => setActiveTab('otp')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
             activeTab === 'otp'
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
           }`}
         >
           <Key className="w-4 h-4" />
-          WhatsApp OTP Tester
+          OTP Engine
         </button>
 
         <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeTab === 'settings'
-              ? 'bg-emerald-600 text-white shadow-sm'
+          onClick={() => { setActiveTab('intelligence'); loadLearningPatterns(); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
+            activeTab === 'intelligence'
+              ? 'bg-purple-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
           }`}
         >
-          <Settings className="w-4 h-4" />
-          Meta API Credentials
+          <Brain className="w-4 h-4 text-purple-300" />
+          AI Learning
         </button>
       </div>
 
@@ -1370,15 +1507,69 @@ export function WhatsAppCommandCenterPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 5: META API CREDENTIALS & WEBHOOK SETTINGS                           */}
+      {/* TAB 2: WHATSAPP API SETUP & CONNECTION STATUS                              */}
       {/* ========================================================================= */}
-      {activeTab === 'settings' && (
-        <div className="space-y-6 max-w-3xl">
+      {(activeTab === 'api_setup' || activeTab === 'settings') && (
+        <div className="space-y-6 max-w-4xl">
+          {/* Connection Status Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  Meta WhatsApp Cloud API Connection Status
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Direct connection with official Meta Cloud API servers. Zero 3rd party middleman markups.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={checkConnection}
+                disabled={testingConnection}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-2 shadow-sm transition-all disabled:opacity-50 shrink-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${testingConnection ? 'animate-spin' : ''}`} />
+                {testingConnection ? 'Testing Meta Handshake...' : 'Test Meta API Connection'}
+              </button>
+            </div>
+
+            {connectionStatus && (
+              <div className={`mt-4 p-4 rounded-xl border text-xs ${connectionStatus.success ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'}`}>
+                <div className="flex items-center gap-2 font-bold mb-2">
+                  {connectionStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-rose-600" />}
+                  <span>{connectionStatus.success ? 'Official Meta API Connected & Ready' : 'Connection Failed'}</span>
+                </div>
+                {connectionStatus.success ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">VERIFIED BUSINESS NAME</span>
+                      <strong className="font-semibold">{connectionStatus.verifiedName || 'RealSalePro Properties'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">DISPLAY PHONE NUMBER</span>
+                      <strong className="font-mono">{connectionStatus.displayPhoneNumber || '+91 70797 37773'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">META QUALITY RATING</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                        {connectionStatus.qualityRating || 'GREEN (High Quality)'}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-1 font-mono text-[11px]">{connectionStatus.error || 'Invalid credentials or expired access token.'}</p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Webhook Callback Box */}
           <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 shadow-sm space-y-3">
             <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-600" />
-              Meta Developer Webhook Configuration
+              <Zap className="w-4 h-4 text-emerald-600" />
+              Meta Inbound Webhook Configuration
             </h3>
             <p className="text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
               In your Meta for Developers App &gt; <strong>WhatsApp &gt; Configuration</strong>, paste this Callback URL and Verify Token to receive live messages and status updates:
@@ -1389,7 +1580,7 @@ export function WhatsAppCommandCenterPage() {
                 <input
                   type="text"
                   readOnly
-                  value="https://api.realsalepro.com/api/whatsapp/webhook"
+                  value={`${window.location.origin}/api/whatsapp/webhook`}
                   className="flex-1 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-xs font-mono text-emerald-950 dark:text-emerald-200 font-semibold"
                 />
                 <button
@@ -1403,7 +1594,7 @@ export function WhatsAppCommandCenterPage() {
               </div>
 
               <div className="text-xs text-emerald-800 dark:text-emerald-400">
-                Verify Token: <code className="bg-white/80 dark:bg-slate-900 px-2 py-0.5 rounded font-mono font-bold">{config.webhookVerifyToken}</code>
+                Verify Token: <code className="bg-white/80 dark:bg-slate-900 px-2 py-0.5 rounded font-mono font-bold">{config.webhookVerifyToken || 'realsalepro_wa_secret'}</code>
               </div>
             </div>
           </div>
@@ -1412,14 +1603,14 @@ export function WhatsAppCommandCenterPage() {
           <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Official WhatsApp Cloud API Credentials</h3>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
                   Phone Number ID (from Meta WhatsApp App)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. 104859382019485"
+                  placeholder="e.g. 1435084146353236"
                   value={config.phoneNumberId}
                   onChange={(e) => setConfig({ ...config, phoneNumberId: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
@@ -1432,7 +1623,7 @@ export function WhatsAppCommandCenterPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. 103948572019483"
+                  placeholder="e.g. 1137788795833452"
                   value={config.wabaId}
                   onChange={(e) => setConfig({ ...config, wabaId: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
@@ -1440,11 +1631,21 @@ export function WhatsAppCommandCenterPage() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                  Permanent System User Access Token
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    Permanent System User Access Token
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowToken(!showToken)}
+                    className="text-[11px] text-emerald-600 hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showToken ? 'Hide Token' : 'Show Token'}
+                  </button>
+                </div>
                 <input
-                  type="password"
+                  type={showToken ? 'text' : 'password'}
                   placeholder="EAAB..."
                   value={config.accessToken}
                   onChange={(e) => setConfig({ ...config, accessToken: e.target.value })}
@@ -1464,76 +1665,6 @@ export function WhatsAppCommandCenterPage() {
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
                 />
               </div>
-
-              <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={config.botEnabled}
-                    onChange={(e) => setConfig({ ...config, botEnabled: e.target.checked })}
-                    className="w-4 h-4 text-emerald-600 rounded"
-                  />
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">
-                    Enable Landing Page Automatic Prospect Bot
-                  </span>
-                </label>
-              </div>
-
-              {/* DeepSeek AI Interactive Sales Copilot Settings */}
-              <div className="pt-5 border-t border-slate-200 dark:border-slate-800 space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-purple-600" />
-                      DeepSeek AI Interactive Sales Copilot
-                    </h4>
-                    <p className="text-[11px] text-slate-500">
-                      Answers visitor questions about RealSalePro, pricing, phone masking, and real estate CRM dynamically in Hindi, English & Hinglish.
-                    </p>
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.aiEnabled ?? true}
-                      onChange={(e) => setConfig({ ...config, aiEnabled: e.target.checked })}
-                      className="w-4 h-4 text-purple-600 rounded"
-                    />
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Enable AI
-                    </span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                    DeepSeek API Key
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="sk-..."
-                    value={config.deepseekApiKey || ''}
-                    onChange={(e) => setConfig({ ...config, deepseekApiKey: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Enter your API key from <code>platform.deepseek.com</code>. If not set, bot uses real-estate keyword intent engine.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                    DeepSeek Model
-                  </label>
-                  <select
-                    value={config.aiModel || 'deepseek-chat'}
-                    onChange={(e) => setConfig({ ...config, aiModel: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold"
-                  >
-                    <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Ultra Fast & Recommended)</option>
-                    <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Deep Thinking Model)</option>
-                  </select>
-                </div>
-              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
@@ -1542,10 +1673,587 @@ export function WhatsAppCommandCenterPage() {
                 disabled={savingConfig}
                 className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50"
               >
-                {savingConfig ? 'Saving...' : 'Save Configuration'}
+                {savingConfig ? 'Saving...' : 'Save API Configuration'}
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: WEBSITE WHATSAPP WIDGET WITH AI CHATBOT                            */}
+      {/* ========================================================================= */}
+      {activeTab === 'widget' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Embed & Settings */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Embed Code Snippet */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Code className="w-4 h-4 text-emerald-600" />
+                  Website Embed Snippet
+                </h3>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                  1-Line Integration
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Copy and paste this script tag right before the closing <code>&lt;/body&gt;</code> tag on your WordPress, Webflow, Shopify, or custom HTML website.
+              </p>
+
+              <div className="relative">
+                <textarea
+                  readOnly
+                  rows={2}
+                  value={`<script src="${window.location.origin}/api/whatsapp/widget.js" data-tenant="${tenant?.id || config.tenantId || 'default'}"></script>`}
+                  className="w-full p-3 rounded-xl bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const snippet = `<script src="${window.location.origin}/api/whatsapp/widget.js" data-tenant="${tenant?.id || config.tenantId || 'default'}"></script>`;
+                    navigator.clipboard.writeText(snippet);
+                    setCopiedWidgetSnippet(true);
+                    setTimeout(() => setCopiedWidgetSnippet(false), 2000);
+                  }}
+                  className="absolute right-2.5 top-2.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 shadow-sm"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  {copiedWidgetSnippet ? 'Copied!' : 'Copy Code'}
+                </button>
+              </div>
+            </div>
+
+            {/* Widget Design & Basic Settings */}
+            <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-600" />
+                    Widget Customization & Appearance
+                  </h3>
+                  <p className="text-xs text-slate-500">Customize how your floating WhatsApp chat bubble appears to visitors.</p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={config.widget?.enabled ?? true}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), enabled: e.target.checked }
+                    })}
+                    className="w-4 h-4 text-emerald-600 rounded"
+                  />
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Widget Enabled</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Business Display Name</label>
+                  <input
+                    type="text"
+                    value={config.widget?.businessName || ''}
+                    placeholder="e.g. Apex Realty"
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), businessName: e.target.value }
+                    })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">AI Agent / Consultant Name</label>
+                  <input
+                    type="text"
+                    value={config.widget?.agentName || ''}
+                    placeholder="e.g. Rahul (Property Consultant)"
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), agentName: e.target.value }
+                    })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Direct WhatsApp Mobile Number</label>
+                  <input
+                    type="text"
+                    value={config.widget?.displayPhone || ''}
+                    placeholder="e.g. 917079737773"
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), displayPhone: e.target.value }
+                    })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Theme Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={config.widget?.primaryColor || '#25D366'}
+                      onChange={(e) => setConfig({
+                        ...config,
+                        widget: { ...(config.widget || {}), primaryColor: e.target.value }
+                      })}
+                      className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer p-0.5"
+                    />
+                    <input
+                      type="text"
+                      value={config.widget?.primaryColor || '#25D366'}
+                      onChange={(e) => setConfig({
+                        ...config,
+                        widget: { ...(config.widget || {}), primaryColor: e.target.value }
+                      })}
+                      className="flex-1 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Initial Greeting Message</label>
+                  <input
+                    type="text"
+                    value={config.widget?.welcomeMessage || ''}
+                    placeholder="Hi there! 👋 How can we help you find your dream property today?"
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), welcomeMessage: e.target.value }
+                    })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* AI Chatbot Configuration */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Bot className="w-4 h-4 text-purple-600" />
+                    AI Chatbot Engine & Custom API Key
+                  </h4>
+                  <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                    Auto-Trained on CRM Data
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">AI Engine Provider</label>
+                    <select
+                      value={config.widget?.aiProvider || config.aiProvider || 'builtin'}
+                      onChange={(e) => setConfig({
+                        ...config,
+                        aiProvider: e.target.value,
+                        widget: { ...(config.widget || {}), aiProvider: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    >
+                      <option value="builtin">Built-in Real Estate Engine (Zero Config)</option>
+                      <option value="openai">Custom OpenAI (GPT-4o / GPT-4o-mini)</option>
+                      <option value="gemini">Custom Google Gemini (Gemini 1.5 Flash)</option>
+                      <option value="deepseek">Custom DeepSeek (DeepSeek V3 / R1)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block font-semibold text-slate-700 dark:text-slate-300">Custom AI API Key</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAiKey(!showAiKey)}
+                        className="text-[11px] text-purple-600 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        {showAiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        {showAiKey ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    <input
+                      type={showAiKey ? 'text' : 'password'}
+                      placeholder="e.g. sk-proj-... / AIzaSy..."
+                      value={config.widget?.aiApiKey || config.aiApiKey || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConfig({
+                          ...config,
+                          aiApiKey: val,
+                          widget: { ...(config.widget || {}), aiApiKey: val }
+                        });
+                      }}
+                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Business Knowledge Base Training */}
+                <div className="text-xs space-y-1.5">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    Business Knowledge Base & FAQs (Trained into AI Bot)
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Enter key property details, price per sqft, payment plans, site visit timings, amenities, and FAQs. The AI chatbot will use this data to answer visitor questions accurately."
+                    value={config.widget?.knowledgeBase || ''}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      widget: { ...(config.widget || {}), knowledgeBase: e.target.value }
+                    })}
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                  />
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Your active CRM property projects and listings are automatically included in the AI context.</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingConfig}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50"
+                >
+                  {savingConfig ? 'Saving...' : 'Save Widget & AI Settings'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Column: Live Interactive Widget Simulator */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 shadow-lg">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Live Widget Simulator</h4>
+                </div>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
+                  Interactive Test
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">
+                Type questions below to test how your AI chatbot responds to potential buyers before deploying to your website.
+              </p>
+
+              {/* Chat Container */}
+              <div className="mt-4 bg-[#0B141A] rounded-xl overflow-hidden border border-slate-800 flex flex-col h-[420px]">
+                {/* Header */}
+                <div className="bg-[#1F2C34] px-4 py-3 flex items-center gap-3 border-b border-slate-700/50">
+                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-xs text-white">
+                    {config.widget?.agentName?.charAt(0) || 'A'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white truncate">
+                      {config.widget?.businessName || tenant?.name || 'RealSalePro Properties'}
+                    </div>
+                    <div className="text-[10px] text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {config.widget?.agentName || 'AI Assistant'} • Online
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message Thread */}
+                <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs bg-[#0c1317]">
+                  {simulatorMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2 leading-relaxed text-xs ${
+                          msg.role === 'user'
+                            ? 'bg-[#005C4B] text-white rounded-br-sm'
+                            : 'bg-[#202C33] text-slate-100 rounded-bl-sm shadow-sm'
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                  {simulatorLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-[#202C33] text-slate-300 rounded-2xl px-3.5 py-2 text-xs flex items-center gap-2">
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lead Captured Alert */}
+                {simulatorLeadCaptured && (
+                  <div className="px-3 py-1.5 bg-emerald-950/80 border-t border-emerald-800 text-[11px] text-emerald-300 flex items-center justify-between">
+                    <span>🎯 Lead captured: <strong>{simulatorLeadCaptured}</strong></span>
+                    <span className="text-[10px] uppercase font-bold text-emerald-400">Auto-saved to CRM</span>
+                  </div>
+                )}
+
+                {/* Input Area */}
+                <form onSubmit={handleSimulatorSend} className="p-2.5 bg-[#1F2C34] flex items-center gap-2 border-t border-slate-700/50">
+                  <input
+                    type="text"
+                    value={simulatorInput}
+                    onChange={(e) => setSimulatorInput(e.target.value)}
+                    placeholder="Ask about properties, pricing, or enter phone..."
+                    className="flex-1 bg-[#2A3942] text-white text-xs px-3.5 py-2 rounded-xl focus:outline-none placeholder-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    disabled={simulatorLoading || !simulatorInput.trim()}
+                    className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 disabled:opacity-50 transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: AUTOMATED WHATSAPP CONFIRMATION FOR LEADS                          */}
+      {/* ========================================================================= */}
+      {activeTab === 'automations' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7 space-y-6">
+            {/* Strict Manual Exclusion Policy Banner */}
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 shadow-sm space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-sm">
+                <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>Strict Automation Rule: Manual Leads 100% Excluded</span>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                Automated WhatsApp greetings trigger <strong>ONLY for digitally generated leads</strong> entering via Meta Ads, Google Ads, or Website Webhooks. Leads entered manually by sales reps or CRM staff are strictly excluded from automated dispatches.
+              </p>
+            </div>
+
+            {/* Inbound Digital Channels Configuration */}
+            <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Zap className="w-4 h-4 text-emerald-600" />
+                Active Digital Inbound Channels
+              </h3>
+
+              <div className="space-y-3 pt-1">
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      Meta Ads (Facebook &amp; Instagram Lead Forms)
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Dispatches instant WhatsApp confirmation upon form submission on Facebook / Instagram.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={config.leadConfirmation?.autoConfirmMetaAds ?? true}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      leadConfirmation: {
+                        ...(config.leadConfirmation || {}),
+                        autoConfirmMetaAds: e.target.checked
+                      }
+                    })}
+                    className="w-4 h-4 text-emerald-600 rounded"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      Google Ads Inbound Leads (GCLID Forms)
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Welcomes Google Search and Display campaign inquiries directly on WhatsApp.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={config.leadConfirmation?.autoConfirmGoogleAds ?? true}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      leadConfirmation: {
+                        ...(config.leadConfirmation || {}),
+                        autoConfirmGoogleAds: e.target.checked
+                      }
+                    })}
+                    className="w-4 h-4 text-emerald-600 rounded"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 block">
+                      Website Inbound Forms &amp; Landing Page Webhooks
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Triggers instant confirmation for website inquiries from WordPress, Elementor, and custom webhooks.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={config.leadConfirmation?.autoConfirmWebsiteForms ?? true}
+                    onChange={(e) => setConfig({
+                      ...config,
+                      leadConfirmation: {
+                        ...(config.leadConfirmation || {}),
+                        autoConfirmWebsiteForms: e.target.checked
+                      }
+                    })}
+                    className="w-4 h-4 text-emerald-600 rounded"
+                  />
+                </label>
+              </div>
+
+              {/* Message Template Customizer */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Lead Confirmation Message Template
+                  </label>
+                  <span className="text-[11px] text-slate-400">Click a tag to insert</span>
+                </div>
+
+                {/* Variable Tag Pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '{customer_name}',
+                    '{project_name}',
+                    '{sales_rep}',
+                    '{company_name}',
+                    '{brochure_url}',
+                    '{lead_source}',
+                  ].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        const current = config.leadConfirmation?.customMessage || '';
+                        setConfig({
+                          ...config,
+                          leadConfirmation: {
+                            ...(config.leadConfirmation || {}),
+                            customMessage: `${current} ${tag}`,
+                          }
+                        });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-mono text-[11px] font-semibold transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={config.leadConfirmation?.customMessage || ''}
+                  onChange={(e) => setConfig({
+                    ...config,
+                    leadConfirmation: {
+                      ...(config.leadConfirmation || {}),
+                      customMessage: e.target.value,
+                    }
+                  })}
+                  className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingConfig}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50"
+                >
+                  {savingConfig ? 'Saving...' : 'Save Automation Rules'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right Column: Live Mobile Preview & Test Dispatcher */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Mobile WhatsApp Preview */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Customer Mobile Preview (WhatsApp)
+              </h4>
+
+              <div className="bg-[#ECE5DD] dark:bg-[#0c1317] p-4 rounded-xl border border-slate-200 dark:border-slate-800 min-h-[220px] flex flex-col justify-end">
+                <div className="bg-white dark:bg-[#202C33] text-slate-900 dark:text-slate-100 p-3.5 rounded-2xl rounded-bl-sm shadow-sm text-xs leading-relaxed max-w-[90%]">
+                  <p className="whitespace-pre-wrap">
+                    {(config.leadConfirmation?.customMessage || 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}.')
+                      .replace('{customer_name}', 'Rahul Sharma')
+                      .replace('{project_name}', 'Devashree Residency')
+                      .replace('{sales_rep}', 'Gaurav Singh')
+                      .replace('{company_name}', tenant?.name || 'RealSalePro Properties')
+                      .replace('{brochure_url}', 'https://realsalepro.com/b/sample.pdf')
+                      .replace('{lead_source}', 'Meta Ads')}
+                  </p>
+                  <div className="text-[10px] text-slate-400 text-right mt-1.5 flex items-center justify-end gap-1">
+                    <span>10:30 AM</span>
+                    <CheckCheck className="w-3.5 h-3.5 text-sky-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Test Dispatcher */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Send className="w-4 h-4 text-emerald-600" />
+                Live Test Dispatch Tool
+              </h4>
+              <p className="text-xs text-slate-500">
+                Send a real test WhatsApp message to your own phone number to verify instant delivery.
+              </p>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Enter mobile with country code (e.g. 919876543210)"
+                  value={testConfirmPhone}
+                  onChange={(e) => setTestConfirmPhone(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleTestConfirmation}
+                  disabled={testingConfirm || !testConfirmPhone.trim()}
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                >
+                  <Send className={`w-3.5 h-3.5 ${testingConfirm ? 'animate-spin' : ''}`} />
+                  {testingConfirm ? 'Sending Test WhatsApp...' : 'Send Test Lead Confirmation'}
+                </button>
+              </div>
+
+              {testConfirmResult && (
+                <div className={`p-3 rounded-xl text-xs font-semibold ${testConfirmResult.success ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'}`}>
+                  {testConfirmResult.success ? (
+                    <div>
+                      🎉 Message dispatched successfully!
+                      {testConfirmResult.messageId && (
+                        <div className="font-mono text-[10px] mt-1 text-slate-500">
+                          Meta Message ID: {testConfirmResult.messageId}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>❌ {testConfirmResult.error || 'Failed to dispatch test message.'}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
