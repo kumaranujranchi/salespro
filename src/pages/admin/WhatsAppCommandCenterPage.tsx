@@ -38,6 +38,7 @@ import {
   Building2,
   MapPin,
   Lock,
+  Unlock,
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,6 +54,7 @@ export function WhatsAppCommandCenterPage() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [showAiKey, setShowAiKey] = useState(false);
+  const [isApiLocked, setIsApiLocked] = useState(true);
 
   // Intelligence & Learning Patterns state
   const [learningPatterns, setLearningPatterns] = useState<any[]>([]);
@@ -299,7 +301,8 @@ export function WhatsAppCommandCenterPage() {
       const res = await whatsappHubService.listConversations({
         status: statusFilter,
         search: searchQuery,
-        tenant_id: tenant?.id,
+        scope: isPlatformAdmin ? 'platform' : undefined,
+        tenant_id: isPlatformAdmin ? 'platform' : tenant?.id,
       });
       if (res?.conversations) {
         setConversations(res.conversations);
@@ -368,7 +371,9 @@ export function WhatsAppCommandCenterPage() {
   const loadLearningPatterns = async () => {
     setLoadingPatterns(true);
     try {
-      const res = await whatsappHubService.getLearningPatterns({ tenant_id: tenant?.id });
+      const res = await whatsappHubService.getLearningPatterns(
+        isPlatformAdmin ? { scope: 'platform' } : { tenant_id: tenant?.id }
+      );
       if (res?.patterns) {
         setLearningPatterns(res.patterns);
       }
@@ -411,6 +416,7 @@ export function WhatsAppCommandCenterPage() {
         ...(isPlatformAdmin ? { scope: 'platform', tenant_id: null } : { tenant_id: tenant?.id }),
       });
       alert('WhatsApp and DeepSeek AI configuration saved successfully!');
+      setIsApiLocked(true);
       await checkConnection();
     } catch (err: any) {
       alert(`Failed to save config: ${err.message}`);
@@ -422,7 +428,9 @@ export function WhatsAppCommandCenterPage() {
   const loadTemplates = async () => {
     setLoadingTemplates(true);
     try {
-      const res = await whatsappHubService.listTemplates({ tenant_id: tenant?.id });
+      const res = await whatsappHubService.listTemplates(
+        isPlatformAdmin ? { scope: 'platform' } : { tenant_id: tenant?.id }
+      );
       if (res?.templates) {
         setTemplates(res.templates);
       }
@@ -446,7 +454,7 @@ export function WhatsAppCommandCenterPage() {
             text: newTemplate.bodyText,
           },
         ],
-        tenant_id: tenant?.id,
+        ...(isPlatformAdmin ? { scope: 'platform', tenant_id: undefined } : { tenant_id: tenant?.id }),
       });
       alert('Template submitted to Meta for review!');
       setIsTemplateModalOpen(false);
@@ -459,7 +467,9 @@ export function WhatsAppCommandCenterPage() {
 
   const loadBroadcasts = async () => {
     try {
-      const res = await whatsappHubService.listBroadcasts({ tenant_id: tenant?.id });
+      const res = await whatsappHubService.listBroadcasts(
+        isPlatformAdmin ? { scope: 'platform' } : { tenant_id: tenant?.id }
+      );
       if (res?.broadcasts) {
         setBroadcasts(res.broadcasts);
       }
@@ -1642,8 +1652,52 @@ export function WhatsAppCommandCenterPage() {
           </div>
 
           {/* Credentials Form */}
-          <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Official WhatsApp Cloud API Credentials</h3>
+          <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  Official WhatsApp Cloud &amp; AI Engine Credentials
+                  {isApiLocked ? (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-emerald-600" />
+                      Locked &amp; Protected
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                      <Unlock className="w-3 h-3 text-amber-600" />
+                      Unlocked (Edit Mode)
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {isApiLocked
+                    ? 'Credentials are locked to prevent accidental deletion or overwriting. Click Unlock to make changes.'
+                    : 'Edit mode active. Please be careful. Save to automatically re-lock and safeguard your settings.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsApiLocked(!isApiLocked)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
+                  isApiLocked
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {isApiLocked ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5" />
+                    Unlock to Edit
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    Lock Configuration
+                  </>
+                )}
+              </button>
+            </div>
 
             <div className="space-y-4 text-xs">
               <div>
@@ -1652,10 +1706,15 @@ export function WhatsAppCommandCenterPage() {
                 </label>
                 <input
                   type="text"
+                  disabled={isApiLocked}
                   placeholder="e.g. 1435084146353236"
                   value={config.phoneNumberId}
                   onChange={(e) => setConfig({ ...config, phoneNumberId: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  className={`w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-mono ${
+                    isApiLocked
+                      ? 'bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed select-all'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                  }`}
                 />
               </div>
 
@@ -1665,10 +1724,15 @@ export function WhatsAppCommandCenterPage() {
                 </label>
                 <input
                   type="text"
+                  disabled={isApiLocked}
                   placeholder="e.g. 1137788795833452"
                   value={config.wabaId}
                   onChange={(e) => setConfig({ ...config, wabaId: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  className={`w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-mono ${
+                    isApiLocked
+                      ? 'bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed select-all'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                  }`}
                 />
               </div>
 
@@ -1688,10 +1752,15 @@ export function WhatsAppCommandCenterPage() {
                 </div>
                 <input
                   type={showToken ? 'text' : 'password'}
+                  disabled={isApiLocked}
                   placeholder="EAAB..."
                   value={config.accessToken}
                   onChange={(e) => setConfig({ ...config, accessToken: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                  className={`w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-mono ${
+                    isApiLocked
+                      ? 'bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                  }`}
                 />
                 <p className="text-[11px] text-slate-400 mt-1">Generated under Meta Business Settings &gt; System Users &gt; Generate Token with <code>whatsapp_business_messaging</code> permission.</p>
               </div>
@@ -1747,12 +1816,13 @@ export function WhatsAppCommandCenterPage() {
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 cursor-pointer self-start sm:self-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                <label className={`flex items-center gap-2 ${isApiLocked ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'} self-start sm:self-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700`}>
                   <input
                     type="checkbox"
+                    disabled={isApiLocked}
                     checked={config.aiEnabled ?? true}
                     onChange={(e) => setConfig({ ...config, aiEnabled: e.target.checked })}
-                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 disabled:opacity-60"
                   />
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     AI Auto-Pilot Enabled
@@ -1777,7 +1847,8 @@ export function WhatsAppCommandCenterPage() {
                   </div>
                   <input
                     type={showAiKey ? 'text' : 'password'}
-                    placeholder="sk-ce0ab58942ae4498b8dc376ce97976f0"
+                    disabled={isApiLocked}
+                    placeholder="sk-..."
                     value={config.deepseekApiKey || config.aiApiKey || ''}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -1788,7 +1859,11 @@ export function WhatsAppCommandCenterPage() {
                         widget: { ...(config.widget || {}), aiApiKey: val }
                       });
                     }}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+                    className={`w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-mono ${
+                      isApiLocked
+                        ? 'bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                    }`}
                   />
                   <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1801,9 +1876,14 @@ export function WhatsAppCommandCenterPage() {
                     DeepSeek Model Architecture
                   </label>
                   <select
+                    disabled={isApiLocked}
                     value={config.aiModel || 'deepseek-chat'}
                     onChange={(e) => setConfig({ ...config, aiModel: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold"
+                    className={`w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold ${
+                      isApiLocked
+                        ? 'bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                    }`}
                   >
                     <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Ultra Fast &amp; Recommended)</option>
                     <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Deep Thinking Model)</option>
@@ -1818,10 +1898,23 @@ export function WhatsAppCommandCenterPage() {
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 type="submit"
-                disabled={savingConfig}
-                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50"
+                disabled={isApiLocked || savingConfig}
+                className={`px-6 py-2.5 rounded-xl font-semibold text-xs shadow-sm transition-all flex items-center gap-1.5 ${
+                  isApiLocked
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                }`}
               >
-                {savingConfig ? 'Saving...' : 'Save API & AI Configuration'}
+                {savingConfig ? (
+                  'Saving...'
+                ) : isApiLocked ? (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    Configuration Locked (Unlock to Edit)
+                  </>
+                ) : (
+                  'Save API & AI Configuration'
+                )}
               </button>
             </div>
           </form>

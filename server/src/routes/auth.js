@@ -334,7 +334,7 @@ router.post('/send-registration-otp', async (req, res) => {
     console.log(`======================================================\n`);
 
     const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
-    const emailPass = process.env.EMAIL_PASS || 'RealSalePro@2026';
+    const emailPass = process.env.EMAIL_PASS || '';
     const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
     const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
     const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);
@@ -482,7 +482,7 @@ router.post('/forgot-password', async (req, res) => {
 
     // Send Security Code via SMTP
     const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
-    const emailPass = process.env.EMAIL_PASS || 'RealSalePro@2026';
+    const emailPass = process.env.EMAIL_PASS || '';
     const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
     const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
     const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);

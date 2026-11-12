@@ -259,13 +259,19 @@ router.post('/test-confirmation', requireAuth, async (req, res) => {
 
 router.get('/conversations', requireAuth, async (req, res) => {
   try {
-    const { status, search, limit, offset, tenant_id } = req.query;
+    const { status, search, limit, offset, tenant_id, scope } = req.query;
     const isPlatform = isPlatformRole(req.user);
     let effectiveTenantId;
-    if (req.user?.tenant_id) {
+    if (isPlatform) {
+      if (scope === 'all' || tenant_id === 'all') {
+        effectiveTenantId = 'all';
+      } else if (tenant_id && tenant_id !== 'platform') {
+        effectiveTenantId = tenant_id;
+      } else {
+        effectiveTenantId = 'platform';
+      }
+    } else if (req.user?.tenant_id) {
       effectiveTenantId = req.user.tenant_id;
-    } else if (isPlatform) {
-      effectiveTenantId = tenant_id || 'platform';
     } else {
       effectiveTenantId = 'none';
     }
@@ -292,12 +298,10 @@ router.get('/conversations/:id/messages', requireAuth, async (req, res) => {
     }
     const convTenantId = convCheck.rows[0].tenant_id;
 
-    if (req.user?.tenant_id) {
-      if (convTenantId !== req.user.tenant_id) {
+    if (!isPlatform) {
+      if (!req.user?.tenant_id || convTenantId !== req.user.tenant_id) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
       }
-    } else if (!isPlatform && convTenantId !== null) {
-      return res.status(403).json({ error: 'Access denied' });
     }
 
     const messages = await getConversationMessages(req.params.id);
@@ -321,12 +325,10 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
     }
     const convTenantId = convCheck.rows[0].tenant_id;
 
-    if (req.user?.tenant_id) {
-      if (convTenantId !== req.user.tenant_id) {
+    if (!isPlatform) {
+      if (!req.user?.tenant_id || convTenantId !== req.user.tenant_id) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
       }
-    } else if (!isPlatform && convTenantId !== null) {
-      return res.status(403).json({ error: 'Access denied' });
     }
 
     const agentName = req.user?.full_name || 'Agent';
@@ -353,12 +355,10 @@ router.post('/conversations/:id/toggle-bot', requireAuth, async (req, res) => {
     }
     const convTenantId = convCheck.rows[0].tenant_id;
 
-    if (req.user?.tenant_id) {
-      if (convTenantId !== req.user.tenant_id) {
+    if (!isPlatform) {
+      if (!req.user?.tenant_id || convTenantId !== req.user.tenant_id) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
       }
-    } else if (!isPlatform && convTenantId !== null) {
-      return res.status(403).json({ error: 'Access denied' });
     }
 
     const updated = await toggleBotStatus({ conversationId: req.params.id, status });
@@ -397,7 +397,9 @@ router.post('/conversations/:id/label', requireAuth, async (req, res) => {
 router.get('/learning-patterns', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.query.tenant_id || null) : null);
+    const tenantId = (isPlatform && (req.query.scope === 'platform' || !req.query.tenant_id))
+      ? null
+      : (req.query.tenant_id || req.user?.tenant_id || null);
     const data = await listLearningPatterns(tenantId);
     return res.json(data);
   } catch (err) {
@@ -414,7 +416,9 @@ router.get('/learning-patterns', requireAuth, async (req, res) => {
 router.get('/templates', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.query.tenant_id || null) : null);
+    const tenantId = (isPlatform && (req.query.scope === 'platform' || !req.query.tenant_id))
+      ? null
+      : (req.query.tenant_id || req.user?.tenant_id || null);
     const data = await listMetaTemplates(tenantId);
     return res.json(data);
   } catch (err) {
@@ -430,7 +434,9 @@ router.post('/templates', requireAuth, async (req, res) => {
     }
 
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.body.tenant_id || null) : null);
+    const tenantId = (isPlatform && (req.body.scope === 'platform' || !req.body.tenant_id))
+      ? null
+      : (req.body.tenant_id || req.user?.tenant_id || null);
 
     const result = await createMetaTemplate({
       name,
@@ -448,7 +454,9 @@ router.post('/templates', requireAuth, async (req, res) => {
 router.delete('/templates/:name', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.body?.tenant_id || req.query?.tenant_id || null) : null);
+    const tenantId = (isPlatform && (!req.body?.tenant_id && !req.query?.tenant_id))
+      ? null
+      : (req.body?.tenant_id || req.query?.tenant_id || req.user?.tenant_id || null);
     const result = await deleteMetaTemplate(req.params.name, tenantId);
     return res.json(result);
   } catch (err) {
@@ -465,7 +473,9 @@ router.delete('/templates/:name', requireAuth, async (req, res) => {
 router.get('/broadcasts', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.query.tenant_id || 'platform') : 'none');
+    const tenantId = isPlatform
+      ? (req.query.tenant_id || 'platform')
+      : (req.user?.tenant_id || 'none');
     const broadcasts = await listBroadcasts(tenantId);
     return res.json({ success: true, broadcasts });
   } catch (err) {
@@ -481,7 +491,9 @@ router.post('/broadcasts', requireAuth, async (req, res) => {
     }
 
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.body.tenant_id || null) : null);
+    const tenantId = (isPlatform && (req.body.scope === 'platform' || !req.body.tenant_id))
+      ? null
+      : (req.body.tenant_id || req.user?.tenant_id || null);
 
     const campaign = await createBroadcastCampaign({
       title,
