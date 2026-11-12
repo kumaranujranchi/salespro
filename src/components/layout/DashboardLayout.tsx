@@ -225,6 +225,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Close profile dropdown on outside click
   useEffect(() => {
+    document.body.classList.remove('landing-page-active');
+    document.documentElement.classList.remove('js');
+    document.documentElement.classList.remove('lenis');
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
         setIsProfileDropdownOpen(false);

@@ -38,6 +38,9 @@
       var p = window.location.pathname || '';
       if (p && p !== '/' && p !== '/index.html') {
         document.documentElement.classList.add('is-spa-route');
+        if (document.body) {
+          document.body.classList.remove('landing-page-active');
+        }
       } else {
         document.documentElement.classList.add('js');
         if (document.body) {
@@ -51,8 +54,6 @@
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #04120c;
-      color: #f4faf6;
       font-family: "Manrope", system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
     }

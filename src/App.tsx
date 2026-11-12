@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -62,6 +63,22 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
 
+function RouteThemeGuard() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Only the homepage uses the landing page theme and Lenis smooth scroll
+    const isMarketingLanding = location.pathname === '/' || location.pathname === '/index.html';
+    if (!isMarketingLanding) {
+      document.body.classList.remove('landing-page-active');
+      document.documentElement.classList.remove('js');
+      document.documentElement.classList.remove('lenis');
+    }
+  }, [location.pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -70,6 +87,7 @@ function App() {
           <DialogProvider>
             <TutorialProvider>
               <ErrorBoundary>
+                <RouteThemeGuard />
                 <AdminRoleSwitcherBar />
                 <Routes>
                 {/* Public Routes */}

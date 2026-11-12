@@ -11,10 +11,25 @@
 .light-theme {
   --bg-primary: #{$color-bg-light};
   --bg-surface: #{$color-surface-light};
-  --text-primary: #1e293b;
+  --text-primary: #0f172a;
   --text-muted: #64748b;
 
   color-scheme: light;
+  color: #0f172a !important;
+
+  body {
+    color: #0f172a !important;
+    background-color: var(--bg-primary);
+  }
+
+  // Ensure all general links and text in light theme are dark slate, never white
+  a:not([class*="text-"]):not(.btn) {
+    color: #334155;
+  }
+
+  button:not(.btn):not([class*="bg-"]):not([class*="text-"]) {
+    color: #0f172a;
+  }
 }
 
 // 2. Component Specific Light Theme Classes

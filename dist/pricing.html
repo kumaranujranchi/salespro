@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="js">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
@@ -38,6 +38,9 @@
       var p = window.location.pathname || '';
       if (p && p !== '/' && p !== '/index.html') {
         document.documentElement.classList.add('is-spa-route');
+        if (document.body) {
+          document.body.classList.remove('landing-page-active');
+        }
       } else {
         document.documentElement.classList.add('js');
         if (document.body) {
@@ -51,8 +54,6 @@
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #04120c;
-      color: #f4faf6;
       font-family: "Manrope", system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -216,11 +217,11 @@
   ]
 }
   </script>
-  <script type="module" crossorigin src="/assets/index-BODNxP1o.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CLlLIi-L.css">
+  <script type="module" crossorigin src="/assets/index-BSg42WAQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-ByaKlf7a.css">
 </head>
 
-<body class="landing-page-active">
+<body>
   <div class="spa-fallback-loader" aria-hidden="true">
     <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
       <div style="width:36px;height:36px;border:3px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:rsp-spin 0.7s linear infinite;"></div>
