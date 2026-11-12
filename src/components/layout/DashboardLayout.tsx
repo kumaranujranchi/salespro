@@ -223,6 +223,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Ensure landing page marketing classes are stripped on dashboard mount
+  useEffect(() => {
+    document.body.classList.remove('landing-page-active');
+  }, []);
+
   // Close profile dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

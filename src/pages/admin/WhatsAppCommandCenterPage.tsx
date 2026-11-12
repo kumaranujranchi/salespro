@@ -39,12 +39,14 @@ import {
   MapPin,
   Lock,
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
 
 export function WhatsAppCommandCenterPage() {
+  const location = useLocation();
   const { tenant, profile, isActualPlatformAdmin } = useAuth();
-  const isPlatformAdmin = !tenant?.id && Boolean(isActualPlatformAdmin || profile?.role === 'platform_admin' || profile?.role === 'super_admin');
+  const isPlatformAdmin = location.pathname.startsWith('/platform') || profile?.role === 'platform_admin' || (!tenant?.id && profile?.role === 'super_admin') || Boolean(isActualPlatformAdmin);
   const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);

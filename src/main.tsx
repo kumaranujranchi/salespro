@@ -9,6 +9,9 @@ if (typeof window !== 'undefined') {
   const loader = document.querySelector('.spa-fallback-loader');
   if (loader) loader.remove();
   document.documentElement.classList.remove('is-spa-route');
+  if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+    document.body.classList.remove('landing-page-active');
+  }
 }
 
 // Automatically reload when a new service worker takes control (PWA auto-update)
