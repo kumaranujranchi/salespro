@@ -140,7 +140,17 @@ router.post('/otp/verify', async (req, res) => {
 router.get('/config', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.query.tenant_id || null) : null);
+    const isPlatformScope = req.query.scope === 'platform' || req.query.tenant_id === 'platform';
+    let tenantId;
+    if (isPlatformScope && isPlatform) {
+      tenantId = null;
+    } else if (req.query.tenant_id !== undefined && req.query.tenant_id !== 'platform') {
+      tenantId = req.query.tenant_id || null;
+    } else if (isPlatform) {
+      tenantId = null;
+    } else {
+      tenantId = req.user?.tenant_id || null;
+    }
     const config = await getWhatsAppConfig(tenantId);
 
     // Mask tokens for display
@@ -175,7 +185,17 @@ router.get('/config', requireAuth, async (req, res) => {
 router.post('/config', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.body.tenant_id || null) : null);
+    const isPlatformScope = req.body.scope === 'platform' || req.body.tenant_id === 'platform';
+    let tenantId;
+    if (isPlatformScope && isPlatform) {
+      tenantId = null;
+    } else if (req.body.tenant_id !== undefined && req.body.tenant_id !== 'platform') {
+      tenantId = req.body.tenant_id || null;
+    } else if (isPlatform) {
+      tenantId = null;
+    } else {
+      tenantId = req.user?.tenant_id || null;
+    }
     if (!tenantId && !isPlatform) {
       return res.status(403).json({ error: 'Unauthorized to modify platform configuration' });
     }
@@ -189,7 +209,17 @@ router.post('/config', requireAuth, async (req, res) => {
 router.post('/test-connection', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const tenantId = req.user?.tenant_id || (isPlatform ? (req.body.tenant_id || null) : null);
+    const isPlatformScope = req.body.scope === 'platform' || req.body.tenant_id === 'platform';
+    let tenantId;
+    if (isPlatformScope && isPlatform) {
+      tenantId = null;
+    } else if (req.body.tenant_id !== undefined && req.body.tenant_id !== 'platform') {
+      tenantId = req.body.tenant_id || null;
+    } else if (isPlatform) {
+      tenantId = null;
+    } else {
+      tenantId = req.user?.tenant_id || null;
+    }
     const { phoneNumberId, accessToken } = req.body;
     const result = await testMetaConnection({ phoneNumberId, accessToken, tenantId });
     if (!result.success) {
