@@ -1361,6 +1361,9 @@ function generatePage(route) {
       '<div id="root"></div>',
       `<div id="root">${route.content}</div>`
     );
+    // Ensure prerendered static pages have active landing classes on html & body from byte 0
+    html = html.replace('<html lang="en">', '<html lang="en" class="js">');
+    html = html.replace('<body>', '<body class="landing-page-active">');
   }
 
   // Write to destination

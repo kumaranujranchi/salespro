@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="js">
 
 <head>
   <meta charset="UTF-8" />
@@ -33,16 +33,40 @@
         }
       });
     }
-    // Instant SPA Guard: If user is refreshing an internal app/tenant route,
-    // prevent the prerendered marketing landing page from flashing.
+    // Instant SPA / Landing Guard:
     try {
       var p = window.location.pathname || '';
       if (p && p !== '/' && p !== '/index.html') {
         document.documentElement.classList.add('is-spa-route');
+      } else {
+        document.documentElement.classList.add('js');
+        if (document.body) {
+          document.body.classList.add('landing-page-active');
+        }
       }
     } catch (e) {}
   </script>
   <style>
+    /* Base critical styles for instantaneous paint with zero layout shift */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #04120c;
+      color: #f4faf6;
+      font-family: "Manrope", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body.landing-page-active {
+      background-color: #04120c !important;
+      color: #f4faf6 !important;
+      overflow-x: clip;
+    }
+    /* Prevent hero section from collapsing, hiding or jumping before/during hydration */
+    .hero [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
     /* Prevent marketing landing page flash on internal authenticated routes */
     html.is-spa-route .realsalepro-landing-wrapper {
       display: none !important;
@@ -69,7 +93,7 @@
       to { transform: rotate(360deg); }
     }
   </style>
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#04120c" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -202,11 +226,11 @@
   ]
 }
   </script>
-  <script type="module" crossorigin src="/assets/index-DDTE9Ci8.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-csIwJp6K.css">
+  <script type="module" crossorigin src="/assets/index-t8Shha72.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DjborKUS.css">
 </head>
 
-<body>
+<body class="landing-page-active">
   <div class="spa-fallback-loader" aria-hidden="true">
     <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
       <div style="width:36px;height:36px;border:3px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:rsp-spin 0.7s linear infinite;"></div>

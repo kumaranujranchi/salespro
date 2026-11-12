@@ -2931,6 +2931,13 @@ html.js [data-reveal] {
 }
 html.js [data-reveal].is-in { opacity: 1; transform: none; }
 
+/* Keep hero above-the-fold content immediately visible to avoid layout shifts on initial load & refresh */
+.hero [data-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
 @keyframes pulseDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(0.8); }
