@@ -35,6 +35,8 @@ import {
   Code,
   Eye,
   EyeOff,
+  Building2,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
@@ -103,7 +105,7 @@ export function WhatsAppCommandCenterPage() {
 
   // Website Widget Simulator state
   const [simulatorMessages, setSimulatorMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
-    { role: 'assistant', text: 'Namaste! 👋 Welcome to our website. Which property type or location are you looking for today?' }
+    { role: 'assistant', text: 'Namaste! Welcome to our website. Which property type or location are you looking for today?' }
   ]);
   const [simulatorInput, setSimulatorInput] = useState('');
   const [simulatorLoading, setSimulatorLoading] = useState(false);
@@ -130,10 +132,10 @@ export function WhatsAppCommandCenterPage() {
       enabled: true,
       position: 'bottom-right',
       primaryColor: '#25D366',
-      welcomeMessage: 'Hi there! 👋 How can we help you find your dream property today?',
-      businessName: tenant?.name || 'RealSalePro Properties',
-      agentName: 'AI Property Advisor',
-      displayPhone: '917079737773',
+      welcomeMessage: 'Hello, welcome! How can we help you find your preferred property today?',
+      businessName: tenant?.name || 'Workspace',
+      agentName: 'Property Advisor',
+      displayPhone: tenant?.phone || '',
       knowledgeBase: '',
     },
     leadConfirmation: {
@@ -141,7 +143,7 @@ export function WhatsAppCommandCenterPage() {
       autoConfirmGoogleAds: true,
       autoConfirmWebsiteForms: true,
       templateType: 'custom_message',
-      customMessage: 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}. Our senior property specialist {sales_rep} will connect with you shortly. You can also view project details here: {brochure_url}',
+      customMessage: 'Hello {customer_name}, thank you for inquiring about {project_name}. Our property specialist {sales_rep} will connect with you shortly. You can also view project details here: {brochure_url}',
       metaTemplateName: 'lead_welcome_v1',
       excludeManualLeads: true,
     },
@@ -363,7 +365,7 @@ export function WhatsAppCommandCenterPage() {
     setLabelingConv(true);
     try {
       const res = await whatsappHubService.labelConversation(conversationId, label);
-      alert(`🎯 Continuous Learning Feedback Saved! Bot intelligence pattern updated for [${label.replace(/_/g, ' ')}]. Authenticity score updated to ${res.authenticityScore}/100.`);
+      alert(`Continuous Learning Feedback Saved! Bot intelligence pattern updated for [${label.replace(/_/g, ' ')}]. Authenticity score updated to ${res.authenticityScore}/100.`);
       await loadConversations(true);
       if (selectedConv?.id === conversationId) {
         setSelectedConv((prev: any) => ({
@@ -556,108 +558,43 @@ export function WhatsAppCommandCenterPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto shrink-0">
-        <button
-          onClick={() => setActiveTab('inbox')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'inbox'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Live Chat
-          {summary.agent_requested_count > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-amber-400 text-slate-950 font-bold rounded-full animate-pulse">
-              {summary.agent_requested_count}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('api_setup')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'api_setup' || activeTab === 'settings'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          API Setup
-        </button>
-
-        <button
-          onClick={() => { setActiveTab('templates'); loadTemplates(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'templates'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Templates
-        </button>
-
-        <button
-          onClick={() => setActiveTab('widget')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'widget'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          Website Widget & AI Bot
-        </button>
-
-        <button
-          onClick={() => setActiveTab('automations')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'automations'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Zap className="w-4 h-4 text-amber-300" />
-          Lead Automations
-        </button>
-
-        <button
-          onClick={() => { setActiveTab('broadcast'); loadBroadcasts(); loadTemplates(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'broadcast'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Radio className="w-4 h-4" />
-          Bulk Broadcasts
-        </button>
-
-        <button
-          onClick={() => setActiveTab('otp')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'otp'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          OTP Engine
-        </button>
-
-        <button
-          onClick={() => { setActiveTab('intelligence'); loadLearningPatterns(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all shrink-0 ${
-            activeTab === 'intelligence'
-              ? 'bg-purple-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Brain className="w-4 h-4 text-purple-300" />
-          AI Learning
-        </button>
+      {/* Navigation Stick Tabs */}
+      <div className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl inline-flex flex-wrap items-center gap-1 shrink-0 max-w-full">
+        {[
+          { id: 'inbox', label: 'Live Chat', icon: MessageSquare, badge: summary.agent_requested_count > 0 ? summary.agent_requested_count : undefined },
+          { id: 'api_setup', label: 'API Setup', icon: Settings },
+          { id: 'templates', label: 'Templates', icon: FileText, onClick: () => loadTemplates() },
+          { id: 'widget', label: 'Website Widget & AI Bot', icon: Globe },
+          { id: 'automations', label: 'Lead Automations', icon: Zap },
+          { id: 'broadcast', label: 'Bulk Broadcasts', icon: Radio, onClick: () => { loadBroadcasts(); loadTemplates(); } },
+          { id: 'otp', label: 'OTP Engine', icon: Key },
+          { id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id || (tab.id === 'api_setup' && activeTab === 'settings');
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as any);
+                if (tab.onClick) tab.onClick();
+              }}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                isActive
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-slate-700/80 font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/40 border border-transparent'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ========================================================================= */}
@@ -681,22 +618,22 @@ export function WhatsAppCommandCenterPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold">
+              <div className="p-0.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-lg inline-flex items-center gap-1 text-[11px] font-medium w-full">
                 <button
                   onClick={() => setStatusFilter('all')}
-                  className={`px-2.5 py-1 rounded-lg ${statusFilter === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                  className={`flex-1 py-1 rounded-md text-center transition-all ${statusFilter === 'all' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                 >
                   All ({summary.total || 0})
                 </button>
                 <button
                   onClick={() => setStatusFilter('agent_requested')}
-                  className={`px-2.5 py-1 rounded-lg flex items-center gap-1 ${statusFilter === 'agent_requested' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'}`}
+                  className={`flex-1 py-1 rounded-md text-center transition-all ${statusFilter === 'agent_requested' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                 >
                   Needs Agent ({summary.agent_requested_count || 0})
                 </button>
                 <button
                   onClick={() => setStatusFilter('bot_active')}
-                  className={`px-2.5 py-1 rounded-lg ${statusFilter === 'bot_active' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'}`}
+                  className={`flex-1 py-1 rounded-md text-center transition-all ${statusFilter === 'bot_active' ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                 >
                   Bot Active ({summary.bot_active_count || 0})
                 </button>
@@ -744,8 +681,8 @@ export function WhatsAppCommandCenterPage() {
 
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mb-1">
                           {conv.phone}
-                          {conv.metadata?.city ? ` • 📍 ${conv.metadata.city}` : ''}
-                          {conv.metadata?.company_name ? ` • 🏢 ${conv.metadata.company_name}` : ''}
+                          {conv.metadata?.city ? ` • ${conv.metadata.city}` : ''}
+                          {conv.metadata?.company_name ? ` • ${conv.metadata.company_name}` : ''}
                         </p>
 
                         <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
@@ -809,12 +746,12 @@ export function WhatsAppCommandCenterPage() {
                         <span className="font-mono">{selectedConv.phone}</span>
                         {selectedConv.metadata?.city && (
                           <span className="px-1.5 py-0.5 rounded bg-emerald-100/60 dark:bg-emerald-950/60 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-                            📍 {selectedConv.metadata.city}
+                            <MapPin className="w-3 h-3" /> {selectedConv.metadata.city}
                           </span>
                         )}
                         {selectedConv.metadata?.company_name && (
                           <span className="px-1.5 py-0.5 rounded bg-blue-100/60 dark:bg-blue-950/60 text-[11px] font-semibold text-blue-800 dark:text-blue-300">
-                            🏢 {selectedConv.metadata.company_name}
+                            <Building2 className="w-3 h-3" /> {selectedConv.metadata.company_name}
                           </span>
                         )}
                         <span>•</span>
@@ -866,7 +803,7 @@ export function WhatsAppCommandCenterPage() {
                         <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
                       )}
                       Score: {selectedConv.metadata?.authenticity_score ?? 50}/100
-                      {selectedConv.metadata?.token_shield_active && ' • 🛡️ Token Shield Active'}
+                      {selectedConv.metadata?.token_shield_active && ' • Token Shield Active'}
                     </span>
                     {selectedConv.metadata?.lead_classification && (
                       <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold uppercase text-[10px]">
@@ -876,39 +813,39 @@ export function WhatsAppCommandCenterPage() {
                   </div>
 
                   {/* 1-Click Classification Feedback buttons (Train the Bot) */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-400 font-medium">Teach Bot:</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] text-slate-400 font-medium">Classify:</span>
                     <button
                       onClick={() => handleLabelConversation(selectedConv.id, 'genuine_builder')}
                       disabled={labelingConv}
-                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 transition-colors"
-                      title="Reinforce as genuine builder pattern"
+                      className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Reinforce genuine builder inquiry"
                     >
-                      ✓ Builder
+                      Builder
                     </button>
                     <button
                       onClick={() => handleLabelConversation(selectedConv.id, 'genuine_broker')}
                       disabled={labelingConv}
-                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 transition-colors"
-                      title="Reinforce as genuine broker pattern"
+                      className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Reinforce genuine broker inquiry"
                     >
-                      ✓ Broker
+                      Broker
                     </button>
                     <button
                       onClick={() => handleLabelConversation(selectedConv.id, 'competitor_probe')}
                       disabled={labelingConv}
-                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 transition-colors"
-                      title="Flag competitor probing"
+                      className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-amber-500 hover:text-amber-600 dark:hover:text-amber-400 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Flag competitor inquiry"
                     >
-                      ⚠️ Competitor
+                      Competitor
                     </button>
                     <button
                       onClick={() => handleLabelConversation(selectedConv.id, 'spammer_token_drain')}
                       disabled={labelingConv}
-                      className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-200 transition-colors"
-                      title="Flag spam / token drain"
+                      className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-rose-500 hover:text-rose-600 dark:hover:text-rose-400 text-slate-700 dark:text-slate-200 transition-colors"
+                      title="Flag spam or token drain"
                     >
-                      🚫 Token Drain
+                      Spam / Bot
                     </button>
                   </div>
                 </div>
@@ -960,64 +897,64 @@ export function WhatsAppCommandCenterPage() {
 
                 {/* Message Input & Canned Actions */}
                 <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shrink-0">
-                  {/* Canned responses */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
-                    <span className="text-slate-400 text-[10px] font-semibold uppercase flex items-center gap-1 shrink-0">
-                      <Sparkles className="w-3 h-3 text-amber-500" /> Quick Replies:
+                  {/* Quick replies in stick button format */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] py-1">
+                    <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider shrink-0">
+                      Quick Replies:
                     </span>
                     {tenant?.id ? (
                       <>
                         <button
                           type="button"
-                          onClick={() => setReplyText('Namaste! We would be delighted to schedule a guided site visit for you. Which day and time works best for you?')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          onClick={() => setReplyText('Namaste, we would be delighted to schedule a guided site visit for you. Which day and time works best for you?')}
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          🏡 Schedule Site Visit
+                          Schedule Site Visit
                         </button>
                         <button
                           type="button"
                           onClick={() => setReplyText('Here is the latest project pricing sheet, floor plans, and master layout. Would you like me to share the PDF brochure?')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          📄 Send Pricing & Brochure
+                          Pricing & Brochure
                         </button>
                         <button
                           type="button"
                           onClick={() => setReplyText('We currently have 2 BHK and 3 BHK unit options available with premium amenities. May I know your preferred budget range or possession timeline?')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          🏢 Units & Availability
+                          Units & Availability
                         </button>
                         <button
                           type="button"
                           onClick={() => setReplyText('Our senior property advisor can connect with you for 5 minutes to guide you on available inventory and payment plans. Would now be a good time?')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          📞 Propose Advisor Call
+                          Advisor Call
                         </button>
                       </>
                     ) : (
                       <>
                         <button
                           type="button"
-                          onClick={() => setReplyText('Hi! You can start immediately with our 100% Free Forever Tier (up to 1,000 leads). Sign up here: https://realsalepro.com/register')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          onClick={() => setReplyText('Hi, you can start immediately with our 100% Free Forever Tier (up to 1,000 leads). Sign up here: https://realsalepro.com/register')}
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          🚀 Send Free Trial Link
+                          Free Trial Link
                         </button>
                         <button
                           type="button"
                           onClick={() => setReplyText('Our Pro Plan is ₹1,200/month (billed semi-annually) and gives you up to 2,00,000 leads, unlimited user seats, and Meta CAPI webhooks. See full breakdown: https://realsalepro.com/pricing')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          💰 Send Pricing Details
+                          Pricing Details
                         </button>
                         <button
                           type="button"
-                          onClick={() => setReplyText('Would tomorrow at 11:30 AM or 4:00 PM work for a quick 15-minute Google Meet walkthrough of RealSalePro?')}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                          onClick={() => setReplyText('Would tomorrow at 11:30 AM or 4:00 PM work for a quick 15-minute walkthrough of RealSalePro?')}
+                          className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap text-xs transition-colors"
                         >
-                          📅 Propose Demo Call
+                          Schedule Demo
                         </button>
                       </>
                     )}
@@ -1264,7 +1201,7 @@ export function WhatsAppCommandCenterPage() {
                   <option value="inactive_trials">Inactive Free Trials</option>
                 </select>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-1">
-                  <span>📍 <strong>Contact Sources:</strong> Unified auto-sync from CRM Leads (Meta Ads, Google, 99acres, Magicbricks) + WhatsApp Landing Inquiries.</span>
+                  <span><strong>Contact Sources:</strong> Unified auto-sync from CRM Leads (Meta Ads, Google, 99acres, Magicbricks) + WhatsApp Landing Inquiries.</span>
                 </p>
               </div>
 
@@ -1298,12 +1235,12 @@ export function WhatsAppCommandCenterPage() {
                   <option value="">None (Send as Custom Text Message)</option>
                   {templates.filter((t) => t.status === 'APPROVED').map((t) => (
                     <option key={t.name} value={t.name}>
-                      ✓ {t.name} ({t.category} - {t.language})
+                      {t.name} (Approved - {t.language})
                     </option>
                   ))}
                   {templates.filter((t) => t.status !== 'APPROVED').map((t) => (
                     <option key={t.name} value={t.name} disabled>
-                      ⏳ {t.name} ({t.status})
+                      {t.name} ({t.status})
                     </option>
                   ))}
                 </select>
@@ -1550,7 +1487,7 @@ export function WhatsAppCommandCenterPage() {
             {otpSent && (
               <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-3">
                 <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-                  ✔ 6-Digit OTP sent to WhatsApp! Enter it below to verify:
+                  6-digit OTP sent to WhatsApp. Enter it below to verify:
                 </p>
 
                 <div className="flex gap-2">
@@ -1573,7 +1510,7 @@ export function WhatsAppCommandCenterPage() {
 
                 {otpVerifyResult && (
                   <div className={`p-2.5 rounded-lg text-xs font-semibold ${otpVerifyResult.success ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}`}>
-                    {otpVerifyResult.success ? '🎉 Verification Successful!' : `❌ ${otpVerifyResult.error}`}
+                    {otpVerifyResult.success ? 'Verification successful' : (otpVerifyResult.error || 'Verification failed')}
                   </div>
                 )}
               </div>
@@ -1764,18 +1701,18 @@ export function WhatsAppCommandCenterPage() {
           {/* Left Column: Embed & Settings */}
           <div className="lg:col-span-7 space-y-6">
             {/* Embed Code Snippet */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Code className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Code className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   Website Embed Snippet
                 </h3>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                   1-Line Integration
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Copy and paste this script tag right before the closing <code>&lt;/body&gt;</code> tag on your WordPress, Webflow, Shopify, or custom HTML website.
+                Paste this script tag before the closing <code>&lt;/body&gt;</code> tag on WordPress, Webflow, Shopify, or any custom website.
               </p>
 
               <div className="relative">
@@ -1783,7 +1720,7 @@ export function WhatsAppCommandCenterPage() {
                   readOnly
                   rows={2}
                   value={`<script src="${window.location.origin}/api/whatsapp/widget.js" data-tenant="${tenant?.id || config.tenantId || 'default'}"></script>`}
-                  className="w-full p-3 rounded-xl bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none"
+                  className="w-full p-3 rounded-xl bg-slate-950 text-emerald-400 font-mono text-xs focus:outline-none border border-slate-800"
                 />
                 <button
                   type="button"
@@ -1793,25 +1730,25 @@ export function WhatsAppCommandCenterPage() {
                     setCopiedWidgetSnippet(true);
                     setTimeout(() => setCopiedWidgetSnippet(false), 2000);
                   }}
-                  className="absolute right-2.5 top-2.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 shadow-sm"
+                  className="absolute right-2.5 top-2.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium inline-flex items-center gap-1.5 border border-slate-700 transition-colors"
                 >
                   <Copy className="w-3.5 h-3.5" />
-                  {copiedWidgetSnippet ? 'Copied!' : 'Copy Code'}
+                  {copiedWidgetSnippet ? 'Copied' : 'Copy Code'}
                 </button>
               </div>
             </div>
 
             {/* Widget Design & Basic Settings */}
-            <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
+            <form onSubmit={handleSaveConfig} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                     <Globe className="w-4 h-4 text-emerald-600" />
                     Widget Customization & Appearance
                   </h3>
-                  <p className="text-xs text-slate-500">Customize how your floating WhatsApp chat bubble appears to visitors.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Customize your floating WhatsApp chat bubble and greeting message.</p>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={config.widget?.enabled ?? true}
@@ -1819,43 +1756,43 @@ export function WhatsAppCommandCenterPage() {
                       ...config,
                       widget: { ...(config.widget || {}), enabled: e.target.checked }
                     })}
-                    className="w-4 h-4 text-emerald-600 rounded"
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 dark:border-slate-700"
                   />
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Widget Enabled</span>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Widget Enabled</span>
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Business Display Name</label>
+                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Business Display Name</label>
                   <input
                     type="text"
                     value={config.widget?.businessName || ''}
-                    placeholder="e.g. Apex Realty"
+                    placeholder={`e.g. ${tenant?.name || 'Acme Realty'}`}
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), businessName: e.target.value }
                     })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">AI Agent / Consultant Name</label>
+                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">AI Agent / Consultant Name</label>
                   <input
                     type="text"
                     value={config.widget?.agentName || ''}
-                    placeholder="e.g. Rahul (Property Consultant)"
+                    placeholder="e.g. Property Advisor"
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), agentName: e.target.value }
                     })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Direct WhatsApp Mobile Number</label>
+                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Direct WhatsApp Mobile Number</label>
                   <input
                     type="text"
                     value={config.widget?.displayPhone || ''}
@@ -1864,12 +1801,12 @@ export function WhatsAppCommandCenterPage() {
                       ...config,
                       widget: { ...(config.widget || {}), displayPhone: e.target.value }
                     })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Theme Color</label>
+                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Theme Color</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
@@ -1878,7 +1815,7 @@ export function WhatsAppCommandCenterPage() {
                         ...config,
                         widget: { ...(config.widget || {}), primaryColor: e.target.value }
                       })}
-                      className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer p-0.5"
+                      className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer p-0.5 bg-transparent"
                     />
                     <input
                       type="text"
@@ -1887,41 +1824,41 @@ export function WhatsAppCommandCenterPage() {
                         ...config,
                         widget: { ...(config.widget || {}), primaryColor: e.target.value }
                       })}
-                      className="flex-1 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-xs"
+                      className="flex-1 p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-xs text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">Initial Greeting Message</label>
+                  <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">Initial Greeting Message</label>
                   <input
                     type="text"
                     value={config.widget?.welcomeMessage || ''}
-                    placeholder="Hi there! 👋 How can we help you find your dream property today?"
+                    placeholder="Hello, welcome! How can we help you find your preferred property today?"
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), welcomeMessage: e.target.value }
                     })}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
               {/* AI Chatbot Configuration */}
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3.5">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Bot className="w-4 h-4 text-purple-600" />
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Bot className="w-4 h-4 text-emerald-600" />
                     AI Chatbot Engine & Custom API Key
                   </h4>
-                  <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                    Auto-Trained on CRM Data
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                    CRM Data Auto-Trained
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">AI Engine Provider</label>
+                    <label className="block font-medium mb-1 text-slate-700 dark:text-slate-300">AI Engine Provider</label>
                     <select
                       value={config.widget?.aiProvider || config.aiProvider || 'builtin'}
                       onChange={(e) => setConfig({
@@ -1929,7 +1866,7 @@ export function WhatsAppCommandCenterPage() {
                         aiProvider: e.target.value,
                         widget: { ...(config.widget || {}), aiProvider: e.target.value }
                       })}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     >
                       <option value="builtin">Built-in Real Estate Engine (Zero Config)</option>
                       <option value="openai">Custom OpenAI (GPT-4o / GPT-4o-mini)</option>
@@ -1940,11 +1877,11 @@ export function WhatsAppCommandCenterPage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300">Custom AI API Key</label>
+                      <label className="block font-medium text-slate-700 dark:text-slate-300">Custom AI API Key</label>
                       <button
                         type="button"
                         onClick={() => setShowAiKey(!showAiKey)}
-                        className="text-[11px] text-purple-600 hover:underline flex items-center gap-1 font-semibold"
+                        className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 font-medium"
                       >
                         {showAiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                         {showAiKey ? 'Hide' : 'Show'}
@@ -1962,25 +1899,25 @@ export function WhatsAppCommandCenterPage() {
                           widget: { ...(config.widget || {}), aiApiKey: val }
                         });
                       }}
-                      className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                      className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
 
                 {/* Business Knowledge Base Training */}
                 <div className="text-xs space-y-1.5">
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="block font-medium text-slate-700 dark:text-slate-300">
                     Business Knowledge Base & FAQs (Trained into AI Bot)
                   </label>
                   <textarea
                     rows={4}
-                    placeholder="Enter key property details, price per sqft, payment plans, site visit timings, amenities, and FAQs. The AI chatbot will use this data to answer visitor questions accurately."
+                    placeholder="Enter property details, price per sqft, payment plans, site visit timings, amenities, and FAQs. The AI chatbot will use this data to answer visitor questions accurately."
                     value={config.widget?.knowledgeBase || ''}
                     onChange={(e) => setConfig({
                       ...config,
                       widget: { ...(config.widget || {}), knowledgeBase: e.target.value }
                     })}
-                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                    className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                   <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1989,11 +1926,11 @@ export function WhatsAppCommandCenterPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
                 <button
                   type="submit"
                   disabled={savingConfig}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all disabled:opacity-50"
+                  className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs shadow-xs transition-all disabled:opacity-50"
                 >
                   {savingConfig ? 'Saving...' : 'Save Widget & AI Settings'}
                 </button>
@@ -2003,50 +1940,49 @@ export function WhatsAppCommandCenterPage() {
 
           {/* Right Column: Live Interactive Widget Simulator */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 shadow-lg">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Live Widget Simulator</h4>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Live Widget Simulator</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Test your AI bot before deploying it to your website.
+                  </p>
                 </div>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono">
-                  Interactive Test
+                <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2.5 py-0.5 rounded-full font-medium">
+                  Preview
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">
-                Type questions below to test how your AI chatbot responds to potential buyers before deploying to your website.
-              </p>
 
               {/* Chat Container */}
-              <div className="mt-4 bg-[#0B141A] rounded-xl overflow-hidden border border-slate-800 flex flex-col h-[420px]">
+              <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[420px] bg-[#efeae2] dark:bg-[#0b141a]">
                 {/* Header */}
-                <div className="bg-[#1F2C34] px-4 py-3 flex items-center gap-3 border-b border-slate-700/50">
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-xs text-white">
-                    {config.widget?.agentName?.charAt(0) || 'A'}
+                <div className="bg-[#008069] dark:bg-[#1f2c34] px-4 py-3 flex items-center gap-3 text-white shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold text-xs text-white">
+                    {config.widget?.agentName?.charAt(0) || 'P'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-bold text-white truncate">
-                      {config.widget?.businessName || tenant?.name || 'RealSalePro Properties'}
+                    <div className="text-xs font-semibold text-white truncate">
+                      {config.widget?.businessName || tenant?.name || 'Property Inquiries'}
                     </div>
-                    <div className="text-[10px] text-emerald-400 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      {config.widget?.agentName || 'AI Assistant'} • Online
+                    <div className="text-[10px] text-white/80 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>
+                      {config.widget?.agentName || 'Property Advisor'} • Online
                     </div>
                   </div>
                 </div>
 
                 {/* Message Thread */}
-                <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs bg-[#0c1317]">
+                <div className="flex-1 p-3.5 overflow-y-auto space-y-2.5 text-xs">
                   {simulatorMessages.map((msg, i) => (
                     <div
                       key={i}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl px-3.5 py-2 leading-relaxed text-xs ${
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2 leading-relaxed text-xs shadow-2xs ${
                           msg.role === 'user'
-                            ? 'bg-[#005C4B] text-white rounded-br-sm'
-                            : 'bg-[#202C33] text-slate-100 rounded-bl-sm shadow-sm'
+                            ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-900 dark:text-white rounded-br-xs'
+                            : 'bg-white dark:bg-[#202c33] text-slate-900 dark:text-slate-100 rounded-bl-xs border border-slate-200/50 dark:border-transparent'
                         }`}
                       >
                         {msg.text}
@@ -2055,10 +1991,10 @@ export function WhatsAppCommandCenterPage() {
                   ))}
                   {simulatorLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-[#202C33] text-slate-300 rounded-2xl px-3.5 py-2 text-xs flex items-center gap-2">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                      <div className="bg-white dark:bg-[#202c33] text-slate-500 rounded-2xl px-3.5 py-2 text-xs flex items-center gap-1.5 border border-slate-200/50 dark:border-transparent shadow-2xs">
+                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
                       </div>
                     </div>
                   )}
@@ -2066,29 +2002,80 @@ export function WhatsAppCommandCenterPage() {
 
                 {/* Lead Captured Alert */}
                 {simulatorLeadCaptured && (
-                  <div className="px-3 py-1.5 bg-emerald-950/80 border-t border-emerald-800 text-[11px] text-emerald-300 flex items-center justify-between">
-                    <span>🎯 Lead captured: <strong>{simulatorLeadCaptured}</strong></span>
-                    <span className="text-[10px] uppercase font-bold text-emerald-400">Auto-saved to CRM</span>
+                  <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/80 border-t border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                    <span>Lead captured: <strong>{simulatorLeadCaptured}</strong></span>
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">Saved to CRM</span>
                   </div>
                 )}
 
                 {/* Input Area */}
-                <form onSubmit={handleSimulatorSend} className="p-2.5 bg-[#1F2C34] flex items-center gap-2 border-t border-slate-700/50">
+                <form onSubmit={handleSimulatorSend} className="p-2 bg-white dark:bg-[#1f2c34] flex items-center gap-2 border-t border-slate-200 dark:border-slate-800">
                   <input
                     type="text"
                     value={simulatorInput}
                     onChange={(e) => setSimulatorInput(e.target.value)}
                     placeholder="Ask about properties, pricing, or enter phone..."
-                    className="flex-1 bg-[#2A3942] text-white text-xs px-3.5 py-2 rounded-xl focus:outline-none placeholder-slate-400"
+                    className="flex-1 bg-slate-100 dark:bg-[#2a3942] text-slate-900 dark:text-white text-xs px-3.5 py-2 rounded-full focus:outline-none placeholder-slate-400"
                   />
                   <button
                     type="submit"
                     disabled={simulatorLoading || !simulatorInput.trim()}
-                    className="w-8 h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shrink-0 disabled:opacity-50 transition-colors"
+                    className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 disabled:opacity-50 transition-colors"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3.5 h-3.5" />
                   </button>
                 </form>
+              </div>
+
+              {/* Quick test stick buttons */}
+              <div className="pt-2">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                  Test Sample Queries:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'What 3 BHK options are available?',
+                    'Can I schedule a site visit?',
+                    'Share pricing and payment plans',
+                  ].map((query, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={simulatorLoading}
+                      onClick={async () => {
+                        const newHistory = [...simulatorMessages, { role: 'user' as const, text: query }];
+                        setSimulatorMessages(newHistory);
+                        setSimulatorLoading(true);
+                        try {
+                          const res = await whatsappHubService.sendWidgetChat({
+                            tenantId: tenant?.id || config.tenantId || 'default',
+                            message: query,
+                            conversationHistory: newHistory.map(m => ({
+                              role: m.role === 'assistant' ? 'assistant' : 'user',
+                              content: m.text,
+                            })),
+                          });
+                          if (res?.reply) {
+                            setSimulatorMessages([...newHistory, { role: 'assistant' as const, text: res.reply }]);
+                          }
+                          if (res?.detectedPhone) {
+                            setSimulatorLeadCaptured(res.detectedPhone);
+                          }
+                        } catch (err: any) {
+                          setSimulatorMessages([
+                            ...newHistory,
+                            { role: 'assistant' as const, text: 'Bot response: ' + (err.message || 'Please check your connection.') },
+                          ]);
+                        } finally {
+                          setSimulatorLoading(false);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors disabled:opacity-50"
+                    >
+                      {query}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -2266,7 +2253,7 @@ export function WhatsAppCommandCenterPage() {
               <div className="bg-[#ECE5DD] dark:bg-[#0c1317] p-4 rounded-xl border border-slate-200 dark:border-slate-800 min-h-[220px] flex flex-col justify-end">
                 <div className="bg-white dark:bg-[#202C33] text-slate-900 dark:text-slate-100 p-3.5 rounded-2xl rounded-bl-sm shadow-sm text-xs leading-relaxed max-w-[90%]">
                   <p className="whitespace-pre-wrap">
-                    {(config.leadConfirmation?.customMessage || 'Hello {customer_name}! 👋 Thank you for inquiring about {project_name}.')
+                    {(config.leadConfirmation?.customMessage || 'Hello {customer_name}, thank you for inquiring about {project_name}.')
                       .replace('{customer_name}', 'Rahul Sharma')
                       .replace('{project_name}', 'Devashree Residency')
                       .replace('{sales_rep}', 'Gaurav Singh')
@@ -2316,7 +2303,7 @@ export function WhatsAppCommandCenterPage() {
                 <div className={`p-3 rounded-xl text-xs font-semibold ${testConfirmResult.success ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'}`}>
                   {testConfirmResult.success ? (
                     <div>
-                      🎉 Message dispatched successfully!
+                      Message dispatched successfully.
                       {testConfirmResult.messageId && (
                         <div className="font-mono text-[10px] mt-1 text-slate-500">
                           Meta Message ID: {testConfirmResult.messageId}
@@ -2324,7 +2311,7 @@ export function WhatsAppCommandCenterPage() {
                       )}
                     </div>
                   ) : (
-                    <div>❌ {testConfirmResult.error || 'Failed to dispatch test message.'}</div>
+                    <div>{testConfirmResult.error || 'Failed to dispatch test message.'}</div>
                   )}
                 </div>
               )}

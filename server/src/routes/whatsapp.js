@@ -569,8 +569,8 @@ router.get('/widget.js', (req, res) => {
     var themeColor = cfg.primaryColor || '#25D366';
     var businessName = cfg.businessName || 'Property Consultant';
     var agentName = cfg.agentName || 'AI Assistant';
-    var welcomeMsg = cfg.welcomeMessage || 'Hi there! 👋 How can we help you find your dream property today?';
-    var waPhone = (cfg.displayPhone || '917079737773').replace(/\\D/g, '');
+    var welcomeMsg = cfg.welcomeMessage || 'Hello, welcome! How can we help you find your preferred property today?';
+    var waPhone = (cfg.displayPhone || '').replace(/\\D/g, '');
 
     var chatOpen = false;
     var history = [];
