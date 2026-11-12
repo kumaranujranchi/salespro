@@ -37,6 +37,7 @@ import {
   EyeOff,
   Building2,
   MapPin,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
@@ -151,9 +152,10 @@ export function WhatsAppCommandCenterPage() {
   });
   const [savingConfig, setSavingConfig] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [copiedVerifyToken, setCopiedVerifyToken] = useState(false);
 
   useEffect(() => {
-    if (!isPlatformAdmin && activeTab === 'intelligence') {
+    if (!isPlatformAdmin && (activeTab === 'intelligence' || activeTab === 'otp')) {
       setActiveTab('inbox');
     }
   }, [isPlatformAdmin, activeTab]);
@@ -501,6 +503,12 @@ export function WhatsAppCommandCenterPage() {
     setTimeout(() => setCopiedWebhook(false), 2000);
   };
 
+  const copyVerifyToken = () => {
+    navigator.clipboard.writeText(config.webhookVerifyToken || 'realsalepro_wa_secret');
+    setCopiedVerifyToken(true);
+    setTimeout(() => setCopiedVerifyToken(false), 2000);
+  };
+
   return (
     <div className="space-y-6 pb-12 pt-3 md:pt-4">
       {/* Top Header */}
@@ -574,7 +582,7 @@ export function WhatsAppCommandCenterPage() {
           { id: 'widget', label: 'Website Widget & AI Bot', icon: Globe },
           { id: 'automations', label: 'Lead Automations', icon: Zap },
           { id: 'broadcast', label: 'Bulk Broadcasts', icon: Radio, onClick: () => { loadBroadcasts(); loadTemplates(); } },
-          { id: 'otp', label: 'OTP Engine', icon: Key },
+          ...(isPlatformAdmin ? [{ id: 'otp', label: 'OTP Engine', icon: Key }] : []),
           ...(isPlatformAdmin ? [{ id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() }] : []),
         ].map((tab) => {
           const Icon = tab.icon;
@@ -1456,9 +1464,9 @@ export function WhatsAppCommandCenterPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: WHATSAPP OTP TESTER                                                */}
+      {/* TAB 4: WHATSAPP OTP TESTER (PLATFORM ADMIN ONLY)                          */}
       {/* ========================================================================= */}
-      {activeTab === 'otp' && (
+      {isPlatformAdmin && activeTab === 'otp' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6 max-w-xl">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -1677,15 +1685,33 @@ export function WhatsAppCommandCenterPage() {
               </div>
 
               <div>
-                <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                  Webhook Verify Token
-                </label>
-                <input
-                  type="text"
-                  value={config.webhookVerifyToken}
-                  onChange={(e) => setConfig({ ...config, webhookVerifyToken: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                    Webhook Verify Token (Fixed &amp; Read-Only)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={copyVerifyToken}
+                    className="text-[11px] text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-semibold"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    {copiedVerifyToken ? 'Copied!' : 'Copy Token'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    value={config.webhookVerifyToken || 'realsalepro_wa_secret'}
+                    className="w-full p-2.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-mono text-xs cursor-not-allowed select-all"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Fixed system token for webhook handshake. Copy and paste this exact value into your Meta Developer App.
+                </p>
               </div>
             </div>
 
