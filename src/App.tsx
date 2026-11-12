@@ -70,7 +70,6 @@ function App() {
           <DialogProvider>
             <TutorialProvider>
               <ErrorBoundary>
-                <AdminRoleSwitcherBar />
                 <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />

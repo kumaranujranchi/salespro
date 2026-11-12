@@ -91,9 +91,8 @@ export function AdminRoleSwitcherBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // STRICT GUARD: Must be 100% invisible to regular users, staff, and clients.
-  // Only rendered if user session is genuine SaaS/Platform Admin.
-  if (!user || !isActualPlatformAdmin) {
+  // STRICT GUARD: Disabled and hidden.
+  if (!user || !isActualPlatformAdmin || true) {
     return null;
   }
 
