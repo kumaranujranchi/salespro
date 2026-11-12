@@ -732,7 +732,7 @@ function evaluateVisitorIntent(messageText, customerName) {
   ) {
     return {
       intent: 'pricing',
-      reply: `RealSalePro do simple plans offer karta hai:\n1. *Free Forever*: ₹0 (1,000 active leads aur 5 team users tak bilkul free, no credit card required).\n2. *Pro Plan*: ₹1,000/month (yearly) ya ₹1,200/month (6-month) — isme *UNLIMITED team members* aur 2,00,000 leads milte hain (per user koi charge nahi)!\n\nAap abhi free start kar sakte hain: https://realsalepro.com/register`,
+      reply: `RealSalePro do simple plans offer karta hai:\n1. *Free Forever*: ₹0 (1,000 active leads aur 5 team users tak bilkul free, no credit card required).\n2. *Pro Plan*: ₹1,000/month (billed ₹12,000 annually) ya ₹1,500/month (monthly) — isme *UNLIMITED team members* aur 2,00,000 leads milte hain (per user koi charge nahi)!\n\nAap abhi free start kar sakte hain: https://realsalepro.com/register`,
     };
   }
 

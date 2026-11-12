@@ -314,6 +314,10 @@ export function LeadManagementFeaturePage() {
                 </div>
               </div>
             </div>
+
+            <div data-reveal style={{ maxWidth: '840px', margin: '32px auto 0', padding: '16px 20px', background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '14px', textAlign: 'center', fontSize: '13.5px', color: '#0a2018' }}>
+              Scale your lead management pipeline with full transparent pricing: View our <a href="/pricing" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Pro &amp; Enterprise Plans</a> or explore our secure <a href="/integration" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>BYOD Database Integrations</a>.
+            </div>
           </div>
         </section>
 

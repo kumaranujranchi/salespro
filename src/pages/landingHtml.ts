@@ -1134,7 +1134,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <b data-price>₹1,000</b><em>/month</em>
             </div>
             <p class="price__desc" data-price-note>Billed ₹12,000 annually — save 33%.</p>
-            <a class="btn btn--primary btn--block" href="https://realsalepro.com/pricing" style="margin-top: 22px !important; margin-bottom: 26px !important;">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn--primary btn--block" href="/pricing" style="margin-top: 22px !important; margin-bottom: 26px !important;">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
             <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> Everything in Free</li>
               <li><svg class="icon"><use href="#i-check"/></svg> Up to 2,00,000 leads</li>
@@ -1164,6 +1164,10 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
 
         <p class="sr-only" aria-live="polite" data-price-live></p>
         <p class="price-fine" data-reveal style="margin-top: 52px !important; margin-bottom: 24px !important; font-size: 12.5px !important; text-align: center !important;">No credit card required for the Free plan. Self-hosted database setup is quoted separately.</p>
+
+        <div data-reveal data-reveal-delay="100" style="max-width: 820px; margin: 30px auto 0; padding: 18px 24px; background: rgba(0, 229, 118, 0.05); border: 1px solid rgba(0, 229, 118, 0.2); border-radius: 14px; text-align: center; font-size: 14px; color: var(--muted-dark);">
+          🤝 <strong>Partner &amp; Affiliate Network:</strong> Are you a real estate consultant, digital marketing agency, or broker? Join our <a href="/referral-program" style="color: var(--mint-bright); text-decoration: underline; font-weight: 700;">Partner &amp; Referral Program</a> to earn 20% recurring monthly commissions. Or compare all plan features on our <a href="/pricing" style="color: var(--mint-bright); text-decoration: underline; font-weight: 700;">Pricing Overview</a>.
+        </div>
       </div>
     </section>
 

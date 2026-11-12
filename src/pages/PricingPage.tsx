@@ -288,15 +288,15 @@ export function PricingPage() {
           {
             "@type": "Offer",
             "name": "Pro Plan",
-            "price": "999",
+            "price": "1000",
             "priceCurrency": "INR",
             "priceSpecification": {
               "@type": "UnitPriceSpecification",
-              "price": "999",
+              "price": "1000",
               "priceCurrency": "INR",
               "unitCode": "MON"
             },
-            "description": "Up to 2,00,000 leads, unlimited users, role-based phone masking, and priority support."
+            "description": "Up to 2,00,000 leads, unlimited users, role-based phone masking, and priority support. ₹1,000/mo billed ₹12,000 annually or ₹1,500/mo billed monthly."
           }
         ]
       }
@@ -307,7 +307,7 @@ export function PricingPage() {
     <>
       <SEOHead
         title="Real Estate CRM Pricing & Plans | RealSalePro"
-        description="Transparent real estate CRM pricing for Indian builders and brokers. Free forever tier up to 1,000 leads, Pro plan at ₹999/mo with unlimited team access."
+        description="Transparent real estate CRM pricing for Indian builders and brokers. Free forever tier up to 1,000 leads, Pro plan at ₹1,000/mo (billed ₹12,000 annually) with unlimited team access."
         canonicalUrl="https://realsalepro.com/pricing"
         keywords="real estate crm pricing, free real estate crm cost, crm plans india, property dealer crm price"
         jsonLd={pricingSchema}

@@ -448,6 +448,10 @@ export function FreeCRMPage() {
             <p className="price-fine" data-reveal style={{ marginTop: '48px', marginBottom: '16px', fontSize: '13px', textAlign: 'center' }}>
               No credit card required for the Free plan. 1-click CSV database export anytime.
             </p>
+
+            <div data-reveal style={{ maxWidth: '840px', margin: '24px auto 0', padding: '16px 20px', background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '14px', textAlign: 'center', fontSize: '13.5px', color: '#0a2018' }}>
+              Looking for our full tier comparison or enterprise hosting? Review our complete <a href="/pricing" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Pricing Plans</a>, explore <a href="/integration" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>BYOD Database Integrations</a>, or earn with the <a href="/referral-program" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Referral Partner Program</a>.
+            </div>
           </div>
         </section>
 

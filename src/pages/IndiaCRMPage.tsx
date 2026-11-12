@@ -289,6 +289,7 @@ export function IndiaCRMPage() {
                   <li>• Live unit availability matrix (Available, Blocked, Booked, Sold).</li>
                   <li>• Sales executive target tracking and incentive calculators.</li>
                   <li>• Direct Meta CAPI integration for maximum ad optimization.</li>
+                  <li>• Enterprise private database hosting available via <a href="/integration" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>BYOD Database Integration</a>.</li>
                   <li>• Multi-project dashboard for group developers across cities.</li>
                 </ul>
               </div>
@@ -301,7 +302,7 @@ export function IndiaCRMPage() {
                   <li>• Automatic customer phone number masking to prevent lead theft.</li>
                   <li>• 1-Click WhatsApp follow-ups with brochures and video tours.</li>
                   <li>• Tailored for <Link to="/crm-for-real-estate-brokers" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Brokers &amp; Channel Partners</Link> across major Indian metros.</li>
-                  <li>• 100% Free Forever up to 1,000 client leads on our <Link to="/free-real-estate-crm" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Free Real Estate CRM</Link>.</li>
+                  <li>• 100% Free Forever up to 1,000 client leads on our <Link to="/free-real-estate-crm" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Free Real Estate CRM</Link> or compare upgrade options on <a href="/pricing" style={{ color: '#059669', fontWeight: 700, textDecoration: 'underline' }}>Pricing Plans</a>.</li>
                 </ul>
               </div>
             </div>
