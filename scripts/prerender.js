@@ -15,6 +15,11 @@ if (!fs.existsSync(templatePath)) {
 }
 const baseHtml = fs.readFileSync(templatePath, 'utf8');
 
+// Write clean base SPA template to dist/app.html & dist/200.html (for internal SPA routes)
+fs.writeFileSync(path.join(distDir, 'app.html'), baseHtml, 'utf8');
+fs.writeFileSync(path.join(distDir, '200.html'), baseHtml, 'utf8');
+console.log('✅ Generated clean SPA fallback template -> dist/app.html & dist/200.html');
+
 // 2. Extract landingHtml for homepage
 let landingPageBody = '';
 const landingHtmlPath = path.join(rootDir, 'src/pages/landingHtml.ts');
