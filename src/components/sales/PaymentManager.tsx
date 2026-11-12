@@ -96,13 +96,14 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
             toast.info("Downloading payment ledger is a Pro feature. Please contact your organization administrator to upgrade the plan.");
         }
     };
-    const totalReceived = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-    const totalRevenue = sale.total_revenue || 0;
-    const pendingAmount = totalRevenue - totalReceived;
+    const paymentItems = Array.isArray(payments) ? payments : [];
+    const totalReceived = paymentItems.reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
+    const totalRevenue = Number(sale.total_revenue) || 0;
+    const pendingAmount = Math.max(0, totalRevenue - totalReceived);
     const receivedPercentage = totalRevenue > 0 ? (totalReceived / totalRevenue) * 100 : 0;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${sale.customer?.name}`} size="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${sale.customer?.name || sale.customer_name || 'Customer'}`} size="xl">
             <div className="p-6 space-y-6">
                 <div className="grid grid-cols-3 gap-4">
                     <SummaryCard title="Total Value" value={formatCurrency(totalRevenue)} color="text-gray-900" />
@@ -116,7 +117,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerPDF(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerPDF(sale, paymentItems, tenant)}
                             className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                             title="Download PDF"
                         >
@@ -126,7 +127,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerExcel(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerExcel(sale, paymentItems, tenant)}
                             className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                             title="Download Excel"
                         >
@@ -136,7 +137,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={isFreePlan ? handleLockedLedgerClick : () => sharePaymentLedger(sale, payments || [], tenant)}
+                            onClick={isFreePlan ? handleLockedLedgerClick : () => sharePaymentLedger(sale, paymentItems, tenant)}
                             className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                             title="Share Ledger"
                         >
@@ -189,7 +190,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                             </tr>
                         </thead>
                         <tbody className="divide-y">
-                            {payments?.map(p => (
+                            {paymentItems.map(p => (
                                 <tr key={p._id}>
                                     <td className="px-4 py-2">{p.payment_date}</td>
                                     <td className="px-4 py-2 capitalize">{p.payment_type}</td>
