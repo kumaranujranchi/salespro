@@ -4,10 +4,9 @@ import { useMutation, useAction } from "../lib/reactive";
 import { api } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
 import { whatsappHubService } from '../lib/services';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Check, CheckCircle2, AlertCircle, Eye, EyeOff, ShieldCheck, CreditCard, Zap } from 'lucide-react';
 import { SEOHead } from '../components/seo/SEOHead';
+import '../styles/register.css';
 
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
@@ -191,6 +190,17 @@ export function RegisterCompanyPage() {
     }
   };
 
+  const isPaidPlan = !!(planName && planName !== 'Free' && planName !== 'Free Forever' && planAmount && parseInt(planAmount) > 0);
+  const passwordMismatch =
+    formData.confirmPassword.length > 0 && formData.password !== formData.confirmPassword;
+  const refFromLink = !!searchParams.get('ref');
+
+  // Hide the browser's page scrollbar only while /register is mounted.
+  useEffect(() => {
+    document.documentElement.classList.add('rr-page');
+    return () => document.documentElement.classList.remove('rr-page');
+  }, []);
+
   return (
     <>
       <SEOHead
@@ -199,242 +209,369 @@ export function RegisterCompanyPage() {
         canonicalUrl="https://realsalepro.com/register"
         noindex={true}
       />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative">
-        <Link to="/" className="absolute top-8 left-8 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-2 transition-colors">
-          <ArrowRight className="h-4 w-4 rotate-180" />
-          Back to Home
-        </Link>
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center flex-col items-center">
-            <img src="/images/RealSalePro_DarkLogo.png" alt="RealSalePro" className="h-12 w-auto dark:hidden" />
-            <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro" className="h-12 w-auto hidden dark:block" />
+      <div className="rr">
+        <div className="rr__bg" aria-hidden="true">
+          <div className="rr__grid" />
+          <div className="rr__glow rr__glow--a" />
+          <div className="rr__glow rr__glow--b" />
+          <div className="rr__ring" />
+          <div className="rr__noise" />
+        </div>
+
+        {/* ---------- Left: story ---------- */}
+        <aside className="rr__story">
+          <div className="rr__top">
+            <Link to="/" className="rr__brand" aria-label="RealSalePro home">
+              <img src="/assets/img/logo-light.png" alt="RealSalePro" width={176} height={34} />
+            </Link>
+            <Link to="/" className="rr__back">
+              <ArrowLeft aria-hidden="true" />
+              <span>Back to home</span>
+            </Link>
           </div>
-          <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {verificationStep ? 'Verify your Email' : 'Create Your Free RealSalePro Account'}
-          </h1>
-        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          {verificationStep
-            ? `We've sent a 6-digit code to ${formData.email}`
-            : 'Start managing your real estate leads today.'
-          }
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="rr__copy">
+            <p className="rr__eyebrow">
+              <span className="rr__dot" />
+              100% free real-estate CRM
+              <span className="rr__new">No card, ever</span>
+            </p>
+            <h1 className="rr__title">
+              Turn every enquiry into a <em>booking</em>.
+            </h1>
+            <p className="rr__lede">
+              Set up your workspace in under two minutes. Pull leads from Meta, Google,
+              Magicbricks and WhatsApp into one calm pipeline. Free up to <strong>1,000 leads</strong>.
+            </p>
 
-          {!verificationStep ? (
-            /* Step 1: Registration Form */
-            <form className="space-y-6" onSubmit={handleSignup}> {/* Changed onSubmit to handleSignup */}
-              <div>
-                <Input
-                  label="Company Name"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Acme Corp"
-                />
-              </div>
+            <ul className="rr__perks">
+              {[
+                'Auto-sync Meta, Google Ads, 99acres & WhatsApp leads',
+                'Site visits, inventory & incentives in one tab',
+                'Up to 5 users free. Upgrade only when you grow',
+                'Free onboarding & Excel data migration',
+              ].map((perk) => (
+                <li key={perk}>
+                  <span className="rr__tick"><Check aria-hidden="true" /></span>
+                  {perk}
+                </li>
+              ))}
+            </ul>
 
-              <div>
-                <Input
-                  label="Your Name"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Rahul Sharma"
-                />
-              </div>
+            <ul className="rr__facts">
+              <li><b>₹0</b><span>Free forever plan</span></li>
+              <li><b>1,000</b><span>Lead capacity</span></li>
+              <li><b>4.8<i>★</i></b><span>1,056 reviews</span></li>
+            </ul>
+          </div>
 
-              <div>
-                <Input
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="rahul@example.com"
-                />
-              </div>
+          <div className="rr__proof rr__proof--story">
+            <span className="rr__avatars" aria-hidden="true">
+              <i style={{ '--av': 'linear-gradient(135deg,#34d399,#059669)' } as React.CSSProperties}>RS</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#f0c987,#c98b3c)' } as React.CSSProperties}>AK</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#8fb7ff,#3f6fd8)' } as React.CSSProperties}>NP</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#c0f08a,#79b131)' } as React.CSSProperties}>VJ</i>
+            </span>
+            <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
+          </div>
+        </aside>
 
-              <div>
-                <Input
-                  label="Phone Number"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="+91 98765 43210"
-                />
-              </div>
+        {/* ---------- Right: form ---------- */}
+        <main className="rr__panel">
+          <div className="rr__card">
+            <div className="rr__steps" aria-label="Signup progress">
+              <span className={`rr__step ${verificationStep ? 'is-done' : 'is-active'}`}>
+                <b>{verificationStep ? <Check aria-hidden="true" /> : '1'}</b>
+                <span>Your details</span>
+              </span>
+              <span className="rr__stepline" />
+              <span className={`rr__step ${verificationStep ? 'is-active' : ''}`}>
+                <b>2</b>
+                <span>Verify</span>
+              </span>
+            </div>
 
-              <div>
-                <Input
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <Input
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <Input
-                  label="Referral Code (Optional)"
-                  name="referralCode"
-                  value={formData.referralCode}
-                  onChange={handleInputChange}
-                  placeholder="Enter code if you have one"
-                  disabled={!!searchParams.get('ref')}
-                  helperText={searchParams.get('ref') ? "Referral code applied from link" : ""}
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">
-                  {error}
-                </div>
+            <h2 className="rr__heading">
+              {verificationStep ? 'Check your inbox' : 'Create your free account'}
+            </h2>
+            <p className="rr__sub">
+              {verificationStep ? (
+                <>We've sent a 6-digit code to <strong>{formData.email}</strong>{formData.phone ? ' and your WhatsApp' : ''}.</>
+              ) : (
+                'Start managing your real estate leads today.'
               )}
+            </p>
 
-              <div>
-                <Button
-                  type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  disabled={loading}
+            {isPaidPlan && (
+              <div className="rr__plan">
+                <span>Selected plan: <b>{planName}</b></span>
+                <span>₹{Number(planAmount).toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
+            {!verificationStep ? (
+              /* Step 1: Registration form */
+              <form className="rr__form" onSubmit={handleSignup}>
+                <div className="rr__row">
+                  <Field label="Company name" htmlFor="rr-company">
+                    <input
+                      id="rr-company"
+                      className="rr__input"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleInputChange}
+                      required
+                      autoComplete="organization"
+                      placeholder="Acme Realty"
+                    />
+                  </Field>
+                  <Field label="Your name" htmlFor="rr-name">
+                    <input
+                      id="rr-name"
+                      className="rr__input"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      required
+                      autoComplete="name"
+                      placeholder="Rahul Sharma"
+                    />
+                  </Field>
+                </div>
+
+                <div className="rr__row">
+                  <Field label="Work email" htmlFor="rr-email">
+                    <input
+                      id="rr-email"
+                      className="rr__input"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      autoComplete="email"
+                      placeholder="rahul@company.com"
+                    />
+                  </Field>
+                  <Field label="Phone (WhatsApp)" htmlFor="rr-phone">
+                    <input
+                      id="rr-phone"
+                      className="rr__input"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      autoComplete="tel"
+                      placeholder="+91 98765 43210"
+                    />
+                  </Field>
+                </div>
+
+                <div className="rr__row">
+                  <Field label="Password" htmlFor="rr-password">
+                    <PasswordInput
+                      id="rr-password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      autoComplete="new-password"
+                    />
+                  </Field>
+                  <Field
+                    label="Confirm password"
+                    htmlFor="rr-confirm"
+                    hint={passwordMismatch ? "Passwords don't match yet" : undefined}
+                    warn
+                  >
+                    <PasswordInput
+                      id="rr-confirm"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      autoComplete="new-password"
+                    />
+                  </Field>
+                </div>
+
+                <Field
+                  label={<>Referral code <small>(optional)</small></>}
+                  htmlFor="rr-ref"
+                  hint={refFromLink ? 'Referral code applied from link' : undefined}
                 >
+                  <input
+                    id="rr-ref"
+                    className="rr__input"
+                    name="referralCode"
+                    value={formData.referralCode}
+                    onChange={handleInputChange}
+                    disabled={refFromLink}
+                    placeholder="Enter code if you have one"
+                  />
+                </Field>
+
+                {error && (
+                  <div className="rr__alert rr__alert--error" role="alert">
+                    <AlertCircle aria-hidden="true" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <button type="submit" className="rr__btn" disabled={loading}>
                   {loading ? (
                     <>
-                      <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                      Sending Verification Code...
+                      <Loader2 className="rr__spin" aria-hidden="true" />
+                      Sending verification code…
                     </>
                   ) : (
                     <>
-                      Continue
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      Create free account
+                      <ArrowRight aria-hidden="true" />
                     </>
                   )}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            /* Step 2: OTP Verification Form */
-            <form className="space-y-6" onSubmit={verifyOtpAndRegister}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Enter Verification Code
-                </label>
-                <div className="flex gap-2 justify-center">
-                  <Input
+                </button>
+
+                <p className="rr__fine">
+                  By continuing you agree to our <Link to="/terms">Terms</Link> and{' '}
+                  <Link to="/privacy">Privacy Policy</Link>.
+                </p>
+              </form>
+            ) : (
+              /* Step 2: OTP verification */
+              <form className="rr__form" onSubmit={verifyOtpAndRegister}>
+                <Field label="Verification code" htmlFor="rr-otp">
+                  <input
+                    id="rr-otp"
+                    className="rr__input rr__otp"
                     name="otp"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     required
-                    placeholder="123456"
-                    className="text-center text-2xl tracking-widest"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="••••••"
                     maxLength={6}
                     autoFocus
                   />
-                </div>
-                <p className="text-xs text-center text-gray-500 mt-2">
-                  Check your WhatsApp or spam folder if you haven't received the code.
-                </p>
-              </div>
+                </Field>
+                <p className="rr__muted">Check your WhatsApp or spam folder if you haven't received the code.</p>
 
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-md text-sm text-center">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="rr__alert rr__alert--error" role="alert">
+                    <AlertCircle aria-hidden="true" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                {success && (
+                  <div className="rr__alert rr__alert--ok" role="status">
+                    <CheckCircle2 aria-hidden="true" />
+                    <span>{success}</span>
+                  </div>
+                )}
 
-              {success && (
-                <div className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-3 rounded-md text-sm text-center">
-                  {success}
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <Button
-                  type="submit"
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  disabled={loading}
-                >
+                <button type="submit" className="rr__btn" disabled={loading}>
                   {loading ? (
                     <>
-                      <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                      Verifying & Creating Account...
+                      <Loader2 className="rr__spin" aria-hidden="true" />
+                      Verifying & creating account…
                     </>
                   ) : (
-                    'Verify & Create Account'
+                    <>
+                      Verify & create account
+                      <ArrowRight aria-hidden="true" />
+                    </>
                   )}
-                </Button>
+                </button>
 
-                <div className="text-center">
+                <div className="rr__actions">
                   {resendTimer > 0 ? (
-                    <p className="text-sm text-gray-500">
-                      Resend code in <span className="font-bold">{resendTimer}s</span>
-                    </p>
+                    <p className="rr__muted">Resend code in <b>{resendTimer}s</b></p>
                   ) : (
                     <button
                       type="button"
                       onClick={handleResendCode}
                       disabled={isResending}
-                      className="text-sm font-bold text-indigo-600 hover:text-indigo-500 transition disabled:opacity-50"
+                      className="rr__link"
                     >
-                      {isResending ? 'Sending...' : "Didn't receive the code? Resend"}
+                      {isResending ? 'Sending…' : "Didn't receive the code? Resend"}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setVerificationStep(false)}
+                    className="rr__link"
+                    style={{ color: 'var(--muted)' }}
+                  >
+                    ← Change email / go back
+                  </button>
                 </div>
+              </form>
+            )}
 
-                <button
-                  type="button"
-                  onClick={() => setVerificationStep(false)}
-                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-                >
-                  Change Email / Go Back
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                  Already have an account?
-                </span>
-              </div>
+            <div className="rr__trust">
+              <span><ShieldCheck aria-hidden="true" /> AES-256 encrypted</span>
+              <span><CreditCard aria-hidden="true" /> No credit card</span>
+              <span><Zap aria-hidden="true" /> Live in 2 minutes</span>
             </div>
 
-            <div className="mt-6 text-center">
-              <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Sign in to existing workspace
-              </Link>
-            </div>
+            <p className="rr__switch">
+              Already have an account?
+              <Link to="/login">Log in</Link>
+            </p>
           </div>
-        </div>
+        </main>
       </div>
-    </div>
     </>
+  );
+}
+
+function Field({
+  label,
+  htmlFor,
+  hint,
+  warn,
+  children,
+}: {
+  label: React.ReactNode;
+  htmlFor: string;
+  hint?: string;
+  warn?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rr__field">
+      <label className="rr__label" htmlFor={htmlFor}>{label}</label>
+      {children}
+      {hint && <span className={`rr__hint ${warn ? 'rr__hint--warn' : ''}`}>{hint}</span>}
+    </div>
+  );
+}
+
+function PasswordInput(props: {
+  id: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  autoComplete?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="rr__control">
+      <input
+        {...props}
+        className="rr__input rr__input--pw"
+        type={show ? 'text' : 'password'}
+        required
+        placeholder="••••••••"
+      />
+      <button
+        type="button"
+        className="rr__eye"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? 'Hide password' : 'Show password'}
+      >
+        {show ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+      </button>
+    </div>
   );
 }

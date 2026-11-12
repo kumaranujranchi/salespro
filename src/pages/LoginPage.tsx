@@ -1,44 +1,40 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useBackend } from '../lib/reactive';
-import { api } from '../lib/api-endpoints';
-import { Input } from '../components/ui/Input';
 import { authService } from '../lib/services';
 import { SEOHead } from '../components/seo/SEOHead';
 import {
   ArrowLeft,
-  CheckCircle,
+  ArrowRight,
   AlertCircle,
-  Loader2,
-  Shield,
-  Lock,
-  Mail,
+  CheckCircle2,
+  Check,
   Eye,
   EyeOff,
-  Key,
-  X,
-  ArrowRight,
-  UserCheck,
-  RefreshCw
+  KeyRound,
+  Loader2,
+  ShieldCheck,
+  Smartphone,
+  Zap,
 } from 'lucide-react';
+import '../styles/register.css';
+
+/** Which view the card is showing. */
+type Mode = 'signin' | 'reset-email' | 'reset-code' | 'reset-done';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-  const { signIn, signOut, user, profile, affiliate, loading: authLoading, setSessionUser } = useAuth();
-  const backend = useBackend();
+  const { signIn, user, profile, affiliate, setSessionUser } = useAuth();
   const navigate = useNavigate();
 
-  // Forgot Password / Security Code Modal State
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetStep, setResetStep] = useState<1 | 2 | 3>(1);
+  // Forgot password / email security-code flow (rendered inside the card)
+  const [mode, setMode] = useState<Mode>('signin');
   const [resetEmail, setResetEmail] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [resetNewPassword, setResetNewPassword] = useState('');
@@ -52,6 +48,12 @@ export function LoginPage() {
     emailSent?: boolean;
     message?: string;
   } | null>(null);
+
+  // Hide the browser's page scrollbar only while this page is mounted (shared with /register).
+  useEffect(() => {
+    document.documentElement.classList.add('rr-page');
+    return () => document.documentElement.classList.remove('rr-page');
+  }, []);
 
   // Resend OTP countdown timer
   useEffect(() => {
@@ -111,8 +113,13 @@ export function LoginPage() {
     setResetConfirmPassword('');
     setResetError('');
     setResetUserInfo(null);
-    setResetStep(1);
-    setShowForgotPassword(true);
+    setError('');
+    setMode('reset-email');
+  };
+
+  const backToSignIn = () => {
+    setResetError('');
+    setMode('signin');
   };
 
   const handleRequestReset = async (e?: React.FormEvent) => {
@@ -129,7 +136,7 @@ export function LoginPage() {
       const res = await authService.forgotPassword(clean);
       setResetUserInfo(res);
       setResendCooldown(60);
-      setResetStep(2);
+      setMode('reset-code');
     } catch (apiErr: any) {
       setResetError(apiErr.message || 'Unable to send security code. Please check your email.');
     } finally {
@@ -180,10 +187,10 @@ export function LoginPage() {
           id: res.profile.userId || (res.profile as any)._id || clean,
           email: res.profile.email || clean,
         });
-        setShowForgotPassword(false);
+        setMode('signin');
         setSuccess('Security code verified! Redirecting to dashboard...');
       } else {
-        setResetStep(3);
+        setMode('reset-done');
       }
     } catch (err: any) {
       setResetError(err.message || 'Invalid or expired security code. Please check your email and try again.');
@@ -205,6 +212,25 @@ export function LoginPage() {
     }
   }, [user, profile, affiliate, loading, success, navigate]);
 
+  const headings: Record<Mode, { title: string; sub: React.ReactNode }> = {
+    signin: {
+      title: 'Log in to your workspace',
+      sub: 'Welcome back. Pick up right where your team left off.',
+    },
+    'reset-email': {
+      title: 'Sign in with a code',
+      sub: "Forgot your password? Enter your registered email and we'll send a 6-digit security code.",
+    },
+    'reset-code': {
+      title: 'Check your inbox',
+      sub: <>We've sent a 6-digit code to <strong>{resetEmail}</strong>.</>,
+    },
+    'reset-done': {
+      title: "You're verified",
+      sub: 'Your account has been verified. You can now log in with your credentials.',
+    },
+  };
+
   return (
     <>
       <SEOHead
@@ -213,438 +239,355 @@ export function LoginPage() {
         canonicalUrl="https://realsalepro.com/login"
         noindex={true}
       />
-      <div className="min-h-screen bg-[#0E1A15] relative overflow-hidden flex items-center justify-center p-4">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0E1A15] via-[#113028] to-[#10B981] opacity-20 pointer-events-none"></div>
-
-      {/* Back to Home Link */}
-      <div className="absolute top-4 left-4 z-50">
-        <Link
-          to="/"
-          className="group flex items-center space-x-2 text-white/70 hover:text-white transition-colors duration-300"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300" />
-          <span className="text-sm font-medium">Back to Home</span>
-        </Link>
-      </div>
-
-      {/* Main Content */}
-      <div className="w-full max-w-[400px] relative z-10">
-        {/* Login Card */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-[#10B981] to-[#0E1A15] px-6 py-5 text-center relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="inline-flex items-center justify-center mb-3 transform transition-transform duration-500 hover:scale-105">
-                <img src="/images/RealSalePro_LighLogo.png" alt="RealSalePro Logo" className="w-12 h-12 object-contain rounded-xl bg-white/10 p-1" />
-              </div>
-              <h1 className="text-xl font-bold text-white mb-1 tracking-tight">Welcome Back</h1>
-              <p className="text-white/80 text-[11px] uppercase tracking-wider font-medium">Sign in to your dashboard</p>
-            </div>
-          </div>
-
-          {/* Form Section */}
-          <div className="px-5 py-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email Field */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[#0E1A15] ml-1">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${emailFocused ? 'text-[#10B981]' : 'text-gray-400'}`}>
-                    <Mail size={16} />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setEmailFocused(true)}
-                    onBlur={() => setEmailFocused(false)}
-                    required
-                    placeholder="Enter your email"
-                    className={`
-                        w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm text-[#0E1A15] placeholder-gray-400
-                        focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981]
-                        transition-all duration-300 bg-gray-50 hover:bg-white
-                        ${emailFocused ? 'border-[#10B981] bg-white shadow-sm' : 'border-gray-200'}
-                      `}
-                  />
-                </div>
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[#0E1A15] ml-1">
-                  Password
-                </label>
-                <div className="relative group">
-                  <div className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 z-10 ${passwordFocused ? 'text-[#10B981]' : 'text-gray-400'}`}>
-                    <Lock size={16} />
-                  </div>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={() => setPasswordFocused(false)}
-                    required
-                    placeholder="Enter password"
-                    showPasswordToggle
-                    className={`
-                        pl-10 pr-10 py-2.5 border rounded-lg text-sm bg-gray-50 hover:bg-white
-                        transition-all duration-300
-                        ${passwordFocused ? 'border-[#10B981] bg-white shadow-sm' : 'border-gray-200'}
-                      `}
-                  />
-                </div>
-              </div>
-
-              {/* Remember & Forgot */}
-              <div className="flex items-center justify-between text-xs pt-1">
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-3.5 h-3.5 rounded border-gray-300 text-[#10B981] focus:ring-[#10B981] transition-all cursor-pointer"
-                  />
-                  <span className="text-gray-500 group-hover:text-[#0E1A15] transition-colors">Remember me</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleOpenForgotPassword}
-                  className="text-[#10B981] hover:text-[#059669] font-medium transition-colors hover:underline"
-                >
-                  Forgot password?
-                </button>
-              </div>
-
-              {/* Error Box */}
-              {error && (
-                <div className={`flex items-start space-x-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs transition-all ${showError ? 'opacity-100' : 'opacity-0'}`}>
-                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                  <span className="leading-tight">{error}</span>
-                </div>
-              )}
-
-              {/* Success Box */}
-              {success && (
-                <div className="flex items-center space-x-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-xs animate-fadeIn">
-                  <CheckCircle size={14} className="shrink-0" />
-                  <span>{success}</span>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className={`
-                    group w-full py-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-semibold text-sm
-                    transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5
-                    disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none
-                    flex items-center justify-center space-x-2
-                  `}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shield size={18} />
-                    <span>Sign In Securely</span>
-                  </>
-                )}
-              </button>
-
-              {/* Quick Login with Email Security Code */}
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={handleOpenForgotPassword}
-                  className="inline-flex items-center space-x-1.5 text-xs text-[#10B981] hover:text-[#059669] font-medium transition-colors hover:underline"
-                >
-                  <Key size={13} />
-                  <span>Login with Email Security Code / Forgot Password</span>
-                </button>
-              </div>
-            </form>
-
-            {/* Security Footer */}
-            <div className="mt-4 pt-3 border-t border-gray-100 text-center">
-              <div className="flex items-center justify-center space-x-1.5 text-[10px] text-gray-400">
-                <Shield size={12} className="text-[#10B981]" />
-                <span>256-bit SSL Encrypted Connection</span>
-              </div>
-            </div>
-          </div>
+      <div className="rr">
+        <div className="rr__bg" aria-hidden="true">
+          <div className="rr__grid" />
+          <div className="rr__glow rr__glow--a" />
+          <div className="rr__glow rr__glow--b" />
+          <div className="rr__ring" />
+          <div className="rr__noise" />
         </div>
 
-        {/* Footer Copyright */}
-        <div className="mt-6 text-center">
-          <p className="text-white/30 text-[10px]">
-            &copy; 2025 RealSalePro. All rights reserved.
-          </p>
-        </div>
-      </div>
+        {/* ---------- Left: story ---------- */}
+        <aside className="rr__story">
+          <div className="rr__top">
+            <Link to="/" className="rr__brand" aria-label="RealSalePro home">
+              <img src="/assets/img/logo-light.png" alt="RealSalePro" width={176} height={34} />
+            </Link>
+            <Link to="/" className="rr__back">
+              <ArrowLeft aria-hidden="true" />
+              <span>Back to home</span>
+            </Link>
+          </div>
 
-      {/* Modern Interactive Forgot Password & Security Code Modal */}
-      {showForgotPassword && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            onClick={() => setShowForgotPassword(false)}
-          ></div>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative z-10 animate-scaleIn border border-gray-100">
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X size={18} />
-            </button>
+          <div className="rr__copy">
+            <p className="rr__eyebrow">
+              <span className="rr__dot" />
+              Your sales command centre
+            </p>
+            <h1 className="rr__title">
+              Welcome back. Your <em>pipeline</em> is waiting.
+            </h1>
+            <p className="rr__lede">
+              Today's follow-ups, site visits and fresh portal leads are already synced.
+              Log in and <strong>close the next booking</strong>.
+            </p>
 
-            {/* STEP 1: Enter Email */}
-            {resetStep === 1 && (
-              <form onSubmit={handleRequestReset} className="space-y-4">
-                <div className="text-center space-y-2 mb-4">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto text-[#10B981] shadow-inner">
-                    <Key size={24} />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">Email Security Code Login</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed max-w-xs mx-auto">
-                    Enter your registered email address. We will send a 6-digit security code so you can sign in directly and update your password.
-                  </p>
-                </div>
+            <ul className="rr__perks">
+              {[
+                "Today's follow-ups & site visits, ready the moment you log in",
+                'New Meta, Google & 99acres leads auto-assigned to your team',
+                'Live dashboards for bookings, collections & targets',
+                'Role-based access for every member of your team',
+              ].map((perk) => (
+                <li key={perk}>
+                  <span className="rr__tick"><Check aria-hidden="true" /></span>
+                  {perk}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                {resetError && (
-                  <div className="flex items-start space-x-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
-                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                    <span>{resetError}</span>
-                  </div>
-                )}
+          <div className="rr__proof rr__proof--story">
+            <span className="rr__avatars" aria-hidden="true">
+              <i style={{ '--av': 'linear-gradient(135deg,#34d399,#059669)' } as React.CSSProperties}>RS</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#f0c987,#c98b3c)' } as React.CSSProperties}>AK</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#8fb7ff,#3f6fd8)' } as React.CSSProperties}>NP</i>
+              <i style={{ '--av': 'linear-gradient(135deg,#c0f08a,#79b131)' } as React.CSSProperties}>VJ</i>
+            </span>
+            <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
+          </div>
+        </aside>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">
-                    Registered Email Address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                      <Mail size={16} />
-                    </div>
-                    <input
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      required
-                      placeholder="e.g. yourname@example.com"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex space-x-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(false)}
-                    className="w-1/3 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium text-xs hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={resetLoading}
-                    className="w-2/3 py-2.5 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-semibold text-xs shadow-md transition-all flex items-center justify-center space-x-1.5 disabled:opacity-75"
-                  >
-                    {resetLoading ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        <span>Sending Code...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Send Security Code</span>
-                        <ArrowRight size={14} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+        {/* ---------- Right: form ---------- */}
+        <main className="rr__panel">
+          <div className="rr__card rr__card--login">
+            {mode !== 'signin' && (
+              <span className="rr__badge" aria-hidden="true">
+                {mode === 'reset-done' ? <CheckCircle2 /> : <KeyRound />}
+              </span>
             )}
 
-            {/* STEP 2: Enter Security Code & Sign In */}
-            {resetStep === 2 && (
-              <form onSubmit={handleCompleteReset} className="space-y-4">
-                <div className="text-center space-y-1 mb-2">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto text-[#10B981] mb-2 shadow-inner">
-                    <Shield size={24} />
-                  </div>
-                  <h3 className="text-base font-bold text-gray-900">
-                    Enter Security Code
-                  </h3>
-                  <p className="text-gray-500 text-xs leading-relaxed max-w-xs mx-auto">
-                    A 6-digit security code was sent to <strong className="text-gray-800">{resetEmail}</strong>. Enter it below to sign in.
-                  </p>
-                  {resetUserInfo?.fullName && (
-                    <div className="inline-block bg-emerald-50 text-emerald-800 text-[11px] font-medium px-2.5 py-0.5 rounded-full mt-1">
-                      Account: {resetUserInfo.fullName}
-                    </div>
-                  )}
+            <h2 className="rr__heading">{headings[mode].title}</h2>
+            <p className="rr__sub">{headings[mode].sub}</p>
+
+            {/* ---------- Sign in ---------- */}
+            {mode === 'signin' && (
+              <form className="rr__form" onSubmit={handleSubmit}>
+                <div className="rr__field">
+                  <label className="rr__label" htmlFor="login-email">Work email</label>
+                  <input
+                    id="login-email"
+                    name="email"
+                    type="email"
+                    className="rr__input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="username"
+                    required
+                    placeholder="you@company.com"
+                  />
                 </div>
 
-                {resetError && (
-                  <div className="flex items-start space-x-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
-                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                    <span>{resetError}</span>
+                <div className="rr__field">
+                  <div className="rr__labelrow">
+                    <label className="rr__label" htmlFor="login-password">Password</label>
+                    <button type="button" className="rr__link rr__link--sm" onClick={handleOpenForgotPassword}>
+                      Forgot password?
+                    </button>
                   </div>
-                )}
-
-                {/* 6-Digit Security Code Field (Strict Email OTP Only) */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">
-                    6-Digit Security Code <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                      <Key size={16} />
-                    </div>
+                  <div className="rr__control">
                     <input
-                      type="text"
-                      maxLength={6}
-                      autoFocus
+                      id="login-password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="rr__input rr__input--pw"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
                       required
-                      value={resetOtp}
-                      onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="e.g. 123456"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-base tracking-widest font-mono font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white text-center"
+                      placeholder="••••••••"
                     />
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] pt-1 px-0.5">
-                    <span className="text-gray-400">Check your inbox or spam folder</span>
                     <button
                       type="button"
-                      disabled={resendCooldown > 0 || resetLoading}
-                      onClick={() => handleRequestReset()}
-                      className="text-[#10B981] hover:text-[#059669] hover:underline font-medium inline-flex items-center space-x-1 disabled:text-gray-400 disabled:no-underline cursor-pointer disabled:cursor-not-allowed transition-colors"
+                      className="rr__eye"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
-                      <RefreshCw size={11} className={resetLoading ? "animate-spin" : ""} />
-                      <span>{resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}</span>
+                      {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Optional New Password */}
-                <div className="pt-2 border-t border-gray-100 space-y-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-semibold text-gray-700">
-                        New Password (Optional)
-                      </label>
-                      <span className="text-[10px] text-gray-400">Leave blank to just sign in</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Lock size={16} />
-                      </div>
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        value={resetNewPassword}
-                        onChange={(e) => setResetNewPassword(e.target.value)}
-                        placeholder="Create a new password (min 6 chars)"
-                        className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
+                {error && (
+                  <div
+                    role="alert"
+                    className="rr__alert rr__alert--error"
+                    style={{ opacity: showError ? 1 : 0, transition: 'opacity 0.3s' }}
+                  >
+                    <AlertCircle aria-hidden="true" />
+                    <span>{error}</span>
                   </div>
+                )}
 
-                  {resetNewPassword.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-gray-700">
-                        Confirm New Password
-                      </label>
-                      <div className="relative">
-                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                          <Lock size={16} />
-                        </div>
-                        <input
-                          type="password"
-                          value={resetConfirmPassword}
-                          onChange={(e) => setResetConfirmPassword(e.target.value)}
-                          placeholder="Re-enter new password"
-                          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10B981]/20 focus:border-[#10B981] bg-gray-50 hover:bg-white"
-                        />
-                      </div>
-                    </div>
+                {success && (
+                  <div role="status" className="rr__alert rr__alert--ok">
+                    <CheckCircle2 aria-hidden="true" />
+                    <span>{success}</span>
+                  </div>
+                )}
+
+                <button type="submit" className="rr__btn" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="rr__spin" aria-hidden="true" />
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      Log in
+                      <ArrowRight aria-hidden="true" />
+                    </>
                   )}
+                </button>
+
+                <div className="rr__or"><span>or</span></div>
+
+                <button type="button" className="rr__btn rr__btn--ghost" onClick={handleOpenForgotPassword}>
+                  <KeyRound aria-hidden="true" />
+                  Email me a sign-in code
+                </button>
+              </form>
+            )}
+
+            {/* ---------- Step 1: request a code ---------- */}
+            {mode === 'reset-email' && (
+              <form className="rr__form" onSubmit={handleRequestReset}>
+                <div className="rr__field">
+                  <label className="rr__label" htmlFor="reset-email">Registered email</label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    className="rr__input"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    autoComplete="username"
+                    autoFocus
+                    required
+                    placeholder="you@company.com"
+                  />
                 </div>
 
-                <div className="flex space-x-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setResetStep(1)}
-                    className="w-1/3 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium text-xs hover:bg-gray-50 transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={resetLoading}
-                    className="w-2/3 py-2.5 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-semibold text-xs shadow-md transition-all flex items-center justify-center space-x-1.5 disabled:opacity-75"
-                  >
-                    {resetLoading ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" />
-                        <span>Verifying...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Verify & Sign In</span>
-                        <ArrowRight size={14} />
-                      </>
-                    )}
+                {resetError && (
+                  <div role="alert" className="rr__alert rr__alert--error">
+                    <AlertCircle aria-hidden="true" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                <button type="submit" className="rr__btn" disabled={resetLoading}>
+                  {resetLoading ? (
+                    <>
+                      <Loader2 className="rr__spin" aria-hidden="true" />
+                      Sending code…
+                    </>
+                  ) : (
+                    <>
+                      Send security code
+                      <ArrowRight aria-hidden="true" />
+                    </>
+                  )}
+                </button>
+
+                <div className="rr__actions">
+                  <button type="button" className="rr__link rr__link--muted" onClick={backToSignIn}>
+                    ← Back to password login
                   </button>
                 </div>
               </form>
             )}
 
-            {/* STEP 3: Success Confirmation */}
-            {resetStep === 3 && (
-              <div className="text-center space-y-4 py-2">
-                <div className="w-14 h-14 bg-emerald-100 text-[#10B981] rounded-full flex items-center justify-center mx-auto shadow-inner animate-scaleIn">
-                  <CheckCircle size={32} />
+            {/* ---------- Step 2: enter the code ---------- */}
+            {mode === 'reset-code' && (
+              <form className="rr__form" onSubmit={handleCompleteReset}>
+                {resetUserInfo?.fullName && (
+                  <p className="rr__chip">Account: {resetUserInfo.fullName}</p>
+                )}
+
+                <div className="rr__field">
+                  <label className="rr__label" htmlFor="reset-otp">6-digit security code</label>
+                  <input
+                    id="reset-otp"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    required
+                    className="rr__input rr__otp"
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="••••••"
+                  />
+                  <span className="rr__hint">Check your inbox or spam folder.</span>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-gray-900">Success!</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed max-w-xs mx-auto">
-                    Your account has been verified. You can now log in using your credentials.
-                  </p>
+
+                <div className="rr__field">
+                  <div className="rr__labelrow">
+                    <label className="rr__label" htmlFor="reset-new">
+                      New password <small>(optional)</small>
+                    </label>
+                    <span className="rr__label"><small>Leave blank to just sign in</small></span>
+                  </div>
+                  <div className="rr__control">
+                    <input
+                      id="reset-new"
+                      type={showNewPassword ? 'text' : 'password'}
+                      className="rr__input rr__input--pw"
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      autoComplete="new-password"
+                      placeholder="Min. 6 characters"
+                    />
+                    <button
+                      type="button"
+                      className="rr__eye"
+                      onClick={() => setShowNewPassword((s) => !s)}
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                    </button>
+                  </div>
                 </div>
+
+                {resetNewPassword.length > 0 && (
+                  <div className="rr__field">
+                    <label className="rr__label" htmlFor="reset-confirm">Confirm new password</label>
+                    <input
+                      id="reset-confirm"
+                      type="password"
+                      className="rr__input"
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      placeholder="Re-enter new password"
+                    />
+                  </div>
+                )}
+
+                {resetError && (
+                  <div role="alert" className="rr__alert rr__alert--error">
+                    <AlertCircle aria-hidden="true" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                <button type="submit" className="rr__btn" disabled={resetLoading}>
+                  {resetLoading ? (
+                    <>
+                      <Loader2 className="rr__spin" aria-hidden="true" />
+                      Verifying…
+                    </>
+                  ) : (
+                    <>
+                      Verify & sign in
+                      <ArrowRight aria-hidden="true" />
+                    </>
+                  )}
+                </button>
+
+                <div className="rr__actions">
+                  {resendCooldown > 0 ? (
+                    <p className="rr__muted">Resend code in <b>{resendCooldown}s</b></p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rr__link"
+                      disabled={resetLoading}
+                      onClick={() => handleRequestReset()}
+                    >
+                      Didn't receive the code? Resend
+                    </button>
+                  )}
+                  <button type="button" className="rr__link rr__link--muted" onClick={() => setMode('reset-email')}>
+                    ← Change email
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ---------- Step 3: verified, go sign in ---------- */}
+            {mode === 'reset-done' && (
+              <div className="rr__form">
                 <button
                   type="button"
+                  className="rr__btn"
                   onClick={() => {
                     setEmail(resetEmail);
                     setPassword('');
-                    setShowForgotPassword(false);
+                    setMode('signin');
                     setSuccess('Account verified! Please sign in.');
                   }}
-                  className="w-full py-2.5 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-semibold text-sm transition-all shadow-md"
                 >
-                  Proceed to Sign In
+                  Proceed to sign in
+                  <ArrowRight aria-hidden="true" />
                 </button>
               </div>
             )}
+
+            <div className="rr__trust">
+              <span><ShieldCheck aria-hidden="true" /> AES-256 encrypted</span>
+              <span><Smartphone aria-hidden="true" /> Works on mobile</span>
+              <span><Zap aria-hidden="true" /> Real-time lead sync</span>
+            </div>
+
+            <p className="rr__switch">
+              New to RealSalePro?
+              <Link to="/register">Create a free account</Link>
+            </p>
           </div>
-        </div>
-      )}
-    </div>
+        </main>
+      </div>
     </>
   );
 }
