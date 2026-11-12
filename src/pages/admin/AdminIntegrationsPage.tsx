@@ -1221,42 +1221,6 @@ export function AdminIntegrationsPage() {
                 Facebook & Instagram
               </span>
             </div>
-
-            {/* WhatsApp Integration Card */}
-            <div 
-              onClick={isFreePlan ? () => handleLockedFeatureClick('WhatsApp Business API & Auto Messaging') : () => navigate('/configuration/whatsapp')}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl p-5 w-40 h-44 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer flex flex-col items-center justify-center text-center group relative overflow-hidden"
-            >
-              {/* Status Dot */}
-              <span className="absolute top-3 right-3 flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isWhatsappActive ? 'bg-emerald-400' : 'bg-transparent'}`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${isWhatsappActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
-              </span>
-
-              {/* Lock Badge */}
-              {isFreePlan && (
-                <div className="absolute top-3 left-3 text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-white/10" title="Pro Feature">
-                  <Lock size={12} />
-                </div>
-              )}
-
-              <div className="w-16 h-16 bg-[#E8F8F0] rounded-2xl flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/images/whatsApp.webp" 
-                  alt="WhatsApp Integration" 
-                  className="w-11 h-11 object-contain"
-                />
-              </div>
-              
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-3 leading-tight">
-                WhatsApp API & Auto Messaging
-              </span>
-              {whatsappSettings.autoWelcomeEnabled && (
-                <span className="text-[9px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-1.5 py-0.5 rounded-full mt-1">
-                  Auto Welcome ON
-                </span>
-              )}
-            </div>
           </div>
         </div>
 
