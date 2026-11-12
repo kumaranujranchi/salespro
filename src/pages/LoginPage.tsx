@@ -55,12 +55,6 @@ export function LoginPage() {
 
   // Resend OTP countdown timer
   useEffect(() => {
-    document.body.classList.remove('landing-page-active');
-    document.documentElement.classList.remove('js');
-    document.documentElement.classList.remove('lenis');
-  }, []);
-
-  useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
       return () => clearTimeout(timer);
@@ -318,8 +312,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={handleOpenForgotPassword}
-                  style={{ color: '#059669' }}
-                  className="text-[#059669] hover:text-[#047857] font-semibold transition-colors hover:underline cursor-pointer"
+                  className="text-[#10B981] hover:text-[#059669] font-medium transition-colors hover:underline"
                 >
                   Forgot password?
                 </button>
@@ -349,7 +342,7 @@ export function LoginPage() {
                     group w-full py-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-semibold text-sm
                     transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5
                     disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none
-                    flex items-center justify-center space-x-2 cursor-pointer
+                    flex items-center justify-center space-x-2
                   `}
               >
                 {loading ? (
@@ -370,10 +363,9 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={handleOpenForgotPassword}
-                  style={{ color: '#047857' }}
-                  className="inline-flex items-center space-x-1.5 text-xs text-[#047857] hover:text-[#065f46] font-semibold transition-colors hover:underline cursor-pointer"
+                  className="inline-flex items-center space-x-1.5 text-xs text-[#10B981] hover:text-[#059669] font-medium transition-colors hover:underline"
                 >
-                  <Key size={13} className="text-[#059669]" />
+                  <Key size={13} />
                   <span>Login with Email Security Code / Forgot Password</span>
                 </button>
               </div>

@@ -38,9 +38,6 @@
       var p = window.location.pathname || '';
       if (p && p !== '/' && p !== '/index.html') {
         document.documentElement.classList.add('is-spa-route');
-        if (document.body) {
-          document.body.classList.remove('landing-page-active');
-        }
       } else {
         document.documentElement.classList.add('js');
         if (document.body) {
@@ -54,6 +51,8 @@
     html, body {
       margin: 0;
       padding: 0;
+      background-color: #04120c;
+      color: #f4faf6;
       font-family: "Manrope", system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -227,8 +226,8 @@
   ]
 }
   </script>
-  <script type="module" crossorigin src="/assets/index-BSg42WAQ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-ByaKlf7a.css">
+  <script type="module" crossorigin src="/assets/index-BODNxP1o.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CLlLIi-L.css">
 </head>
 
 <body class="landing-page-active">
