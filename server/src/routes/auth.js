@@ -272,6 +272,161 @@ router.post('/promote', requireAuth, async (req, res) => {
   }
 });
 
+// 3b. Check if email is already registered in the system (for signup duplicate prevention)
+router.all('/check-email', async (req, res) => {
+  try {
+    const email = req.query.email || req.body?.email;
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ error: 'Email parameter is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const result = await query(
+      `SELECT id, email, full_name, role FROM profiles WHERE LOWER(email) = $1 LIMIT 1`,
+      [cleanEmail]
+    );
+
+    if (result.rows.length > 0) {
+      return res.json({
+        exists: true,
+        email: cleanEmail,
+        message: 'This email is already registered. Please sign in to your existing account.',
+      });
+    }
+
+    return res.json({
+      exists: false,
+      email: cleanEmail,
+    });
+  } catch (error) {
+    console.error('Check email error:', error);
+    return res.status(500).json({ error: 'Failed to verify email availability' });
+  }
+});
+
+// 3c. Send 6-digit verification code to email during company / workspace registration
+router.post('/send-registration-otp', async (req, res) => {
+  try {
+    const { email, name, otp } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email already registered
+    const existing = await query(
+      `SELECT id FROM profiles WHERE LOWER(email) = $1 LIMIT 1`,
+      [cleanEmail]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({
+        error: 'This email is already registered. Please sign in instead.',
+        alreadyRegistered: true,
+      });
+    }
+
+    const code = String(otp || crypto.randomInt(100000, 1000000)).trim();
+    const userName = (typeof name === 'string' && name.trim()) ? name.trim() : 'Real Estate Leader';
+
+    console.log(`\n======================================================`);
+    console.log(`📩 [RealSalePro Registration OTP] for ${cleanEmail}: ${code}`);
+    console.log(`======================================================\n`);
+
+    const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
+    const emailPass = process.env.EMAIL_PASS || 'RealSalePro@2026';
+    const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
+    const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
+    const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);
+
+    let emailSent = false;
+    let emailError = null;
+
+    try {
+      const nodemailer = (await import('nodemailer')).default;
+      const transporter = nodemailer.createTransport({
+        host: emailHost,
+        port: emailPort,
+        secure: emailSecure,
+        auth: {
+          user: emailUser,
+          pass: emailPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"RealSalePro Team" <${emailUser}>`,
+        to: cleanEmail,
+        subject: `${code} is your RealSalePro verification code`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #04120c; margin: 0; padding: 24px; color: #f4faf6; }
+              .card { max-width: 520px; margin: 20px auto; background: #071d14; border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.25); overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+              .header { background: linear-gradient(135deg, #062b1e 0%, #04120c 100%); padding: 32px 24px; text-align: center; border-bottom: 1px solid rgba(16, 185, 129, 0.2); }
+              .content { padding: 32px 28px; color: #e2e8f0; font-size: 15px; line-height: 1.6; }
+              .code-box { background: rgba(16, 185, 129, 0.08); border: 2px dashed #10b981; border-radius: 12px; padding: 20px; text-align: center; margin: 28px 0; }
+              .code-label { font-size: 12px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+              .code-num { font-size: 36px; font-weight: 800; color: #34d399; letter-spacing: 8px; font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; }
+              .hint { font-size: 13px; color: #94a3b8; margin-top: 16px; }
+              .footer { padding: 18px 24px; background: #04120c; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="header">
+                <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">RealSalePro</h1>
+                <p style="margin: 6px 0 0 0; color: #34d399; font-size: 13px; font-weight: 500;">Free Real Estate CRM & Sales Automation</p>
+              </div>
+              <div class="content">
+                <p style="margin-top: 0;">Hi <strong>${userName}</strong>,</p>
+                <p>Welcome to RealSalePro! Please verify your email address to complete creating your workspace:</p>
+                <div class="code-box">
+                  <div class="code-label">Verification Code</div>
+                  <div class="code-num">${code}</div>
+                </div>
+                <p class="hint">Enter this 6-digit code on the registration page to activate your free workspace. This code expires in <strong>15 minutes</strong>.</p>
+                <p class="hint" style="margin-bottom: 0;">If you did not request this verification, you can safely ignore this email.</p>
+              </div>
+              <div class="footer">
+                &copy; ${new Date().getFullYear()} RealSalePro. Built for modern real estate sales teams.
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      });
+      emailSent = true;
+    } catch (mailErr) {
+      console.error('Registration OTP Email Error:', mailErr);
+      emailError = mailErr.message;
+    }
+
+    if (!emailSent) {
+      return res.status(500).json({
+        error: `Failed to deliver verification email: ${emailError || 'SMTP connection failed'}. Please check your email address.`,
+      });
+    }
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      otp: code,
+      message: `A 6-digit verification code has been sent to ${cleanEmail}.`,
+    });
+  } catch (error) {
+    console.error('Send registration OTP error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // In-memory OTP storage: cleanEmail -> { code, expiresAt, attempts }
 const otpStore = new Map();
 
@@ -327,7 +482,7 @@ router.post('/forgot-password', async (req, res) => {
 
     // Send Security Code via SMTP
     const emailUser = process.env.EMAIL_USER || 'support@realsalepro.com';
-    const emailPass = process.env.EMAIL_PASS || '';
+    const emailPass = process.env.EMAIL_PASS || 'RealSalePro@2026';
     const emailHost = process.env.EMAIL_HOST || 'smtp.hostinger.com';
     const emailPort = parseInt(process.env.EMAIL_PORT || '465', 10);
     const emailSecure = process.env.EMAIL_SECURE ? process.env.EMAIL_SECURE === 'true' : (emailPort === 465);

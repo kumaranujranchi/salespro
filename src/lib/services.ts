@@ -23,6 +23,10 @@ export const authService = {
     newPassword?: string;
   }) =>
     api.post<{ success: boolean; message: string; profile?: Profile }>('/auth/reset-password', data),
+  checkEmail: (email: string) =>
+    api.get<{ exists: boolean; email: string; message?: string }>('/auth/check-email', { email }),
+  sendRegistrationOtp: (data: { email: string; name?: string; otp: string }) =>
+    api.post<{ success: boolean; email: string; otp: string; message: string }>('/auth/send-registration-otp', data),
 };
 
 export const tenantsService = {

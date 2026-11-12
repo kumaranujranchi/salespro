@@ -404,7 +404,10 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await miscService.getReferralCampaign({ userId: args?.userId });
   }
   if (key.includes('emails.sendEmail')) {
-    return { success: true };
+    const email = args?.email;
+    const name = args?.name || args?.fullName;
+    const otp = args?.data?.otp || args?.otp;
+    return await authService.sendRegistrationOtp({ email, name, otp });
   }
   if (key.includes('system.getMetrics')) {
     return await systemService.getMetrics();

@@ -85,6 +85,12 @@ export async function registerTenantHandler(req, res) {
       return res.status(400).json({ error: 'A company with this URL slug already exists' });
     }
 
+    const profileEmail = contact_email.toLowerCase().trim();
+    const existingProfile = await query('SELECT id FROM profiles WHERE LOWER(email) = $1 LIMIT 1', [profileEmail]);
+    if (existingProfile.rows.length > 0) {
+      return res.status(409).json({ error: 'This email is already registered. Please sign in to your existing workspace.' });
+    }
+
     // 1. Create Tenant
     const tenantRes = await query(
       `INSERT INTO tenants (name, slug, settings, subscription_status, plan_tier, is_active, last_login_at)
