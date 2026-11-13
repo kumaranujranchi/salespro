@@ -345,6 +345,12 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('targets.setTarget') || key.includes('targets.create')) {
     return await targetsService.setTarget(args);
   }
+  if (key.includes('targets.updateTarget') || key.includes('targets.update')) {
+    return await targetsService.updateTarget(args?.id || args?._id, args);
+  }
+  if (key.includes('targets.deleteTarget') || key.includes('targets.delete')) {
+    return await targetsService.deleteTarget(args?.id || args?._id);
+  }
 
   // MISC (FOLLOWUPS, NOTIFICATIONS, ANNOUNCEMENTS, SUPPORT, REFERRALS)
   if (key.includes('followups.listByLead') || key.includes('followups.list')) {

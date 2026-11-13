@@ -141,6 +141,8 @@ export const targetsService = {
   list: (tenantId: string, userId?: string) =>
     api.get<any[]>('/targets', { tenant_id: tenantId, user_id: userId }),
   setTarget: (data: any) => api.post<any>('/targets', data),
+  updateTarget: (id: string, data: any) => api.patch<any>(`/targets/${id}`, data),
+  deleteTarget: (id: string) => api.delete<{ success: boolean; id: string }>(`/targets/${id}`),
 };
 
 export const miscService = {
