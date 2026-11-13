@@ -211,23 +211,31 @@ export function SalesPage() {
         </CardContent>
       </Card>
 
-      <SalesFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSuccess={() => {}} editingSale={selectedSale} />
-      <PaymentManager isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} sale={selectedSale} canEdit={canEdit} />
-      <SalesDetailsModal 
-         isOpen={isDetailOpen} 
-         onClose={() => setIsDetailOpen(false)} 
-         sale={selectedSale}
-         onEdit={handleEdit}
-         onCancel={handleCancelSale}
-         onDelete={handleDelete}
-         canEdit={canEdit}
-      />
-      <SalesCancellationModal 
-         isOpen={isCancelOpen} 
-         onClose={() => setIsCancelOpen(false)} 
-         sale={selectedSale}
-         onSuccess={() => setIsCancelOpen(false)} 
-      />
+      {isFormOpen && (
+        <SalesFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} onSuccess={() => {}} editingSale={selectedSale} />
+      )}
+      {isPaymentOpen && selectedSale && (
+        <PaymentManager isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} sale={selectedSale} canEdit={canEdit} />
+      )}
+      {isDetailOpen && selectedSale && (
+        <SalesDetailsModal 
+           isOpen={isDetailOpen} 
+           onClose={() => setIsDetailOpen(false)} 
+           sale={selectedSale}
+           onEdit={handleEdit}
+           onCancel={handleCancelSale}
+           onDelete={handleDelete}
+           canEdit={canEdit}
+        />
+      )}
+      {isCancelOpen && selectedSale && (
+        <SalesCancellationModal 
+           isOpen={isCancelOpen} 
+           onClose={() => setIsCancelOpen(false)} 
+           sale={selectedSale}
+           onSuccess={() => setIsCancelOpen(false)} 
+        />
+      )}
     </div>
   );
 }

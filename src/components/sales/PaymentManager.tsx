@@ -21,12 +21,18 @@ interface PaymentManagerProps {
     canEdit?: boolean;
 }
 
-export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: PaymentManagerProps) {
+export function PaymentManager(props: PaymentManagerProps) {
+    if (!props.isOpen || !props.sale) return null;
+    return <PaymentManagerContent {...props} />;
+}
+
+function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: PaymentManagerProps) {
     const { profile, tenant } = useAuth();
     const dialog = useDialog();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingPayment, setEditingPayment] = useState<any | null>(null);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const [paymentData, setPaymentData] = useState({
         paymentDate: new Date().toISOString().slice(0, 10),
@@ -37,10 +43,16 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
         transactionReference: ''
     });
 
+    const isFreePlan = tenant?.plan_tier === 'free';
+    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
+
+    const saleId = sale?._id || sale?.id;
+
     // Backend queries
-    const payments = useQuery(api.payments.listPayments, (isOpen && sale && profile?.tenant_id) ? {
+    const payments = useQuery(api.payments.listPayments, (sale && profile?.tenant_id && saleId) ? {
         tenant_id: profile.tenant_id as Id<"tenants">,
-        sale_id: sale?._id as Id<"sales">
+        sale_id: saleId as Id<"sales">
     } : "skip");
 
     // Mutations
@@ -55,7 +67,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
         try {
             await addPayment({
                 tenant_id: profile.tenant_id as Id<"tenants">,
-                sale_id: sale._id as Id<"sales">,
+                sale_id: (sale._id || sale.id) as Id<"sales">,
                 payment_date: paymentData.paymentDate,
                 amount: parseFloat(paymentData.amount),
                 payment_type: paymentData.paymentType,
@@ -82,13 +94,6 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
         }
     };
 
-    if (!sale) return null;
-
-    const isFreePlan = tenant?.plan_tier === 'free';
-    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
-    const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
     const handleLockedLedgerClick = () => {
         if (isSuperAdmin) {
             setShowUpgradeModal(true);
@@ -96,14 +101,19 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
             toast.info("Downloading payment ledger is a Pro feature. Please contact your organization administrator to upgrade the plan.");
         }
     };
+
     const paymentItems = Array.isArray(payments) ? payments : [];
     const totalReceived = paymentItems.reduce((sum: number, p: any) => sum + (Number(p?.amount) || 0), 0);
-    const totalRevenue = Number(sale.total_revenue) || 0;
+    const totalRevenue = Number(sale?.total_revenue) || 0;
     const pendingAmount = Math.max(0, totalRevenue - totalReceived);
     const receivedPercentage = totalRevenue > 0 ? (totalReceived / totalRevenue) * 100 : 0;
 
+    const customerDisplayName = (typeof sale?.customer === 'object' && sale?.customer?.name)
+        ? sale.customer.name
+        : (sale?.customer_name || sale?.customer || 'Customer');
+
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${sale.customer?.name || sale.customer_name || 'Customer'}`} size="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${customerDisplayName}`} size="xl">
             <div className="p-6 space-y-6">
                 <div className="grid grid-cols-3 gap-4">
                     <SummaryCard title="Total Value" value={formatCurrency(totalRevenue)} color="text-gray-900" />
@@ -113,7 +123,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
 
                 {/* Ledger actions bar */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button
                             variant="outline"
                             size="sm"
@@ -146,52 +156,72 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                         </Button>
                     </div>
                     {canEdit && (
-                        <Button onClick={() => setShowAddForm(!showAddForm)} variant={showAddForm ? "outline" : "primary"}>
-                            {showAddForm ? "Cancel" : "Add Payment"}
+                        <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+                            <Plus size={16} className="mr-1" /> Record Payment
                         </Button>
                     )}
                 </div>
 
-                <div className="flex justify-between items-center">
-                    <h4 className="font-bold flex items-center gap-2"><History size={18}/> Payment History</h4>
-                </div>
-
-                {showAddForm && canEdit && (
-                    <form onSubmit={handleAddPayment} className="bg-gray-50 p-4 rounded-lg grid grid-cols-2 gap-4">
-                        <Input label="Date" type="date" value={paymentData.paymentDate} onChange={e => setPaymentData({ ...paymentData, paymentDate: e.target.value })} required />
-                        <Input label="Amount" type="number" value={paymentData.amount} onChange={e => setPaymentData({ ...paymentData, amount: e.target.value })} required />
-                        <Select label="Type" value={paymentData.paymentType} onChange={e => setPaymentData({ ...paymentData, paymentType: e.target.value })} 
-                            options={[
-                                { label: 'Installment', value: 'installment' },
-                                { label: 'Booking', value: 'booking' },
-                                { label: 'Final', value: 'final' }
-                            ]} />
-                        <Select label="Mode" value={paymentData.paymentMode} onChange={e => setPaymentData({ ...paymentData, paymentMode: e.target.value })}
-                            options={[
-                                { label: 'Cheque', value: 'cheque' },
-                                { label: 'Cash', value: 'cash' },
-                                { label: 'UPI', value: 'upi' },
-                                { label: 'Transfer', value: 'bank_transfer' }
-                            ]} />
-                        <div className="col-span-2">
-                           <Button type="submit" isLoading={isSubmitting} className="w-full">Save Payment</Button>
+                {showAddForm && (
+                    <form onSubmit={handleAddPayment} className="p-4 bg-gray-50 rounded-lg border space-y-4">
+                        <h4 className="font-bold text-sm">New Payment Entry</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs text-gray-500">Date</label>
+                                <Input type="date" value={paymentData.paymentDate} onChange={e => setPaymentData({...paymentData, paymentDate: e.target.value})} required />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500">Amount (₹)</label>
+                                <Input type="number" step="0.01" value={paymentData.amount} onChange={e => setPaymentData({...paymentData, amount: e.target.value})} required placeholder="0.00" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500">Payment Type</label>
+                                <Select value={paymentData.paymentType} onChange={e => setPaymentData({...paymentData, paymentType: e.target.value})}>
+                                    <option value="booking_amount">Booking Amount</option>
+                                    <option value="installment">Installment</option>
+                                    <option value="part_payment">Part Payment</option>
+                                    <option value="registry_charge">Registry Charge</option>
+                                </Select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500">Mode</label>
+                                <Select value={paymentData.paymentMode} onChange={e => setPaymentData({...paymentData, paymentMode: e.target.value})}>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="neft_rtgs">NEFT/RTGS</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="cash">Cash</option>
+                                </Select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-500">Reference / Cheque No.</label>
+                            <Input value={paymentData.transactionReference} onChange={e => setPaymentData({...paymentData, transactionReference: e.target.value})} placeholder="UTR / Cheque No" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-500">Remarks</label>
+                            <Input value={paymentData.remarks} onChange={e => setPaymentData({...paymentData, remarks: e.target.value})} placeholder="Optional remarks" />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" type="button" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                            <Button size="sm" type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Payment"}</Button>
                         </div>
                     </form>
                 )}
 
+                {/* History Table */}
                 <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
                             <tr>
-                                <th className="px-4 py-2 text-left">Date</th>
-                                <th className="px-4 py-2 text-left">Type</th>
+                                <th className="px-4 py-2">Date</th>
+                                <th className="px-4 py-2">Type</th>
                                 <th className="px-4 py-2 text-right">Amount</th>
-                                <th className="px-4 py-2 text-right">Receipt & Actions</th>
+                                <th className="px-4 py-2 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
                             {paymentItems.map(p => (
-                                <tr key={p._id}>
+                                <tr key={p._id || p.id}>
                                     <td className="px-4 py-2">{p.payment_date}</td>
                                     <td className="px-4 py-2 capitalize">{p.payment_type}</td>
                                     <td className="px-4 py-2 text-right font-bold">{formatCurrency(p.amount)}</td>
@@ -217,7 +247,7 @@ export function PaymentManager({ isOpen, onClose, sale, canEdit = false }: Payme
                                                 <button 
                                                     onClick={async () => {
                                                         if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
-                                                            await deletePayment({ id: p._id });
+                                                             await deletePayment({ id: p._id || p.id });
                                                             toast.success("Payment record deleted successfully");
                                                         }
                                                     }} 
