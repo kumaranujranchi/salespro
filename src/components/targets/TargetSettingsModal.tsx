@@ -140,7 +140,7 @@ export function TargetSettingsModal({ isOpen, onClose, onSuccess }: TargetSettin
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-white/10">
                     <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button type="button" variant="primary" isLoading={loading} onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Button type="button" variant="primary" isLoading={loading} onClick={handleSave} className="!bg-emerald-600 hover:!bg-emerald-700 !text-white font-semibold shadow-sm">
                         Save Organization Settings
                     </Button>
                 </div>

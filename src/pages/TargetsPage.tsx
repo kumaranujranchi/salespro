@@ -200,7 +200,7 @@ export function TargetsPage() {
             </Button>
             <Button
               onClick={() => { setEditingTarget(null); setIsModalOpen(true); }}
-              className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="gap-1.5 !bg-emerald-600 hover:!bg-emerald-700 !text-white"
             >
               <Plus size={18} />
               <span>Assign Target</span>
@@ -367,7 +367,7 @@ export function TargetsPage() {
                 No monthly targets have been assigned for this year yet. Click "Assign Target" to set customized goals for your sales team.
               </p>
               {canManage && (
-                <Button size="sm" onClick={() => { setEditingTarget(null); setIsModalOpen(true); }} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={() => { setEditingTarget(null); setIsModalOpen(true); }} className="!bg-emerald-600 hover:!bg-emerald-700 !text-white">
                   <Plus size={15} className="mr-1" /> Assign First Target
                 </Button>
               )}

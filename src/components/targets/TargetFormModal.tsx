@@ -347,7 +347,7 @@ export function TargetFormModal({ isOpen, onClose, onSuccess, editingTarget }: T
                 {/* Footer Buttons */}
                 <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-white/10">
                     <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" variant="primary" isLoading={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                    <Button type="submit" variant="primary" isLoading={loading} className="!bg-emerald-600 hover:!bg-emerald-700 !text-white font-semibold shadow-sm">
                         {editingTarget ? "Update Target" : "Save Target"}
                     </Button>
                 </div>
