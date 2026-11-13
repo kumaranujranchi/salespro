@@ -12,28 +12,52 @@ export interface OrgNode extends Profile {
 export function buildOrgTree(profiles: Profile[], rootId: string | null = null): OrgNode[] {
   const profileMap = new Map<string, OrgNode>();
   
-  // Clone profiles into OrgNodes
-  profiles.forEach(p => {
-    profileMap.set(p.id, { ...p, children: [] });
+  // Clone profiles into OrgNodes with resilient id matching (_id and id)
+  (profiles || []).forEach(p => {
+    const key = String((p as any)._id || p.id || '');
+    if (key) {
+      const node: OrgNode = {
+        ...p,
+        id: key,
+        _id: key as any,
+        children: []
+      };
+      profileMap.set(key, node);
+      // Also map secondary id if different
+      if (p.id && String(p.id) !== key) profileMap.set(String(p.id), node);
+      if ((p as any)._id && String((p as any)._id) !== key) profileMap.set(String((p as any)._id), node);
+    }
   });
 
   const roots: OrgNode[] = [];
+  const processed = new Set<string>();
 
   profileMap.forEach(node => {
-    const managerId = node.reporting_manager_id;
-    if (managerId && profileMap.has(managerId)) {
+    const nodeKey = String(node._id || node.id);
+    if (processed.has(nodeKey)) return;
+    processed.add(nodeKey);
+
+    const managerId = node.reporting_manager_id ? String(node.reporting_manager_id) : null;
+    if (managerId && profileMap.has(managerId) && managerId !== nodeKey) {
       const manager = profileMap.get(managerId);
-      manager?.children?.push(node);
+      if (manager && manager.children) {
+        // Prevent duplicate child insertions
+        const alreadyChild = manager.children.some(c => String(c._id || c.id) === nodeKey);
+        if (!alreadyChild) {
+          manager.children.push(node);
+        }
+      }
     } else {
-      // If no manager or manager not in the current set, it's a root for this view
       roots.push(node);
     }
   });
 
-  if (rootId && profileMap.has(rootId)) {
-    // If a specific rootId is requested, return only that branch
-    const specificRoot = profileMap.get(rootId);
-    return specificRoot ? [specificRoot] : [];
+  if (rootId) {
+    const targetKey = String(rootId);
+    if (profileMap.has(targetKey)) {
+      const specificRoot = profileMap.get(targetKey);
+      return specificRoot ? [specificRoot] : [];
+    }
   }
 
   return roots;

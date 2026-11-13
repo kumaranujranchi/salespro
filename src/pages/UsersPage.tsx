@@ -14,6 +14,7 @@ import { Modal, ModalFooter } from '../components/ui/Modal';
 import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { ActionMenu } from '../components/ui/ActionMenu';
+import { OrganizationChart } from '../components/users/OrganizationChart';
 import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
@@ -469,20 +470,17 @@ export function UsersPage() {
           ))}
         </div>
       ) : viewType === 'tree' ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Network size={20} />
-              <CardTitle>Organization Chart</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="org-tree-container">
-               {/* Simplified Tree view for now */}
-               <div className="text-center p-4 text-gray-500">Tree view active with {users.length} users.</div>
-            </div>
-          </CardContent>
-        </Card>
+        <OrganizationChart
+          users={(users as Profile[]) || []}
+          roles={(roles as TenantRole[]) || []}
+          departments={(departments as Department[]) || []}
+          tenantName={tenant?.name}
+          onEditUser={handleEditUser}
+          onResetPassword={canManagePasswords ? handleOpenResetPassword : undefined}
+          onToggleStatus={!isReadOnly ? handleToggleStatus : undefined}
+          onDeleteUser={!isReadOnly ? handleDeleteUser : undefined}
+          onAddUser={() => { resetForm(); setIsModalOpen(true); }}
+        />
       ) : (
         <Card>
           <CardHeader>
