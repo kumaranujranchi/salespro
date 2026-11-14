@@ -1,4 +1,5 @@
 import { query } from '../db/index.js';
+import { extractCleanPersonalName } from '../utils/nameHelper.js';
 
 /**
  * ============================================================================
@@ -217,7 +218,9 @@ export async function analyzeLeadAuthenticity({ messageText = '', conversation =
   // 4. Check Identity Disclosures (City, Company, Name)
   const hasCity = Boolean(metadata.city);
   const hasCompany = Boolean(metadata.company_name);
-  const hasValidName = conversation.customer_name && !['hey', 'visitor', 'user', 'website visitor'].includes(conversation.customer_name.toLowerCase().trim());
+  const statedName = metadata.stated_name;
+  const cleanPersonal = extractCleanPersonalName(statedName) || extractCleanPersonalName(conversation.customer_name);
+  const hasValidName = Boolean(cleanPersonal);
 
   if (hasCity && hasCompany) {
     delta += 20; // Full firm identity known
@@ -263,8 +266,12 @@ export async function analyzeLeadAuthenticity({ messageText = '', conversation =
 
   // 7. Contextual Probing Question Recommendation for DeepSeek (Adaptive Focus)
   let recommendedProbe = null;
-  if (!hasCompany && !hasCity) {
+  if (!hasCompany && !hasCity && !hasValidName) {
     recommendedProbe = 'Aapka shubh naam aur aapki real estate company kis city mein hai?';
+  } else if (hasCompany && !hasValidName) {
+    recommendedProbe = metadata.city
+      ? 'Aapka shubh naam jaan sakta hoon?'
+      : `Aapka shubh naam jaan sakta hoon? Aur ${metadata.company_name} kis city mein operate karti hai?`;
   } else if (!hasCompany) {
     recommendedProbe = `Aapki real estate company ka naam kya hai ${metadata.city ? metadata.city + ' mein' : ''}?`;
   } else if (!hasCity) {

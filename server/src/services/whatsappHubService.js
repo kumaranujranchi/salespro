@@ -664,6 +664,20 @@ async function sendBotReply(conversation, text) {
   }
 }
 
+import {
+  isCompanyOrBusinessName,
+  isGenericOrHandle,
+  extractCleanPersonalName,
+  extractCompanyName,
+} from '../utils/nameHelper.js';
+
+export {
+  isCompanyOrBusinessName,
+  isGenericOrHandle,
+  extractCleanPersonalName,
+  extractCompanyName,
+};
+
 /**
  * Intelligent Lead Extractor:
  * Detects Name, City, and Company/Firm from inbound WhatsApp conversation
@@ -684,20 +698,46 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
   // 1. Detect Real Customer Name
   // Matches "Name: Aditya", "Naam: Rahul", "mera naam Aditya hai", "my name is Aditya", "myself Aditya", "Aditya from RJ Builders"
   const namePatterns = [
-    /(?:^|\n|\b)(?:name|naam|mera naam|my name is|i am|this is|myself|im)\s*[:=\-]?\s*([A-Za-z][A-Za-z\s]{1,25})/im,
+    /(?:^|\n|\b)(?:mera naam|my name is|naam|name is|name|i am|im|this is|myself|main hoon|mai hoon)\s*[:=\-]?\s*([A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F\s]{1,25})/im,
   ];
   for (const pat of namePatterns) {
     const match = rawText.match(pat);
     if (match && match[1]) {
       let candidate = match[1].split(/\r?\n/)[0].trim();
-      candidate = candidate.replace(/(?:from|se|in|city|company|firm|builders|realty|properties|developers|hai).*$/i, '').trim();
+      candidate = candidate.replace(/(?:from|se|in|city|company|firm|builders|realty|properties|developers|hai|hoon|hu|here).*$/i, '').trim();
       if (
         candidate.length >= 2 &&
         candidate.length <= 25 &&
         !/^(here|hey|user|visitor|broker|agent|admin|pricing|yes|haan|nahi|no|ok|thik|none|not|patna|delhi|mumbai)$/i.test(candidate)
       ) {
-        detectedName = candidate;
-        break;
+        // If the candidate is actually a company name (e.g. "My name is AR developer")
+        if (isCompanyOrBusinessName(candidate)) {
+          if (!detectedCompany) detectedCompany = candidate;
+        } else {
+          const cleanName = extractCleanPersonalName(candidate);
+          if (cleanName) {
+            detectedName = cleanName;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Standalone personal name reply (e.g. user replied "Aditya" or "Anuj Kumar" when asked for name)
+  if (!detectedName && !conversation.metadata?.stated_name) {
+    const wordCount = rawText.split(/\s+/).filter(Boolean).length;
+    if (
+      wordCount >= 1 &&
+      wordCount <= 3 &&
+      rawText.length >= 2 &&
+      rawText.length <= 25 &&
+      !/^(hi|hello|hey|namaste|ha|haan|yes|no|nahi|ok|okay|thik|sure|pricing|price|cost|demo|plans?|features?|details?|call|phone|sales|crm|sheet|excel|template|patna|delhi|mumbai|noida|gurgaon|ranchi|lucknow|kolkata|bangalore|pune|ahmedabad|jaipur|indore)$/i.test(rawText) &&
+      !isCompanyOrBusinessName(rawText)
+    ) {
+      const cleanStandalone = extractCleanPersonalName(rawText);
+      if (cleanStandalone) {
+        detectedName = cleanStandalone;
       }
     }
   }
@@ -717,6 +757,10 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
         break;
       }
     }
+  }
+
+  if (!detectedCompany && isCompanyOrBusinessName(rawText)) {
+    detectedCompany = rawText;
   }
 
   // 3. Detect City patterns (popular Indian real estate hubs)
@@ -820,16 +864,19 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
   }
 
   const currentName = (conversation.customer_name || '').trim();
-  const isGenericOrHandle = !currentName ||
-    /^(website visitor|hey|visitor|user|\+|mydigitalera)/i.test(currentName) ||
-    currentName.length < 3;
+  const currentIsCompany = isCompanyOrBusinessName(currentName);
+  if (currentIsCompany && !newMetadata.company_name) {
+    newMetadata.company_name = currentName;
+    metadataChanged = true;
+  }
+  const isGeneric = isGenericOrHandle(currentName) || currentIsCompany;
 
   if (detectedName) {
     newMetadata.stated_name = detectedName;
     metadataChanged = true;
 
-    // Update customer_name in DB if currently generic/handle or explicitly specified
-    if (isGenericOrHandle || currentName.toLowerCase() !== detectedName.toLowerCase()) {
+    // Update customer_name in DB if currently generic/company or explicitly specified
+    if (isGeneric || currentName.toLowerCase() !== detectedName.toLowerCase()) {
       updates.push(`customer_name = $${pIdx++}`);
       params.push(detectedName);
       conversation.customer_name = detectedName;
@@ -863,7 +910,7 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
             updated_at = CURRENT_TIMESTAMP
         WHERE tenant_id = $3 AND (mobile = $4 OR mobile LIKE $5)
       `, [
-        detectedName || conversation.customer_name || null,
+        detectedName || (isCompanyOrBusinessName(conversation.customer_name) ? null : conversation.customer_name) || null,
         detectedCity || null,
         conversation.tenant_id,
         last10,
@@ -878,12 +925,11 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
 /**
  * Natural Human Sales Rule Engine (Fallback & Direct Numbers)
  */
-function evaluateVisitorIntent(messageText, customerName) {
+export function evaluateVisitorIntent(messageText, customerName, companyName = null) {
   const text = String(messageText || '').trim().toLowerCase();
-  const validName = (customerName && !['hey', 'visitor', 'user', 'website visitor'].includes(customerName.toLowerCase().trim()))
-    ? customerName.trim()
-    : null;
-  const nameSalutation = validName ? ` ${validName} ji` : '';
+  const personalName = extractCleanPersonalName(customerName);
+  const detectedCompany = companyName || extractCompanyName(customerName);
+  const nameSalutation = personalName ? ` ${personalName} ji` : '';
 
   // 1. Handover to Live Support / Call / Human
   if (
@@ -900,15 +946,16 @@ function evaluateVisitorIntent(messageText, customerName) {
     text.includes('specialist')
   ) {
     const timeCtx = getIndiaTimeContext();
+    const salutationPrefix = personalName ? `Ji bilkul ${personalName} ji!` : 'Ji bilkul sir!';
     if (timeCtx.isWorkingHours) {
       return {
         intent: 'agent_handover',
-        reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar raha hoon, wo thodi der mein aapse is chat par connect karenge.\n\nAgar immediate baat karni ho toh aap humein abhi direct call bhi kar sakte hain: +91 70797 37773.`,
+        reply: `${salutationPrefix} Main hamare senior sales manager ko notify kar raha hoon, wo thodi der mein aapse is chat par connect karenge.\n\nAgar immediate baat karni ho toh aap humein abhi direct call bhi kar sakte hain: +91 70797 37773.`,
       };
     } else {
       return {
         intent: 'agent_handover',
-        reply: `Ji bilkul${nameSalutation}! Main hamare senior sales manager ko notify kar diya hai.\n\nAbhi office timing close ho chuki hai, isliye hamari sales team kal subah 10:00 AM aapse direct connect karegi. Agar aapko kal baat karni ho toh aap humein kal subah 10 baje ke baad direct call kar sakte hain: +91 70797 37773 par.\n\nTab tak aap apna 100% Free CRM account setup karke explore kar sakte hain (1,000 leads tak lifetime free, no credit card required):\n👉 https://realsalepro.com/register`,
+        reply: `${salutationPrefix} Main hamare senior sales manager ko notify kar diya hai.\n\nAbhi office timing close ho chuki hai, isliye hamari sales team kal subah 10:00 AM aapse direct connect karegi. Agar aapko kal baat karni ho toh aap humein kal subah 10 baje ke baad direct call kar sakte hain: +91 70797 37773 par.\n\nTab tak aap apna 100% Free CRM account setup karke explore kar sakte hain (1,000 leads tak lifetime free, no credit card required):\n👉 https://realsalepro.com/register`,
       };
     }
   }
@@ -927,9 +974,10 @@ function evaluateVisitorIntent(messageText, customerName) {
     text.includes('start') ||
     text.includes('onboard')
   ) {
+    const greeting = personalName ? `Namaste ${personalName} ji!` : 'Namaste sir!';
     return {
       intent: 'demo_trial',
-      reply: `Namaste${nameSalutation}! Aap hamara 100% Free Forever plan direct shuru kar sakte hain (1,000 leads tak lifetime free, koi credit card nahi chahiye):\n\n👉 https://realsalepro.com/register\n\nAgar aap 15-minute ka live screen walkthrough chahte hain, toh kripya apna Name aur City bata dijiye, main demo schedule karwa deta hoon!`,
+      reply: `${greeting} Aap hamara 100% Free Forever plan direct shuru kar sakte hain (1,000 leads tak lifetime free, koi credit card nahi chahiye):\n\n👉 https://realsalepro.com/register\n\nAgar aap 15-minute ka live screen walkthrough chahte hain, toh kripya apna Name aur City bata dijiye, main demo schedule karwa deta hoon!`,
     };
   }
 
@@ -982,10 +1030,24 @@ function evaluateVisitorIntent(messageText, customerName) {
     };
   }
 
-  // Default Greeting (Completely human, asks for Name & City early)
+  // Default Greeting (Completely human, asks for Name early, never attaches "ji" to company)
+  if (personalName) {
+    return {
+      intent: 'greeting_human',
+      reply: `Namaste ${personalName} ji! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon?`,
+    };
+  }
+
+  if (detectedCompany) {
+    return {
+      intent: 'greeting_human',
+      reply: `Namaste sir! 🙏 Main Rahul hoon RealSalePro sales team se.\n\n${detectedCompany} ke liye aapki kaise help kar sakta hoon? Aur aage baat karne ke liye aapka shubh naam jaan sakta hoon?`,
+    };
+  }
+
   return {
     intent: 'greeting_human',
-    reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aapka shubh naam aur company kis city mein hai?`,
+    reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aage connect karne ke liye aapka shubh naam jaan sakta hoon?`,
   };
 }
 
@@ -1027,19 +1089,29 @@ export async function generateSalesAiReply({
 
   const text = String(messageText || '').trim().toLowerCase();
 
+  const statedName = conversationMetadata.stated_name;
+  const cleanStated = extractCleanPersonalName(statedName);
+  const cleanCustomer = extractCleanPersonalName(customerName);
+  const effectivePersonalName = cleanStated || cleanCustomer || null;
+
+  // Detect company name
+  let effectiveCompanyName = conversationMetadata.company_name || null;
+  if (!effectiveCompanyName && isCompanyOrBusinessName(customerName)) {
+    effectiveCompanyName = extractCompanyName(customerName);
+  }
+  if (!effectiveCompanyName && isCompanyOrBusinessName(statedName)) {
+    effectiveCompanyName = extractCompanyName(statedName);
+  }
+
   // If user explicitly clicks or types a direct option (1, 2, 3, 4, 5)
   if (['1', '2', '3', '4', '5'].includes(text)) {
-    return evaluateVisitorIntent(messageText, customerName);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
   }
 
   // If AI is disabled or no API key is configured yet, fall back to rule engine
   if (!config.aiEnabled || !apiKey) {
-    return evaluateVisitorIntent(messageText, customerName);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
   }
-
-  const statedName = conversationMetadata.stated_name;
-  const isGeneric = (name) => !name || /^(hey|visitor|user|website visitor|mydigitalera)$/i.test(name.trim());
-  const effectiveName = statedName || (!isGeneric(customerName) ? customerName.trim() : null);
 
   const systemPrompt = `You are Rahul, a senior real estate sales executive at RealSalePro (https://realsalepro.com) chatting with an inbound prospect on WhatsApp.
 
@@ -1069,9 +1141,21 @@ ANTI-REPETITION & MEMORY RULES (CRITICAL):
    - If the prospect already told you their Name, City, Company, Team Size, or Current CRM, NEVER ASK FOR IT AGAIN!
    - If they already told you their team size (e.g. 10+), DO NOT ask "Aapki team mein kitne members hain?".
    - If they already told you their company or city (e.g. RJ Builders, Patna), DO NOT ask "Aapka shubh naam aur company kis city mein hai?".
-2. PROSPECT NAME USAGE:
-   - If their real name is known (e.g., "${effectiveName || 'Aditya'}"), address them respectfully as "${effectiveName ? effectiveName + ' ji' : 'sir'}".
-   - NEVER address them by their WhatsApp username/handle (e.g. NEVER call them "MyDigitalEra" or "MyDigitalEra ji").
+2. PROSPECT NAME & SALUTATION RULES (STRICT HINDI ETIQUETTE & ZERO BUSINESS 'JI'):
+   - "ji" (or "G") is an honorific in Hindi used EXCLUSIVELY with a REAL HUMAN PERSONAL NAME (e.g., "Amit ji", "Rahul ji", "Pooja ji", "Vikram ji").
+   - ABSOLUTE PROHIBITION ON ATTACHING "ji" / "G" TO A COMPANY OR BUSINESS NAME:
+     * NEVER, UNDER ANY CIRCUMSTANCES, ATTACH "ji" OR "G" TO A COMPANY, BRAND, AGENCY, FIRM, OR BUSINESS HANDLE!
+     * NEVER say "AR developer ji", "Developer ji", "Builders ji", "Realty ji", "Infra ji", "Properties ji", "Solutions ji", "Group ji", "Agency ji", etc. In Hindi culture and professional business etiquette, addressing a company entity with "ji" is completely wrong, awkward, and unnatural!
+   - IF ONLY A COMPANY NAME IS KNOWN (e.g., "AR developer"):
+     * Treat it strictly as their company/firm name, NEVER as their personal human name.
+     * Address them respectfully as "sir" (e.g., "Namaste sir", "Ji bilkul sir").
+     * In your first greeting or early in the conversation, politely ask for the person's real personal human name: "Aapka shubh naam jaan sakta hoon?" (or "May I know your name please?").
+   - IF NO PERSONAL HUMAN NAME IS KNOWN YET:
+     * Address them respectfully as "sir" (or "Namaste!").
+     * Politely ask for their real name: "Aapka shubh naam jaan sakta hoon?".
+   - ONCE THE PROSPECT SHARES THEIR REAL PERSONAL HUMAN NAME:
+     * Remember it and address them respectfully using their real personal name with "ji" (e.g., "${effectivePersonalName || 'Aditya'} ji").
+   - NEVER address them by a WhatsApp username/handle or placeholder (e.g. NEVER call them "MyDigitalEra", "MyDigitalEra ji", "Visitor ji", "User ji").
 3. ANSWER QUESTIONS DIRECTLY:
    - When the prospect asks about pricing ("pricing", "after that", "kitna lagega"), ANSWER THE PRICING DIRECTLY with exact numbers from the knowledge base below!
    - When the prospect says "i will go with paid plans", acknowledge that enthusiastically, share the Pro Plan details, and guide them to schedule a demo or call!
@@ -1129,8 +1213,16 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
 
     // Build the dynamic Prospect Profile Dossier & Session Milestones
     const dossierItems = [];
-    if (effectiveName) dossierItems.push(`- Prospect Real Name: ${effectiveName}`);
-    if (conversationMetadata.company_name) dossierItems.push(`- Real Estate Company: ${conversationMetadata.company_name}`);
+    if (effectivePersonalName) {
+      dossierItems.push(`- Prospect Real Human Name: ${effectivePersonalName} (Address respectfully as "${effectivePersonalName} ji")`);
+    } else {
+      dossierItems.push(`- Prospect Real Personal Name: UNKNOWN YET (CRITICAL: Do NOT guess or use company name. Address as "sir" and politely ask: "Aapka shubh naam jaan sakta hoon?")`);
+    }
+
+    if (effectiveCompanyName) {
+      dossierItems.push(`- Real Estate Company / Firm: ${effectiveCompanyName} (CRITICAL: THIS IS A COMPANY ENTITY, NOT A PERSON. NEVER ADD "ji" TO IT. NEVER SAY "${effectiveCompanyName} ji"!)`);
+    }
+
     if (conversationMetadata.city) dossierItems.push(`- City: ${conversationMetadata.city}`);
     if (conversationMetadata.team_size) dossierItems.push(`- Team Size: ${conversationMetadata.team_size} users/members`);
     if (conversationMetadata.current_tool) dossierItems.push(`- Current CRM/Tracking Tool: ${conversationMetadata.current_tool}`);
@@ -1147,7 +1239,11 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
 
     let dossierPrompt = '';
     if (dossierItems.length > 0) {
-      dossierPrompt = `\n\nPROSPECT PROFILE DOSSIER (PERMANENT SESSION MEMORY - NEVER ASK FOR THESE AGAIN!):\n${dossierItems.join('\n')}\n\n*CRITICAL*: Since you already know the above details from earlier in this session, NEVER ask for them again. Always call the prospect "${effectiveName ? effectiveName + ' ji' : 'sir'}" (NEVER by any WhatsApp handle like MyDigitalEra).`;
+      const salutationDirective = effectivePersonalName
+        ? `Since you know the prospect's real human name is ${effectivePersonalName}, address them respectfully as "${effectivePersonalName} ji".`
+        : `Prospect's personal human name is unknown. Address them respectfully as "sir" (CRITICAL: NEVER say "${effectiveCompanyName ? effectiveCompanyName + ' ji' : 'Developer ji'}") and ask for their personal name: "Aapka shubh naam jaan sakta hoon?".`;
+
+      dossierPrompt = `\n\nPROSPECT PROFILE DOSSIER (PERMANENT SESSION MEMORY - NEVER ASK FOR THESE AGAIN!):\n${dossierItems.join('\n')}\n\n*CRITICAL SALUTATION DIRECTIVE*:\n${salutationDirective}`;
     }
 
     let dynamicSystemPrompt = systemPrompt + dossierPrompt;
@@ -1238,11 +1334,23 @@ CRITICAL OFF-HOURS CALLING RULE:
       .replace(/^hello there!\s*🚀?/i, '')
       .trim();
 
-    // Safety cleaner: If prospect's real name is known (e.g. "Aditya"), replace any accidental usage of WhatsApp handle "MyDigitalEra" with real name
-    if (effectiveName) {
+    // Safety cleaner: NEVER allow "ji" / "G" attached to company / business names
+    if (effectiveCompanyName) {
+      const escapedCompany = effectiveCompanyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       reply = reply
-        .replace(/\bMyDigitalEra\b/gi, effectiveName)
-        .replace(/\bmydigitalera\b/gi, effectiveName);
+        .replace(new RegExp(`\\b${escapedCompany}\\s+(?:ji|g)\\b`, 'gi'), effectiveCompanyName)
+        .replace(new RegExp(`\\b${escapedCompany}(?:ji|g)\\b`, 'gi'), effectiveCompanyName);
+    }
+    // Also clean any generic business keywords with "ji" (e.g. "developer ji", "builders ji", "realty ji")
+    reply = reply
+      .replace(/\b(developer|developers|builder|builders|realty|real estate|properties|infra|infrastructure|enterprises?|solutions?|group|consultants?|holdings?|homes?|agency)\s+(?:ji|g)\b/gi, '$1')
+      .replace(/\b(developer|developers|builder|builders|realty|properties|infra|infrastructures|enterprises|solutions|group|consultants|holdings|homes)(?:ji|g)\b/gi, '$1');
+
+    // Safety cleaner: If prospect's real human name is known (e.g. "Aditya"), replace any accidental usage of WhatsApp handle "MyDigitalEra" with real name
+    if (effectivePersonalName) {
+      reply = reply
+        .replace(/\bMyDigitalEra\b/gi, effectivePersonalName)
+        .replace(/\bmydigitalera\b/gi, effectivePersonalName);
     }
 
     return {
@@ -1251,7 +1359,7 @@ CRITICAL OFF-HOURS CALLING RULE:
     };
   } catch (err) {
     console.error('[Sales AI] Call failed, fallback to rule engine:', err.message);
-    return evaluateVisitorIntent(messageText, customerName);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
   }
 }
 
@@ -1294,9 +1402,10 @@ export async function processIncomingWebhook(body) {
           const fromPhone = normalizeWhatsAppPhone(msg.from);
           const metaMessageId = msg.id;
           const contact = (value.contacts || []).find(c => normalizeWhatsAppPhone(c.wa_id) === fromPhone);
-          const rawName = (contact?.profile?.name || '').trim();
-          const isGenericName = !rawName || /^(hey|visitor|user|website visitor)$/i.test(rawName);
-          const customerName = isGenericName ? null : rawName;
+          const rawProfileName = (contact?.profile?.name || '').trim();
+          const isCompanyProfile = isCompanyOrBusinessName(rawProfileName);
+          const cleanProfileName = extractCleanPersonalName(rawProfileName);
+          const profileCompany = extractCompanyName(rawProfileName);
 
           // Extract text content (handles text, button reply, or interactive list reply)
           let messageText = '';
@@ -1346,27 +1455,64 @@ export async function processIncomingWebhook(body) {
           let conversation;
           if (convRes.rows[0]) {
             conversation = convRes.rows[0];
-            const updatedCustomerName = (customerName && customerName !== 'Website Visitor')
-              ? customerName
-              : (conversation.customer_name || 'Website Visitor');
+            const existingMeta = conversation.metadata || {};
+            let metaUpdated = false;
 
+            if (isCompanyProfile && !existingMeta.company_name) {
+              existingMeta.company_name = profileCompany || rawProfileName;
+              metaUpdated = true;
+            }
+
+            const existingCustomerName = conversation.customer_name;
+            const existingClean = extractCleanPersonalName(existingCustomerName);
+            let updatedCustomerName = existingClean;
+
+            if (!updatedCustomerName && cleanProfileName) {
+              updatedCustomerName = cleanProfileName;
+            }
+
+            const setClauses = [
+              'last_message = $1',
+              'last_message_at = CURRENT_TIMESTAMP',
+              'unread_count = unread_count + 1',
+              'updated_at = CURRENT_TIMESTAMP',
+            ];
+            const updateParams = [messageText];
+            let pCount = 2;
+
+            if (updatedCustomerName && updatedCustomerName !== existingCustomerName) {
+              setClauses.push(`customer_name = $${pCount++}`);
+              updateParams.push(updatedCustomerName);
+            } else if (!existingCustomerName && !updatedCustomerName) {
+              setClauses.push(`customer_name = $${pCount++}`);
+              updateParams.push('Website Visitor');
+            }
+
+            if (metaUpdated) {
+              setClauses.push(`metadata = $${pCount++}::jsonb`);
+              updateParams.push(JSON.stringify(existingMeta));
+            }
+
+            updateParams.push(conversation.id);
             const updRes = await query(`
               UPDATE whatsapp_conversations
-              SET customer_name = $1,
-                  last_message = $2,
-                  last_message_at = CURRENT_TIMESTAMP,
-                  unread_count = unread_count + 1,
-                  updated_at = CURRENT_TIMESTAMP
-              WHERE id = $3
+              SET ${setClauses.join(', ')}
+              WHERE id = $${pCount}
               RETURNING *
-            `, [updatedCustomerName, messageText, conversation.id]);
+            `, updateParams);
             conversation = updRes.rows[0];
           } else {
+            const initialMeta = {};
+            if (isCompanyProfile) {
+              initialMeta.company_name = profileCompany || rawProfileName;
+            }
+            const initialCustomerName = cleanProfileName || 'Website Visitor';
+
             const insRes = await query(`
-              INSERT INTO whatsapp_conversations (tenant_id, phone, customer_name, last_message, last_message_at, unread_count, updated_at)
-              VALUES ($1, $2, COALESCE($3, 'Website Visitor'), $4, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+              INSERT INTO whatsapp_conversations (tenant_id, phone, customer_name, last_message, last_message_at, unread_count, metadata, updated_at)
+              VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, 1, $5::jsonb, CURRENT_TIMESTAMP)
               RETURNING *
-            `, [matchedTenantId, fromPhone, customerName, messageText]);
+            `, [matchedTenantId, fromPhone, initialCustomerName, messageText, JSON.stringify(initialMeta)]);
             conversation = insRes.rows[0];
           }
 
@@ -1420,9 +1566,10 @@ export async function processIncomingWebhook(body) {
           const config = await getWhatsAppConfig(matchedTenantId);
 
           const statedName = conversation.metadata?.stated_name;
-          const effectiveName = statedName || ((conversation.customer_name && !['website visitor', 'hey', 'visitor', 'user', 'mydigitalera'].includes(conversation.customer_name.toLowerCase().trim()))
-            ? conversation.customer_name
-            : null);
+          const cleanStated = extractCleanPersonalName(statedName);
+          const cleanCust = extractCleanPersonalName(conversation.customer_name);
+          const effectivePersonalName = cleanStated || cleanCust || null;
+          const currentCompanyName = conversation.metadata?.company_name || extractCompanyName(conversation.customer_name);
 
           // Check if user requested agent handover explicitly
           const normalized = String(messageText || '').trim().toLowerCase();
@@ -1438,9 +1585,10 @@ export async function processIncomingWebhook(body) {
             let handoverReply;
             if (matchedTenantId) {
               const agentPhone = config.agentNotifyPhone || config.displayPhone || '';
-              handoverReply = `Ji bilkul${effectiveName ? ` ${effectiveName} ji` : ''}! Main hamari property sales team ko notify kar diya hai, hamare advisor jald hi aapse is chat par connect karenge.${agentPhone ? `\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: ${agentPhone}.` : ''}`;
+              const salutation = effectivePersonalName ? ` ${effectivePersonalName} ji` : '';
+              handoverReply = `Ji bilkul${salutation}! Main hamari property sales team ko notify kar diya hai, hamare advisor jald hi aapse is chat par connect karenge.${agentPhone ? `\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: ${agentPhone}.` : ''}`;
             } else {
-              const handover = evaluateVisitorIntent('5', effectiveName);
+              const handover = evaluateVisitorIntent('5', effectivePersonalName, currentCompanyName);
               handoverReply = handover.reply;
             }
 
@@ -1520,14 +1668,15 @@ export async function processIncomingWebhook(body) {
               replyText = widgetRes?.reply;
             } catch (err) {
               console.warn('[WhatsApp Bot] Tenant AI error, using fallback:', err.message);
-              replyText = `Namaste${effectiveName ? ` ${effectiveName} ji` : ''}! Thank you for messaging ${config.businessName || 'us'}. Our property consultant will connect with you shortly.`;
+              const salutation = effectivePersonalName ? ` ${effectivePersonalName} ji` : '';
+              replyText = `Namaste${salutation}! Thank you for messaging ${config.businessName || 'us'}. Our property consultant will connect with you shortly.`;
             }
           } else {
             // Platform landing page AI
             const learnedGuidance = await getLearnedGuidanceForPrompt();
             const aiRes = await generateSalesAiReply({
               messageText,
-              customerName: effectiveName,
+              customerName: effectivePersonalName,
               conversationHistory: history,
               conversationMetadata: conversation.metadata || {},
               learnedGuidance,

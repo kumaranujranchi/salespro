@@ -498,6 +498,8 @@ function testCriticalFiles() {
     'server/src/services/leadToSale.js',
     'server/src/services/whatsappService.js',
     'server/src/services/inactivityService.js',
+    'server/src/utils/nameHelper.js',
+    'server/src/services/whatsappHubService.js',
   ];
 
   let missingCount = 0;
@@ -594,7 +596,71 @@ function testInactivityLifecycle() {
 }
 
 // ---------------------------------------------------------
-// TEST 9: Backend Server & DB Health (Async Ping)
+// TEST 9: WhatsApp Chatbot Salutation & Business Name Protection
+// ---------------------------------------------------------
+async function testWhatsAppChatbotSalutations() {
+  printHeader('9. WhatsApp Chatbot Salutation & Business Name Protection');
+
+  try {
+    const { isCompanyOrBusinessName, extractCleanPersonalName, extractCompanyName } = await import(
+      '../server/src/utils/nameHelper.js'
+    );
+    const { evaluateVisitorIntent } = await import(
+      '../server/src/services/whatsappHubService.js'
+    );
+
+    // A. Company name detection
+    const isCompany = isCompanyOrBusinessName('AR developer');
+    const isApex = isCompanyOrBusinessName('Apex Realty');
+    const isBuilders = isCompanyOrBusinessName('Skyline Builders');
+
+    if (isCompany && isApex && isBuilders) {
+      logPass('Business & developer handles properly classified as companies (AR developer, Apex Realty, Skyline Builders)');
+    } else {
+      logFail('Company detection failed for real estate business names', 'Expected true for company handles');
+    }
+
+    // B. Clean personal name vs company
+    const arPersonalName = extractCleanPersonalName('AR developer');
+    const amitPersonalName = extractCleanPersonalName('Amit Sharma');
+    if (arPersonalName === null && amitPersonalName === 'Amit Sharma') {
+      logPass('Company handles yield null personal names, human names correctly preserved');
+    } else {
+      logFail('extractCleanPersonalName error', `AR developer got ${arPersonalName}, Amit Sharma got ${amitPersonalName}`);
+    }
+
+    // C. evaluateVisitorIntent salutation for Company
+    const compIntent = evaluateVisitorIntent('hello', 'AR developer');
+    const compHandover = evaluateVisitorIntent('5', 'AR developer');
+
+    if (!compIntent.reply.includes('AR developer ji') && compIntent.reply.includes('shubh naam')) {
+      logPass('Chatbot NEVER attaches "ji" to "AR developer"; asks for real human name politely');
+    } else {
+      logFail('Chatbot attached "ji" to company or failed to ask for name', compIntent.reply);
+    }
+
+    if (!compHandover.reply.includes('AR developer ji') && compHandover.reply.includes('Ji bilkul sir!')) {
+      logPass('Handover salutation uses respectful "sir" for company profiles, never "Company ji"');
+    } else {
+      logFail('Handover salutation incorrect for company handle', compHandover.reply);
+    }
+
+    // D. evaluateVisitorIntent salutation for Human Person
+    const personIntent = evaluateVisitorIntent('hello', 'Rahul');
+    const personHandover = evaluateVisitorIntent('5', 'Rahul');
+
+    if (personIntent.reply.includes('Namaste Rahul ji!') && personHandover.reply.includes('Ji bilkul Rahul ji!')) {
+      logPass('Real human personal names correctly and respectfully greeted with "Rahul ji"');
+    } else {
+      logFail('Personal name salutation failed for human prospect', personIntent.reply);
+    }
+  } catch (err) {
+    logFail('WhatsApp chatbot salutation test crashed', err.message);
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 10: Backend Server & DB Health (Async Ping)
 // ---------------------------------------------------------
 async function testBackendHealth() {
   printHeader('7. Backend Server & Database Connection');
@@ -651,6 +717,7 @@ async function runSuite() {
   testLeadToSaleConversion();
   testMetaCapiIntegration();
   testInactivityLifecycle();
+  await testWhatsAppChatbotSalutations();
   testCriticalFiles();
   await testBackendHealth();
 
