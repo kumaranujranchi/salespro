@@ -813,6 +813,16 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('Sales Custom Details verification failed', 'Check SalesFormModal.tsx, SalesDetailsModal.tsx, sales.js & App.tsx');
   }
+
+  // K. AuthContext & Server Syntax Integrity Guard
+  const authContextCode = fs.readFileSync(path.join(ROOT_DIR, 'src/contexts/AuthContext.tsx'), 'utf8');
+  const hasHandleSessionExpiredImport = authContextCode.includes('handleSessionExpired') && authContextCode.includes("from '../lib/auth-token'");
+
+  if (hasHandleSessionExpiredImport) {
+    logPass('AuthContext handleSessionExpired properly imported (prevents ReferenceError on 502/session expiration)');
+  } else {
+    logFail('AuthContext import missing handleSessionExpired', 'Check AuthContext.tsx');
+  }
 }
 
 // ---------------------------------------------------------

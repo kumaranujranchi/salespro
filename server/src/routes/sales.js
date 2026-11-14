@@ -455,8 +455,6 @@ router.patch('/:id', async (req, res) => {
         }
       }
     }
-      }
-    }
 
     if (fields.length === 0) return res.json({ success: true });
 

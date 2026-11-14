@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { useQuery, useMutation, useBackend } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
-import { getAuthToken, getStoredSessionUser, setAuthToken, setStoredSessionUser } from '../lib/auth-token';
+import { getAuthToken, getStoredSessionUser, setAuthToken, setStoredSessionUser, handleSessionExpired } from '../lib/auth-token';
 import { Profile, Tenant, ReferralCampaign, UserRole } from '../types/database';
 
 interface AuthContextType {
