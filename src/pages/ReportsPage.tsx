@@ -287,7 +287,7 @@ export function ReportsPage() {
                     }`}
                   >
                     <CalendarIcon size={14} />
-                    Daily Summary (दिन अनुसार)
+                    Daily Summary
                   </button>
                   <button
                     type="button"
@@ -299,7 +299,7 @@ export function ReportsPage() {
                     }`}
                   >
                     <Car size={14} />
-                    Trip Logs (ट्रिप लॉग)
+                    Trip Logs
                   </button>
                 </div>
               )}
@@ -396,11 +396,11 @@ export function ReportsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="pl-6">Date (तारीख)</TableHead>
-                      <TableHead>Total Visits (कुल विज़िट्स)</TableHead>
-                      <TableHead>Completed Trips (सफल ट्रिप्स)</TableHead>
-                      <TableHead>Total Distance (ऑडोमीटर किमी)</TableHead>
-                      <TableHead>Drivers on Duty (गाड़ी / ड्राइवर्स)</TableHead>
+                      <TableHead className="pl-6">Date</TableHead>
+                      <TableHead>Total Visits</TableHead>
+                      <TableHead>Completed Trips</TableHead>
+                      <TableHead>Total Distance (Odometer)</TableHead>
+                      <TableHead>Drivers on Duty</TableHead>
                       <TableHead className="pr-6">Avg Km / Trip</TableHead>
                     </TableRow>
                   </TableHeader>

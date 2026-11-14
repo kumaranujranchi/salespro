@@ -771,7 +771,7 @@ function testSiteVisitDriverIdentification() {
   const reportsRouteCode = reportsRouteExists ? fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/reports.js'), 'utf8') : '';
   const hasDailySummaryCalc = reportsRouteCode.includes('dailySummary') && reportsRouteCode.includes('totalKmDriven');
   const reportsPageCode = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/ReportsPage.tsx'), 'utf8');
-  const hasReportsViewToggle = reportsPageCode.includes('visitViewMode') && reportsPageCode.includes('Daily Summary (दिन अनुसार)');
+  const hasReportsViewToggle = reportsPageCode.includes('visitViewMode') && reportsPageCode.includes('Daily Summary');
   const hasOdometerKpi = reportsPageCode.includes('Total Fleet Distance (Odometer)');
 
   if (reportsRouteExists && hasDailySummaryCalc && hasReportsViewToggle && hasOdometerKpi) {
