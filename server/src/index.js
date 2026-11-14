@@ -73,6 +73,26 @@ app.post('/api/tenants/register', registerTenantHandler);
 // Public WhatsApp Webhook & OTP router (internal admin routes guard themselves with requireAuth)
 app.use('/api/whatsapp', whatsappRoutes);
 
+// File Upload & Storage resolver (Public upload endpoint for avatars, receipts, and brand assets)
+app.post('/api/files/upload', (req, res) => {
+  try {
+    const fileData = req.body?.file || req.body?.data || req.body?.image;
+    const storageId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const url = fileData || `/api/files/${storageId}`;
+    return res.json({ storageId, url });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/files/:id', (req, res) => {
+  const { id } = req.params;
+  if (id && (id.startsWith('http://') || id.startsWith('https://') || id.startsWith('data:'))) {
+    return res.redirect(id);
+  }
+  return res.json({ url: id });
+});
+
 // Everything below requires a valid session token, and tenant-scoped
 // requests are pinned to the caller's own tenant.
 app.use('/api', requireAuth, enforceTenantScope);

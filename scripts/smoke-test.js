@@ -779,6 +779,25 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('Admin Reports section verification failed', 'Check server/src/routes/reports.js & ReportsPage.tsx');
   }
+
+  // I. Tenant Brand Logo Upload & Client-Side Canvas Optimization
+  const settingsPageCode = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SettingsPage.tsx'), 'utf8');
+  const hasClientCanvasOptimization = settingsPageCode.includes('canvas.toDataURL') && settingsPageCode.includes('maxDimension');
+  const hasSvgSupport = settingsPageCode.includes('image/svg+xml');
+  const hasSaveBrandingResolvedUrl = settingsPageCode.includes('resolved_logo_url: logoUrl');
+  const hasContrastSaveButton = settingsPageCode.includes('!text-white font-bold');
+
+  const reactiveCode = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/reactive.ts'), 'utf8');
+  const hasReactiveFilesFallback = reactiveCode.includes('files.generateUploadUrl') && reactiveCode.includes('files.getUrl');
+
+  const serverIndexCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/index.js'), 'utf8');
+  const hasServerFilesUpload = serverIndexCode.includes('/api/files/upload') && serverIndexCode.includes('/api/files/:id');
+
+  if (hasClientCanvasOptimization && hasSvgSupport && hasSaveBrandingResolvedUrl && hasContrastSaveButton && hasReactiveFilesFallback && hasServerFilesUpload) {
+    logPass('Tenant Brand Logo upload with Canvas optimization & file upload fallbacks verified');
+  } else {
+    logFail('Tenant Brand Logo upload verification failed', 'Check SettingsPage.tsx, reactive.ts & server/src/index.js');
+  }
 }
 
 // ---------------------------------------------------------

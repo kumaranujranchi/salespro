@@ -478,6 +478,16 @@ async function resolveApiCall(functionKey: any, args: any) {
     const otp = args?.data?.otp || args?.otp;
     return await authService.sendRegistrationOtp({ email, name, otp });
   }
+  if (key.includes('files.generateUploadUrl')) {
+    return '/api/files/upload';
+  }
+  if (key.includes('files.getUrl')) {
+    const sId = args?.storageId || args?.id || '';
+    if (!sId) return null;
+    const str = String(sId);
+    if (str.startsWith('http') || str.startsWith('data:')) return str;
+    return `/api/files/${encodeURIComponent(str)}`;
+  }
   if (key.includes('system.getMetrics')) {
     return await systemService.getMetrics();
   }

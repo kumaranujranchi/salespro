@@ -64,7 +64,8 @@ export function SettingsPage() {
         ...tenant.settings,
         appearance: {
           ...tenant.settings?.appearance,
-          logo_url: logoUrl
+          logo_url: logoUrl,
+          resolved_logo_url: logoUrl
         }
       };
 
@@ -95,21 +96,86 @@ export function SettingsPage() {
 
     setUploadingLogo(true);
     try {
-      const uploadUrl = await generateUploadUrl();
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      const { storageId } = await result.json();
+      // SVG handling: Read directly as Data URL
+      if (file.type === 'image/svg+xml') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          setLogoUrl(result);
+          setLogoPreview(result);
+          setUploadingLogo(false);
+          toast.success('Logo selected! Click Save Branding to apply.');
+        };
+        reader.onerror = () => {
+          setUploadingLogo(false);
+          toast.error('Failed to read SVG file.');
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
 
-      setLogoUrl(storageId);
-      setLogoPreview(URL.createObjectURL(file));
-      toast.success('Logo uploaded successfully! Click Save to apply changes.');
+      // Raster images (PNG, JPG, WebP, etc.): optimize client-side using Canvas to keep payload compact and fast
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawDataUrl = event.target?.result as string;
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+            const maxDimension = 400; // Optimal size for high-res navbar and reports
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              setLogoUrl(rawDataUrl);
+              setLogoPreview(rawDataUrl);
+              setUploadingLogo(false);
+              toast.success('Logo selected! Click Save Branding to apply.');
+              return;
+            }
+
+            ctx.drawImage(img, 0, 0, width, height);
+            const isPng = file.type === 'image/png';
+            const optimizedDataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.9);
+
+            setLogoUrl(optimizedDataUrl);
+            setLogoPreview(optimizedDataUrl);
+            setUploadingLogo(false);
+            toast.success('Logo selected! Click Save Branding to apply.');
+          } catch (canvasErr) {
+            console.warn('Canvas optimization fallback:', canvasErr);
+            setLogoUrl(rawDataUrl);
+            setLogoPreview(rawDataUrl);
+            setUploadingLogo(false);
+            toast.success('Logo selected! Click Save Branding to apply.');
+          }
+        };
+        img.onerror = () => {
+          setUploadingLogo(false);
+          toast.error('Failed to parse image file.');
+        };
+        img.src = rawDataUrl;
+      };
+      reader.onerror = () => {
+        setUploadingLogo(false);
+        toast.error('Failed to read image file.');
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error('Failed to upload logo.');
-    } finally {
       setUploadingLogo(false);
     }
   };
@@ -117,6 +183,9 @@ export function SettingsPage() {
   const handleRemoveLogo = () => {
     setLogoUrl(null);
     setLogoPreview(null);
+    const fileInput = document.getElementById('brand-logo-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+    toast.success('Logo removed. Click Save Branding to apply changes.');
   };
 
   const handleSave = async () => {
@@ -300,8 +369,13 @@ export function SettingsPage() {
           </div>
 
           <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
-            <Button onClick={handleSaveBranding} isLoading={savingBranding} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-              <Save size={18} /> Save Branding
+            <Button
+              onClick={handleSaveBranding}
+              isLoading={savingBranding}
+              variant="secondary"
+              className="gap-2 !bg-emerald-600 hover:!bg-emerald-700 !text-white font-bold shadow-md px-5 py-2.5"
+            >
+              <Save size={18} className="text-white" /> Save Branding
             </Button>
           </div>
         </CardContent>
