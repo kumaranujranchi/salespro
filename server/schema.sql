@@ -289,6 +289,7 @@ CREATE TABLE IF NOT EXISTS site_visits (
     end_odometer VARCHAR(50),
     trip_start_time TIMESTAMPTZ,
     trip_end_time TIMESTAMPTZ,
+    completed_by_profile_id VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

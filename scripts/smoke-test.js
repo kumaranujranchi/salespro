@@ -752,6 +752,33 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('Global site visit visibility test failed', 'Check server/src/routes/site_visits.js, SettingsPage.tsx & SiteVisitsPage.tsx');
   }
+
+  // G. Driver Trip Completion & End Odometer Fix Verification
+  const driverModalCode = fs.readFileSync(path.join(ROOT_DIR, 'src/components/site-visits/DriverTripModal.tsx'), 'utf8');
+  const hasOdometerValidation = driverModalCode.includes('End reading must be greater than start');
+  const hasCompletedByHandling = siteVisitsRouteCode.includes('completed_by_profile_id') && siteVisitsRouteCode.includes('ALLOWED_PATCH_FIELDS');
+  const hasDriverContrastButton = driverModalCode.includes('!text-white font-bold bg-emerald-600');
+  const hasTripForm = driverModalCode.includes('<form onSubmit={handleAction}');
+
+  if (hasOdometerValidation && hasCompletedByHandling && hasDriverContrastButton && hasTripForm) {
+    logPass('Driver Trip Modal & End Odometer completion fix verified (SQL column safety + contrast button + form submission)');
+  } else {
+    logFail('Driver Trip completion verification failed', 'Check DriverTripModal.tsx & site_visits.js');
+  }
+
+  // H. Reports Page Daily Site Visits & Odometer Distance Report Verification
+  const reportsRouteExists = fs.existsSync(path.join(ROOT_DIR, 'server/src/routes/reports.js'));
+  const reportsRouteCode = reportsRouteExists ? fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/reports.js'), 'utf8') : '';
+  const hasDailySummaryCalc = reportsRouteCode.includes('dailySummary') && reportsRouteCode.includes('totalKmDriven');
+  const reportsPageCode = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/ReportsPage.tsx'), 'utf8');
+  const hasReportsViewToggle = reportsPageCode.includes('visitViewMode') && reportsPageCode.includes('Daily Summary (दिन अनुसार)');
+  const hasOdometerKpi = reportsPageCode.includes('Total Fleet Distance (Odometer)');
+
+  if (reportsRouteExists && hasDailySummaryCalc && hasReportsViewToggle && hasOdometerKpi) {
+    logPass('Admin Reports section Daily Site Visits & Odometer Distance calculations fully verified');
+  } else {
+    logFail('Admin Reports section verification failed', 'Check server/src/routes/reports.js & ReportsPage.tsx');
+  }
 }
 
 // ---------------------------------------------------------

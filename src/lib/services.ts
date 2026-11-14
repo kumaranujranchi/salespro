@@ -140,6 +140,10 @@ export const siteVisitsService = {
   delete: (id: string) => api.delete<{ success: boolean }>(`/site-visits/${id}`),
 };
 
+export const reportsService = {
+  getReportsData: (params: any) => api.get<any>('/reports', params),
+};
+
 export const targetsService = {
   list: (tenantId: string, userId?: string) =>
     api.get<any[]>('/targets', { tenant_id: tenantId, user_id: userId }),

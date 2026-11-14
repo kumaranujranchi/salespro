@@ -3,6 +3,15 @@ import { query } from '../db/index.js';
 
 const router = Router();
 
+// Ensure database columns for trip management
+query(`
+  ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS completed_by_profile_id VARCHAR(255) REFERENCES profiles(id) ON DELETE SET NULL;
+  ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS start_odometer VARCHAR(50);
+  ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS end_odometer VARCHAR(50);
+  ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS trip_start_time TIMESTAMPTZ;
+  ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS trip_end_time TIMESTAMPTZ;
+`).catch(() => {});
+
 // List Site Visits
 router.get('/', async (req, res) => {
   try {
@@ -146,12 +155,20 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const b = req.body;
 
+    const ALLOWED_PATCH_FIELDS = new Set([
+      'tenant_id', 'requested_by', 'lead_id', 'customer_name', 'mobile',
+      'visit_date', 'visit_time', 'pickup_location', 'notes', 'status',
+      'driver_id', 'rejection_reason', 'clarification_note',
+      'start_odometer', 'end_odometer', 'trip_start_time', 'trip_end_time',
+      'completed_by_profile_id', 'metadata'
+    ]);
+
     const fields = [];
     const values = [];
     let idx = 1;
 
     for (const [k, v] of Object.entries(b)) {
-      if (k !== 'id' && k !== '_id' && v !== undefined) {
+      if (ALLOWED_PATCH_FIELDS.has(k) && v !== undefined) {
         fields.push(`${k} = $${idx++}`);
         values.push(v);
       }
@@ -163,6 +180,41 @@ router.patch('/:id', async (req, res) => {
     values.push(id);
 
     await query(`UPDATE site_visits SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+
+    // If trip completed, log activity on linked lead and tenant
+    if (b.status === 'completed') {
+      try {
+        const visitRes = await query('SELECT * FROM site_visits WHERE id = $1', [id]);
+        const v = visitRes.rows[0];
+        if (v) {
+          const startKm = parseFloat(b.start_odometer || v.start_odometer || 0);
+          const endKm = parseFloat(b.end_odometer || v.end_odometer || 0);
+          const distKm = Math.max(0, endKm - startKm);
+          await query(
+            `INSERT INTO activity_logs (tenant_id, user_id, action, entity_type, entity_id, details)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              v.tenant_id,
+              b.completed_by_profile_id || v.driver_id || v.requested_by,
+              'Site Visit Completed',
+              'site_visits',
+              id,
+              JSON.stringify({
+                customer_name: v.customer_name,
+                pickup_location: v.pickup_location,
+                start_odometer: b.start_odometer || v.start_odometer,
+                end_odometer: b.end_odometer || v.end_odometer,
+                distance_km: distKm,
+                lead_id: v.lead_id
+              })
+            ]
+          );
+        }
+      } catch (logErr) {
+        // Non-blocking activity log
+      }
+    }
+
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });

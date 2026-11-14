@@ -175,8 +175,14 @@ export function DriverDashboard() {
 
             <DriverTripModal
                 isOpen={isDriverModalOpen}
-                onClose={() => setIsDriverModalOpen(false)}
-                onSuccess={() => {}}
+                onClose={() => {
+                    setIsDriverModalOpen(false);
+                    setSelectedVisit(null);
+                }}
+                onSuccess={() => {
+                    setIsDriverModalOpen(false);
+                    setSelectedVisit(null);
+                }}
                 visit={selectedVisit as any}
             />
         </div>

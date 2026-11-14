@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   authService, tenantsService, profilesService, leadsService,
-  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService, metaService
+  salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService, metaService,
+  reportsService
 } from './services';
 import { handleSessionExpired } from './auth-token';
 
@@ -390,6 +391,11 @@ async function resolveApiCall(functionKey: any, args: any) {
     const res = await siteVisitsService.delete(args?.id || args?._id);
     invalidateQuery('site_visits');
     return res;
+  }
+
+  // REPORTS & ODOMETER ANALYTICS
+  if (key.includes('reports.getReportsData') || key.includes('reports.get')) {
+    return await reportsService.getReportsData(args);
   }
 
   // TARGETS

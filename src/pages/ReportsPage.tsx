@@ -9,7 +9,7 @@ import { Badge } from '../components/ui/Badge';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { 
   FileText, Download, Filter, Calendar as CalendarIcon, 
-  TrendingUp, Users, Award, MapPin, PhoneCall 
+  TrendingUp, Users, Award, MapPin, PhoneCall, Car, Gauge 
 } from 'lucide-react';
 import { isLeadPhoneMasked, maskPhoneNumber } from '../utils/phoneMasking';
 
@@ -33,6 +33,7 @@ export function ReportsPage() {
   }, []);
 
   const [activeTab, setActiveTab] = useState<'leads' | 'sales' | 'visits' | 'executives'>('leads');
+  const [visitViewMode, setVisitViewMode] = useState<'daily' | 'detailed'>('daily');
   const [startDate, setStartDate] = useState(defaultDates.start);
   const [endDate, setEndDate] = useState(defaultDates.end);
   const [sourceFilter, setSourceFilter] = useState('All Sources');
@@ -64,10 +65,19 @@ export function ReportsPage() {
         s.customerName, s.projectName, s.unitNumber, s.areaSqft, s.totalRevenue, s.bookingAmount, s.date, s.executiveName
       ]);
     } else if (activeTab === 'visits') {
-      headers = ['Customer Name', 'Mobile', 'Project', 'Executive', 'Visit Date', 'Status'];
-      dataToExport = (reportData.siteVisitsReport?.detailedRegister || []).map(v => [
-        v.customerName, isPhoneMasked ? maskPhoneNumber(v.mobile) : v.mobile, v.projectName, v.executiveName, v.visitDate, v.status
-      ]);
+      if (visitViewMode === 'daily') {
+        headers = ['Date', 'Total Site Visits', 'Completed Trips', 'Total Odometer Distance (km)', 'Active Drivers'];
+        dataToExport = (reportData.siteVisitsReport?.dailySummary || []).map(d => [
+          d.date, d.totalVisits, d.completedVisits, d.totalKm, (d.driversList || []).join('; ') || 'None'
+        ]);
+        filename = 'daily_site_visits_odometer_report';
+      } else {
+        headers = ['Customer Name', 'Mobile', 'Location / Project', 'Executive', 'Driver', 'Visit Date', 'Visit Time', 'Start Odometer (km)', 'End Odometer (km)', 'Distance Run (km)', 'Status'];
+        dataToExport = (reportData.siteVisitsReport?.detailedRegister || []).map(v => [
+          v.customerName, isPhoneMasked ? maskPhoneNumber(v.mobile) : v.mobile, v.projectName || v.pickupLocation, v.executiveName, v.driverName, v.visitDate, v.visitTime, v.startOdometer, v.endOdometer, v.totalKm, v.status
+        ]);
+        filename = 'detailed_site_visits_odometer_report';
+      }
     } else if (activeTab === 'executives') {
       headers = ['Executive Name', 'Role', 'Total Assigned', 'Converted', 'Conversion %', 'Site Visits Done', 'Total Revenue'];
       dataToExport = (reportData.executivePerformanceReport?.detailedRegister || []).map(e => [
@@ -215,7 +225,7 @@ export function ReportsPage() {
       ) : (
         <div className="space-y-6">
           {/* KPI Cards Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className={`grid gap-4 md:gap-6 ${activeTab === 'visits' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
             {activeTab === 'leads' && (
               <>
                 <KPICardItem title="Total Leads Imported" value={reportData.leadsReport?.totalLeadsImported} icon={Users} color="text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" />
@@ -232,9 +242,10 @@ export function ReportsPage() {
             )}
             {activeTab === 'visits' && (
               <>
-                <KPICardItem title="Total Site Visits" value={reportData.siteVisitsReport?.totalVisits} icon={MapPin} color="text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" />
-                <KPICardItem title="Visits Scheduled" value={reportData.siteVisitsReport?.scheduled} icon={CalendarIcon} color="text-amber-600 bg-amber-50 dark:bg-amber-500/10" />
-                <KPICardItem title="Visits Done" value={reportData.siteVisitsReport?.done} icon={Users} color="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" />
+                <KPICardItem title="Total Site Visits" value={reportData.siteVisitsReport?.totalVisits ?? 0} icon={MapPin} color="text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10" />
+                <KPICardItem title="Visits Completed" value={reportData.siteVisitsReport?.done ?? reportData.siteVisitsReport?.completed ?? 0} icon={Users} color="text-blue-600 bg-blue-50 dark:bg-blue-500/10" />
+                <KPICardItem title="Total Fleet Distance (Odometer)" value={`${(reportData.siteVisitsReport?.totalKmDriven ?? 0).toLocaleString()} km`} icon={Car} color="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10" />
+                <KPICardItem title="Avg. Distance / Trip" value={`${(reportData.siteVisitsReport?.averageKmPerTrip ?? 0).toFixed(1)} km`} icon={Gauge} color="text-amber-600 bg-amber-50 dark:bg-amber-500/10" />
               </>
             )}
             {activeTab === 'executives' && (
@@ -246,10 +257,52 @@ export function ReportsPage() {
             )}
           </div>
 
-          {/* Detailed Register Table */}
+          {/* Detailed Register / Daily Report Table */}
           <Card className="rounded-2xl border border-gray-100 dark:border-white/5 overflow-hidden">
-            <CardHeader className="border-b border-gray-100 dark:border-white/5">
-              <CardTitle className="text-base font-bold text-slate-800 dark:text-white">Detailed Register</CardTitle>
+            <CardHeader className="border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-800 dark:text-white">
+                  {activeTab === 'visits' 
+                    ? (visitViewMode === 'daily' ? 'Daily Site Visits & Odometer Distance Report' : 'Trip-Level Site Visits & Odometer Logs') 
+                    : 'Detailed Register'}
+                </CardTitle>
+                {activeTab === 'visits' && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {visitViewMode === 'daily' 
+                      ? 'Daily aggregate of scheduled visits, completed trips, and total kilometers run based on start/end odometers.'
+                      : 'Comprehensive list of individual trips with start and end odometer readings.'}
+                  </p>
+                )}
+              </div>
+
+              {activeTab === 'visits' && (
+                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setVisitViewMode('daily')}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                      visitViewMode === 'daily'
+                        ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <CalendarIcon size={14} />
+                    Daily Summary (दिन अनुसार)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisitViewMode('detailed')}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                      visitViewMode === 'detailed'
+                        ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Car size={14} />
+                    Trip Logs (ट्रिप लॉग)
+                  </button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {activeTab === 'leads' && (
@@ -339,31 +392,137 @@ export function ReportsPage() {
                 </Table>
               )}
 
-              {activeTab === 'visits' && (
+              {activeTab === 'visits' && visitViewMode === 'daily' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-6">Date (तारीख)</TableHead>
+                      <TableHead>Total Visits (कुल विज़िट्स)</TableHead>
+                      <TableHead>Completed Trips (सफल ट्रिप्स)</TableHead>
+                      <TableHead>Total Distance (ऑडोमीटर किमी)</TableHead>
+                      <TableHead>Drivers on Duty (गाड़ी / ड्राइवर्स)</TableHead>
+                      <TableHead className="pr-6">Avg Km / Trip</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(reportData.siteVisitsReport?.dailySummary || []).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10 text-gray-400">
+                          No site visits recorded in this period
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      (reportData.siteVisitsReport?.dailySummary || []).map((row: any) => {
+                        const avgKm = row.completedVisits > 0 ? (row.totalKm / row.completedVisits).toFixed(1) : '0';
+                        return (
+                          <TableRow key={row.date} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+                            <TableCell className="font-bold text-slate-800 dark:text-slate-200 pl-6 flex items-center gap-2">
+                              <CalendarIcon size={14} className="text-emerald-600 shrink-0" />
+                              <span>{row.date}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs">
+                                {row.totalVisits} visits
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={row.completedVisits > 0 ? 'success' : 'default'}>
+                                {row.completedVisits} completed
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                <Car size={15} />
+                                {row.totalKm.toLocaleString()} km
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {row.driversList && row.driversList.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {row.driversList.map((dr: string, i: number) => (
+                                    <span key={i} className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md font-medium">
+                                      {dr}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">No driver assigned</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="pr-6 font-mono text-xs text-slate-600 dark:text-slate-300">
+                              {avgKm} km
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+
+              {activeTab === 'visits' && visitViewMode === 'detailed' && (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="pl-6">Customer Name</TableHead>
                       <TableHead>Mobile</TableHead>
-                      <TableHead>Project</TableHead>
+                      <TableHead>Location / Project</TableHead>
                       <TableHead>Executive</TableHead>
-                      <TableHead>Visit Date</TableHead>
+                      <TableHead>Driver</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Odometer Start</TableHead>
+                      <TableHead>Odometer End</TableHead>
+                      <TableHead>Total Distance</TableHead>
                       <TableHead className="pr-6">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(reportData.siteVisitsReport?.detailedRegister || []).length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-gray-400">No site visits scheduled in this period</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-10 text-gray-400">
+                          No site visits found in this period
+                        </TableCell>
+                      </TableRow>
                     ) : (
-                      (reportData.siteVisitsReport?.detailedRegister || []).map((visit) => (
-                        <TableRow key={visit.id}>
-                          <TableCell className="font-semibold text-slate-800 dark:text-slate-200 pl-6">{visit.customerName}</TableCell>
-                          <TableCell>{visit.mobile}</TableCell>
-                          <TableCell className="font-medium">{visit.projectName}</TableCell>
-                          <TableCell>{visit.executiveName}</TableCell>
-                          <TableCell>{visit.visitDate}</TableCell>
+                      (reportData.siteVisitsReport?.detailedRegister || []).map((visit: any) => (
+                        <TableRow key={visit.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
+                          <TableCell className="font-semibold text-slate-800 dark:text-slate-200 pl-6">
+                            {visit.customerName}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
+                              {isPhoneMasked ? maskPhoneNumber(visit.mobile) : visit.mobile}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-medium text-xs">
+                            {visit.projectName || visit.pickupLocation}
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-600 dark:text-slate-300">{visit.executiveName}</TableCell>
+                          <TableCell className="text-xs">
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {visit.driverName}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">
+                            {visit.visitDate} {visit.visitTime ? `(${visit.visitTime})` : ''}
+                          </TableCell>
+                          <TableCell className="text-xs font-mono text-slate-600 dark:text-slate-300">
+                            {visit.startOdometer !== '-' ? `${visit.startOdometer} km` : '-'}
+                          </TableCell>
+                          <TableCell className="text-xs font-mono text-slate-600 dark:text-slate-300">
+                            {visit.endOdometer !== '-' ? `${visit.endOdometer} km` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {visit.totalKm > 0 ? (
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                                {visit.totalKm} km
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="pr-6">
-                            <Badge variant={['trip_completed', 'completed', 'done', 'approved'].includes(visit.status.toLowerCase()) ? 'success' : 'warning'}>
+                            <Badge variant={['completed', 'trip_completed', 'done'].includes(String(visit.status).toLowerCase()) ? 'success' : 'warning'}>
                               {visit.status}
                             </Badge>
                           </TableCell>
