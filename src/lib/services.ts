@@ -137,6 +137,7 @@ export const siteVisitsService = {
     api.get<number>('/site-visits/count-pending', { tenant_id: tenantId }),
   request: (data: any) => api.post<any>('/site-visits', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/site-visits/${id}`, data),
+  delete: (id: string) => api.delete<{ success: boolean }>(`/site-visits/${id}`),
 };
 
 export const targetsService = {

@@ -386,6 +386,11 @@ async function resolveApiCall(functionKey: any, args: any) {
     invalidateQuery('site_visits');
     return res;
   }
+  if (key.includes('site_visits.delete')) {
+    const res = await siteVisitsService.delete(args?.id || args?._id);
+    invalidateQuery('site_visits');
+    return res;
+  }
 
   // TARGETS
   if (key.includes('targets.listTargets') || key.includes('targets.list')) {

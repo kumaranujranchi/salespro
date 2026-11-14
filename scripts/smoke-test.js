@@ -737,6 +737,21 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('SiteVisitRequestForm missing search debounce or strict lead selection guard', 'Check SiteVisitRequestForm & reactive.ts');
   }
+
+  // F. Site Visit Global Visibility & Tenant Setting verification
+  const siteVisitsRoutePath = path.join(ROOT_DIR, 'server/src/routes/site_visits.js');
+  const siteVisitsRouteCode = fs.readFileSync(siteVisitsRoutePath, 'utf8');
+
+  const hasGlobalVisibilityLogic = siteVisitsRouteCode.includes('isGlobalVisibility') && siteVisitsRouteCode.includes("status IN ('approved', 'trip_started', 'completed')");
+  const hasScopeMySupport = siteVisitsRouteCode.includes("scope === 'my'");
+  const hasSettingsPageToggle = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SettingsPage.tsx'), 'utf8').includes('globalSiteVisits') && fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SettingsPage.tsx'), 'utf8').includes('Site Visit Visibility');
+  const hasSiteVisitsPageToggle = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SiteVisitsPage.tsx'), 'utf8').includes('isGlobalConfigured') && fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SiteVisitsPage.tsx'), 'utf8').includes('Company Schedule');
+
+  if (hasGlobalVisibilityLogic && hasScopeMySupport && hasSettingsPageToggle && hasSiteVisitsPageToggle) {
+    logPass('Global Site Visit schedule visibility is configurable in Settings and seamlessly active across backend & UI');
+  } else {
+    logFail('Global site visit visibility test failed', 'Check server/src/routes/site_visits.js, SettingsPage.tsx & SiteVisitsPage.tsx');
+  }
 }
 
 // ---------------------------------------------------------

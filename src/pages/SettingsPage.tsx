@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
-import { Settings, Target, Save, Building2, Image, UploadCloud, Trash2, ShieldCheck, Phone, Lock } from 'lucide-react';
+import { Settings, Target, Save, Building2, Image, UploadCloud, Trash2, ShieldCheck, Phone, Lock, Car, CheckCircle2 } from 'lucide-react';
 
 export function SettingsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
@@ -30,6 +30,10 @@ export function SettingsPage() {
   const [maskLeadPhone, setMaskLeadPhone] = useState(false);
   const [savingSecurity, setSavingSecurity] = useState(false);
 
+  // Site Visit Visibility (Global vs Private)
+  const [globalSiteVisits, setGlobalSiteVisits] = useState(true);
+  const [savingSiteVisits, setSavingSiteVisits] = useState(false);
+
   useEffect(() => {
     if (tenant) {
       setBrandName(tenant.name || '');
@@ -37,6 +41,11 @@ export function SettingsPage() {
       setLogoPreview((tenant.settings?.appearance as any)?.resolved_logo_url || tenant.settings?.appearance?.logo_url || null);
       if (tenant.settings?.security?.mask_lead_phone !== undefined) {
         setMaskLeadPhone(!!tenant.settings.security.mask_lead_phone);
+      }
+      if (tenant.settings?.site_visits?.global_visibility !== undefined) {
+        setGlobalSiteVisits(Boolean(tenant.settings.site_visits.global_visibility));
+      } else {
+        setGlobalSiteVisits(true);
       }
     }
     if (tenant?.settings?.general?.target_model) {
@@ -163,6 +172,34 @@ export function SettingsPage() {
       toast.error(error.message || 'Failed to save security settings.');
     } finally {
       setSavingSecurity(false);
+    }
+  };
+
+  const handleSaveSiteVisits = async () => {
+    if (!tenant?._id) return;
+    setSavingSiteVisits(true);
+
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        site_visits: {
+          ...tenant.settings?.site_visits,
+          global_visibility: globalSiteVisits,
+        },
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings,
+      });
+
+      await refreshTenant();
+      toast.success('Site visit visibility settings saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving site visit settings:', error);
+      toast.error(error.message || 'Failed to save site visit settings.');
+    } finally {
+      setSavingSiteVisits(false);
     }
   };
 
@@ -401,6 +438,90 @@ export function SettingsPage() {
           <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
             <Button onClick={handleSaveSecurity} isLoading={savingSecurity} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
               <Save size={18} /> Save Privacy Settings
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Site Visit Visibility & Fleet Coordination Card */}
+      <Card>
+        <CardHeader className="border-b border-gray-100 dark:border-white/10">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Car className="text-emerald-500" size={20} /> Site Visit Visibility & Fleet Scheduling
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Global Site Visit Visibility
+                </h4>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  globalSiteVisits ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                }`}>
+                  {globalSiteVisits ? 'Global (Company-Wide)' : 'Private (Requester Only)'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                When <strong>Global</strong> is enabled, sales executives can see approved company-wide site visits to verify car and driver availability before scheduling, preventing vehicle booking conflicts.
+                When <strong>Private</strong>, sales executives strictly see only their own requested visits in isolation.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setGlobalSiteVisits(!globalSiteVisits)}
+              className={`w-14 h-8 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer shrink-0 ${
+                globalSiteVisits ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
+            >
+              <div
+                className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-200 ${
+                  globalSiteVisits ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Live Comparison Preview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className={`p-4 rounded-xl border transition-all ${
+              globalSiteVisits
+                ? 'border-emerald-300 dark:border-emerald-700/60 bg-emerald-50/50 dark:bg-emerald-950/20'
+                : 'border-slate-200 dark:border-slate-800 opacity-60'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-600" /> Global Schedule (ON)
+                </span>
+                <span className="text-[10px] bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.5 rounded font-semibold">Recommended</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Sales reps see all approved trips, assigned drivers, and real-time vehicle booking calendars to pick open slots without clashes.
+              </p>
+            </div>
+
+            <div className={`p-4 rounded-xl border transition-all ${
+              !globalSiteVisits
+                ? 'border-amber-300 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-950/20'
+                : 'border-slate-200 dark:border-slate-800 opacity-60'
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                  <Lock size={14} className="text-amber-600" /> Private / Isolated (OFF)
+                </span>
+                <span className="text-[10px] bg-amber-200/60 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded font-semibold">Isolated</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Sales reps can only see visits they personally created. Other agents' visits and vehicle schedules remain hidden.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
+            <Button onClick={handleSaveSiteVisits} isLoading={savingSiteVisits} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <Save size={18} /> Save Site Visit Settings
             </Button>
           </div>
         </CardContent>

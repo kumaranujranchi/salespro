@@ -6,8 +6,14 @@ const router = Router();
 // List Site Visits
 router.get('/', async (req, res) => {
   try {
-    const { tenant_id, status, driver_id, executive_id, role, userId, filterStatus } = req.query;
+    const { tenant_id, status, driver_id, executive_id, role, userId, filterStatus, scope, visit_date } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
+
+    // Check Tenant's Site Visit Visibility Setting (Global vs Private)
+    const tenantRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenant_id]);
+    const tenantSettings = tenantRes.rows[0]?.settings || {};
+    // Default is true (Global company schedule), unless tenant admin toggled it to false
+    const isGlobalVisibility = tenantSettings?.site_visits?.global_visibility !== false;
 
     let sql = `
       SELECT sv.*, 
@@ -26,26 +32,52 @@ router.get('/', async (req, res) => {
     `;
     const params = [tenant_id];
 
+    // Status filter
     const effectiveStatus = status || filterStatus;
     if (effectiveStatus && effectiveStatus !== 'all') {
       params.push(effectiveStatus);
       sql += ` AND sv.status = $${params.length}`;
     }
 
+    // Date filter (e.g. for checking availability on a specific date)
+    if (visit_date) {
+      params.push(visit_date);
+      sql += ` AND sv.visit_date = $${params.length}`;
+    }
+
     const normRole = String(role || '').toLowerCase().trim();
+
+    // Driver filter
     const effectiveDriverId = driver_id || (normRole.includes('driver') ? userId : null);
     if (effectiveDriverId) {
       params.push(effectiveDriverId);
       sql += ` AND sv.driver_id = $${params.length}`;
     }
 
-    const effectiveExecId = executive_id || (['sales_executive', 'team_leader'].includes(normRole) ? userId : null);
-    if (effectiveExecId) {
-      params.push(effectiveExecId);
+    // Role-based visibility and scope filtering
+    if (executive_id) {
+      params.push(executive_id);
       sql += ` AND sv.requested_by = $${params.length}`;
+    } else if (['sales_executive', 'team_leader'].includes(normRole)) {
+      if (scope === 'my' || !isGlobalVisibility) {
+        // Private / Isolated Mode: requester only sees their own visits
+        if (userId) {
+          params.push(userId);
+          sql += ` AND sv.requested_by = $${params.length}`;
+        }
+      } else {
+        // Global Mode (Default ON): Sales reps see all approved/scheduled/completed visits across the company
+        // to check fleet/car/driver availability + their own requests (even if pending or clarification)
+        if (userId) {
+          params.push(userId);
+          sql += ` AND (sv.status IN ('approved', 'trip_started', 'completed') OR sv.requested_by = $${params.length})`;
+        } else {
+          sql += ` AND sv.status IN ('approved', 'trip_started', 'completed')`;
+        }
+      }
     }
 
-    sql += ' ORDER BY sv.visit_date DESC';
+    sql += ' ORDER BY sv.visit_date DESC, sv.visit_time ASC';
     const result = await query(sql, params);
     return res.json(
       result.rows.map(r => ({
@@ -131,6 +163,17 @@ router.patch('/:id', async (req, res) => {
     values.push(id);
 
     await query(`UPDATE site_visits SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete Site Visit
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await query('DELETE FROM site_visits WHERE id = $1', [id]);
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });

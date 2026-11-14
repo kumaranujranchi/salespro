@@ -14,7 +14,7 @@ import { Select } from '../components/ui/Select';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function SiteVisitsPage() {
-  const { profile } = useAuth();
+  const { profile, tenant } = useAuth();
   const dialog = useDialog();
 
   // Selection
@@ -23,6 +23,7 @@ export function SiteVisitsPage() {
 
   // Filtering
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'my'>('all');
 
   const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
   const canViewAll = ['super_admin', 'admin', 'director'].includes(normalizedRole);
@@ -30,19 +31,25 @@ export function SiteVisitsPage() {
   const isDriver = normalizedRole === 'driver';
   const isSales = normalizedRole === 'sales_executive' || normalizedRole === 'team_leader';
 
+  // Check tenant configuration for Global vs Private Site Visits visibility
+  const isGlobalConfigured = tenant?.settings?.site_visits?.global_visibility !== false;
+
   // State for Modals
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
 
+  const targetTenantId = (profile?.tenant_id || (tenant as any)?._id || (tenant as any)?.id);
+
   // Backend queries
   const { results: visits, status, loadMore } = usePaginatedQuery(
     api.site_visits.listSiteVisits, 
     profile?.id ? {
-      tenant_id: profile.tenant_id as Id<"tenants">,
+      tenant_id: targetTenantId as Id<"tenants">,
       role: profile.role,
       userId: profile.id as Id<"profiles">,
-      filterStatus
+      filterStatus,
+      scope: isGlobalConfigured ? scopeFilter : 'my',
     } : "skip",
     { initialNumItems: 15 }
   );
@@ -97,7 +104,34 @@ export function SiteVisitsPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {isGlobalConfigured && !canViewAll && !isDriver && (
+            <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-lg border border-slate-200 dark:border-white/10 shrink-0">
+              <button
+                type="button"
+                onClick={() => setScopeFilter('all')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  scopeFilter === 'all'
+                    ? 'bg-white dark:bg-emerald-600 text-emerald-700 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                }`}
+              >
+                🏢 Company Schedule
+              </button>
+              <button
+                type="button"
+                onClick={() => setScopeFilter('my')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  scopeFilter === 'my'
+                    ? 'bg-white dark:bg-emerald-600 text-emerald-700 dark:text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                }`}
+              >
+                👤 My Requests
+              </button>
+            </div>
+          )}
+
           <Select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -128,9 +162,24 @@ export function SiteVisitsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Calendar size={20} />
-            <CardTitle>{canViewAll ? 'All Requests' : isDriver ? 'My Trips' : 'My Requests'}</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar size={20} />
+              <CardTitle>
+                {canViewAll
+                  ? 'All Requests'
+                  : isDriver
+                  ? 'My Trips'
+                  : isGlobalConfigured && scopeFilter === 'all'
+                  ? 'Company Schedule (All Bookings)'
+                  : 'My Requests'}
+              </CardTitle>
+            </div>
+            {isGlobalConfigured && !canViewAll && !isDriver && (
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                {scopeFilter === 'all' ? 'Showing Company Bookings' : 'Showing My Requests Only'}
+              </span>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -163,9 +212,14 @@ export function SiteVisitsPage() {
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h3 className="font-semibold text-[#0A1C37] dark:text-white text-lg">{visit.customer_name}</h3>
                             <Badge variant={getStatusColor(visit.status)}>{visit.status.replace('_', ' ')}</Badge>
+                            {visit.requested_by === profile?.id ? (
+                              <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                My Request
+                              </span>
+                            ) : null}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                            <User size={14} /> Created by: {visit.requester?.full_name || 'System'}
+                            <User size={14} /> Created by: {visit.requested_by === profile?.id ? 'You' : (visit.requested_by_name || visit.requester?.full_name || 'Team Member')}
                           </p>
                         </div>
                       </div>
@@ -190,7 +244,7 @@ export function SiteVisitsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-3">
                            <div className="flex items-center gap-2"><MapPin size={16}/><span className="font-medium">{visit.pickup_location}</span></div>
                            <div className="flex items-center gap-2"><Clock size={16}/><span className="font-medium">{visit.visit_date} at {visit.visit_time}</span></div>
-                           <div className="flex items-center gap-2"><Car size={16}/><span>Driver: {visit.driver?.full_name || 'Unassigned'}</span></div>
+                           <div className="flex items-center gap-2"><Car size={16}/><span>Driver: {visit.driver?.full_name ? `${visit.driver.full_name} (${visit.driver.phone || 'No phone'})` : (visit.driver_name || 'Unassigned')}</span></div>
                         </div>
                         {visit.notes && <p className="mt-3 text-sm text-gray-500 italic">Notes: {visit.notes}</p>}
                       </div>

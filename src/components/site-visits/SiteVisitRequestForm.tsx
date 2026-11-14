@@ -5,7 +5,7 @@ import { api, Id } from '../../lib/api-endpoints';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { AlertCircle, MessageSquare, Search, X, User, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { AlertCircle, MessageSquare, Search, X, User, CheckCircle2, ShieldCheck, Car } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SiteVisitRequestFormProps {
@@ -60,6 +60,19 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
             tenant_id: targetTenantId as Id<"tenants">,
             searchQuery: debouncedSearch,
             limit: 20,
+        } : "skip"
+    );
+
+    const isGlobalConfigured = tenant?.settings?.site_visits?.global_visibility !== false;
+
+    // Fetch existing booked visits on selected date to preview fleet and driver availability
+    const bookedVisitsOnDate = useQuery(
+        api.site_visits.listSiteVisits,
+        targetTenantId && formData.visitDate && isGlobalConfigured && isOpen ? {
+            tenant_id: targetTenantId as Id<"tenants">,
+            visit_date: formData.visitDate,
+            filterStatus: 'all',
+            scope: 'all'
         } : "skip"
     );
 
@@ -399,6 +412,45 @@ export function SiteVisitRequestForm({ isOpen, onClose, onSuccess, editingVisit 
                         required
                     />
                 </div>
+
+                {/* Real-time Fleet & Driver Schedule Preview for selected date */}
+                {formData.visitDate && isGlobalConfigured && (
+                    <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-white/5 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <span className="flex items-center gap-1.5">
+                                <Car size={15} className="text-emerald-600" />
+                                Existing Driver & Car Bookings for {formData.visitDate}
+                            </span>
+                            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                                {bookedVisitsOnDate ? `${(bookedVisitsOnDate as any[]).filter(v => v.status === 'approved' || v.status === 'trip_started').length} booked` : 'Checking...'}
+                            </span>
+                        </div>
+
+                        {bookedVisitsOnDate && (bookedVisitsOnDate as any[]).filter(v => v.status === 'approved' || v.status === 'trip_started').length > 0 ? (
+                            <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                {(bookedVisitsOnDate as any[]).filter(v => v.status === 'approved' || v.status === 'trip_started').map((v: any) => (
+                                    <div key={v._id || v.id} className="flex items-center justify-between text-xs p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/10 shadow-2xs">
+                                        <div className="min-w-0 pr-2">
+                                            <span className="font-semibold text-slate-900 dark:text-white">⏰ {v.visit_time || 'Time TBD'}</span>
+                                            <span className="text-slate-600 dark:text-slate-300 ml-2 font-medium">🚗 {v.driver?.full_name ? `${v.driver.full_name} (${v.driver.phone || 'Assigned'})` : (v.driver_name || 'Driver assigned')}</span>
+                                            <span className="text-slate-400 ml-1.5 truncate">({v.pickup_location})</span>
+                                        </div>
+                                        <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded shrink-0">
+                                            Booked
+                                        </span>
+                                    </div>
+                                ))}
+                                <p className="text-[11px] text-amber-600 dark:text-amber-400 italic pt-1">
+                                    💡 Tip: Check above time slots to avoid driver conflicts when scheduling.
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                                <CheckCircle2 size={14} /> All company vehicles & drivers are currently free on this date!
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 {/* 4. Notes & Clarification */}
                 {isClarificationMode ? (
