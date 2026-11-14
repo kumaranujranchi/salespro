@@ -62,6 +62,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { Toaster } from 'sonner';
 
 function GTMPageViewTracker() {
   const location = useLocation();
@@ -455,6 +456,7 @@ function App() {
               </ErrorBoundary>
             </TutorialProvider>
           </DialogProvider>
+          <Toaster richColors position="top-right" closeButton />
         </ToastProvider>
       </ThemeProvider>
     </AuthProvider>

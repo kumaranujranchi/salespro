@@ -798,6 +798,21 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('Tenant Brand Logo upload verification failed', 'Check SettingsPage.tsx, reactive.ts & server/src/index.js');
   }
+
+  // J. Sales Record Custom Details Tab & Update Confirmation Toast
+  const salesModalCode = fs.readFileSync(path.join(ROOT_DIR, 'src/components/sales/SalesFormModal.tsx'), 'utf8');
+  const hasCustomTab = salesModalCode.includes("activeTab === 'custom'") && salesModalCode.includes('Custom Details');
+  const hasCustomSuggestions = salesModalCode.includes('PRESET_CUSTOM_SUGGESTIONS') && salesModalCode.includes('Police Station / PS');
+  const hasUpdateConfirmationToast = salesModalCode.includes('Sale details updated successfully!') && salesModalCode.includes('toastCtx.success');
+  const hasSonnerToasterMounted = fs.readFileSync(path.join(ROOT_DIR, 'src/App.tsx'), 'utf8').includes('<Toaster richColors');
+  const hasSalesDetailsCustomTab = fs.readFileSync(path.join(ROOT_DIR, 'src/components/sales/SalesDetailsModal.tsx'), 'utf8').includes("activeTab === 'custom'");
+  const hasSalesBackendMetadataHandling = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/sales.js'), 'utf8').includes('metadataJson');
+
+  if (hasCustomTab && hasCustomSuggestions && hasUpdateConfirmationToast && hasSonnerToasterMounted && hasSalesDetailsCustomTab && hasSalesBackendMetadataHandling) {
+    logPass('Sales Custom Details tab, quick presets & update confirmation toast verified across frontend & backend');
+  } else {
+    logFail('Sales Custom Details verification failed', 'Check SalesFormModal.tsx, SalesDetailsModal.tsx, sales.js & App.tsx');
+  }
 }
 
 // ---------------------------------------------------------

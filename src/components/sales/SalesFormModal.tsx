@@ -8,8 +8,18 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Modal, ModalFooter } from '../ui/Modal';
-import { User, DollarSign, FileText, Calendar, MapPin } from 'lucide-react';
+import { User, DollarSign, FileText, Calendar, MapPin, Plus, Trash2, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { useToast } from '../../contexts/ToastContext';
+
+const PRESET_CUSTOM_SUGGESTIONS = [
+    { label: 'Police Station / PS', placeholder: 'E.g. Danapur PS, Sector 18' },
+    { label: 'Applicant Profile / Remarks', placeholder: 'E.g. HNI Investor / Govt Officer / Doctor' },
+    { label: 'Nominee Name & Relation', placeholder: 'E.g. Sunita Devi (Wife)' },
+    { label: 'Witness / Guarantor Name & Phone', placeholder: 'E.g. Rajesh Kumar (9876543210)' },
+    { label: 'Special Concession / Terms', placeholder: 'E.g. Car parking waiver approved by Director' },
+    { label: 'Bank / Loan Reference No', placeholder: 'E.g. SBI Home Loan Ref #8934' },
+];
 
 interface SalesFormModalProps {
     isOpen: boolean;
@@ -22,8 +32,9 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
     const { profile } = useAuth();
     const dialog = useDialog();
     const backend = useBackend();
+    const toastCtx = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [activeTab, setActiveTab] = useState<'booking' | 'customer' | 'address' | 'coapplicant'>('booking');
+    const [activeTab, setActiveTab] = useState<'booking' | 'customer' | 'address' | 'coapplicant' | 'custom'>('booking');
 
     // Backend queries
     const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
@@ -152,6 +163,17 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
 
     useEffect(() => {
         if (isOpen && editingSale) {
+            let parsedCustomFields: { label: string, value: string }[] = [];
+            if (Array.isArray(editingSale.metadata?.custom_fields)) {
+                parsedCustomFields = editingSale.metadata.custom_fields;
+            } else if (typeof editingSale.metadata?.custom_fields === 'string') {
+                try {
+                    parsedCustomFields = JSON.parse(editingSale.metadata.custom_fields);
+                } catch (e) {
+                    parsedCustomFields = [];
+                }
+            }
+
             setFormData({
                 customerName: editingSale.customer?.name || editingSale.customer_name || '',
                 customerPhone: editingSale.customer?.phone || editingSale.customer_phone || '',
@@ -173,7 +195,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 bookingAmount: editingSale.booking_amount?.toString() || '',
                 paymentMode: editingSale.metadata?.payment_mode || 'cheque',
                 transactionRef: editingSale.metadata?.transaction_ref || '',
-                customFields: editingSale.metadata?.custom_fields || [],
+                customFields: parsedCustomFields,
                 // Customer Info
                 fatherHusbandName: editingSale.father_husband_name || '',
                 dob: editingSale.dob || '',
@@ -269,6 +291,28 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
         const other = parseFloat(formData.otherCharges) || 0;
         const discount = parseFloat(formData.discount) || 0;
         return (area * rate) + (area * dev) + (area * rate * (plc / 100)) + other - discount;
+    };
+
+    const handleAddCustomField = (presetLabel = '', presetValue = '') => {
+        setFormData(prev => ({
+            ...prev,
+            customFields: [...prev.customFields, { label: presetLabel, value: presetValue }]
+        }));
+    };
+
+    const handleUpdateCustomField = (index: number, key: 'label' | 'value', val: string) => {
+        setFormData(prev => {
+            const next = [...prev.customFields];
+            next[index] = { ...next[index], [key]: val };
+            return { ...prev, customFields: next };
+        });
+    };
+
+    const handleRemoveCustomField = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            customFields: prev.customFields.filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -407,16 +451,18 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                     discount: parseFloat(formData.discount) || 0,
                     payment_mode: formData.paymentMode,
                     transaction_ref: formData.transactionRef,
-                    custom_fields: formData.customFields
+                    custom_fields: formData.customFields.filter(f => f && (f.label.trim() !== '' || f.value.trim() !== ''))
                 }
             };
 
             if (editingSale) {
                 await updateSale({ id: editingSale._id, ...saleData });
-                toast.success("Sale updated successfully");
+                toast.success("Sale details updated successfully!");
+                toastCtx.success("Sale details updated successfully!");
             } else {
                 await createSale(saleData);
-                toast.success("Sale created successfully");
+                toast.success("Sale created successfully!");
+                toastCtx.success("Sale created successfully!");
             }
             onSuccess();
             onClose();
@@ -426,6 +472,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 errorMessage = errorMessage.slice('Error: '.length);
             }
             toast.error(errorMessage);
+            toastCtx.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -480,6 +527,22 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                     onClick={() => setActiveTab('coapplicant')}
                 >
                     <User size={16} /> Co-Applicant
+                </button>
+                <button
+                    type="button"
+                    className={`pb-3 px-4 font-semibold text-sm border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeTab === 'custom'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                    }`}
+                    onClick={() => setActiveTab('custom')}
+                >
+                    <SlidersHorizontal size={16} /> Custom Details
+                    {formData.customFields.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-full">
+                            {formData.customFields.length}
+                        </span>
+                    )}
                 </button>
             </div>
 
@@ -685,24 +748,159 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                     </div>
                 )}
 
+                {/* 5. CUSTOM DETAILS TAB */}
+                {activeTab === 'custom' && (
+                    <div className="space-y-6">
+                        <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-blue-600 text-white shrink-0 shadow-sm">
+                                    <SlidersHorizontal size={18} />
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Custom Record Details & Configuration</h4>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        Add any extra fields not covered in standard sections (such as local Police Station / PS, applicant profile evaluation, special conditions, witness / guarantor details, or nominee info).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Suggestion Chips */}
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                <Sparkles size={14} className="text-amber-500" />
+                                <span>Quick One-Click Suggestions:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {PRESET_CUSTOM_SUGGESTIONS.map((preset) => {
+                                    const alreadyAdded = formData.customFields.some(
+                                        f => f && f.label.trim().toLowerCase() === preset.label.trim().toLowerCase()
+                                    );
+                                    return (
+                                        <button
+                                            key={preset.label}
+                                            type="button"
+                                            disabled={alreadyAdded}
+                                            onClick={() => handleAddCustomField(preset.label, '')}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                                alreadyAdded
+                                                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-700'
+                                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 shadow-sm active:scale-95'
+                                            }`}
+                                        >
+                                            <Plus size={13} className={alreadyAdded ? 'opacity-40' : 'text-blue-500'} />
+                                            {preset.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Custom Fields List */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="font-bold text-slate-800 dark:text-gray-200 text-sm">
+                                    Configured Custom Fields ({formData.customFields.length})
+                                </h3>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddCustomField('', '')}
+                                    className="gap-1.5 text-xs text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                >
+                                    <Plus size={14} /> Add Custom Field
+                                </Button>
+                            </div>
+
+                            {formData.customFields.length === 0 ? (
+                                <div className="p-8 text-center border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl space-y-3 bg-gray-50/50 dark:bg-gray-900/20">
+                                    <SlidersHorizontal size={32} className="mx-auto text-gray-400" />
+                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">No custom fields added yet</p>
+                                    <p className="text-xs text-gray-500 max-w-md mx-auto">
+                                        Click "+ Add Custom Field" or choose from the quick suggestions above to configure extra details like Police Station (PS), applicant notes, etc.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {formData.customFields.map((field, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-start gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+                                        >
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                                                <Input
+                                                    label={`Field Name / Label #${index + 1}`}
+                                                    placeholder="e.g. Police Station / PS"
+                                                    value={field.label}
+                                                    onChange={e => handleUpdateCustomField(index, 'label', e.target.value)}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Field Value"
+                                                    placeholder="Enter details..."
+                                                    value={field.value}
+                                                    onChange={e => handleUpdateCustomField(index, 'value', e.target.value)}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveCustomField(index)}
+                                                title="Remove this custom field"
+                                                className="mt-7 p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors border border-transparent hover:border-rose-200 dark:hover:border-rose-800"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 <ModalFooter>
-                    <div className="flex gap-2">
-                        {activeTab !== 'booking' && (
-                            <Button variant="outline" type="button" onClick={() => {
-                                if (activeTab === 'coapplicant') setActiveTab('address');
-                                else if (activeTab === 'address') setActiveTab('customer');
-                                else if (activeTab === 'customer') setActiveTab('booking');
-                            }}>Previous Tab</Button>
-                        )}
-                        {activeTab !== 'coapplicant' ? (
-                            <Button variant="primary" type="button" onClick={() => {
-                                if (activeTab === 'booking') setActiveTab('customer');
-                                else if (activeTab === 'customer') setActiveTab('address');
-                                else if (activeTab === 'address') setActiveTab('coapplicant');
-                            }}>Next Tab</Button>
-                        ) : (
-                            <Button variant="primary" type="submit" isLoading={isSubmitting}>{editingSale ? "Update Details" : "Book Sale"}</Button>
-                        )}
+                    <div className="flex items-center justify-between w-full">
+                        <div>
+                            {activeTab !== 'booking' && (
+                                <Button
+                                    variant="outline"
+                                    type="button"
+                                    onClick={() => {
+                                        if (activeTab === 'custom') setActiveTab('coapplicant');
+                                        else if (activeTab === 'coapplicant') setActiveTab('address');
+                                        else if (activeTab === 'address') setActiveTab('customer');
+                                        else if (activeTab === 'customer') setActiveTab('booking');
+                                    }}
+                                >
+                                    Previous Tab
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {activeTab !== 'custom' && (
+                                <Button
+                                    variant="neutral"
+                                    type="button"
+                                    onClick={() => {
+                                        if (activeTab === 'booking') setActiveTab('customer');
+                                        else if (activeTab === 'customer') setActiveTab('address');
+                                        else if (activeTab === 'address') setActiveTab('coapplicant');
+                                        else if (activeTab === 'coapplicant') setActiveTab('custom');
+                                    }}
+                                >
+                                    Next Tab
+                                </Button>
+                            )}
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                isLoading={isSubmitting}
+                                className="!bg-emerald-600 hover:!bg-emerald-700 !text-white font-bold px-6 shadow-sm"
+                            >
+                                {editingSale ? "Update Details" : "Book Sale"}
+                            </Button>
+                        </div>
                     </div>
                 </ModalFooter>
             </form>

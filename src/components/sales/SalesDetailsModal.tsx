@@ -1,4 +1,4 @@
-import { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
+import { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
 import { formatCurrency } from '../../utils/format';
 import { useQuery } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
@@ -63,8 +63,20 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
     const isFreePlan = tenant?.plan_tier === 'free';
     const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
     const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
-    const [activeTab, setActiveTab] = useState<'profile' | 'coapplicant_address'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'coapplicant_address' | 'custom'>('profile');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+    const customFields: { label: string, value: string }[] = useMemo(() => {
+        const raw = sale?.metadata?.custom_fields;
+        if (Array.isArray(raw)) return raw.filter((f: any) => f && (f.label || f.value));
+        if (typeof raw === 'string') {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed.filter((f: any) => f && (f.label || f.value));
+            } catch (e) {}
+        }
+        return [];
+    }, [sale]);
 
     const handleLockedLedgerClick = () => {
         if (isSuperAdmin) {
@@ -223,6 +235,22 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
                 >
                     Co-Applicant & Addresses
                 </button>
+                <button
+                    type="button"
+                    className={`pb-2.5 px-5 font-semibold text-sm border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeTab === 'custom'
+                            ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 font-bold'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                    }`}
+                    onClick={() => setActiveTab('custom')}
+                >
+                    Custom Details
+                    {customFields.length > 0 && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-full">
+                            {customFields.length}
+                        </span>
+                    )}
+                </button>
             </div>
 
             {/* Tab Content */}
@@ -297,6 +325,34 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
                             <p className="text-sm text-gray-400 italic">No co-applicant details provided.</p>
                         )}
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'custom' && (
+                <div className="bg-slate-50/50 dark:bg-slate-900/20 p-5 rounded-xl border border-slate-100 dark:border-slate-800/40">
+                    {customFields.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 text-sm">
+                            {customFields.map((field, idx) => (
+                                <p key={idx} className="flex justify-between border-b dark:border-white/5 pb-1.5">
+                                    <span className="text-gray-500 font-medium">{field.label}:</span>
+                                    <span className="font-semibold text-gray-800 dark:text-gray-200">{field.value || 'N/A'}</span>
+                                </p>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-6 text-gray-400 text-sm">
+                            <p>No custom fields recorded for this sale.</p>
+                            {canEdit && onEdit && (
+                                <button
+                                    type="button"
+                                    onClick={() => onEdit(sale)}
+                                    className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                                >
+                                    + Add custom details now
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 

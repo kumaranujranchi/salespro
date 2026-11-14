@@ -58,10 +58,14 @@ router.get('/', async (req, res) => {
       const custEmail = r.lead_email || '';
       const projName = r.project_name || 'General Project';
       const execName = r.executive_name || 'Assigned Executive';
+      const parsedMetadata = typeof r.metadata === 'string'
+        ? (() => { try { return JSON.parse(r.metadata); } catch(e) { return {}; } })()
+        : (r.metadata || {});
 
       return {
         ...r,
         _id: r.id,
+        metadata: parsedMetadata,
         // Nested structure required by SalesPage, SalesDetailsModal & SalesFormModal
         customer: {
           name: custName,
@@ -387,6 +391,10 @@ router.get('/leaderboard', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const b = req.body;
+    const metadataJson = b.metadata
+      ? (typeof b.metadata === 'object' ? JSON.stringify(b.metadata) : b.metadata)
+      : '{}';
+
     const result = await query(
       `INSERT INTO sales
         (tenant_id, customer_id, project_id, sales_executive_id, team_leader_id,
@@ -396,12 +404,13 @@ router.post('/', async (req, res) => {
          occupation, company_name, annual_income, marital_status, nationality,
          address_house_no, address_street, address_city, address_state, address_pin_code,
          perm_address_house_no, perm_address_street, perm_address_city, perm_address_state, perm_address_pin_code,
-         co_applicant_name, co_applicant_relation, co_applicant_mobile, co_applicant_aadhaar)
+         co_applicant_name, co_applicant_relation, co_applicant_mobile, co_applicant_aadhaar,
+         metadata)
        VALUES
         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
          $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
          $26, $27, $28, $29, $30, $31, $32, $33, $34, $35,
-         $36, $37, $38, $39)
+         $36, $37, $38, $39, $40)
        RETURNING *`,
       [
         b.tenant_id, b.customer_id || null, b.project_id, b.sales_executive_id, b.team_leader_id || null,
@@ -413,7 +422,8 @@ router.post('/', async (req, res) => {
         b.annual_income || null, b.marital_status || null, b.nationality || 'Indian',
         b.address_house_no || null, b.address_street || null, b.address_city || null, b.address_state || null, b.address_pin_code || null,
         b.perm_address_house_no || null, b.perm_address_street || null, b.perm_address_city || null, b.perm_address_state || null, b.perm_address_pin_code || null,
-        b.co_applicant_name || null, b.co_applicant_relation || null, b.co_applicant_mobile || null, b.co_applicant_aadhaar || null
+        b.co_applicant_name || null, b.co_applicant_relation || null, b.co_applicant_mobile || null, b.co_applicant_aadhaar || null,
+        metadataJson
       ]
     );
 
@@ -436,8 +446,15 @@ router.patch('/:id', async (req, res) => {
 
     for (const [k, v] of Object.entries(b)) {
       if (k !== 'id' && k !== '_id' && v !== undefined) {
-        fields.push(`${k} = $${idx++}`);
-        values.push(v);
+        if (k === 'metadata' && typeof v === 'object' && v !== null) {
+          fields.push(`${k} = $${idx++}`);
+          values.push(JSON.stringify(v));
+        } else {
+          fields.push(`${k} = $${idx++}`);
+          values.push(v);
+        }
+      }
+    }
       }
     }
 
