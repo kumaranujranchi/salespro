@@ -20,7 +20,13 @@ router.get('/', async (req, res) => {
       const endIdx = params.length;
       dateFilterLeads = ` AND (l.lead_date >= $${startIdx} AND l.lead_date <= $${endIdx})`;
       dateFilterSales = ` AND (s.sale_date >= $${startIdx} AND s.sale_date <= $${endIdx})`;
-      dateFilterVisits = ` AND (sv.visit_date >= $${startIdx} AND sv.visit_date <= $${endIdx})`;
+      dateFilterVisits = ` AND (
+        (sv.visit_date >= $${startIdx} AND sv.visit_date <= $${endIdx})
+        OR (sv.trip_end_time IS NOT NULL AND sv.trip_end_time::date >= $${startIdx}::date AND sv.trip_end_time::date <= $${endIdx}::date)
+        OR (sv.trip_start_time IS NOT NULL AND sv.trip_start_time::date >= $${startIdx}::date AND sv.trip_start_time::date <= $${endIdx}::date)
+        OR (sv.updated_at IS NOT NULL AND sv.updated_at::date >= $${startIdx}::date AND sv.updated_at::date <= $${endIdx}::date)
+        OR (sv.created_at IS NOT NULL AND sv.created_at::date >= $${startIdx}::date AND sv.created_at::date <= $${endIdx}::date)
+      )`;
     }
 
     let sourceFilterSql = '';
@@ -57,16 +63,20 @@ router.get('/', async (req, res) => {
     const visitsDetailedRegister = visitsList.map(v => {
       const startKm = parseFloat(v.start_odometer) || 0;
       const endKm = parseFloat(v.end_odometer) || 0;
-      const isCompleted = ['completed', 'trip_completed'].includes(String(v.status || '').toLowerCase());
-      const tripKm = (isCompleted && endKm > startKm) ? Math.max(0, endKm - startKm) : 0;
+      const isCompleted = ['completed', 'trip_completed', 'done', 'finished'].includes(String(v.status || '').toLowerCase().trim());
+      const tripKm = (endKm > startKm) ? Math.max(0, endKm - startKm) : 0;
+      const isTripDone = isCompleted || (endKm > 0 && endKm > startKm);
 
-      if (isCompleted) {
+      if (isTripDone) {
         completedVisitsCount++;
         totalKmDriven += tripKm;
       }
 
-      // Daily Grouping
-      const visitDate = v.visit_date || (v.created_at ? new Date(v.created_at).toISOString().split('T')[0] : 'Unknown');
+      // Daily Grouping: use trip completion date if completed, otherwise scheduled visit date
+      const visitDate = (isTripDone && v.trip_end_time)
+        ? new Date(v.trip_end_time).toISOString().split('T')[0]
+        : (v.visit_date || (v.created_at ? new Date(v.created_at).toISOString().split('T')[0] : 'Unknown'));
+
       if (!dailyMap[visitDate]) {
         dailyMap[visitDate] = {
           date: visitDate,
@@ -78,7 +88,7 @@ router.get('/', async (req, res) => {
         };
       }
       dailyMap[visitDate].totalVisits += 1;
-      if (isCompleted) {
+      if (isTripDone) {
         dailyMap[visitDate].completedVisits += 1;
         dailyMap[visitDate].totalKm += tripKm;
       }

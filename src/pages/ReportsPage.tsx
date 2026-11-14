@@ -94,7 +94,8 @@ export function ReportsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}_${startDate}_to_${endDate}.csv`);
+    const rangeTag = (startDate && endDate) ? `${startDate}_to_${endDate}` : 'all_time';
+    link.setAttribute("download", `${filename}_${rangeTag}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -176,22 +177,75 @@ export function ReportsPage() {
             <Filter size={18} /> Report Filters:
           </div>
           <div className="flex flex-wrap items-center gap-4 flex-1">
-            <div className="flex flex-col gap-1 min-w-[140px]">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  !startDate && !endDate
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                All Time
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStartDate(defaultDates.start); setEndDate(defaultDates.end); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  startDate === defaultDates.start && endDate === defaultDates.end
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                This Month
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  setStartDate(todayStr);
+                  setEndDate(todayStr);
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  startDate && startDate === endDate && startDate === new Date().toISOString().split('T')[0]
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const todayObj = new Date();
+                  const pastObj = new Date();
+                  pastObj.setDate(todayObj.getDate() - 30);
+                  setStartDate(pastObj.toISOString().split('T')[0]);
+                  setEndDate(todayObj.toISOString().split('T')[0]);
+                }}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                Last 30 Days
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1 min-w-[130px]">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Start Date</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-            <div className="flex flex-col gap-1 min-w-[140px]">
+            <div className="flex flex-col gap-1 min-w-[130px]">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">End Date</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             {activeTab === 'leads' && (
@@ -407,8 +461,25 @@ export function ReportsPage() {
                   <TableBody>
                     {(reportData.siteVisitsReport?.dailySummary || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-gray-400">
-                          No site visits recorded in this period
+                        <TableCell colSpan={6} className="text-center py-12">
+                          <div className="flex flex-col items-center justify-center space-y-2.5 text-slate-500">
+                            <Car className="text-slate-300 dark:text-slate-600" size={38} />
+                            <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                              No site visits found for {startDate ? `${startDate} to ${endDate}` : 'the selected filter'}.
+                            </p>
+                            <p className="text-xs text-slate-400 max-w-md">
+                              Your ride might have been scheduled on a different date. Click below to view all site visits across all time.
+                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setStartDate(''); setEndDate(''); }}
+                              className="mt-1 font-semibold"
+                            >
+                              View All Time Site Visits
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -479,8 +550,25 @@ export function ReportsPage() {
                   <TableBody>
                     {(reportData.siteVisitsReport?.detailedRegister || []).length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center py-10 text-gray-400">
-                          No site visits found in this period
+                        <TableCell colSpan={10} className="text-center py-12">
+                          <div className="flex flex-col items-center justify-center space-y-2.5 text-slate-500">
+                            <Car className="text-slate-300 dark:text-slate-600" size={38} />
+                            <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">
+                              No site visits found for {startDate ? `${startDate} to ${endDate}` : 'the selected filter'}.
+                            </p>
+                            <p className="text-xs text-slate-400 max-w-md">
+                              Your trip might have been scheduled on a different date. Click below to view all site visits across all time.
+                            </p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setStartDate(''); setEndDate(''); }}
+                              className="mt-1 font-semibold"
+                            >
+                              View All Time Site Visits
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (

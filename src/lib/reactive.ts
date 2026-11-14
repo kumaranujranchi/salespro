@@ -380,16 +380,19 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('site_visits.request') || key.includes('site_visits.create')) {
     const res = await siteVisitsService.request(args);
     invalidateQuery('site_visits');
+    invalidateQuery('reports');
     return res;
   }
   if (key.includes('site_visits.update')) {
     const res = await siteVisitsService.update(args?.id || args?._id, args);
     invalidateQuery('site_visits');
+    invalidateQuery('reports');
     return res;
   }
   if (key.includes('site_visits.delete')) {
     const res = await siteVisitsService.delete(args?.id || args?._id);
     invalidateQuery('site_visits');
+    invalidateQuery('reports');
     return res;
   }
 
