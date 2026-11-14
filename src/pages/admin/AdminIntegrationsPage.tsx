@@ -13,6 +13,7 @@ import { Settings, Save, Facebook, Info, LogOut, Eye, EyeOff, Plug, X, ChevronRi
 import { UpgradeToProModal } from '../../components/ui/UpgradeToProModal';
 
 const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
+const DEFAULT_FACEBOOK_APP_SECRET = '73b2d2fb9c45ed22d763aac80c24a46d';
 
 export function AdminIntegrationsPage() {
   const { tenant, refreshTenant, profile } = useAuth();
@@ -101,7 +102,7 @@ export function AdminIntegrationsPage() {
   const [metaSettings, setMetaSettings] = useState({
     enabled: false,
     appId: DEFAULT_FACEBOOK_APP_ID,
-    appSecret: '',
+    appSecret: DEFAULT_FACEBOOK_APP_SECRET,
     accessToken: '',
     pageId: '',
     pageName: '',
@@ -192,6 +193,7 @@ export function AdminIntegrationsPage() {
   });
 
   const [webhookSecret, setWebhookSecret] = useState<string | null>(null);
+  const webhookToken = webhookSecret || '<webhook_token>';
 
   // Pages selection modal state
   const [pagesList, setPagesList] = useState<any[]>([]);
@@ -218,10 +220,12 @@ export function AdminIntegrationsPage() {
 
   useEffect(() => {
     if (tenant?.settings?.integrations?.meta) {
+      const mAppId = tenant.settings.integrations.meta.appId || DEFAULT_FACEBOOK_APP_ID;
+      const mAppSecret = tenant.settings.integrations.meta.appSecret || (mAppId === DEFAULT_FACEBOOK_APP_ID ? DEFAULT_FACEBOOK_APP_SECRET : '');
       setMetaSettings({
         enabled: tenant.settings.integrations.meta.enabled ?? false,
-        appId: tenant.settings.integrations.meta.appId || DEFAULT_FACEBOOK_APP_ID,
-        appSecret: tenant.settings.integrations.meta.appSecret ?? '',
+        appId: mAppId,
+        appSecret: mAppSecret,
         accessToken: tenant.settings.integrations.meta.accessToken ?? '',
         pageId: tenant.settings.integrations.meta.pageId ?? '',
         pageName: tenant.settings.integrations.meta.pageName ?? '',
@@ -367,11 +371,13 @@ export function AdminIntegrationsPage() {
       const fetchPages = async () => {
         try {
           const redirectUri = `${window.location.origin}/settings/integrations`;
+          const resolvedAppId = metaSettings.appId?.trim() || tenant?.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID;
+          const resolvedAppSecret = metaSettings.appSecret?.trim() || tenant?.settings?.integrations?.meta?.appSecret || (resolvedAppId === DEFAULT_FACEBOOK_APP_ID ? DEFAULT_FACEBOOK_APP_SECRET : '');
           const pages = await exchangeCodeAndGetPagesAction({
             code,
             redirectUri,
-            appId: metaSettings.appId?.trim() || tenant?.settings?.integrations?.meta?.appId,
-            appSecret: metaSettings.appSecret?.trim() || tenant?.settings?.integrations?.meta?.appSecret,
+            appId: resolvedAppId,
+            appSecret: resolvedAppSecret,
           });
           setPagesList(pages);
         } catch (error: any) {
@@ -420,6 +426,15 @@ export function AdminIntegrationsPage() {
         pageAccessToken: manualPageToken.trim()
       });
 
+      try {
+        await subscribePageToWebhookAction({
+          pageId: manualPageId.trim(),
+          pageAccessToken: manualPageToken.trim()
+        });
+      } catch (subErr) {
+        console.warn("Manual page webhook subscription:", subErr);
+      }
+
       const pageName = verifyRes?.page?.name || manualPageName.trim() || "Connected Facebook Page";
 
       const updatedSettings = {
@@ -433,8 +448,8 @@ export function AdminIntegrationsPage() {
             pageId: manualPageId.trim(),
             pageName,
             assignmentRule: metaSettings.assignmentRule || 'manual',
-            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || '',
-            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || ''
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET
           }
         }
       };
@@ -560,11 +575,14 @@ export function AdminIntegrationsPage() {
         integrations: {
           ...tenant.settings?.integrations,
           meta: {
+            ...tenant.settings?.integrations?.meta,
             enabled: true,
             accessToken: page.access_token,
             pageId: page.id,
             pageName: page.name,
             assignmentRule: metaSettings.assignmentRule || 'manual',
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET,
             lastAssignedExecutiveId: tenant.settings?.integrations?.meta?.lastAssignedExecutiveId
           }
         }
@@ -1109,7 +1127,6 @@ export function AdminIntegrationsPage() {
   // Public webhook base for lead-capture integrations, served by the AWS API.
   const apiBase = getApiBaseUrl().replace(/\/+$/, '');
   const publicApiBase = apiBase.startsWith('http') ? apiBase : `${window.location.origin}${apiBase}`;
-  const webhookToken = webhookSecret || '<webhook_token>';
   const buildWebhookUrl = (portal: string) =>
     `${publicApiBase}/v1/inbound-leads?portal=${portal}&token=${webhookToken}`;
 
@@ -1699,11 +1716,43 @@ export function AdminIntegrationsPage() {
                                       className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
                                     />
                                   </div>
+                                  <div>
+                                    <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">
+                                      Facebook App Secret:
+                                    </label>
+                                    <div className="relative">
+                                      <input
+                                        type={showMetaAppSecret ? "text" : "password"}
+                                        value={metaSettings.appSecret}
+                                        onChange={(e) => setMetaSettings({ ...metaSettings, appSecret: e.target.value })}
+                                        placeholder="••••••••••••••••••••••••••••••••"
+                                        className="w-full pr-8 pl-2.5 py-1 text-xs border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowMetaAppSecret(!showMetaAppSecret)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                      >
+                                        {showMetaAppSecret ? <EyeOff size={13} /> : <Eye size={13} />}
+                                      </button>
+                                    </div>
+                                  </div>
                                   <div className="pt-1">
                                     <span className="text-[10px] text-gray-500 block mb-0.5">Valid OAuth Redirect URI:</span>
                                     <div className="flex items-center gap-1 font-mono text-[10px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-gray-200 dark:border-slate-700 select-all">
                                       <span className="truncate flex-1">{window.location.origin}/settings/integrations</span>
                                     </div>
+                                  </div>
+                                  <div className="pt-1 flex justify-end">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={handleSaveMetaCredentials}
+                                      isLoading={savingMeta}
+                                      className="text-[11px] py-1 px-3 h-7 flex items-center gap-1.5"
+                                    >
+                                      <Save size={12} /> Save Credentials
+                                    </Button>
                                   </div>
                                 </div>
                               </div>

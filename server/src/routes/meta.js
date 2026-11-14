@@ -5,6 +5,9 @@ import { sendMetaCloudMessage, sendWatiMessage } from '../services/whatsappServi
 
 const router = Router();
 
+const DEFAULT_FACEBOOK_APP_ID = '1574456310724339';
+const DEFAULT_FACEBOOK_APP_SECRET = '73b2d2fb9c45ed22d763aac80c24a46d';
+
 /**
  * Exchange Facebook OAuth code for access token and fetch pages
  * POST /api/meta/exchange-code
@@ -25,6 +28,14 @@ router.post('/exchange-code', requireAuth, async (req, res) => {
         const metaCfg = tenantRes.rows[0]?.settings?.integrations?.meta;
         if (metaCfg?.appId && !appId) appId = metaCfg.appId;
         if (metaCfg?.appSecret && !appSecret) appSecret = metaCfg.appSecret;
+      }
+    }
+
+    // Fallback to built-in default Meta credentials if default app ID is in use or no credentials provided
+    if (!appId || appId === DEFAULT_FACEBOOK_APP_ID) {
+      appId = DEFAULT_FACEBOOK_APP_ID;
+      if (!appSecret) {
+        appSecret = DEFAULT_FACEBOOK_APP_SECRET;
       }
     }
 

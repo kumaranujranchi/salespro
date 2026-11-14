@@ -27,10 +27,10 @@ const PORTALS = {
 
 const FIELD_KEYS = {
   name: ['customer_name', 'full_name', 'fullname', 'name', 'your_name', 'customer name',
-    'full name', 'name of the customer', 'sender_name', 'first_name'],
+    'full name', 'name of the customer', 'sender_name', 'first_name', 'enter your name'],
   mobile: ['mobile', 'mobile_number', 'mobile number', 'phone', 'phone_number', 'phone number',
     'contact', 'contact_number', 'contact number', 'contact_no', 'whatsapp', 'whatsapp_number',
-    'wa_id', 'mobile_no', 'phone_no', 'your mobile number'],
+    'wa_id', 'mobile_no', 'phone_no', 'your mobile number', 'phonenumber', 'enter your phone number'],
   email: ['email', 'email_address', 'email address', 'e_mail', 'e-mail', 'your email', 'emailid'],
   city: ['city', 'location', 'preferred_location', 'preferred location', 'your city'],
   budget: ['budget', 'budget_range', 'budget range', 'your budget'],
@@ -163,31 +163,44 @@ async function handleInboundLead(req, res) {
     const portal = PORTALS[portalParam] || { integrationKey: null, leadSource: req.query.portal || 'Direct' };
     const token = req.query.token || req.query.tenantId || req.query.tenant_id || req.body?.token;
 
-    if (!token) {
-      return res.status(400).json({
-        error: 'Missing webhook token. Use /api/v1/inbound-leads?portal=<portal>&token=<webhook_token>',
-      });
-    }
-
     const clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
     if (isRateLimited(`ip:${clientIp}`, RATE_LIMITS.ip)) {
       res.set('Retry-After', '60');
       return res.status(429).json({ error: 'Too many requests from this address' });
     }
-    if (isRateLimited(`token:${token}`, RATE_LIMITS.token)) {
+    if (token && isRateLimited(`token:${token}`, RATE_LIMITS.token)) {
       res.set('Retry-After', '60');
       return res.status(429).json({ error: 'Too many requests for this webhook token' });
     }
 
-    const tenantResult = await query(
-      `SELECT id, name, settings FROM tenants
-        WHERE settings->'integrations'->>'webhookSecret' = $1
-          AND COALESCE(is_active, true) = true
-        LIMIT 1`,
-      [token]
-    );
-    if (tenantResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Unknown webhook token' });
+    let tenantResult;
+    if (token) {
+      tenantResult = await query(
+        `SELECT id, name, settings FROM tenants
+          WHERE (settings->'integrations'->>'webhookSecret' = $1 OR id = $1)
+            AND COALESCE(is_active, true) = true
+          LIMIT 1`,
+        [token]
+      );
+    } else if (portalParam === 'meta' || portalParam === 'facebook') {
+      const metaPageId = req.body?.entry?.[0]?.changes?.[0]?.value?.page_id || req.body?.entry?.[0]?.id;
+      if (metaPageId) {
+        tenantResult = await query(
+          `SELECT id, name, settings FROM tenants
+            WHERE settings->'integrations'->'meta'->>'pageId' = $1
+              AND COALESCE(is_active, true) = true
+            LIMIT 1`,
+          [String(metaPageId)]
+        );
+      }
+    }
+
+    if (!tenantResult || tenantResult.rows.length === 0) {
+      return res.status(token ? 404 : 400).json({
+        error: token
+          ? 'Unknown webhook token'
+          : 'Missing webhook token and unable to match Facebook Page ID. Please include ?token=<token> or connect your Facebook Page in Settings.',
+      });
     }
 
     const tenantId = tenantResult.rows[0].id;
@@ -329,6 +342,14 @@ async function handleInboundLead(req, res) {
 function handleGoogleWebhook(req, res) {
   req.query.portal = 'google_ads';
   return handleInboundLead(req, res);
+}
+
+function usage(req, res) {
+  return res.status(200).json({
+    service: 'RealSalePro Inbound Leads Webhook',
+    status: 'active',
+    instructions: 'Send POST requests with your webhook token to /api/v1/inbound-leads?portal=<portal>&token=<token>'
+  });
 }
 
 // Meta webhooks require returning the plain-text hub.challenge on subscription verification
