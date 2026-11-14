@@ -14,10 +14,14 @@ router.get('/', async (req, res) => {
         p.full_name as requested_by_name,
         p.phone as requested_by_phone,
         d.full_name as driver_name,
-        d.phone as driver_phone
+        d.phone as driver_phone,
+        l.customer_name as lead_customer_name,
+        l.mobile as lead_mobile,
+        l.lead_status as lead_status
       FROM site_visits sv
       LEFT JOIN profiles p ON sv.requested_by = p.id
       LEFT JOIN profiles d ON sv.driver_id = d.id
+      LEFT JOIN leads l ON sv.lead_id = l.id
       WHERE sv.tenant_id = $1
     `;
     const params = [tenant_id];
@@ -49,6 +53,15 @@ router.get('/', async (req, res) => {
         _id: r.id,
         driver: r.driver_name
           ? { full_name: r.driver_name, phone: r.driver_phone }
+          : null,
+        lead: r.lead_id
+          ? {
+              id: r.lead_id,
+              _id: r.lead_id,
+              customer_name: r.lead_customer_name || r.customer_name,
+              mobile: r.lead_mobile || r.mobile,
+              lead_status: r.lead_status,
+            }
           : null,
       }))
     );

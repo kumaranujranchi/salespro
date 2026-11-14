@@ -723,6 +723,20 @@ function testSiteVisitDriverIdentification() {
   } else {
     logFail('UsersPage missing guaranteed Driver role or save normalization', 'Check roleOptions and handleSaveUser');
   }
+
+  // E. Frontend SiteVisitRequestForm CRM Lead Search & Debounce verification
+  const requestFormPath = path.join(ROOT_DIR, 'src/components/site-visits/SiteVisitRequestForm.tsx');
+  const requestFormCode = fs.readFileSync(requestFormPath, 'utf8');
+
+  const hasLeadSearchDebounce = requestFormCode.includes('debouncedSearch') && requestFormCode.includes('setTimeout') && requestFormCode.includes('300');
+  const hasStrictLeadValidation = requestFormCode.includes('!selectedLead && !editingVisit') && requestFormCode.includes('select an existing customer');
+  const hasReactiveSearchRoute = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/reactive.ts'), 'utf8').includes('leads.searchLeads');
+
+  if (hasLeadSearchDebounce && hasStrictLeadValidation && hasReactiveSearchRoute) {
+    logPass('SiteVisitRequestForm strictly enforces selecting existing CRM leads with 300ms debouncing');
+  } else {
+    logFail('SiteVisitRequestForm missing search debounce or strict lead selection guard', 'Check SiteVisitRequestForm & reactive.ts');
+  }
 }
 
 // ---------------------------------------------------------

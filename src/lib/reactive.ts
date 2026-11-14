@@ -222,6 +222,16 @@ async function resolveApiCall(functionKey: any, args: any) {
   }
 
   // LEADS
+  if (key.includes('leads.searchLeads') || key.includes('leads.search')) {
+    const tId = args?.tenant_id;
+    if (!tId) return [];
+    return await leadsService.list(tId, {
+      searchQuery: args?.searchQuery || args?.search || '',
+      limit: args?.limit || 20,
+      profileId: args?.profileId,
+      showOnlyMyLeads: args?.showOnlyMyLeads
+    });
+  }
   if (key.includes('leads.list') || key.includes('leads.listLeads')) {
     return await leadsService.list(args?.tenant_id, args);
   }

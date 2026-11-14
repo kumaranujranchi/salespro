@@ -113,14 +113,14 @@ export function SiteVisitsPage() {
             ]}
           />
 
-          {(isSales && !canViewAll) && (
+          {!isDriver && (
             <Button
               variant="primary"
               onClick={() => { setSelectedVisit(null); setIsRequestModalOpen(true); }}
               className="h-[42px] whitespace-nowrap"
             >
               <Plus size={18} className="mr-2" />
-              New Request
+              Schedule Visit
             </Button>
           )}
         </div>
