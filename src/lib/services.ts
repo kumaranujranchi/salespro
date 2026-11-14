@@ -44,6 +44,8 @@ export const tenantsService = {
 export const profilesService = {
   listByTenant: (tenantId: string, filters?: { role?: string; is_active?: boolean }) =>
     api.get<Profile[]>('/profiles', { tenant_id: tenantId, ...filters }),
+  listDrivers: (tenantId: string) =>
+    api.get<Profile[]>('/profiles/drivers', { tenant_id: tenantId }),
   create: (data: any) => api.post<Profile>('/profiles', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/profiles/${id}`, data),
   delete: (id: string) => api.delete<{ success: boolean; message: string }>(`/profiles/${id}`),

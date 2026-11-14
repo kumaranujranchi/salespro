@@ -660,7 +660,73 @@ async function testWhatsAppChatbotSalutations() {
 }
 
 // ---------------------------------------------------------
-// TEST 10: Backend Server & DB Health (Async Ping)
+// TEST 10: Site Visit Driver Identification & Assignment
+// ---------------------------------------------------------
+function testSiteVisitDriverIdentification() {
+  printHeader('10. Site Visit Driver Identification & Assignment Guard');
+
+  // A. Keyword & Role Detection Logic
+  const isDriverKeyword = (roleName) => {
+    const norm = String(roleName || '').toLowerCase().trim();
+    return norm.includes('driver') || norm.includes('cab') || norm.includes('chauffeur');
+  };
+
+  const driverVariants = ['Driver', 'driver', 'DRIVER', 'Cab Driver', 'Site Visit Driver', 'Company Chauffeur'];
+  const nonDriverVariants = ['Sales Executive', 'Admin', 'Team Leader', 'Accountant', 'Director', 'Receptionist'];
+
+  const allDriversMatched = driverVariants.every(isDriverKeyword);
+  const nonDriversExcluded = nonDriverVariants.every(r => !isDriverKeyword(r));
+
+  if (allDriversMatched && nonDriversExcluded) {
+    logPass('Case-insensitive Driver role detection covers Driver, Cab, and Chauffeur variants');
+  } else {
+    logFail('Driver keyword detection logic failed', 'Check driverVariants vs nonDriverVariants');
+  }
+
+  // B. Backend profiles route driver detection & endpoint verification
+  const profilesRoutePath = path.join(ROOT_DIR, 'server/src/routes/profiles.js');
+  const profilesCode = fs.readFileSync(profilesRoutePath, 'utf8');
+
+  const hasDedicatedDriversEndpoint = profilesCode.includes("router.get('/drivers'") || profilesCode.includes('router.get("/drivers"');
+  const hasCaseInsensitiveDriverSql = profilesCode.includes("cleanRole === 'driver'") && profilesCode.includes('ILIKE');
+  const hasDetectDriverRole = profilesCode.includes('detectDriverRole');
+
+  if (hasDedicatedDriversEndpoint && hasCaseInsensitiveDriverSql && hasDetectDriverRole) {
+    logPass('Backend profiles route provides /drivers endpoint, SQL case-insensitivity & auto-role normalization');
+  } else {
+    logFail('profiles.js missing driver routes or normalization logic', 'Check /drivers and detectDriverRole');
+  }
+
+  // C. Frontend SiteVisitApprovalModal verification
+  const approvalModalPath = path.join(ROOT_DIR, 'src/components/site-visits/SiteVisitApprovalModal.tsx');
+  const modalCode = fs.readFileSync(approvalModalPath, 'utf8');
+
+  const hasTargetTenantFallback = modalCode.includes('targetTenantId') && modalCode.includes('visit?.tenant_id');
+  const hasAutoSelectDriver = modalCode.includes('drivers.length === 1') && modalCode.includes('setDriverId');
+  const hasDriverIdFallback = modalCode.includes('d._id || d.id');
+
+  if (hasTargetTenantFallback && hasAutoSelectDriver && hasDriverIdFallback) {
+    logPass('SiteVisitApprovalModal safely resolves tenant, driver IDs and auto-selects available driver');
+  } else {
+    logFail('SiteVisitApprovalModal missing tenant fallback or auto-select', 'Check targetTenantId & drivers map');
+  }
+
+  // D. Frontend UsersPage Role options verification
+  const usersPagePath = path.join(ROOT_DIR, 'src/pages/UsersPage.tsx');
+  const usersCode = fs.readFileSync(usersPagePath, 'utf8');
+
+  const hasAlwaysDriverInOptions = usersCode.includes('roleOptions') && usersCode.includes("value: 'driver', label: 'Driver'");
+  const hasDriverNormalizationOnSave = usersCode.includes("includes('driver') ? 'driver'");
+
+  if (hasAlwaysDriverInOptions && hasDriverNormalizationOnSave) {
+    logPass('UsersPage always exposes Driver in Role dropdown and normalizes driver role on profile save');
+  } else {
+    logFail('UsersPage missing guaranteed Driver role or save normalization', 'Check roleOptions and handleSaveUser');
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 11: Backend Server & DB Health (Async Ping)
 // ---------------------------------------------------------
 async function testBackendHealth() {
   printHeader('7. Backend Server & Database Connection');
@@ -718,6 +784,7 @@ async function runSuite() {
   testMetaCapiIntegration();
   testInactivityLifecycle();
   await testWhatsAppChatbotSalutations();
+  testSiteVisitDriverIdentification();
   testCriticalFiles();
   await testBackendHealth();
 

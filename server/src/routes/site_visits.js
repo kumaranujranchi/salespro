@@ -6,13 +6,15 @@ const router = Router();
 // List Site Visits
 router.get('/', async (req, res) => {
   try {
-    const { tenant_id, status, driver_id, executive_id } = req.query;
+    const { tenant_id, status, driver_id, executive_id, role, userId, filterStatus } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
 
     let sql = `
       SELECT sv.*, 
         p.full_name as requested_by_name,
-        d.full_name as driver_name
+        p.phone as requested_by_phone,
+        d.full_name as driver_name,
+        d.phone as driver_phone
       FROM site_visits sv
       LEFT JOIN profiles p ON sv.requested_by = p.id
       LEFT JOIN profiles d ON sv.driver_id = d.id
@@ -20,22 +22,36 @@ router.get('/', async (req, res) => {
     `;
     const params = [tenant_id];
 
-    if (status && status !== 'all') {
-      params.push(status);
+    const effectiveStatus = status || filterStatus;
+    if (effectiveStatus && effectiveStatus !== 'all') {
+      params.push(effectiveStatus);
       sql += ` AND sv.status = $${params.length}`;
     }
-    if (driver_id) {
-      params.push(driver_id);
+
+    const normRole = String(role || '').toLowerCase().trim();
+    const effectiveDriverId = driver_id || (normRole.includes('driver') ? userId : null);
+    if (effectiveDriverId) {
+      params.push(effectiveDriverId);
       sql += ` AND sv.driver_id = $${params.length}`;
     }
-    if (executive_id) {
-      params.push(executive_id);
+
+    const effectiveExecId = executive_id || (['sales_executive', 'team_leader'].includes(normRole) ? userId : null);
+    if (effectiveExecId) {
+      params.push(effectiveExecId);
       sql += ` AND sv.requested_by = $${params.length}`;
     }
 
     sql += ' ORDER BY sv.visit_date DESC';
     const result = await query(sql, params);
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(
+      result.rows.map(r => ({
+        ...r,
+        _id: r.id,
+        driver: r.driver_name
+          ? { full_name: r.driver_name, phone: r.driver_phone }
+          : null,
+      }))
+    );
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

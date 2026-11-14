@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
@@ -98,6 +98,37 @@ export function UsersPage() {
   const departments = useQuery(api.departments.list, currentTenantId ? { tenant_id: currentTenantId as any } : "skip");
   const roles = useQuery(api.roles.list, currentTenantId ? { tenant_id: currentTenantId as any } : "skip");
 
+  const standardRoles = useMemo(() => [
+    { value: 'sales_executive', label: 'Sales Executive' },
+    { value: 'team_leader', label: 'Team Leader' },
+    { value: 'sales_manager', label: 'Sales Manager' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'accountant', label: 'Accountant' },
+    { value: 'receptionist', label: 'Receptionist' },
+    { value: 'driver', label: 'Driver' },
+  ], []);
+
+  const roleOptions = useMemo(() => {
+    if (!roles || roles.length === 0) {
+      return standardRoles;
+    }
+    const customList = (roles as any[]).map(r => ({
+      value: String(r._id || r.id),
+      label: r.name,
+    }));
+    const hasDriverRole = customList.some(r => r.label.toLowerCase().includes('driver'));
+    const combined = [...customList];
+    if (!hasDriverRole) {
+      combined.push({ value: 'driver', label: 'Driver' });
+    }
+    for (const std of standardRoles) {
+      if (!combined.some(c => c.label.toLowerCase() === std.label.toLowerCase() || c.value === std.value)) {
+        combined.push(std);
+      }
+    }
+    return combined;
+  }, [roles, standardRoles]);
+
   // Backend mutations
   const createUserProfileMutation = useMutation(api.profiles.createUserProfile);
   const updateProfileMutation = useMutation(api.profiles.updateProfile);
@@ -179,13 +210,14 @@ export function UsersPage() {
     setEditingUserId(user._id || user.id);
     setPhoneError('');
     setError('');
+    const isDriverRole = String(user.role || '').toLowerCase().includes('driver');
     setFormData({
       fullName: user.full_name,
       email: user.email,
       phone: user.phone || '',
       employeeId: user.employee_id,
-      role: user.role,
-      roleId: user.role_id || '',
+      role: isDriverRole ? 'driver' : user.role,
+      roleId: user.role_id || (isDriverRole ? 'driver' : ''),
       departmentId: user.department_id || '',
       reportingManagerId: user.reporting_manager_id || '',
       password: '',
@@ -224,12 +256,15 @@ export function UsersPage() {
     setIsSubmitting(true);
 
     try {
+      const isDriverRole = String(formData.role || '').toLowerCase().includes('driver');
+      const normalizedRole = isDriverRole ? 'driver' : (formData.role || 'sales_executive');
+
       if (editingUserId) {
         await updateProfileMutation({
           id: editingUserId,
           full_name: formData.fullName,
           phone: normalizedPhone,
-          role: formData.role,
+          role: normalizedRole,
           role_id: formData.roleId as Id<"tenant_roles"> || null,
           department_id: formData.departmentId as Id<"departments"> || null,
           reporting_manager_id: formData.reportingManagerId as Id<"profiles"> || null,
@@ -252,7 +287,7 @@ export function UsersPage() {
           email: formData.email,
           phone: normalizedPhone,
           employee_id: formData.employeeId,
-          role: formData.role,
+          role: normalizedRole,
           role_id: formData.roleId as Id<"tenant_roles"> || null,
           department_id: formData.departmentId as Id<"departments"> || null,
           reporting_manager_id: formData.reportingManagerId as Id<"profiles"> || null,
@@ -561,30 +596,28 @@ export function UsersPage() {
               <Select
                 label="Role"
                 name="roleId"
-                value={formData.roleId || formData.role}
+                value={formData.roleId || (String(formData.role).toLowerCase().includes('driver') ? 'driver' : formData.role)}
                 onChange={(e) => {
-                  const rId = e.target.value;
-                  const roleObj = (roles as any[])?.find(r => r._id === rId);
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    roleId: roleObj ? rId : '', 
-                    role: roleObj ? roleObj.name : rId 
-                  }));
+                  const val = e.target.value;
+                  const roleObj = (roles as any[])?.find(r => (r._id || r.id) === val);
+                  if (roleObj) {
+                    const norm = String(roleObj.name || '').toLowerCase().trim();
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      roleId: roleObj._id || roleObj.id, 
+                      role: norm.includes('driver') ? 'driver' : roleObj.name 
+                    }));
+                  } else {
+                    const norm = String(val).toLowerCase().trim();
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      roleId: '', 
+                      role: norm.includes('driver') ? 'driver' : val 
+                    }));
+                  }
                 }}
                 required
-                options={
-                  (roles && roles.length > 0)
-                    ? roles.map((r: any) => ({ value: r._id, label: r.name }))
-                    : [
-                        { value: 'sales_executive', label: 'Sales Executive' },
-                        { value: 'team_leader', label: 'Team Leader' },
-                        { value: 'sales_manager', label: 'Sales Manager' },
-                        { value: 'admin', label: 'Admin' },
-                        { value: 'accountant', label: 'Accountant' },
-                        { value: 'receptionist', label: 'Receptionist' },
-                        { value: 'driver', label: 'Driver' },
-                      ]
-                }
+                options={roleOptions}
               />
               <Select
                 label="Department"

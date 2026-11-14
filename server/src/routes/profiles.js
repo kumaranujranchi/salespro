@@ -5,6 +5,26 @@ import { isPlatformRole, requireRole, sanitizeProfile } from '../middleware/auth
 
 const router = Router();
 
+// Helper to detect and normalize driver roles across system & custom tenant roles
+async function detectDriverRole(role, roleId) {
+  let r = String(role || '').trim().toLowerCase();
+  if (roleId) {
+    try {
+      const roleRes = await query('SELECT name FROM tenant_roles WHERE id = $1', [roleId]);
+      const rName = String(roleRes.rows[0]?.name || '').trim().toLowerCase();
+      if (rName.includes('driver') || rName.includes('cab') || rName.includes('chauffeur')) {
+        return 'driver';
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  if (r.includes('driver') || r.includes('cab') || r.includes('chauffeur')) {
+    return 'driver';
+  }
+  return r || 'sales_executive';
+}
+
 // 1. List Users By Tenant
 router.get('/', async (req, res) => {
   try {
@@ -22,17 +42,68 @@ router.get('/', async (req, res) => {
     const params = [targetTenantId];
 
     if (role) {
-      params.push(role);
-      sql += ` AND p.role = $${params.length}`;
+      const cleanRole = String(role).trim().toLowerCase();
+      if (cleanRole === 'driver') {
+        sql += ` AND (
+          LOWER(TRIM(p.role)) IN ('driver', 'cab_driver', 'cab driver', 'chauffeur')
+          OR LOWER(TRIM(COALESCE(r.name, ''))) IN ('driver', 'cab_driver', 'cab driver', 'chauffeur')
+          OR p.role ILIKE '%driver%'
+          OR r.name ILIKE '%driver%'
+          OR p.role ILIKE '%cab%'
+          OR r.name ILIKE '%cab%'
+          OR p.role ILIKE '%chauffeur%'
+          OR r.name ILIKE '%chauffeur%'
+        )`;
+      } else {
+        params.push(cleanRole);
+        sql += ` AND (LOWER(TRIM(p.role)) = $${params.length} OR LOWER(TRIM(COALESCE(r.name, ''))) = $${params.length})`;
+      }
     }
     if (is_active !== undefined) {
-      params.push(is_active === 'true' || is_active === true);
-      sql += ` AND p.is_active = $${params.length}`;
+      const activeVal = is_active === 'true' || is_active === true;
+      if (activeVal) {
+        sql += ` AND (p.is_active = true OR p.is_active IS NULL)`;
+      } else {
+        sql += ` AND p.is_active = false`;
+      }
     }
 
     sql += ` ORDER BY p.created_at ASC`;
 
     const result = await query(sql, params);
+    return res.json(result.rows.map(r => sanitizeProfile(r)));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Dedicated endpoint to fetch all active drivers for a tenant
+router.get('/drivers', async (req, res) => {
+  try {
+    const { tenant_id } = req.query;
+    const targetTenantId = tenant_id || req.user?.tenant_id;
+    if (!targetTenantId) return res.status(400).json({ error: 'tenant_id required' });
+
+    const sql = `
+      SELECT p.*, d.name as department_name, r.name as role_name
+      FROM profiles p
+      LEFT JOIN departments d ON p.department_id = d.id
+      LEFT JOIN tenant_roles r ON p.role_id = r.id
+      WHERE p.tenant_id = $1
+        AND (p.is_active = true OR p.is_active IS NULL)
+        AND (
+          LOWER(TRIM(p.role)) IN ('driver', 'cab_driver', 'cab driver', 'chauffeur')
+          OR LOWER(TRIM(COALESCE(r.name, ''))) IN ('driver', 'cab_driver', 'cab driver', 'chauffeur')
+          OR p.role ILIKE '%driver%'
+          OR r.name ILIKE '%driver%'
+          OR p.role ILIKE '%cab%'
+          OR r.name ILIKE '%cab%'
+          OR p.role ILIKE '%chauffeur%'
+          OR r.name ILIKE '%chauffeur%'
+        )
+      ORDER BY p.full_name ASC
+    `;
+    const result = await query(sql, [targetTenantId]);
     return res.json(result.rows.map(r => sanitizeProfile(r)));
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -90,6 +161,7 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
 
     const rawPass = password || 'Admin@123';
     const passwordHash = await bcrypt.hash(rawPass, 10);
+    const resolvedRole = await detectDriverRole(role, role_id);
 
     const result = await query(
       `INSERT INTO profiles 
@@ -106,7 +178,7 @@ router.post('/', requireRole('super_admin', 'admin', 'director'), async (req, re
         full_name, 
         employee_id || null, 
         normalizedPhone || null, 
-        role || 'sales_executive',
+        resolvedRole,
         department_id || null, 
         reporting_manager_id || null, 
         role_id || null,
@@ -158,6 +230,9 @@ router.patch('/:id', async (req, res) => {
 
     if (canManageUsers) {
       allowed.push('role', 'role_id', 'department_id', 'reporting_manager_id', 'employee_id', 'is_active');
+      if (body.role !== undefined || body.role_id !== undefined) {
+        body.role = await detectDriverRole(body.role, body.role_id);
+      }
     }
 
     const fields = [];

@@ -116,7 +116,42 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await profilesService.listByTenant(args?.tenant_id, { is_active: true });
   }
   if (key.includes('profiles.listDrivers')) {
-    return await profilesService.listByTenant(args?.tenant_id, { role: 'driver', is_active: true });
+    const tId = args?.tenant_id;
+    if (!tId) return [];
+    try {
+      const res = await profilesService.listDrivers(tId);
+      if (Array.isArray(res) && res.length > 0) return res;
+    } catch (e) {
+      console.warn('Dedicated listDrivers failed, trying listByTenant fallback:', e);
+    }
+    try {
+      const byRole = await profilesService.listByTenant(tId, { role: 'driver', is_active: true });
+      if (Array.isArray(byRole) && byRole.length > 0) return byRole;
+    } catch (e) {
+      console.warn('listByTenant role=driver failed:', e);
+    }
+    // Fallback: load all staff and filter in memory by role / role_name / department_name
+    try {
+      const allStaff = await profilesService.listByTenant(tId);
+      if (Array.isArray(allStaff)) {
+        const isDriverUser = (p: any) => {
+          const r = String(p.role || '').toLowerCase().trim();
+          const rn = String(p.role_name || p.role_title || '').toLowerCase().trim();
+          const dept = String(p.department_name || '').toLowerCase().trim();
+          return (
+            r.includes('driver') || rn.includes('driver') ||
+            r.includes('cab') || rn.includes('cab') ||
+            r.includes('chauffeur') || rn.includes('chauffeur') ||
+            dept.includes('driver') || dept.includes('transport')
+          );
+        };
+        const drivers = allStaff.filter(p => isDriverUser(p) && p.is_active !== false);
+        if (drivers.length > 0) return drivers;
+      }
+    } catch (e) {
+      console.warn('allStaff driver search fallback failed:', e);
+    }
+    return [];
   }
   if (key.includes('profiles.promoteToPlatformAdmin')) {
     return await authService.promote(args?.email);
@@ -332,10 +367,14 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await siteVisitsService.list(args?.tenant_id, args);
   }
   if (key.includes('site_visits.request') || key.includes('site_visits.create')) {
-    return await siteVisitsService.request(args);
+    const res = await siteVisitsService.request(args);
+    invalidateQuery('site_visits');
+    return res;
   }
   if (key.includes('site_visits.update')) {
-    return await siteVisitsService.update(args?.id || args?._id, args);
+    const res = await siteVisitsService.update(args?.id || args?._id, args);
+    invalidateQuery('site_visits');
+    return res;
   }
 
   // TARGETS
