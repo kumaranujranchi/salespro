@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -62,6 +63,27 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
 
+function GTMPageViewTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).dataLayer) {
+        (window as any).dataLayer.push({
+          event: 'page_view',
+          page_path: location.pathname + location.search,
+          page_location: window.location.href,
+          page_title: document.title,
+        });
+      }
+    } catch {
+      // Ignore tracking errors
+    }
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -70,6 +92,7 @@ function App() {
           <DialogProvider>
             <TutorialProvider>
               <ErrorBoundary>
+                <GTMPageViewTracker />
                 <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
