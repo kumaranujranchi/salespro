@@ -106,8 +106,19 @@ export function AdminIntegrationsPage() {
     accessToken: '',
     pageId: '',
     pageName: '',
-    assignmentRule: 'manual' as 'manual' | 'round_robin'
+    assignmentRule: 'manual' as 'manual' | 'round_robin',
+    pages: [] as Array<{
+      id: string;
+      name: string;
+      accessToken: string;
+      category?: string;
+      assignmentRule?: 'manual' | 'round_robin';
+      connectedAt?: string;
+    }>
   });
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
+  const [selectedTestPageId, setSelectedTestPageId] = useState<string>('');
+  const [batchConnecting, setBatchConnecting] = useState(false);
   const [metaConnectMethod, setMetaConnectMethod] = useState<'oauth' | 'manual'>('oauth');
   const [manualPageId, setManualPageId] = useState('');
   const [manualPageName, setManualPageName] = useState('');
@@ -220,22 +231,53 @@ export function AdminIntegrationsPage() {
 
   useEffect(() => {
     if (tenant?.settings?.integrations?.meta) {
-      const mAppId = tenant.settings.integrations.meta.appId || DEFAULT_FACEBOOK_APP_ID;
-      const mAppSecret = tenant.settings.integrations.meta.appSecret || (mAppId === DEFAULT_FACEBOOK_APP_ID ? DEFAULT_FACEBOOK_APP_SECRET : '');
+      const meta = tenant.settings.integrations.meta as any;
+      const mAppId = meta.appId || DEFAULT_FACEBOOK_APP_ID;
+      const mAppSecret = meta.appSecret || (mAppId === DEFAULT_FACEBOOK_APP_ID ? DEFAULT_FACEBOOK_APP_SECRET : '');
+
+      let loadedPages: Array<{
+        id: string;
+        name: string;
+        accessToken: string;
+        category?: string;
+        assignmentRule?: 'manual' | 'round_robin';
+        connectedAt?: string;
+      }> = [];
+
+      if (Array.isArray(meta.pages) && meta.pages.length > 0) {
+        loadedPages = meta.pages.map((p: any) => ({
+          id: String(p.id),
+          name: p.name || 'Facebook Page',
+          accessToken: p.accessToken || '',
+          category: p.category || '',
+          assignmentRule: (p.assignmentRule as 'manual' | 'round_robin') || (meta.assignmentRule as 'manual' | 'round_robin') || 'manual',
+          connectedAt: p.connectedAt || ''
+        }));
+      } else if (meta.pageId) {
+        loadedPages = [{
+          id: String(meta.pageId),
+          name: meta.pageName || 'Connected Facebook Page',
+          accessToken: meta.accessToken || '',
+          assignmentRule: (meta.assignmentRule as 'manual' | 'round_robin') || 'manual',
+        }];
+      }
+
       setMetaSettings({
-        enabled: tenant.settings.integrations.meta.enabled ?? false,
+        enabled: meta.enabled ?? false,
         appId: mAppId,
         appSecret: mAppSecret,
-        accessToken: tenant.settings.integrations.meta.accessToken ?? '',
-        pageId: tenant.settings.integrations.meta.pageId ?? '',
-        pageName: tenant.settings.integrations.meta.pageName ?? '',
-        assignmentRule: (tenant.settings.integrations.meta.assignmentRule as 'manual' | 'round_robin') ?? 'manual'
+        accessToken: meta.accessToken ?? (loadedPages[0]?.accessToken || ''),
+        pageId: meta.pageId ?? (loadedPages[0]?.id || ''),
+        pageName: meta.pageName ?? (loadedPages[0]?.name || ''),
+        assignmentRule: (meta.assignmentRule as 'manual' | 'round_robin') ?? 'manual',
+        pages: loadedPages
       });
-      if (tenant.settings.integrations.meta.pageId) {
-        setManualPageId(tenant.settings.integrations.meta.pageId);
+      if (loadedPages[0]?.id) {
+        setManualPageId(loadedPages[0].id);
+        setSelectedTestPageId(loadedPages[0].id);
       }
-      if (tenant.settings.integrations.meta.pageName) {
-        setManualPageName(tenant.settings.integrations.meta.pageName);
+      if (loadedPages[0]?.name) {
+        setManualPageName(loadedPages[0].name);
       }
     }
     if (tenant?.settings?.integrations?.google) {
@@ -379,7 +421,10 @@ export function AdminIntegrationsPage() {
             appId: resolvedAppId,
             appSecret: resolvedAppSecret,
           });
-          setPagesList(pages);
+          setPagesList(pages || []);
+          if (pages && pages.length > 0) {
+            setSelectedPageIds(pages.map((p: any) => String(p.id)));
+          }
         } catch (error: any) {
           console.error("Error exchanging Facebook code:", error);
           toast.error(error.message || "Failed to retrieve Facebook pages. Check server environment keys or credentials.");
@@ -436,6 +481,17 @@ export function AdminIntegrationsPage() {
       }
 
       const pageName = verifyRes?.page?.name || manualPageName.trim() || "Connected Facebook Page";
+      const newPage = {
+        id: manualPageId.trim(),
+        name: pageName,
+        accessToken: manualPageToken.trim(),
+        category: verifyRes?.page?.category || '',
+        assignmentRule: metaSettings.assignmentRule || 'manual',
+        connectedAt: new Date().toISOString()
+      };
+
+      const existingPages = metaSettings.pages.filter(p => String(p.id) !== String(manualPageId.trim()));
+      const updatedPages = [...existingPages, newPage];
 
       const updatedSettings = {
         ...tenant.settings,
@@ -444,9 +500,10 @@ export function AdminIntegrationsPage() {
           meta: {
             ...tenant.settings?.integrations?.meta,
             enabled: true,
-            accessToken: manualPageToken.trim(),
-            pageId: manualPageId.trim(),
-            pageName,
+            pages: updatedPages,
+            accessToken: updatedPages[0]?.accessToken || manualPageToken.trim(),
+            pageId: updatedPages[0]?.id || manualPageId.trim(),
+            pageName: updatedPages[0]?.name || pageName,
             assignmentRule: metaSettings.assignmentRule || 'manual',
             appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
             appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET
@@ -461,6 +518,9 @@ export function AdminIntegrationsPage() {
 
       await refreshTenant();
       toast.success(`Successfully connected Facebook Page: ${pageName}`);
+      setManualPageId('');
+      setManualPageToken('');
+      setManualPageName('');
     } catch (error: any) {
       console.error("Error connecting Facebook page:", error);
       toast.error(error.message || "Failed to verify Facebook Page with Meta. Please check your Page ID and Token.");
@@ -506,6 +566,10 @@ export function AdminIntegrationsPage() {
       toast.error("Webhook token not ready yet. Please wait a moment.");
       return;
     }
+    const testPage = metaSettings.pages.find(p => p.id === selectedTestPageId) || metaSettings.pages[0];
+    const testPageId = testPage?.id || metaSettings.pageId || 'test_page';
+    const testPageName = testPage?.name || metaSettings.pageName || 'Facebook Test Page';
+
     setIsTestingMetaLead(true);
     setMetaTestResult(null);
     try {
@@ -522,26 +586,27 @@ export function AdminIntegrationsPage() {
               value: {
                 form_id: 'test_meta_form',
                 leadgen_id: `test_lead_${Date.now()}`,
-                page_id: metaSettings.pageId || 'test_page'
+                page_id: testPageId
               }
             }]
           }],
-          customer_name: 'Pooja Verma (Facebook Test Lead)',
+          page_id: testPageId,
+          customer_name: `Pooja Verma (${testPageName} Test Lead)`,
           phone: '9876543210',
           email: 'pooja.verma@example.com',
           city: 'Mumbai',
           budget: '85 Lakhs',
           purpose: '3 BHK Residential Apartment',
-          lead_source: 'Meta Lead Ads'
+          lead_source: 'Meta'
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setMetaTestResult({
           success: true,
-          message: `Test lead successfully created in CRM! Check your Leads page.`
+          message: `Test lead for "${testPageName}" successfully created in CRM! Check your Leads page.`
         });
-        toast.success("Test Facebook lead received by CRM! Check Leads page.");
+        toast.success(`Test lead for "${testPageName}" received by CRM!`);
       } else {
         setMetaTestResult({
           success: false,
@@ -570,6 +635,18 @@ export function AdminIntegrationsPage() {
         pageAccessToken: page.access_token
       });
 
+      const newPage = {
+        id: String(page.id),
+        name: page.name,
+        accessToken: page.access_token,
+        category: page.category || '',
+        assignmentRule: metaSettings.assignmentRule || 'manual',
+        connectedAt: new Date().toISOString()
+      };
+
+      const existingPages = metaSettings.pages.filter(p => String(p.id) !== String(page.id));
+      const updatedPages = [...existingPages, newPage];
+
       const updatedSettings = {
         ...tenant.settings,
         integrations: {
@@ -577,9 +654,10 @@ export function AdminIntegrationsPage() {
           meta: {
             ...tenant.settings?.integrations?.meta,
             enabled: true,
-            accessToken: page.access_token,
-            pageId: page.id,
-            pageName: page.name,
+            pages: updatedPages,
+            accessToken: updatedPages[0]?.accessToken || page.access_token,
+            pageId: updatedPages[0]?.id || page.id,
+            pageName: updatedPages[0]?.name || page.name,
             assignmentRule: metaSettings.assignmentRule || 'manual',
             appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
             appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET,
@@ -594,8 +672,7 @@ export function AdminIntegrationsPage() {
       });
 
       await refreshTenant();
-      toast.success(`Successfully connected to Page: ${page.name}`);
-      setShowPagesModal(false);
+      toast.success(`Successfully connected Page: ${page.name}`);
     } catch (error: any) {
       console.error("Error connecting Facebook page:", error);
       toast.error(error.message || "Failed to connect Facebook page.");
@@ -604,9 +681,125 @@ export function AdminIntegrationsPage() {
     }
   };
 
+  const handleBatchConnectPages = async () => {
+    if (!tenant?._id || selectedPageIds.length === 0) {
+      toast.error("Please select at least one page to connect.");
+      return;
+    }
+
+    setBatchConnecting(true);
+    let successCount = 0;
+    const pagesToAdd: Array<{
+      id: string;
+      name: string;
+      accessToken: string;
+      category?: string;
+      assignmentRule?: 'manual' | 'round_robin';
+      connectedAt?: string;
+    }> = [];
+
+    try {
+      for (const pageId of selectedPageIds) {
+        const page = pagesList.find(p => String(p.id) === String(pageId));
+        if (!page) continue;
+
+        try {
+          await subscribePageToWebhookAction({
+            pageId: page.id,
+            pageAccessToken: page.access_token
+          });
+        } catch (subErr) {
+          console.warn(`Webhook subscription notice for ${page.name}:`, subErr);
+        }
+
+        pagesToAdd.push({
+          id: String(page.id),
+          name: page.name,
+          accessToken: page.access_token,
+          category: page.category || '',
+          assignmentRule: metaSettings.assignmentRule || 'manual',
+          connectedAt: new Date().toISOString()
+        });
+        successCount++;
+      }
+
+      const otherPages = metaSettings.pages.filter(p => !selectedPageIds.includes(String(p.id)));
+      const updatedPages = [...otherPages, ...pagesToAdd];
+
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta: {
+            ...tenant.settings?.integrations?.meta,
+            enabled: true,
+            pages: updatedPages,
+            accessToken: updatedPages[0]?.accessToken || '',
+            pageId: updatedPages[0]?.id || '',
+            pageName: updatedPages[0]?.name || '',
+            assignmentRule: metaSettings.assignmentRule || 'manual',
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success(`Successfully connected ${successCount} Facebook page(s)!`);
+      setShowPagesModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect selected pages.");
+    } finally {
+      setBatchConnecting(false);
+    }
+  };
+
+  const handleDisconnectSinglePage = async (pageIdToDisconnect: string, pageNameToDisconnect: string) => {
+    if (!tenant?._id) return;
+    if (!confirm(`Are you sure you want to disconnect "${pageNameToDisconnect}"? Leads from this page will no longer be captured.`)) return;
+
+    setSavingMeta(true);
+    try {
+      const updatedPages = metaSettings.pages.filter(p => String(p.id) !== String(pageIdToDisconnect));
+      const isStillConnected = updatedPages.length > 0;
+
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta: {
+            ...tenant.settings?.integrations?.meta,
+            enabled: isStillConnected ? metaSettings.enabled : false,
+            pages: updatedPages,
+            pageId: updatedPages[0]?.id || '',
+            pageName: updatedPages[0]?.name || '',
+            accessToken: updatedPages[0]?.accessToken || '',
+          }
+        }
+      };
+
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+
+      await refreshTenant();
+      toast.success(`Disconnected "${pageNameToDisconnect}" successfully.`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to disconnect page.");
+    } finally {
+      setSavingMeta(false);
+    }
+  };
+
   const handleDisconnectMeta = async () => {
     if (!tenant?._id) return;
-    if (!confirm("Are you sure you want to disconnect your Facebook Page? Leads will no longer be imported.")) return;
+    if (!confirm("Are you sure you want to disconnect ALL connected Facebook Pages? Leads will no longer be imported.")) return;
 
     setSavingMeta(true);
     try {
@@ -615,7 +808,9 @@ export function AdminIntegrationsPage() {
         integrations: {
           ...tenant.settings?.integrations,
           meta: {
+            ...tenant.settings?.integrations?.meta,
             enabled: false,
+            pages: [],
             accessToken: '',
             pageId: '',
             pageName: '',
@@ -630,12 +825,47 @@ export function AdminIntegrationsPage() {
       });
 
       await refreshTenant();
-      toast.success('Facebook integration disconnected.');
+      toast.success('All Facebook pages disconnected.');
     } catch (error: any) {
       console.error('Error disconnecting Meta:', error);
       toast.error(error.message || 'Failed to disconnect Meta.');
     } finally {
       setSavingMeta(false);
+    }
+  };
+
+  const handleUpdatePageAssignmentRule = async (pageId: string, rule: 'manual' | 'round_robin') => {
+    const updatedPages = metaSettings.pages.map(p => {
+      if (String(p.id) === String(pageId)) {
+        return { ...p, assignmentRule: rule };
+      }
+      return p;
+    });
+    setMetaSettings(prev => ({
+      ...prev,
+      pages: updatedPages
+    }));
+
+    if (!tenant?._id) return;
+    try {
+      const updatedSettings = {
+        ...tenant.settings,
+        integrations: {
+          ...tenant.settings?.integrations,
+          meta: {
+            ...tenant.settings?.integrations?.meta,
+            pages: updatedPages
+          }
+        }
+      };
+      await updateTenantMutation({
+        id: tenant._id as any,
+        settings: updatedSettings
+      });
+      await refreshTenant();
+      toast.success("Page assignment rule updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update page assignment rule");
     }
   };
 
@@ -652,8 +882,12 @@ export function AdminIntegrationsPage() {
             ...tenant.settings?.integrations?.meta,
             enabled: metaSettings.enabled,
             assignmentRule: metaSettings.assignmentRule,
-            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || '',
-            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || ''
+            pages: metaSettings.pages,
+            pageId: metaSettings.pages[0]?.id || '',
+            pageName: metaSettings.pages[0]?.name || '',
+            accessToken: metaSettings.pages[0]?.accessToken || '',
+            appId: metaSettings.appId?.trim() || tenant.settings?.integrations?.meta?.appId || DEFAULT_FACEBOOK_APP_ID,
+            appSecret: metaSettings.appSecret?.trim() || tenant.settings?.integrations?.meta?.appSecret || DEFAULT_FACEBOOK_APP_SECRET
           }
         }
       };
@@ -668,7 +902,7 @@ export function AdminIntegrationsPage() {
       setActiveModal(null);
     } catch (error: any) {
       console.error('Error saving Meta settings:', error);
-      toast.error(error.message || 'Failed to save integration settings.');
+      toast.error(error.message || 'Failed to update Meta settings.');
     } finally {
       setSavingMeta(false);
     }
@@ -1139,7 +1373,7 @@ export function AdminIntegrationsPage() {
   const googleSheetWebhookUrl = buildWebhookUrl('google_sheet');
   const websiteWebhookUrl = buildWebhookUrl('website');
 
-  const isMetaConnected = !!metaSettings.pageId;
+  const isMetaConnected = (metaSettings.pages && metaSettings.pages.length > 0) || !!metaSettings.pageId;
   const isMetaActive = metaSettings.enabled && isMetaConnected;
   const isGoogleActive = googleSettings.enabled && !!googleSettings.googleKey;
   const isNineNineActive = nineNineSettings.enabled && (!!nineNineSettings.username || !!nineNineSettings.clientId);
@@ -1845,49 +2079,123 @@ export function AdminIntegrationsPage() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 rounded-xl flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="w-8 h-8 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                FB
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                                  {metaSettings.pageName || "Connected Page"}
-                                </p>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                                  ID: {metaSettings.pageId}
-                                </p>
-                              </div>
+                          {/* Connected Pages Header with Count & Connect More */}
+                          <div className="flex items-center justify-between pb-1 border-b border-gray-100 dark:border-white/5">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                Connected Pages ({metaSettings.pages.length})
+                              </h4>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                Syncing Leads
+                              </span>
                             </div>
                             <Button
-                              variant="danger"
                               size="sm"
-                              onClick={handleDisconnectMeta}
-                              isLoading={savingMeta}
-                              className="text-[10px] py-1 px-2.5 flex items-center gap-1 flex-shrink-0"
+                              variant="outline"
+                              onClick={() => {
+                                if (pagesList.length > 0) {
+                                  setShowPagesModal(true);
+                                } else {
+                                  handleFacebookConnect();
+                                }
+                              }}
+                              className="text-xs py-1 px-2.5 h-7 flex items-center gap-1.5 border-blue-200 text-blue-600 hover:bg-blue-50"
                             >
-                              <LogOut size={10} /> Disconnect
+                              <Facebook size={12} fill="currentColor" /> + Connect Page
                             </Button>
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                              Lead Assignment Rule
-                            </label>
-                            <Select
-                              value={metaSettings.assignmentRule}
-                              onChange={(e) => setMetaSettings({ ...metaSettings, assignmentRule: e.target.value as 'manual' | 'round_robin' })}
-                              className="text-xs py-1.5 h-9"
-                              options={[
-                                { label: 'Manual Assignment (Unassigned)', value: 'manual' },
-                                { label: 'Round Robin Auto-Assignment', value: 'round_robin' }
-                              ]}
-                            />
-                            <p className="text-[10px] text-gray-500 mt-1">
-                              {metaSettings.assignmentRule === 'manual' 
-                                ? 'New leads from Meta will import as unassigned. Admin can assign them manually.' 
-                                : 'New leads will be automatically distributed one-by-one to active Sales Executives.'}
-                            </p>
+                          {/* Connected Pages List */}
+                          <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                            {metaSettings.pages.map((p) => (
+                              <div
+                                key={p.id}
+                                className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-white/10 space-y-2 shadow-sm"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <div className="w-7 h-7 bg-[#1877F2] text-white rounded-lg flex items-center justify-center font-bold text-[11px] shrink-0">
+                                      FB
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                        {p.name}
+                                      </p>
+                                      <p className="text-[10px] text-gray-500 dark:text-gray-400 font-mono truncate">
+                                        ID: {p.id}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDisconnectSinglePage(p.id, p.name)}
+                                    title="Disconnect Page"
+                                    className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors shrink-0 rounded"
+                                  >
+                                    <X size={15} />
+                                  </button>
+                                </div>
+
+                                <div className="pt-2 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-2">
+                                  <label className="text-[10px] font-semibold text-gray-500 shrink-0">
+                                    Lead Routing:
+                                  </label>
+                                  <select
+                                    value={p.assignmentRule || 'manual'}
+                                    onChange={(e) => handleUpdatePageAssignmentRule(p.id, e.target.value as 'manual' | 'round_robin')}
+                                    className="text-[11px] py-0.5 px-2 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none"
+                                  >
+                                    <option value="manual">Manual Assignment</option>
+                                    <option value="round_robin">Round Robin</option>
+                                  </select>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Quick Manual Add Page Accordion */}
+                          <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-gray-200 dark:border-white/10 text-xs">
+                            <details className="group">
+                              <summary className="font-semibold text-slate-700 dark:text-slate-300 cursor-pointer flex items-center justify-between text-[11px]">
+                                <span>+ Add Page manually via Token</span>
+                                <ChevronRight size={13} className="group-open:rotate-90 transition-transform text-gray-400" />
+                              </summary>
+                              <div className="mt-2.5 space-y-2 pt-2 border-t border-gray-200 dark:border-white/5">
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">
+                                    Page ID:
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={manualPageId}
+                                    onChange={(e) => setManualPageId(e.target.value)}
+                                    placeholder="e.g. 104829104820192"
+                                    className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-600 dark:text-gray-400 mb-0.5">
+                                    Page Access Token:
+                                  </label>
+                                  <input
+                                    type="password"
+                                    value={manualPageToken}
+                                    onChange={(e) => setManualPageToken(e.target.value)}
+                                    placeholder="EAAG..."
+                                    className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white font-mono"
+                                  />
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={handleManualPageConnect}
+                                  isLoading={verifyingPage}
+                                  disabled={verifyingPage || !manualPageId.trim() || !manualPageToken.trim()}
+                                  className="w-full text-xs py-1"
+                                >
+                                  Verify & Add Page
+                                </Button>
+                              </div>
+                            </details>
                           </div>
 
                           {/* Test Facebook Lead Capture Button */}
@@ -1907,11 +2215,36 @@ export function AdminIntegrationsPage() {
                                 <Send size={12} /> Send Test Lead
                               </Button>
                             </div>
+                            {metaSettings.pages.length > 1 && (
+                              <div className="flex items-center gap-2 pt-1 text-[11px]">
+                                <span className="text-gray-500 shrink-0">Test with Page:</span>
+                                <select
+                                  value={selectedTestPageId || metaSettings.pages[0]?.id || ''}
+                                  onChange={(e) => setSelectedTestPageId(e.target.value)}
+                                  className="w-full text-[11px] py-1 px-2 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900"
+                                >
+                                  {metaSettings.pages.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                             {metaTestResult && (
                               <div className={`p-2 rounded-lg text-[11px] ${metaTestResult.success ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                                 {metaTestResult.message}
                               </div>
                             )}
+                          </div>
+
+                          {/* Disconnect All Button */}
+                          <div className="pt-1 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={handleDisconnectMeta}
+                              className="text-[11px] text-red-500 hover:text-red-700 dark:hover:text-red-400 flex items-center gap-1 font-medium transition-colors"
+                            >
+                              <LogOut size={11} /> Disconnect All Facebook Pages
+                            </button>
                           </div>
                         </div>
                       )}
@@ -3166,63 +3499,135 @@ export function AdminIntegrationsPage() {
         </div>
       )}
 
-      {/* Facebook Pages Selection Modal (Nested inside Meta modal check) */}
+      {/* Facebook Pages Selection Modal (Multi-Page Selection) */}
       {showPagesModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scaleIn">
-            <CardHeader className="border-b border-gray-100 dark:border-white/10 p-6">
-              <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
-                <Facebook className="text-blue-600 dark:text-blue-400" size={24} /> Connect Facebook Page
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl animate-scaleIn">
+            <CardHeader className="border-b border-gray-100 dark:border-white/10 p-5 flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                <Facebook className="text-blue-600 dark:text-blue-400" size={24} /> Connect Facebook Pages
               </CardTitle>
+              <button
+                type="button"
+                onClick={() => setShowPagesModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 rounded-lg"
+              >
+                <X size={20} />
+              </button>
             </CardHeader>
-            <div className="p-6 max-h-[400px] overflow-y-auto">
+
+            <div className="p-5 max-h-[460px] overflow-y-auto space-y-4">
               {fetchingPages ? (
-                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Fetching your Facebook pages...</p>
                 </div>
               ) : pagesList.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500 dark:text-gray-400">No managed pages found for this account.</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Make sure you have admin rights on the pages.</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Make sure you have admin rights on the pages in Facebook Business Manager.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Select the Facebook Page you want to connect to RealSalePro CRM:
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Select all Facebook Pages you want to capture leads from:
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedPageIds.length === pagesList.length) {
+                          setSelectedPageIds([]);
+                        } else {
+                          setSelectedPageIds(pagesList.map((p) => String(p.id)));
+                        }
+                      }}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      {selectedPageIds.length === pagesList.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                  </div>
+
                   <div className="divide-y divide-gray-100 dark:divide-white/5 border border-gray-100 dark:border-white/5 rounded-xl overflow-hidden">
-                    {pagesList.map((page) => (
-                      <div
-                        key={page.id}
-                        className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                      >
-                        <div className="pr-4">
-                          <p className="font-semibold text-slate-900 dark:text-white text-sm">{page.name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">{page.category} • ID: {page.id}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleConnectPage(page)}
-                          isLoading={connectingPageId === page.id}
-                          className="px-4 py-1.5 flex-shrink-0"
+                    {pagesList.map((page) => {
+                      const isConnected = metaSettings.pages.some((p) => String(p.id) === String(page.id));
+                      const isSelected = selectedPageIds.includes(String(page.id));
+
+                      return (
+                        <div
+                          key={page.id}
+                          className={`flex items-center justify-between p-3.5 transition-colors ${
+                            isSelected ? 'bg-blue-50/40 dark:bg-blue-950/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          }`}
                         >
-                          Connect
-                        </Button>
-                      </div>
-                    ))}
+                          <label className="flex items-center gap-3 pr-4 flex-1 cursor-pointer min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPageIds((prev) => [...prev, String(page.id)]);
+                                } else {
+                                  setSelectedPageIds((prev) => prev.filter((id) => id !== String(page.id)));
+                                }
+                              }}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">{page.name}</p>
+                                {isConnected && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 shrink-0">
+                                    Connected
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize mt-0.5 font-mono">
+                                {page.category ? `${page.category} • ` : ''}ID: {page.id}
+                              </p>
+                            </div>
+                          </label>
+
+                          <Button
+                            size="sm"
+                            variant={isConnected ? "outline" : "primary"}
+                            onClick={() => handleConnectPage(page)}
+                            isLoading={connectingPageId === page.id}
+                            className="px-3 py-1 text-xs shrink-0"
+                          >
+                            {isConnected ? 'Re-sync' : 'Connect'}
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex justify-end">
-              <Button
-                variant="neutral"
-                onClick={() => setShowPagesModal(false)}
-                disabled={connectingPageId !== null}
-              >
-                Cancel
-              </Button>
+
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+              <span className="text-xs text-gray-500">
+                {selectedPageIds.length} of {pagesList.length} pages selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="neutral"
+                  onClick={() => setShowPagesModal(false)}
+                  disabled={batchConnecting || connectingPageId !== null}
+                >
+                  Cancel
+                </Button>
+                {pagesList.length > 0 && (
+                  <Button
+                    onClick={handleBatchConnectPages}
+                    isLoading={batchConnecting}
+                    disabled={selectedPageIds.length === 0}
+                    className="bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-semibold px-4"
+                  >
+                    Connect Selected ({selectedPageIds.length})
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

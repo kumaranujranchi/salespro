@@ -187,8 +187,14 @@ async function handleInboundLead(req, res) {
       if (metaPageId) {
         tenantResult = await query(
           `SELECT id, name, settings FROM tenants
-            WHERE settings->'integrations'->'meta'->>'pageId' = $1
-              AND COALESCE(is_active, true) = true
+            WHERE (
+              settings->'integrations'->'meta'->>'pageId' = $1
+              OR (
+                jsonb_typeof(settings->'integrations'->'meta'->'pages') = 'array'
+                AND settings->'integrations'->'meta'->'pages' @> jsonb_build_array(jsonb_build_object('id', $1::text))
+              )
+            )
+            AND COALESCE(is_active, true) = true
             LIMIT 1`,
           [String(metaPageId)]
         );
@@ -222,9 +228,27 @@ async function handleInboundLead(req, res) {
     const payload = req.body && Object.keys(req.body).length ? req.body : req.query;
     let lead = normalizeLead(payload);
 
+    // Identify which Facebook Page this lead belongs to (if Meta)
+    const metaPageId = req.body?.entry?.[0]?.changes?.[0]?.value?.page_id || req.body?.entry?.[0]?.id || req.body?.page_id || null;
+    
+    // Resolve connected pages list (supporting both multi-page array and single-page legacy fallback)
+    let connectedPages = [];
+    if (Array.isArray(integration?.pages) && integration.pages.length > 0) {
+      connectedPages = integration.pages;
+    } else if (integration?.pageId) {
+      connectedPages = [{
+        id: String(integration.pageId),
+        name: integration.pageName || 'Connected Facebook Page',
+        accessToken: integration.accessToken || '',
+        assignmentRule: integration.assignmentRule || 'manual'
+      }];
+    }
+
+    const matchedPage = (metaPageId && connectedPages.find(p => String(p.id) === String(metaPageId))) || connectedPages[0] || null;
+
     // If Meta leadgen event without inline customer fields, fetch from Facebook Graph API
     if (!lead.mobile && !lead.email && lead.leadgen_id) {
-      const pageAccessToken = integration?.accessToken;
+      const pageAccessToken = matchedPage?.accessToken || integration?.accessToken;
       if (pageAccessToken) {
         try {
           const fbRes = await fetch(`https://graph.facebook.com/v19.0/${lead.leadgen_id}?access_token=${pageAccessToken}`);
@@ -238,9 +262,12 @@ async function handleInboundLead(req, res) {
               fbc: lead.fbc || fetchedLead.fbc,
               externalId: lead.externalId || lead.leadgen_id,
             };
+          } else {
+            const errData = await fbRes.json().catch(() => ({}));
+            console.warn('[Webhooks] Meta Graph API fetch leadgen_id failed:', errData);
           }
-        } catch {
-          // Non-blocking fallback
+        } catch (fetchErr) {
+          console.warn('[Webhooks] Meta Graph API network warning:', fetchErr.message);
         }
       }
     }
@@ -262,7 +289,8 @@ async function handleInboundLead(req, res) {
       }
     }
 
-    const salesExecutiveId = integration?.assignmentRule === 'round_robin'
+    const effectiveAssignmentRule = matchedPage?.assignmentRule || integration?.assignmentRule || 'manual';
+    const salesExecutiveId = effectiveAssignmentRule === 'round_robin'
       ? await pickRoundRobinExecutive(tenantId)
       : null;
 
@@ -286,6 +314,8 @@ async function handleInboundLead(req, res) {
       fbclid: lead.fbc || undefined,
       gclid: lead.gclid || undefined,
       leadgen_id: lead.leadgen_id || undefined,
+      page_id: matchedPage?.id || metaPageId || undefined,
+      page_name: matchedPage?.name || undefined,
       client_ip: lead.client_ip || req.ip || undefined,
       user_agent: lead.user_agent || req.headers['user-agent'] || undefined,
       received_at: new Date().toISOString(),
