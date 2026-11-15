@@ -7,7 +7,8 @@ import { KPICard } from '../components/ui/KPICard';
 import { Link } from 'react-router-dom';
 import {
   Users, TrendingUp, Clock, MapPin, CheckCircle2,
-  XCircle, PhoneCall, Globe, UserPlus, Phone, UserCheck, Calendar, Info
+  XCircle, PhoneCall, Globe, UserPlus, Phone, UserCheck, Calendar, Info,
+  ChevronDown, ArrowRight
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -59,15 +60,15 @@ export function CRMDashboardPage() {
   if (!stats) return <LoadingSpinner size="lg" className="min-h-screen" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex justify-between items-center pb-1 sm:pb-0">
         <div>
-          <h1 className="text-3xl font-bold">CRM Dashboard</h1>
-          <p className="text-gray-500">Overview of leads and conversion funnel</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">CRM Dashboard</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Overview of leads and conversion funnel</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <KPICard title="Total Leads" value={stats.totalLeads} icon={Users} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
         <KPICard title="Open" value={stats.openLeads} icon={Clock} iconColor="text-yellow-600" iconBgColor="bg-yellow-100" />
         <KPICard title="In Progress" value={stats.inProgress} icon={TrendingUp} iconColor="text-purple-600" iconBgColor="bg-purple-100" />
@@ -76,73 +77,113 @@ export function CRMDashboardPage() {
         <KPICard title="Walk-in" value={stats.walkInLeads} icon={Users} iconColor="text-orange-600" iconBgColor="bg-orange-100" />
       </div>
 
-      {/* New Call Overview & Agent Activity Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Call Overview & Agent Activity Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Call Overview Widget */}
-        <Card className="lg:col-span-2 overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-gray-100 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-slate-800 dark:text-white">Call Overview</CardTitle>
-            <select
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border-2 border-purple-500 dark:border-purple-400 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-bold shadow-sm focus:outline-none cursor-pointer transition-all duration-200"
-            >
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="this_week">This Week</option>
-              <option value="this_month">This Month</option>
-              <option value="all_time">All Time</option>
-            </select>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6 items-center">
-            {/* Chart Area */}
-            <div className="relative flex justify-center items-center h-36 min-w-0 w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="100%"
-                    startAngle={180}
-                    endAngle={0}
-                    innerRadius={65}
-                    outerRadius={85}
-                    paddingAngle={0}
-                    dataKey="value"
-                  >
-                    <Cell key="cell-0" fill="#7C3AED" />
-                    <Cell key="cell-1" fill="#E9D5FF" className="dark:fill-slate-700" />
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
-                <div className="text-lg font-extrabold text-slate-800 dark:text-white leading-tight">
-                  {percentage.toFixed(2)}%
-                </div>
-                <div className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                  Connected
-                </div>
+        <Card className="lg:col-span-2 overflow-hidden rounded-2xl shadow-xs">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-gray-100 dark:border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
+                <PhoneCall size={16} />
               </div>
+              <CardTitle className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Call Overview</CardTitle>
             </div>
-
-            {/* Breakup Details */}
-            <div className="flex flex-col justify-center gap-5 sm:pl-8 sm:border-l border-slate-100 dark:border-white/5">
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-10 rounded-full bg-[#7C3AED]" />
-                <div>
-                  <div className="text-xs text-slate-400 font-medium">Connected</div>
-                  <div className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
-                    {periodStats.connected}
+            
+            <div className="relative">
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value as any)}
+                className="appearance-none pl-3 pr-7 py-1.5 bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/80 dark:border-purple-800 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-semibold shadow-xs focus:outline-none cursor-pointer hover:bg-purple-100/60 transition-colors"
+              >
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="all_time">All Time</option>
+              </select>
+              <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-purple-500 pointer-events-none" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-8 items-center">
+              {/* Chart Area */}
+              <div className="relative flex justify-center items-center h-32 sm:h-36 min-w-0 w-full">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="100%"
+                      startAngle={180}
+                      endAngle={0}
+                      innerRadius={58}
+                      outerRadius={78}
+                      paddingAngle={0}
+                      dataKey="value"
+                    >
+                      <Cell key="cell-0" fill="#7C3AED" />
+                      <Cell key="cell-1" fill="#E9D5FF" className="dark:fill-slate-700" />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                <div className="absolute bottom-1 sm:bottom-2 left-1/2 -translate-x-1/2 text-center pointer-events-none">
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                    {percentage.toFixed(2)}%
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Connected
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-10 rounded-full bg-[#E9D5FF] dark:bg-slate-700" />
-                <div>
-                  <div className="text-xs text-slate-400 font-medium">Total</div>
-                  <div className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
-                    {periodStats.total}
+
+              {/* Mobile 2-Column Stats Micro-Grid (Visible on mobile only) */}
+              <div className="grid grid-cols-2 gap-2.5 w-full sm:hidden">
+                <div className="bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 rounded-2xl p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">Connected</span>
+                    <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {periodStats.connected}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">calls</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl p-3 flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Total Dialed</span>
+                    <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {periodStats.total}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">calls</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Breakup Details (100% Preserved for Desktop) */}
+              <div className="hidden sm:flex flex-col justify-center gap-5 sm:pl-8 sm:border-l border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-10 rounded-full bg-[#7C3AED]" />
+                  <div>
+                    <div className="text-xs text-slate-400 font-medium">Connected</div>
+                    <div className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
+                      {periodStats.connected}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-10 rounded-full bg-[#E9D5FF] dark:bg-slate-700" />
+                  <div>
+                    <div className="text-xs text-slate-400 font-medium">Total</div>
+                    <div className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5">
+                      {periodStats.total}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -151,40 +192,69 @@ export function CRMDashboardPage() {
         </Card>
 
         {/* Agent Activity Widget */}
-        <Card className="flex flex-col justify-between">
-          <CardHeader className="pb-2 border-b border-gray-100 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-slate-800 dark:text-white">Agent Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col justify-center flex-1 py-8">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm shrink-0">
-                {/* Runner Icon Style representation */}
-                <Users size={24} />
+        <Card className="flex flex-col justify-between overflow-hidden rounded-2xl shadow-xs">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-gray-100 dark:border-white/5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <Users size={16} />
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-sm text-slate-400 font-medium">
-                  Active Agents
+              <CardTitle className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Agent Activity</CardTitle>
+            </div>
+            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              {totalAgents > 0 ? Math.round((activeAgents / totalAgents) * 100) : 0}% Active
+            </span>
+          </CardHeader>
+          <CardContent className="flex flex-col justify-between flex-1 p-4 sm:p-6 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs shrink-0 border border-emerald-500/20">
+                <Users size={22} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-400 font-medium">
+                  Active Sales Agents
                   <span className="cursor-help text-slate-300 hover:text-slate-400 transition-colors" title="Agents who created at least one follow-up in the selected period">
-                    <Info size={14} />
+                    <Info size={13} />
                   </span>
                 </div>
-                <div className="text-4xl font-extrabold text-slate-800 dark:text-white flex items-baseline">
+                <div className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white flex items-baseline mt-0.5">
                   {activeAgents}
-                  <span className="text-lg font-bold text-slate-400 ml-1">
+                  <span className="text-base sm:text-lg font-bold text-slate-400 ml-1">
                     /{totalAgents}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Activity Progress Bar & Micro pills for Mobile and Desktop */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+              <div className="w-full h-2.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                  style={{ width: `${totalAgents > 0 ? Math.min(100, (activeAgents / totalAgents) * 100) : 0}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-0.5">
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span>{activeAgents} Engaged</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>{Math.max(0, totalAgents - activeAgents)} Idle</span>
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <Card>
-            <CardHeader><CardTitle>Leads by Source</CardTitle></CardHeader>
-            <CardContent>
-               <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+         <Card className="rounded-2xl shadow-xs">
+            <CardHeader className="pb-3 border-b border-gray-100 dark:border-white/5">
+              <CardTitle className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Leads by Source</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+               <div className="space-y-3.5">
                   <SourceBar label="Referral" count={stats.referralLeads || 0} total={stats.totalLeads} color="bg-indigo-500" />
                   <SourceBar label="99acres" count={stats.acresLeads || 0} total={stats.totalLeads} color="bg-yellow-500" />
                   <SourceBar label="MagicBrick" count={stats.magicBrickLeads || 0} total={stats.totalLeads} color="bg-red-500" />
@@ -196,20 +266,30 @@ export function CRMDashboardPage() {
             </CardContent>
          </Card>
          
-         <div className="space-y-4">
-            <Link to="/leads" className="block">
-               <Card className="bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                  <CardContent className="p-6">
-                     <h3 className="text-xl font-bold mb-1">Manage Leads</h3>
-                     <p className="opacity-80 text-sm">View full lead list and follow-up history</p>
+         <div className="space-y-3 sm:space-y-4">
+            <Link to="/leads" className="block group">
+               <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all rounded-2xl shadow-xs border-0">
+                  <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                     <div>
+                        <h3 className="text-base sm:text-lg font-bold mb-0.5">Manage Leads</h3>
+                        <p className="opacity-80 text-xs">View full lead list and follow-up timeline</p>
+                     </div>
+                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform">
+                        <ArrowRight size={16} />
+                     </div>
                   </CardContent>
                </Card>
             </Link>
-            <Link to="/crm/pipeline" className="block">
-               <Card className="bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
-                  <CardContent className="p-6">
-                     <h3 className="text-xl font-bold mb-1">Sales Pipeline</h3>
-                     <p className="opacity-80 text-sm">Visualize your conversion stages</p>
+            <Link to="/crm/pipeline" className="block group">
+               <Card className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700 transition-all rounded-2xl shadow-xs border-0">
+                  <CardContent className="p-4 sm:p-5 flex items-center justify-between">
+                     <div>
+                        <h3 className="text-base sm:text-lg font-bold mb-0.5">Sales Pipeline</h3>
+                        <p className="opacity-80 text-xs">Visualize conversion stages & deal velocity</p>
+                     </div>
+                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:translate-x-1 transition-transform">
+                        <ArrowRight size={16} />
+                     </div>
                   </CardContent>
                </Card>
             </Link>
