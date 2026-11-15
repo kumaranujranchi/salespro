@@ -19,10 +19,35 @@ export function sanitizeProfile(user) {
   const copy = { ...user };
   delete copy.password;
   delete copy.password_hash;
+
+  let roleDetails = null;
+  const roleId = copy.role_id_val || copy.role_id;
+  const roleName = copy.role_name || copy.role;
+  let rolePermissions = copy.role_permissions || copy.permissions || {};
+  if (typeof rolePermissions === 'string') {
+    try {
+      rolePermissions = JSON.parse(rolePermissions);
+    } catch {
+      rolePermissions = {};
+    }
+  }
+
+  if (roleId || roleName || copy.role_permissions) {
+    roleDetails = {
+      id: roleId,
+      name: roleName,
+      description: copy.role_description || null,
+      permissions: rolePermissions,
+      is_system: copy.role_is_system || false,
+    };
+  }
+
   return {
     ...copy,
     _id: copy.id,
     userId: copy.user_id || copy.email,
+    role_details: roleDetails,
+    permissions: rolePermissions,
   };
 }
 
@@ -50,6 +75,7 @@ export function signAuthToken(profile) {
       sub: String(profile.id || profile._id),
       email: profile.email,
       role: normalizeRole(profile.role),
+      role_id: profile.role_id || profile.role_details?.id || null,
       tenant_id: profile.tenant_id || null,
       userId: profile.user_id || profile.email,
     },
@@ -68,6 +94,31 @@ export function isPlatformRole(user) {
   return false;
 }
 
+export async function getEffectivePermissions(user) {
+  if (!user) return { is_admin: false };
+  if (isPlatformRole(user) || normalizeRole(user.role) === 'super_admin') {
+    return { is_admin: true };
+  }
+  try {
+    const { query } = await import('../db/index.js');
+    const sql = `
+      SELECT r.permissions 
+      FROM profiles p
+      LEFT JOIN tenant_roles r ON (p.role_id = r.id OR (p.role_id IS NULL AND p.tenant_id = r.tenant_id AND LOWER(r.name) = LOWER(p.role)))
+      WHERE p.id = $1
+      LIMIT 1
+    `;
+    const res = await query(sql, [user.id]);
+    const perms = res.rows[0]?.permissions;
+    if (perms) {
+      return typeof perms === 'string' ? JSON.parse(perms) : perms;
+    }
+  } catch (err) {
+    console.error('getEffectivePermissions error:', err.message);
+  }
+  return {};
+}
+
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const [scheme, token] = header.split(' ');
@@ -82,6 +133,7 @@ export function requireAuth(req, res, next) {
       id: String(payload.sub),
       email: payload.email,
       role: normalizeRole(payload.role),
+      role_id: payload.role_id || null,
       tenant_id: payload.tenant_id ? String(payload.tenant_id) : null,
       userId: payload.userId,
     };

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   Lead, LeadSource, LeadStatus, BudgetRange, PurposeType,
   LeadScore, Project, Profile
@@ -11,6 +12,7 @@ import { Modal, ModalFooter } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { isLeadPhoneMasked, maskPhoneNumber } from '../../utils/phoneMasking';
+import { ShieldAlert } from 'lucide-react';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -20,8 +22,12 @@ interface LeadFormModalProps {
 
 export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
   const { profile, tenant } = useAuth();
+  const { canCreate, canEdit } = usePermissions();
   const isFreePlan = tenant?.plan_tier === 'free';
   const isEditing = !!lead;
+  const canEditLead = canEdit('leads');
+  const canCreateLead = canCreate('leads');
+  const hasFormPermission = isEditing ? canEditLead : canCreateLead;
   const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
   const dialog = useDialog();
 
@@ -126,6 +132,22 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !validateForm()) return;
+
+    if (isEditing && !canEditLead) {
+      await dialog.alert('You have View-Only access. You do not have permission to edit lead information.', {
+        variant: 'danger',
+        title: 'Permission Denied'
+      });
+      return;
+    }
+
+    if (!isEditing && !canCreateLead) {
+      await dialog.alert('You do not have permission to create leads.', {
+        variant: 'danger',
+        title: 'Permission Denied'
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -264,6 +286,12 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        {isEditing && !canEditLead && (
+          <div className="flex items-center gap-2.5 p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-amber-800 dark:text-amber-300 text-xs font-medium">
+            <ShieldAlert size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>View-Only Mode: You do not have permission to edit lead information. Contact details cannot be modified.</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -529,14 +557,20 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            isLoading={loading}
-            className="h-11 sm:h-auto text-sm sm:text-base font-semibold whitespace-nowrap justify-center"
-          >
-            {lead ? 'Update Lead' : 'Create Lead'}
-          </Button>
+          {hasFormPermission ? (
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={loading}
+              className="h-11 sm:h-auto text-sm sm:text-base font-semibold whitespace-nowrap justify-center"
+            >
+              {lead ? 'Update Lead' : 'Create Lead'}
+            </Button>
+          ) : (
+            <div className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center px-2">
+              Read-Only Lead
+            </div>
+          )}
         </ModalFooter>
       </form>
     </Modal>

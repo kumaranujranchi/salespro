@@ -3,6 +3,7 @@ import { query } from '../db/index.js';
 import { createSaleFromLead } from '../services/leadToSale.js';
 import { dispatchCrmConversionEvent } from '../services/capiService.js';
 import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
+import { getEffectivePermissions, isPlatformRole } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -358,6 +359,21 @@ router.post('/', async (req, res) => {
     const targetTenantId = tenant_id || req.user?.tenant_id;
     if (!targetTenantId) return res.status(400).json({ error: 'tenant_id is required' });
 
+    // Strict RBAC permission check for creating new leads:
+    if (req.user && !isPlatformRole(req.user) && req.user.role !== 'super_admin') {
+      const perms = await getEffectivePermissions(req.user);
+      if (perms && !perms.is_admin) {
+        const canCreateLeads = 
+          perms.modules?.leads?.create === true ||
+          (perms.modules?.leads?.create === undefined && perms.menu?.crm !== 'none');
+        if (!canCreateLeads) {
+          return res.status(403).json({
+            error: 'You do not have permission to create leads.'
+          });
+        }
+      }
+    }
+
     // Check Plan Lead Limits (1,000 for Free Plan, 200,000 for Pro Plan)
     const tenantRes = await query('SELECT plan_tier, subscription_status FROM tenants WHERE id = $1', [targetTenantId]);
     const tenantRow = tenantRes.rows[0];
@@ -603,6 +619,32 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const body = req.body;
 
+    // Strict RBAC permission check for updating lead contact details:
+    if (req.user && !isPlatformRole(req.user) && req.user.role !== 'super_admin') {
+      const perms = await getEffectivePermissions(req.user);
+      if (perms && !perms.is_admin) {
+        const canEditLeads = 
+          perms.modules?.leads?.edit === true ||
+          (perms.modules?.leads?.edit === undefined && perms.menu?.crm === 'edit');
+
+        // Check if caller is attempting to modify core contact details
+        const isEditingLeadDetails = 
+          body.customer_name !== undefined ||
+          body.mobile !== undefined ||
+          body.email !== undefined ||
+          body.project_id !== undefined ||
+          body.budget_range !== undefined ||
+          body.city !== undefined ||
+          body.purpose !== undefined;
+
+        if (isEditingLeadDetails && !canEditLeads) {
+          return res.status(403).json({
+            error: 'You have View-Only access for leads. You do not have permission to edit lead contact details.'
+          });
+        }
+      }
+    }
+
     const allowed = [
       'customer_name', 'mobile', 'email', 'lead_source', 'project_id',
       'sales_executive_id', 'budget_range', 'city', 'purpose',
@@ -770,9 +812,13 @@ router.post('/bulk-project', async (req, res) => {
 // 6. Delete Lead
 router.delete('/:id', async (req, res) => {
   try {
-    const role = req.user?.role;
-    if (role !== 'super_admin' && role !== 'platform_admin') {
-      return res.status(403).json({ error: 'Only Super Admin can delete leads' });
+    let hasDeletePermission = isPlatformRole(req.user) || req.user?.role === 'super_admin';
+    if (!hasDeletePermission && req.user) {
+      const perms = await getEffectivePermissions(req.user);
+      hasDeletePermission = perms?.is_admin || perms?.modules?.leads?.delete === true;
+    }
+    if (!hasDeletePermission) {
+      return res.status(403).json({ error: 'You do not have permission to delete leads' });
     }
     const { id } = req.params;
     await query(`DELETE FROM leads WHERE id = $1`, [id]);
@@ -785,9 +831,13 @@ router.delete('/:id', async (req, res) => {
 // 6b. Bulk Delete Leads
 router.post('/bulk-delete', async (req, res) => {
   try {
-    const role = req.user?.role;
-    if (role !== 'super_admin' && role !== 'platform_admin') {
-      return res.status(403).json({ error: 'Only Super Admin can delete leads' });
+    let hasDeletePermission = isPlatformRole(req.user) || req.user?.role === 'super_admin';
+    if (!hasDeletePermission && req.user) {
+      const perms = await getEffectivePermissions(req.user);
+      hasDeletePermission = perms?.is_admin || perms?.modules?.leads?.delete === true;
+    }
+    if (!hasDeletePermission) {
+      return res.status(403).json({ error: 'You do not have permission to delete leads' });
     }
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {

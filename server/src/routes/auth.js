@@ -23,9 +23,11 @@ router.post('/login', authRateLimiter, async (req, res) => {
     const isSuperAdminEmail = (cleanEmail === 'admin@realsalepro.com' || cleanEmail === 'admin@salespro.com');
 
     let result = await query(
-      `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status, t.is_active as tenant_is_active, t.deactivation_reason
+      `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status, t.is_active as tenant_is_active, t.deactivation_reason,
+              r.id as role_id_val, r.name as role_name, r.description as role_description, r.permissions as role_permissions, r.is_system as role_is_system
        FROM profiles p
        LEFT JOIN tenants t ON p.tenant_id = t.id
+       LEFT JOIN tenant_roles r ON (p.role_id = r.id OR (p.role_id IS NULL AND p.tenant_id = r.tenant_id AND LOWER(r.name) = LOWER(p.role)))
        WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2)
        LIMIT 1`,
       [cleanEmail, lookupEmail]
@@ -168,9 +170,11 @@ router.get('/profile', requireAuth, async (req, res) => {
       const cleanUserId = userId.trim().toLowerCase();
       const lookupUserId = (cleanUserId === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanUserId;
       result = await query(
-        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status,
+                r.id as role_id_val, r.name as role_name, r.description as role_description, r.permissions as role_permissions, r.is_system as role_is_system
          FROM profiles p
          LEFT JOIN tenants t ON p.tenant_id = t.id
+         LEFT JOIN tenant_roles r ON (p.role_id = r.id OR (p.role_id IS NULL AND p.tenant_id = r.tenant_id AND LOWER(r.name) = LOWER(p.role)))
          WHERE (p.id = $1 OR LOWER(p.user_id) = $1 OR LOWER(p.email) = $1 OR LOWER(p.user_id) = $2 OR LOWER(p.email) = $2)
          LIMIT 1`,
         [cleanUserId, lookupUserId]
@@ -179,9 +183,11 @@ router.get('/profile', requireAuth, async (req, res) => {
       const cleanEmail = email.trim().toLowerCase();
       const lookupEmail = (cleanEmail === 'admin@salespro.com') ? 'admin@realsalepro.com' : cleanEmail;
       result = await query(
-        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status
+        `SELECT p.*, t.name as tenant_name, t.slug as tenant_slug, t.settings as tenant_settings, t.subscription_status,
+                r.id as role_id_val, r.name as role_name, r.description as role_description, r.permissions as role_permissions, r.is_system as role_is_system
          FROM profiles p
          LEFT JOIN tenants t ON p.tenant_id = t.id
+         LEFT JOIN tenant_roles r ON (p.role_id = r.id OR (p.role_id IS NULL AND p.tenant_id = r.tenant_id AND LOWER(r.name) = LOWER(p.role)))
          WHERE (LOWER(p.email) = $1 OR LOWER(p.email) = $2)
          LIMIT 1`,
         [cleanEmail, lookupEmail]

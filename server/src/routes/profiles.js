@@ -33,10 +33,11 @@ router.get('/', async (req, res) => {
     if (!targetTenantId) return res.status(400).json({ error: 'tenant_id required' });
 
     let sql = `
-      SELECT p.*, d.name as department_name, r.name as role_name
+      SELECT p.*, d.name as department_name, 
+             r.id as role_id_val, r.name as role_name, r.description as role_description, r.permissions as role_permissions, r.is_system as role_is_system
       FROM profiles p
       LEFT JOIN departments d ON p.department_id = d.id
-      LEFT JOIN tenant_roles r ON p.role_id = r.id
+      LEFT JOIN tenant_roles r ON (p.role_id = r.id OR (p.role_id IS NULL AND p.tenant_id = r.tenant_id AND LOWER(r.name) = LOWER(p.role)))
       WHERE p.tenant_id = $1
     `;
     const params = [targetTenantId];

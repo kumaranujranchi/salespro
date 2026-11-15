@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, usePaginatedQuery, useAction } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { useDialog } from '../contexts/DialogContext';
 import { useToast } from '../contexts/ToastContext';
 import { LeadWithRelations, LeadStatus, FollowupType, CustomerResponse, CallStatus } from '../types/database';
@@ -205,9 +206,14 @@ export function LeadsPage() {
     } : "skip"
   );
 
-  // Permissions (defined early so useQuery hooks below can use them)
-  const canCreateLead = ['super_admin', 'admin', 'team_leader', 'sales_executive'].includes(normalizedRole);
-  const canViewAllLeads = ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
+  // Granular RBAC Permissions
+  const { can, canCreate, canEdit, canDelete, canExport, canAssign, isAdmin } = usePermissions();
+  const canCreateLead = canCreate('leads');
+  const canEditLead = canEdit('leads');
+  const canDeleteLead = canDelete('leads');
+  const canExportLeads = canExport('leads');
+  const canAssignLeads = canAssign('leads');
+  const canViewAllLeads = isAdmin || ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
 
   // Per-executive lead stats (only for roles that can see all leads)
   const executiveStats = useQuery(
@@ -558,6 +564,10 @@ export function LeadsPage() {
   };
 
   const handleCreateLead = () => {
+    if (!canCreateLead) {
+      toast.error('You do not have permission to create leads.');
+      return;
+    }
     const totalLeadsCount = statsData?.totalLeads ?? statsData?.total_leads ?? (rawLeads ? rawLeads.length : 0);
     if (isFreePlan && totalLeadsCount >= 1000) {
       if (isSuperAdmin) {
@@ -576,6 +586,10 @@ export function LeadsPage() {
   };
 
   const handleEditLead = (lead: LeadWithRelations) => {
+    if (!canEditLead) {
+      toast.error('You have View-Only access. You do not have permission to edit lead information.');
+      return;
+    }
     setSelectedLead(lead);
     setIsFormModalOpen(true);
   };
@@ -586,8 +600,8 @@ export function LeadsPage() {
   };
 
   const handleExportCSV = () => {
-    if (!isSuperAdmin) {
-      toast.error('Only Super Admin can export leads.');
+    if (!canExportLeads) {
+      toast.error('You do not have permission to export leads.');
       return;
     }
     if (leads.length === 0) return;
@@ -674,8 +688,8 @@ export function LeadsPage() {
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    if (!isSuperAdmin) {
-      toast.error('Only Super Admin can delete leads.');
+    if (!canDeleteLead) {
+      toast.error('You do not have permission to delete leads.');
       return;
     }
 
@@ -699,8 +713,8 @@ export function LeadsPage() {
   };
 
   const handleBulkDelete = async () => {
-    if (!isSuperAdmin) {
-      toast.error('Only Super Admin can delete leads.');
+    if (!canDeleteLead) {
+      toast.error('You do not have permission to delete leads.');
       return;
     }
 
@@ -864,25 +878,26 @@ export function LeadsPage() {
         </div>
 
         <div className="flex items-center gap-4">
-
-          {canCreateLead && (
-            <div className="flex gap-2">
-              {isSuperAdmin && (
-                <Button variant="outline" onClick={handleExportCSV} className="hidden md:flex">
-                  <Download size={18} className="mr-2" />
-                  Export CSV
+          <div className="flex gap-2">
+            {canExportLeads && (
+              <Button variant="outline" onClick={handleExportCSV} className="hidden md:flex">
+                <Download size={18} className="mr-2" />
+                Export CSV
+              </Button>
+            )}
+            {canCreateLead && (
+              <>
+                <Button variant="outline" onClick={handleBulkImport} className="hidden md:flex">
+                  <Upload size={18} className="mr-2" />
+                  Import
                 </Button>
-              )}
-              <Button variant="outline" onClick={handleBulkImport} className="hidden md:flex">
-                <Upload size={18} className="mr-2" />
-                Import
-              </Button>
-              <Button variant="primary" onClick={handleCreateLead} className="hidden md:flex">
-                <Plus size={18} className="mr-2" />
-                Create Lead
-              </Button>
-            </div>
-          )}
+                <Button variant="primary" onClick={handleCreateLead} className="hidden md:flex">
+                  <Plus size={18} className="mr-2" />
+                  Create Lead
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1193,24 +1208,28 @@ export function LeadsPage() {
             {selectedLeadIds.length} Selected
           </span>
           <div className="h-4 w-px bg-gray-300 dark:bg-gray-600 shrink-0"></div>
-          {['admin', 'super_admin', 'director', 'team_leader'].includes(profile?.role || '') && (
+          {canAssignLeads && (
             <Button size="sm" variant="primary" onClick={() => setIsAssignModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
               <UserPlus size={14} className="mr-1.5" />
               Assign Executive
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={() => setIsProjectModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
-            <Building size={14} className="mr-1.5" />
-            Assign Project
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setIsStatusModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
-            <RefreshCw size={14} className="mr-1.5" />
-            Change Status
-          </Button>
+          {canEditLead && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setIsProjectModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
+                <Building size={14} className="mr-1.5" />
+                Assign Project
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setIsStatusModalOpen(true)} className="whitespace-nowrap text-xs shrink-0">
+                <RefreshCw size={14} className="mr-1.5" />
+                Change Status
+              </Button>
+            </>
+          )}
           <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 whitespace-nowrap text-xs shrink-0" onClick={() => setSelectedLeadIds([])}>
             Cancel
           </Button>
-          {isSuperAdmin && (
+          {canDeleteLead && (
             <Button 
               size="sm" 
               variant="danger" 
@@ -1408,7 +1427,7 @@ export function LeadsPage() {
                               )}
                               <ActionMenu
                                 actions={[
-                                  ...(lead.lead_status !== 'Converted' ? [{
+                                  ...(canEditLead && lead.lead_status !== 'Converted' ? [{
                                     label: 'Edit',
                                     icon: Edit,
                                     onClick: () => handleEditLead(lead)
@@ -1428,7 +1447,7 @@ export function LeadsPage() {
                                      icon: RefreshCw,
                                      onClick: () => handleReopenLead(lead.id)
                                    }] : []),
-                                  ...(isSuperAdmin ? [{
+                                  ...(canDeleteLead ? [{
                                     label: 'Delete',
                                     icon: Trash2,
                                     variant: 'danger' as const,
@@ -1821,7 +1840,7 @@ export function LeadsPage() {
                         >
                           <MessageSquare size={14} />
                         </a>
-                        {lead.lead_status !== 'Converted' ? (
+                        {canEditLead && lead.lead_status !== 'Converted' ? (
                           <button
                             type="button"
                             onClick={() => handleEditLead(lead)}
@@ -1830,7 +1849,7 @@ export function LeadsPage() {
                           >
                             <Edit size={14} />
                           </button>
-                        ) : (
+                        ) : lead.lead_status === 'Converted' ? (
                           <button
                             type="button"
                             onClick={() => navigate('/sales')}
@@ -1839,7 +1858,7 @@ export function LeadsPage() {
                           >
                             <TrendingUp size={12} /> Sales
                           </button>
-                        )}
+                        ) : null}
                         <button
                           type="button"
                           onClick={() => handleViewDetails(lead)}

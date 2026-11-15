@@ -15,7 +15,7 @@
     "cap:sync": "npm run build && npx cap sync",
     "cap:build": "npm run build && npx cap copy android",
     "cap:open": "npx cap open android",
-    "build:apk": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug && cd .. && cp android/app/build/outputs/apk/debug/app-debug.apk ~/Desktop/RealSalePro.apk"
+    "build:apk": "npm run build && npx cap sync android && export JAVA_HOME=\"${JAVA_HOME:-$HOME/.jdk/zulu21.38.21-ca-jdk21.0.5-macosx_aarch64}\" && export ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" && export PATH=\"$JAVA_HOME/bin:$PATH\" && cd android && ./gradlew assembleDebug && cd .. && cp android/app/build/outputs/apk/debug/app-debug.apk ~/Desktop/RealSalePro.apk"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",

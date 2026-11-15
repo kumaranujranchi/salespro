@@ -105,8 +105,20 @@ export interface TenantSettings {
   };
 }
 
+export interface ModulePermissionConfig {
+  view: boolean;
+  create?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+  export?: boolean;
+  assign?: boolean;
+  perspective?: 'none' | 'self' | 'team' | 'overall';
+  [key: string]: boolean | string | undefined;
+}
+
 export interface RolePermissions {
-  menu: Record<string, 'none' | 'read' | 'edit'>;
+  menu?: Record<string, 'none' | 'read' | 'edit'>;
+  modules?: Record<string, ModulePermissionConfig>;
   dashboard: {
     kpi_cards?: boolean;
     project_performance?: boolean;
@@ -231,9 +243,11 @@ export interface Profile {
   is_active: boolean;
   force_password_change: boolean;
   role_id?: string | null;
+  permissions?: RolePermissions;
   role_details?: {
     id: string;
     name: string;
+    description?: string | null;
     permissions: RolePermissions;
     is_system: boolean;
   };
