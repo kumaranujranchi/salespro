@@ -346,3 +346,8 @@ export const whatsappHubService = {
   getLearningPatterns: (params?: { tenant_id?: string; scope?: string }) =>
     api.get<{ success: boolean; patterns: any[] }>('/whatsapp/learning-patterns', params),
 };
+
+export const aiService = {
+  chat: (data: { messages: any[]; tenant_id?: string; profileId?: string }) =>
+    api.post<{ reply: string }>('/ai/chat', data),
+};

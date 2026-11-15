@@ -17,6 +17,7 @@ import systemRoutes from './routes/system.js';
 import capiRoutes from './routes/capi.js';
 import metaRoutes from './routes/meta.js';
 import whatsappRoutes from './routes/whatsapp.js';
+import aiRoutes from './routes/ai.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -110,6 +111,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/capi', capiRoutes);
 app.use('/api/meta', metaRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

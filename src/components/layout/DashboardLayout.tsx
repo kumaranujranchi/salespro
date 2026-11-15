@@ -39,8 +39,11 @@ import {
   Sparkles,
   X,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Crown,
+  Lock
 } from 'lucide-react';
+import { UpgradeToProModal } from '../ui/UpgradeToProModal';
 
 import { useAction } from '../../lib/reactive';
 import { api } from '../../lib/api-endpoints';
@@ -245,7 +248,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     };
   }, [isProfileDropdownOpen]);
 
-  // AI Chatbot State
+  // AI Chatbot State & Pro Plan Gating
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin' || profile?.role === 'super_admin' || profile?.role === 'platform_admin';
+  const planTier = String(tenant?.plan_tier || '').toLowerCase();
+  const subStatus = String(tenant?.subscription_status || '').toLowerCase();
+  const isProPlan = isSuperAdmin || planTier === 'pro' || subStatus === 'paid' || subStatus === 'pro' || subStatus === 'active_paid';
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   const chatAction = useAction(api.ai.chatWithAI);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
@@ -254,7 +264,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'model'; content: string }>>([
     {
       role: 'model',
-      content: "Welcome! Ready to boost your pipeline and close more deals today?\n\nHere is how I can assist you right now:\n\n* **Cold Call Scripts:** Pitching SalesPro to real estate brokers or team leads.\n* **Objection Handling:** Crushing pushback like \"We already use a CRM\" or \"It's too expensive.\"\n* **Follow-up Cadences:** High-converting multi-channel strategies (Email, SMS, WhatsApp).\n* **Pipeline Strategy:** Ideas to re-engage dead leads and boost conversion rates.\n\nWhat are you working on right now? Tell me your immediate goal or challenge!"
+      content: "Namaste! 👋 I'm your **RealSalePro AI Sales Copilot**, powered by DeepSeek AI.\n\nI can assist you with:\n\n* **Sales Scripts & Objections:** Cold call openers, overcoming \"Price is too high\" or \"Will think and tell\", and booking site visits.\n* **WhatsApp & Follow-up:** Instant pitch drafts and dead-lead revival messages.\n* **CRM & Operations:** Complete guidance on phone masking, lead assignment, inventory blocking, and driver trip logs.\n* **Deals & Closing:** Booking tokens, agreement schedules, and converting CRM leads to sales.\n\nWhat property deal, customer objection, or CRM feature are you working on today?"
     }
   ]);
 
@@ -336,11 +346,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       }
 
       setChatMessages([...updatedMessages, { role: 'model' as const, content: aiReply }]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('AI chat error:', err);
+      const isProErr = String(err?.message || '').includes('PRO_REQUIRED') || String(err?.message || '').includes('exclusive Pro Plan feature');
+      const errReply = isProErr
+        ? "🔒 **AI Sales Copilot is exclusive to Pro Plan.**\n\nPlease upgrade your organization's subscription to Pro to enjoy real-time AI sales coaching powered by DeepSeek."
+        : "I'm your RealSalePro AI Sales Copilot. How can I assist you with your sales pipeline, property pitches, or CRM workflows today?";
       setChatMessages([
         ...updatedMessages,
-        { role: 'model' as const, content: "I'm your RealSalePro AI Sales Copilot. How can I assist you with your sales pipeline or property pitches today?" }
+        { role: 'model' as const, content: errReply }
       ]);
     } finally {
       setChatLoading(false);
@@ -1087,6 +1101,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         onClick={() => setIsChatOpen(!isChatOpen)}
         className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full shadow-2xl hover:scale-110 hover:shadow-emerald-300/30 transition-all duration-300 group cursor-pointer focus:outline-none"
       >
+        {!isProPlan && (
+          <span className="absolute -top-1.5 -left-1.5 px-1.5 py-0.5 bg-amber-500 text-white text-[9px] font-black rounded-full uppercase tracking-wider shadow-md border-2 border-white dark:border-slate-900">
+            PRO
+          </span>
+        )}
         {isChatOpen ? (
           <X size={24} className="transition-transform duration-200 rotate-90" />
         ) : (
@@ -1102,16 +1121,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* AI Chatbot Drawer Pane */}
       {isChatOpen && (
-        <div className={`fixed bottom-24 right-6 z-50 bg-white dark:bg-[#121e18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300 transition-all duration-300 ${isChatMaximized ? 'w-[600px] max-w-[95vw] h-[80vh]' : 'w-[340px] sm:w-[380px] h-[500px]'}`}>
+        <div className={`fixed bottom-24 right-6 z-50 bg-white dark:bg-[#121e18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300 transition-all duration-300 ${isChatMaximized ? 'w-[600px] max-w-[95vw] h-[80vh]' : 'w-[340px] sm:w-[380px] h-[520px]'}`}>
           {/* Header */}
           <div className="bg-gradient-to-r from-[#00E576] to-[#00C853] px-4 py-3.5 flex items-center justify-between text-[#0A1C37]">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-[#0A1C37]" />
               <div>
-                <h4 className="font-bold text-sm text-[#0A1C37]">AI Sales Copilot</h4>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="font-bold text-sm text-[#0A1C37]">AI Sales Copilot</h4>
+                  {!isProPlan && (
+                    <span className="px-1.5 py-0.2 bg-[#0A1C37] text-white text-[9px] font-bold rounded">
+                      PRO
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#0A1C37] animate-pulse"></span>
-                  <span className="text-[10px] text-[#0A1C37] opacity-80 font-medium">Ready to assist</span>
+                  <span className="text-[10px] text-[#0A1C37] opacity-80 font-medium">
+                    {isProPlan ? 'Powered by DeepSeek AI' : 'Pro Plan Exclusive'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1133,59 +1161,128 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
 
-          {/* Message Area */}
-          <div
-            id="chat-messages-container"
-            className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 dark:bg-black/20 scroll-smooth"
-          >
-            {chatMessages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
-                      : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-sm whitespace-pre-wrap'
-                  }`}
-                >
-                  {renderFormattedMessage(msg.content)}
-                </div>
+          {!isProPlan ? (
+            /* Pro Plan Lock Screen */
+            <div className="flex-1 p-6 flex flex-col items-center justify-between text-center bg-gradient-to-b from-slate-50 to-white dark:from-[#121e18] dark:to-slate-900 overflow-y-auto">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-white shadow-xl shadow-amber-500/20 my-2 shrink-0">
+                <Crown size={32} />
               </div>
-            ))}
-            {chatLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-bl-none px-3.5 py-2.5 shadow-sm">
-                  <div className="flex items-center gap-1.5 py-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300"></span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-150"></span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-300"></span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Input Form */}
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 flex gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask a sales question..."
-              className="flex-1 text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-            />
-            <button
-              type="submit"
-              disabled={!chatInput.trim() || chatLoading}
-              className="flex items-center justify-center p-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 hover:opacity-90 transition-opacity duration-150 focus:outline-none cursor-pointer"
-            >
-              <Send size={15} />
-            </button>
-          </form>
+              <div className="space-y-1.5 max-w-xs">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] uppercase tracking-wider">
+                  Pro Plan Feature
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  AI Sales Copilot
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Real-time sales coaching powered by DeepSeek AI. Master real estate objection handling, cold calling scripts, and complete RealSalePro CRM processes.
+                </p>
+              </div>
+
+              <div className="w-full bg-white dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 text-left space-y-2 text-xs my-2">
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <Sparkles size={14} className="text-emerald-500 shrink-0" />
+                  <span>Proven Cold Call & Site Visit Closing Scripts</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <Sparkles size={14} className="text-emerald-500 shrink-0" />
+                  <span>Instant Objection Handling (Price, Delay, Competitors)</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <Sparkles size={14} className="text-emerald-500 shrink-0" />
+                  <span>Full RealSalePro CRM Process & Feature Guidance</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <Sparkles size={14} className="text-emerald-500 shrink-0" />
+                  <span>DeepSeek AI Conversational Intelligence</span>
+                </div>
+              </div>
+
+              <div className="w-full pt-2">
+                {isSuperAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChatOpen(false);
+                      setShowUpgradeModal(true);
+                    }}
+                    className="w-full py-3 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Zap size={14} /> Upgrade to Pro to Unlock
+                  </button>
+                ) : (
+                  <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[11px] text-slate-500 text-center">
+                    Contact your organization administrator to upgrade this workspace to Pro Plan.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Message Area */}
+              <div
+                id="chat-messages-container"
+                className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 dark:bg-black/20 scroll-smooth"
+              >
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
+                          : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-sm whitespace-pre-wrap'
+                      }`}
+                    >
+                      {renderFormattedMessage(msg.content)}
+                    </div>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-bl-none px-3.5 py-2.5 shadow-sm">
+                      <div className="flex items-center gap-1.5 py-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-150"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce duration-300 delay-300"></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input Form */}
+              <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask a sales question or CRM workflow..."
+                  className="flex-1 text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim() || chatLoading}
+                  className="flex items-center justify-center p-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white disabled:opacity-50 hover:opacity-90 transition-opacity duration-150 focus:outline-none cursor-pointer"
+                >
+                  <Send size={15} />
+                </button>
+              </form>
+            </>
+          )}
         </div>
       )}
+
+      {/* Upgrade to Pro Modal for Copilot */}
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="AI Sales Copilot"
+        description="Upgrade to RealSalePro Pro to unlock DeepSeek-powered AI Sales Copilot, real-time sales coaching, cold calling scripts, and complete CRM workflow guidance."
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   authService, tenantsService, profilesService, leadsService,
   salesService, projectsService, siteVisitsService, targetsService, miscService, systemService, capiService, metaService,
-  reportsService
+  reportsService, aiService
 } from './services';
 import { handleSessionExpired } from './auth-token';
 
@@ -516,8 +516,27 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await metaService.verifyPageToken(args);
   }
 
-  // AI SALES COPILOT & ASSISTANT ACTIONS
+  // AI SALES COPILOT & ASSISTANT ACTIONS (DeepSeek API + RealSalePro Engine)
   if (key.includes('ai.chatWithAI') || key.includes('chatWithAI')) {
+    try {
+      const res = await aiService.chat({
+        messages: args?.messages || [],
+        tenant_id: args?.tenant_id,
+        profileId: args?.profileId,
+      });
+      if (res?.reply) {
+        return res.reply;
+      }
+    } catch (err: any) {
+      console.warn('Backend AI chat error, evaluating fallback:', err);
+      if (
+        err?.code === 'PRO_REQUIRED' ||
+        String(err?.message || '').includes('PRO_REQUIRED') ||
+        String(err?.message || '').includes('exclusive Pro Plan feature')
+      ) {
+        throw new Error('PRO_REQUIRED: AI Sales Copilot is an exclusive Pro Plan feature. Upgrade your organization plan to access real-time AI sales coaching.');
+      }
+    }
     return generateAiSalesCopilotResponse(args);
   }
   if (key.includes('ai.generateOutreach') || key.includes('generateOutreach')) {
