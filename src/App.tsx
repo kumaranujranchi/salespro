@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { AuthProvider } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -96,7 +97,7 @@ function App() {
                 <GTMPageViewTracker />
                 <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={Capacitor.isNativePlatform() ? <Navigate to="/login" replace /> : <LandingPage />} />
                 <Route path="/free-real-estate-crm" element={<FreeCRMPage />} />
                 <Route path="/templates/real-estate-crm-excel-template" element={<ExcelTemplatePage />} />
                 <Route path="/crm-for-real-estate-brokers" element={<BrokersCRMPage />} />

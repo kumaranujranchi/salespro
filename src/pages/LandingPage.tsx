@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { landingHtml } from './landingHtml';
@@ -115,6 +116,12 @@ export function LandingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // 0. Native mobile app guard: always redirect directly to login
+    if (Capacitor.isNativePlatform()) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     // 1. Activate landing page scoped CSS and reveal animations
     document.body.classList.add('landing-page-active');
     document.documentElement.classList.add('js');

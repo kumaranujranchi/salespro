@@ -44,7 +44,11 @@
     // Instant SPA / Landing Guard:
     try {
       var p = window.location.pathname || '';
-      if (p && p !== '/' && p !== '/index.html') {
+      var isCapacitor = !!(
+        (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ||
+        window.location.protocol === 'capacitor:'
+      );
+      if (isCapacitor || (p && p !== '/' && p !== '/index.html')) {
         document.documentElement.classList.add('is-spa-route');
       } else {
         document.documentElement.classList.add('js');

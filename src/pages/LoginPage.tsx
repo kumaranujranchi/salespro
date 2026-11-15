@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { useBackend } from '../lib/reactive';
 import { api } from '../lib/api-endpoints';
@@ -217,16 +218,18 @@ export function LoginPage() {
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0E1A15] via-[#113028] to-[#10B981] opacity-20 pointer-events-none"></div>
 
-      {/* Back to Home Link */}
-      <div className="absolute top-4 left-4 z-50">
-        <Link
-          to="/"
-          className="group flex items-center space-x-2 text-white/70 hover:text-white transition-colors duration-300"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300" />
-          <span className="text-sm font-medium">Back to Home</span>
-        </Link>
-      </div>
+      {/* Back to Home Link (hidden on native mobile app) */}
+      {!Capacitor.isNativePlatform() && (
+        <div className="absolute top-4 left-4 z-50">
+          <Link
+            to="/"
+            className="group flex items-center space-x-2 text-white/70 hover:text-white transition-colors duration-300"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform duration-300" />
+            <span className="text-sm font-medium">Back to Home</span>
+          </Link>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="w-full max-w-[400px] relative z-10">
