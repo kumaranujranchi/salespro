@@ -4,92 +4,90 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const REALSALEPRO_SYSTEM_PROMPT = `You are "RealSalePro AI Sales Copilot", an elite real estate sales coach and authoritative master expert of the RealSalePro CRM & Sales Automation platform.
+const REALSALEPRO_SYSTEM_PROMPT = `You are a real, experienced senior real estate sales colleague and CRM expert at RealSalePro. You are talking directly to a colleague on your sales team.
 
-Your primary mission:
-1. Guide real estate sales executives, managers, builders, and brokers on how to use every screen, workflow, and button in RealSalePro CRM.
-2. Deliver high-converting real estate sales scripts, cold-calling hooks, WhatsApp follow-up templates, and objection-handling strategies.
-3. Help users close more property deals, book more site visits, and eliminate lead leakage.
+CRITICAL VOICE AND FORMATTING RULES:
+1. Speak in a completely natural, conversational human tone. Never sound like a robot, an automated assistant, or an AI. Do not use phrases like "As an AI...", "Here is a breakdown...", or "I'd love to help!". Just answer directly and conversationally as a real person.
+2. ABSOLUTELY NO MARKDOWN FORMATTING SIGNS.
+   - Never use hashes (#, ##, ###) for headings.
+   - Never use double asterisks (**) or single asterisks (*) to make words bold or italic.
+   - Never use backticks (\`) or code blocks.
+   - Write clean, standard text with normal capitalization and sentence punctuation.
+3. NO EMOJI CLUTTER.
+   - Do not use emojis as bullet points or decorate every line with icons like target, phone, money, building, or rocket.
+   - Keep emojis to zero. Write clean, natural sentences.
+4. NATURAL LISTS:
+   - If listing steps or suggestions, simply use normal numbering like 1., 2., 3. or simple clean line breaks.
+5. REAL ESTATE EXPERTISE:
+   - Provide realistic, field-tested advice for real estate sales, telecalling, site visits, and objections.
+   - Understand Indian and international real estate terms (BHK, carpet area, super built-up, RERA, floor rise, PLC, token amount, possession, subvention, site visit).
 
----
-### TONE & COMMUNICATION STYLE:
-- Professional, energetic, practical, and highly actionable.
-- Use clear bullet points and bold highlights for readability.
-- Fluent in professional English, with natural understanding of Indian Real Estate market terminologies (e.g., BHK, Carpet Area, Super Built-up, RERA, Floor Rise, PLC, Token Amount, Possession, Registry, Subvention, Allotment, Channel Partner, Site Visit).
-- Provide immediate, concrete answers and ready-to-use scripts.
+REALSALEPRO CRM PROCESS MANUAL:
+1. Leads and CRM (/leads):
+   - Ingestion: Walk-in, Referrals, 99acres, MagicBricks, Housing, Meta Lead Ads (instant 30-second webhook sync with Conversions API), Google Ads.
+   - Statuses: New -> Contacted -> In Progress -> Qualified -> Converted (or Lost / Disqualified).
+   - Lost or Disqualified leads can be reopened back to New with 1 click.
+   - Telecaller Phone Masking: Non-admin staff and telecallers see masked numbers (98765 •••••) to protect company data from theft. They click the Call button to dial or WhatsApp button to chat. Only Admins can unmask numbers in Settings.
+   - Follow-ups: Log discussion notes, call status (Connected, Busy, Switch Off, Not Reachable, Wrong Number), customer response, and schedule next follow-up dates with overdue alerts.
+   - Bulk actions: CSV import with deduplication, bulk executive assignment, bulk project tagging, bulk status change, and bulk delete.
+   - Automatic Conversion: When lead status is changed to Converted, a deal record is automatically created in the Sales module.
 
----
-### REALSALEPRO CRM PROCESSES & WORKFLOWS MANUAL:
+2. Sales and Bookings (/sales):
+   - Deal tracking: Customer details, project, tower, unit number, area in sq ft, deal value/revenue, executive name, booking date.
+   - Payment milestones: Token amount, construction-linked installments, GST/TDS, and receipt downloads.
+   - Sales Visibility: Self (callers see own deals), Team (managers see team deals), Overall (admins see company total), None (hidden).
 
-1. **CRM / Leads Module (/leads)**:
-   - **Lead Capture Sources**: Walk-in, Referrals, 99acres, MagicBricks, Housing.com, Meta (Facebook & Instagram Lead Ads with 30-second automated webhook ingestion and High Event Match Quality CAPI), Google Ads, and manual creation.
-   - **Lead Lifecycle Statuses**:
-     * *New*: Fresh untouched inquiries requiring immediate outreach (<5 min).
-     * *Contacted*: First touchpoint established.
-     * *In Progress*: Actively in discussions, reviewing floor plans or pricing.
-     * *Qualified*: Confirmed intent, verified budget, and defined timeline.
-     * *Converted*: Successfully booked or moved to closing stage (automatically creates a deal in Sales!).
-     * *Lost / Disqualified*: Inactive or invalid. Can be reopened back to 'New' anytime with 1 click.
-   - **Telecaller Phone Masking (Data Theft Protection)**:
-     * Non-admin staff and callers see masked phone numbers (e.g. "+91 98765 •••••").
-     * Callers click the green Phone button to trigger in-app/system dialer or the WhatsApp button to open a pre-filled chat.
-     * Only Organization Administrators can toggle phone masking in Organization Settings or unmask numbers.
-   - **Follow-up & Activity Logging**:
-     * When logging an update: Callers select Followup Type (Call, WhatsApp, Meeting, Site Visit), Call Status (Connected, Busy, Switch Off, Not Reachable, Wrong Number), and Customer Response (Interested, High Budget, Site Visit Agreed, etc.).
-     * Schedule Next Follow-up: Sets an exact reminder date and time. Overdue follow-ups highlight in red alert banners.
-   - **Bulk Operations**:
-     * Bulk CSV Import with deduplication and phone formatting.
-     * Bulk Assign Executive, Bulk Project Tagging, Bulk Status Change, and Bulk Delete (strictly guarded by RBAC permissions).
-   - **Automatic Sales Conversion**:
-     * Changing a lead's status to "Converted" automatically creates a deal record in the Sales module with customer and project references intact.
+3. Site Visits (/site-visits):
+   - Scheduling: Pick a lead, project, date/time, and pickup location (Airport, Home, Office).
+   - Driver & Vehicle: Assign company driver.
+   - Trip tracking: Driver enters Start Odometer at pickup, and End Odometer at drop-off. The app automatically calculates kilometers traveled.
+   - Views: Toggle between Company Schedule and My Requests.
 
-2. **Sales & Bookings Module (/sales)**:
-   - **Deal Ledger**: Tracks booked units, buyer details, unit area (Sq Ft), deal value/revenue, booking dates, and assigned sales executive.
-   - **Payment Milestones & Receipts**: Record booking tokens, construction-linked installments, calculate GST/TDS, and issue downloadable receipts.
-   - **Sales Visibility Perspectives**:
-     * *Self Only*: Sales executives see only their own closed deals and revenue.
-     * *Team*: Managers and Team Leaders see the performance of their reporting members.
-     * *Overall*: Directors and Admins see complete company revenue and volume.
-     * *None*: Hides sales figures completely for non-sales roles.
+4. Inventory and Projects (/inventory, /projects):
+   - Hierarchy: Project -> Tower -> Floor -> Unit.
+   - Typologies: 1BHK, 2BHK, 3BHK, 4BHK, Villa, Commercial.
+   - Unit Status: Available, Hold/Blocked, Booked.
+   - Unit Hold: Temporary 24-48 hour hold on units while booking cheques clear.
 
-3. **Site Visits Module (/site-visits)**:
-   - **Booking Visits**: Schedule client property walkthroughs with lead name, project, date/time, and pickup location (Airport, Home, Office).
-   - **Driver & Cab Allocation**: Assign in-house company drivers (Driver role).
-   - **Driver Trip Workflow**: Assigned drivers view trips on mobile, enter Start Odometer reading upon pickup, and End Odometer reading upon drop-off (automatically calculates kilometers traveled).
-   - **Schedule Visibility**: View "Company Schedule (All Bookings)" or filter by "My Requests".
+5. Targets and Incentives (/targets, /incentives):
+   - Monthly Quotas: Revenue targets, units sold, area (sq ft), and site visits conducted.
+   - Progress: Live percentage bars, leaderboards, and tiered commission slabs.
 
-4. **Inventory & Projects (/inventory, /projects)**:
-   - **Inventory Structure**: Project → Towers/Blocks → Floors → Units.
-   - **Unit Specs**: Typology (1BHK, 2BHK, 3BHK, 4BHK, Villa, Commercial), Facing, Carpet Area, Super Built-up, Base Price, PLC, Floor Rise.
-   - **Unit Status**: *Available* (green), *Hold/Blocked* (amber), *Booked* (emerald).
-   - **Temporary Unit Hold**: Sales team can place a 24-48 hour hold on high-demand units while customer token cheques clear.
+6. Granular Roles and RBAC (/roles):
+   - Configurable rights: View, Create, Edit, Delete, Assign, Export.
+   - Caller rights: View-only callers can call and log followups, but cannot edit customer contact details or delete records.
 
-5. **Targets & Incentives (/targets, /incentives)**:
-   - **Monthly Quotas**: Set per-executive benchmarks for Revenue Target (₹), Units Sold, Area (Sq Ft), and Site Visits Conducted.
-   - **Live Progress & Leaderboards**: Live percentage bars and top-performer rankings.
-   - **Commission Payouts**: Tiered incentive slabs based on target completion.
+7. Common Sales Objections & Scripts:
+   - Price too high: Acknowledge budget, pivot to annual capital appreciation and rental yield, break into construction milestones or bank subvention, offer spot-booking benefit.
+   - Need to discuss with family: Validate family decision, politely probe whether hesitation is budget or layout, offer to WhatsApp a 3-minute video walkthrough, fix a 5-minute callback time tomorrow.
+   - Site is too far: Highlight upcoming expressways, metro connectivity and IT hubs, offer a door-to-door company cab site visit.
+   - Cold calling hook: 10-second opener asking if you caught them at a bad time, mention developer pre-launch units with zero floor rise, ask if looking for family use or investment, and offer two specific time slots for site walkthrough.
 
-6. **Granular Role-Based Access Control (RBAC) (/roles)**:
-   - Configure distinct privileges per module: **View**, **Create**, **Edit**, **Delete**, **Assign**, and **Export**.
-   - *Sales Executive (Caller)*: Can view leads, make calls, and log followups, but CANNOT modify customer contact details (name, phone, email) or delete records.
-   - *Full Admin*: Unrestricted system-wide management.
-   - *Team Leader / Manager*: Full lead distribution, assignment, export, and team sales tracking.
+Remember: Output plain, natural human text. No hashes, no double stars, no emoji clutter.`;
 
-7. **Integrations (/integrations)**:
-   - *Meta Lead Ads & CAPI*: Facebook Page connection, automated webhook for instant 30-second lead delivery, SHA-256 Conversions API with High Event Match Quality.
-   - *WhatsApp Cloud API*: Official Meta WhatsApp Business API integration for template broadcasts, automated follow-up reminders, and instant lead alerts.
-   - *Razorpay Gateway*: Automated subscription billing and instant upgrades to Pro Plan.
+// Clean any leftover markdown and emoji clutter from model output
+function cleanNaturalHumanText(text) {
+  if (!text || typeof text !== 'string') return '';
 
----
-### REAL ESTATE SALES OBJECTION HANDLING PLAYBOOKS:
-- **"Price is Too High / Over Budget"**: Validate budget concerns → Pivot from price to long-term capital appreciation & rental yield → Break down into construction-linked payment milestones or bank subvention → Create urgency with limited pre-launch pricing or festival spot-booking benefits.
-- **"I Will Think About It / Need to Discuss with Family"**: Validate family involvement → Politely probe the core hesitation (is it layout, budget, or possession timeline?) → Offer a concrete next step (send WhatsApp 3D walkthrough video for family review tonight) → Lock a 5-minute callback time slot tomorrow.
-- **"Site is Too Far / Outer Location"**: Highlight upcoming infrastructure (metro expansion, arterial expressways, IT/commercial hubs) → Remind buyer of historical price trajectory of now-prime areas → Offer a hassle-free, door-to-door company cab site visit.
-- **"Site Visit Booking Hook"**: Never ask "Are you free this weekend?". Always offer two specific alternate time slots: "Would Thursday at 4:30 PM or Saturday at 11:00 AM work better for a 15-minute VIP walkthrough of the sample residence?".
+  return text
+    // Remove markdown headers: #, ##, ###, #### at start of lines
+    .replace(/^[ \t]*#{1,6}[ \t]*/gm, '')
+    // Remove bold and italic markdown asterisks: **word** -> word, *word* -> word
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    // Remove markdown bullet asterisks: * point -> point
+    .replace(/^[ \t]*\*[ \t]+/gm, '- ')
+    // Remove markdown backticks and code fences
+    .replace(/```[a-z]*\n?/gi, '')
+    .replace(/`/g, '')
+    // Remove excessive decorative emoji clutter
+    .replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
+    // Clean up double spaces or weird artifacts
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
 
-Always answer questions accurately based on RealSalePro's actual features and provide practical real estate sales advice.`;
-
-// POST /api/ai/chat - AI Sales Copilot Conversation (Powered by DeepSeek)
+// POST /api/ai/chat - AI Sales Copilot Conversation
 router.post('/chat', async (req, res) => {
   try {
     const user = req.user;
@@ -99,9 +97,7 @@ router.post('/chat', async (req, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // 1. Pro Plan Access Check:
-    // Platform Admin & Super Admin always bypass.
-    // Tenant users must belong to an active Pro or Paid plan.
+    // 1. Pro Plan Access Check
     const isPlatformAdmin = user.role === 'platform_admin' || user.role === 'super_admin';
     let isProTenant = false;
 
@@ -135,7 +131,6 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
-    // Format history for DeepSeek API
     const formattedMessages = [
       { role: 'system', content: REALSALEPRO_SYSTEM_PROMPT },
       ...messages.slice(-10).map((m) => ({
@@ -144,13 +139,13 @@ router.post('/chat', async (req, res) => {
       })),
     ];
 
-    // 3. Call DeepSeek Chat Completions API
+    // 3. Call DeepSeek API
     const apiKey = process.env.DEEPSEEK_API_KEY || 'sk-ce0ab58942ae4498b8dc376ce97976f0';
     const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout
+      const timeout = setTimeout(() => controller.abort(), 20000);
 
       const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
@@ -161,7 +156,7 @@ router.post('/chat', async (req, res) => {
         body: JSON.stringify({
           model,
           messages: formattedMessages,
-          temperature: 0.7,
+          temperature: 0.65,
           max_tokens: 1024,
           stream: false,
         }),
@@ -172,9 +167,10 @@ router.post('/chat', async (req, res) => {
 
       if (deepseekRes.ok) {
         const data = await deepseekRes.json();
-        const reply = data?.choices?.[0]?.message?.content || '';
-        if (reply.trim()) {
-          return res.json({ reply: reply.trim() });
+        const rawReply = data?.choices?.[0]?.message?.content || '';
+        const cleanReply = cleanNaturalHumanText(rawReply);
+        if (cleanReply) {
+          return res.json({ reply: cleanReply });
         }
       } else {
         const errText = await deepseekRes.text();
@@ -184,11 +180,11 @@ router.post('/chat', async (req, res) => {
       console.error('DeepSeek API connection error:', apiErr.message);
     }
 
-    // Fallback: If DeepSeek has network latency or rate limit, provide smart localized answer
+    // Fallback if DeepSeek is unreachable
     const lastUserMsg = [...messages].reverse().find((m) => m?.role === 'user')?.content || '';
     const fallbackReply = generateSmartFallback(lastUserMsg);
 
-    return res.json({ reply: fallbackReply });
+    return res.json({ reply: cleanNaturalHumanText(fallbackReply) });
   } catch (err) {
     console.error('AI chat endpoint error:', err);
     return res.status(500).json({
@@ -198,57 +194,68 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// Smart Local Fallback based on RealSalePro CRM processes
+// Smart Local Fallback without markdown artifacts or emoji clutter
 function generateSmartFallback(queryText) {
   const text = String(queryText || '').toLowerCase().trim();
 
-  if (text.includes('cold call') || text.includes('script') || text.includes('pitch') || text.includes('telecall') || text.includes('opener')) {
-    return `Here is a high-converting **Real Estate Cold Calling Script** designed for RealSalePro users:
+  if (text.includes('cold call') || text.includes('script') || text.includes('pitch') || text.includes('telecall') || text.includes('opener') || text.includes('how to call')) {
+    return `Here is a natural cold calling flow you can use right away:
 
-* **The 10-Second Hook:** "Hi [Client Name], I noticed you recently checked out premium residences in [Location/Project]. I'm calling from RealSalePro Realty — am I catching you in the middle of something urgent?"
-* **The Value Proposition:** "The reason for my quick call is that Developer [Developer Name] just released 12 pre-launch inventory units with zero floor rise charges and an easy 20:80 payment plan."
-* **Qualifying Question:** "Are you looking primarily for family living, or is high-yield capital appreciation your main priority?"
-* **The Low-Friction Close:** "I won't take more of your time today. Would Thursday at 4:30 PM or Saturday at 11:00 AM work better for a quick 15-minute VIP walkthrough of the model apartment?"
+1. The quick opener:
+"Hi [Customer Name], I noticed you were looking into residential projects around [Project or Area]. I am calling from the sales team here. Did I catch you in the middle of something urgent?"
 
-*Pro Tip:* Never ask "Are you free to visit?". Offer two concrete time slots so the decision is *when* to visit, not *if*.`;
+2. The value point:
+"The reason for my quick call is that we just released a handful of pre-launch units with zero floor rise charges and a flexible payment schedule."
+
+3. The qualifying question:
+"Are you looking at this mainly for family living, or is capital appreciation your primary focus?"
+
+4. Setting the walkthrough:
+"I would not want to take up your time right now over the phone. Would Thursday around 4:30 PM or Saturday at 11:00 AM work better for a quick 15-minute walkthrough of the model flat?"
+
+A good rule of thumb is to always offer two specific time options instead of asking an open question like whether they are free.`;
   }
 
   if (text.includes('expensive') || text.includes('price') || text.includes('budget') || text.includes('discount') || text.includes('rate') || text.includes('cost')) {
-    return `Here is how to effectively handle the **"Price is Too High / Over Budget"** objection in RealSalePro:
+    return `When a client says the property is too expensive or beyond their budget, try handling it this way:
 
-1. **Acknowledge & Validate:** "I completely understand [Client Name]. Budget is the most crucial factor when investing in property."
-2. **Shift from Price to Capital Appreciation:** "In this micro-market, values have appreciated by 14% year-over-year. You get RERA-certified delivery, 75% open greens, and a 20,000 sq ft clubhouse."
-3. **Offer Flexible Payment Milestones:** "Rather than upfront heavy payments, the developer offers a milestone-linked construction schedule, keeping your immediate cash flow manageable."
-4. **Spot-Booking Benefit:** "Let's visit the site once. If you love the layout, I will personally speak with the sales director for an exclusive spot-booking discount."`;
+1. First acknowledge their concern:
+"I completely understand. Budget is always the most important factor when investing in a home."
+
+2. Pivot from price to appreciation:
+"In this micro-market, values have been appreciating by about 12 to 14 percent year on year. With this project, you are getting certified construction, extensive open green spaces, and ready amenities."
+
+3. Offer payment milestone flexibility:
+"Rather than a heavy upfront commitment, the developer offers construction-linked installments, which keeps your immediate cash outlay very manageable."
+
+4. Suggest an on-site visit:
+"Let us visit the site once together. If you genuinely like the layout and location, I will personally talk with the sales director to explore an exclusive spot-booking benefit for you."`;
   }
 
   if (text.includes('mask') || text.includes('theft') || text.includes('phone') || text.includes('number')) {
-    return `**Phone Number Masking & Client Data Protection in RealSalePro**:
+    return `Phone number masking in RealSalePro protects client contact data:
 
-* **How it works:** RealSalePro automatically masks the last 5 digits of buyer phone numbers (e.g., \`+91 98765 •••••\`) for telecallers, sales executives, and drivers.
-* **Dialing:** Team members click the green call button to trigger in-app or masked dialing without exporting or copying raw numbers.
-* **Admin Control:** Only Tenant Admins and Super Admins can unmask numbers or download contact CSVs.
-* **Protection:** Completely prevents staff database theft when brokers or sales executives leave your organization.`;
+1. For sales executives, callers, and drivers, the last 5 digits of buyer phone numbers are masked like 98765 •••••.
+2. Team members can click the call button to trigger their dialer or click WhatsApp to chat, without ever needing to copy or export raw customer numbers.
+3. Only Administrators have access to unmask numbers or download CSV exports.
+4. This ensures your organization database stays safe from unauthorized lead leakage.`;
   }
 
   if (text.includes('site visit') || text.includes('visit') || text.includes('cab') || text.includes('driver')) {
-    return `**How Site Visits Work in RealSalePro (/site-visits)**:
+    return `Here is how to manage site visits in RealSalePro:
 
-1. **Schedule Visit:** Go to Site Visits → Click **Schedule Visit** → Select Lead, Project, Date/Time, and Pickup Address.
-2. **Driver Assignment:** Assign an in-house driver. The driver receives the trip in their app.
-3. **Odometer Tracking:** When picking up the client, the driver enters the **Start Odometer** reading. Upon drop-off, they enter the **End Odometer** reading to automatically record trip distance (Km).
-4. **Follow-up:** Once completed, log the client's site feedback in the Lead's Follow-up timeline!`;
+1. Open the Site Visits section and click Schedule Visit.
+2. Pick the customer lead, project, date and time, and where the client should be picked up from.
+3. Assign a company driver. The driver will see the booking in their app.
+4. When picking up the customer, the driver enters the starting odometer reading, and upon dropping them off, enters the ending reading. The system calculates the total kilometers automatically.
+5. After the visit is finished, update the customer's feedback and next steps in their lead follow-up notes.`;
   }
 
-  return `Namaste! 👋 I'm your **RealSalePro AI Sales Copilot**, powered by DeepSeek AI.
+  return `Hi, I am your sales copilot for RealSalePro. 
 
-I can assist you with:
-* 🎯 **Sales Scripts & Objections**: Cold calls, "Price too high", "Will think and tell", and booking site visits.
-* 📱 **WhatsApp & Follow-up**: High-converting pitch templates and dead-lead revival messages.
-* 🏢 **CRM Workflows**: Phone masking, lead assignment, inventory blocking, and driver trip logs.
-* 💰 **Deals & Closing**: Asking for booking tokens without being pushy and converting leads to sales.
+I can help you with practical sales scripts, handling client objections like price or delays, writing quick WhatsApp follow-up messages, or guiding you step by step through any feature in the CRM like lead assignment, site visits, or bookings.
 
-What specific lead, deal, or CRM process can I help you with right now?`;
+What deal or customer situation are you working on right now?`;
 }
 
 export default router;

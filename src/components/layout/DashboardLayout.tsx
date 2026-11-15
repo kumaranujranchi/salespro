@@ -264,39 +264,46 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'model'; content: string }>>([
     {
       role: 'model',
-      content: "Namaste! 👋 I'm your **RealSalePro AI Sales Copilot**, powered by DeepSeek AI.\n\nI can assist you with:\n\n* **Sales Scripts & Objections:** Cold call openers, overcoming \"Price is too high\" or \"Will think and tell\", and booking site visits.\n* **WhatsApp & Follow-up:** Instant pitch drafts and dead-lead revival messages.\n* **CRM & Operations:** Complete guidance on phone masking, lead assignment, inventory blocking, and driver trip logs.\n* **Deals & Closing:** Booking tokens, agreement schedules, and converting CRM leads to sales.\n\nWhat property deal, customer objection, or CRM feature are you working on today?"
+      content: "Hi, I am your sales copilot for RealSalePro.\n\nWhether you need a quick cold calling script, advice on handling client objections like price or delays, or want to know how any CRM feature works, feel free to ask me.\n\nWhat deal or customer situation are you working on today?"
     }
   ]);
 
-  // Clean formatting symbols (* and **) to render them natively as bullet lists and bold text
+  // Clean formatting symbols (hashes, asterisks, etc.) to render natural human-readable text
   const renderFormattedMessage = (content: any) => {
     try {
       if (!content) return null;
-      const safeContent = typeof content === 'string'
+      let safeContent = typeof content === 'string'
         ? content
         : (content && typeof content === 'object' && content.message ? String(content.message) : (content ? String(content) : ''));
       if (!safeContent) return null;
+
+      // Clean markdown backticks and code blocks
+      safeContent = safeContent.replace(/```[a-z]*\n?/gi, '').replace(/`/g, '');
+
       const lines = safeContent.split('\n');
       return lines.map((line, idx) => {
         let trimmed = (line || '').trim();
+
+        // Strip leading markdown hashes (#, ##, ###)
+        trimmed = trimmed.replace(/^[ \t]*#{1,6}[ \t]*/, '');
+
         const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || (trimmed.startsWith('*') && !trimmed.startsWith('**'));
-        
         if (isBullet) {
           trimmed = trimmed.replace(/^[\*\-]\s*/, '');
         }
 
-        // Parse bold elements inside the line
-        const parts = (trimmed || '').split('**');
+        // Clean out raw double asterisks if stray, or render clean bold
+        const parts = trimmed.split('**');
         const formattedText = parts.map((part, i) => {
           if (i % 2 === 1) {
-            return <strong key={i} className="font-extrabold text-slate-900 dark:text-white">{part}</strong>;
+            return <strong key={i} className="font-semibold text-slate-900 dark:text-white">{part}</strong>;
           }
           return part;
         });
 
         if (isBullet) {
           return (
-            <div key={idx} className="flex items-start gap-2 ml-2 my-1.5 leading-relaxed">
+            <div key={idx} className="flex items-start gap-2 ml-1 my-1 leading-relaxed">
               <span className="text-emerald-500 dark:text-[#00E576] font-bold text-sm select-none">•</span>
               <span className="flex-1">{formattedText}</span>
             </div>
@@ -304,7 +311,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }
 
         return (
-          <div key={idx} className={trimmed ? "my-1.5 leading-relaxed min-h-[1em]" : "my-2.5 min-h-[0.5em]"}>
+          <div key={idx} className={trimmed ? "my-1 leading-relaxed min-h-[1em]" : "my-2 min-h-[0.5em]"}>
             {formattedText}
           </div>
         );
