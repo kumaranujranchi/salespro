@@ -15,7 +15,7 @@ import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { ActionMenu } from '../components/ui/ActionMenu';
 import { OrganizationChart } from '../components/users/OrganizationChart';
-import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Pencil, Network, UserX, UserCheck, LayoutGrid, List, KeyRound, Sparkles, Copy, Check, Eye, EyeOff, Lock, Trash2, ChevronDown, Mail, Phone, Briefcase } from 'lucide-react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 export function validatePhoneNumber(phone: string): string | null {
@@ -63,6 +63,19 @@ export function UsersPage() {
   const [editingUserId, setEditingUserId] = useState<Id<"profiles"> | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [viewType, setViewType] = useState<'card' | 'table' | 'tree'>('table');
+  const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(new Set());
+
+  const toggleUserExpand = (userId: string) => {
+    setExpandedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
   const isReadOnly = false; // Simplified for now
 
   const [formData, setFormData] = useState({
@@ -408,24 +421,26 @@ export function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">User Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage team members and access control</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1">User Management</h1>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Manage team members and access control</p>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2 shadow-sm">
-            <button onClick={() => setViewType('card')} className={`p-1.5 rounded-md transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={18} /></button>
-            <button onClick={() => setViewType('table')} className={`p-1.5 rounded-md transition-all ${viewType === 'table' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={18} /></button>
-            <button onClick={() => setViewType('tree')} className={`p-1.5 rounded-md transition-all ${viewType === 'tree' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><Network size={18} /></button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs h-9">
+              <button type="button" onClick={() => setViewType('card')} className={`p-1.5 rounded-lg transition-all ${viewType === 'card' ? 'bg-blue-500 text-white shadow-xs' : 'text-slate-400 hover:text-slate-600'}`} title="Card View"><LayoutGrid size={15} /></button>
+              <button type="button" onClick={() => setViewType('table')} className={`p-1.5 rounded-lg transition-all ${viewType === 'table' ? 'bg-blue-500 text-white shadow-xs' : 'text-slate-400 hover:text-slate-600'}`} title="List View"><List size={15} /></button>
+              <button type="button" onClick={() => setViewType('tree')} className={`p-1.5 rounded-lg transition-all ${viewType === 'tree' ? 'bg-blue-500 text-white shadow-xs' : 'text-slate-400 hover:text-slate-600'}`} title="Org Tree"><Network size={15} /></button>
+            </div>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="flex-1 sm:w-36 h-9 text-xs rounded-xl"
+              options={[{ value: 'active', label: 'Active Users' }, { value: 'inactive', label: 'Inactive Users' }, { value: 'all', label: 'All Users' }]}
+            />
           </div>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="w-40 h-[42px]"
-            options={[{ value: 'active', label: 'Active Users' }, { value: 'inactive', label: 'Inactive Users' }, { value: 'all', label: 'All Users' }]}
-          />
           {!isReadOnly && (
-            <Button 
-              variant={isUserLimitReached ? "outline" : "primary"} 
+            <button 
+              type="button"
               onClick={() => { 
                 if (isUserLimitReached) {
                   if (isSuperAdmin) {
@@ -438,11 +453,15 @@ export function UsersPage() {
                 resetForm(); 
                 setIsModalOpen(true); 
               }} 
-              className={`h-[42px] whitespace-nowrap ${isUserLimitReached ? 'border-amber-400 text-amber-600 dark:text-amber-400' : ''}`}
+              className={`w-full sm:w-auto h-9 px-3.5 text-xs font-semibold rounded-xl inline-flex items-center justify-center gap-1.5 whitespace-nowrap shadow-xs active:scale-95 transition-all ${
+                isUserLimitReached 
+                  ? 'border border-amber-400 text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20' 
+                  : 'bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048]'
+              }`}
             >
-              {isUserLimitReached ? <Lock size={16} className="mr-2" /> : <UserPlus size={18} className="mr-2" />}
-              Add User {isFreePlan && `(${totalUsersCount}/5)`}
-            </Button>
+              {isUserLimitReached ? <Lock size={14} className="shrink-0" /> : <UserPlus size={14} className="shrink-0" />}
+              <span>Add User {isFreePlan && `(${totalUsersCount}/5)`}</span>
+            </button>
           )}
         </div>
       </div>
@@ -517,55 +536,192 @@ export function UsersPage() {
           onAddUser={() => { resetForm(); setIsModalOpen(true); }}
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2"><Users size={20} /><CardTitle>Users List</CardTitle></div>
+        <Card className="rounded-2xl border-slate-200/80 dark:border-white/10 shadow-xs overflow-hidden">
+          <CardHeader className="pb-3 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users size={18} className="text-blue-500" />
+                <CardTitle className="text-base sm:text-lg">Users List</CardTitle>
+              </div>
+              <span className="text-xs text-gray-500 bg-gray-100 dark:bg-white/5 px-2.5 py-0.5 rounded-full font-medium">
+                {users.length} {users.length === 1 ? 'Member' : 'Members'}
+              </span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(users as any[]).map((user: any) => (
-                  <TableRow key={user._id} className={!user.is_active ? 'bg-gray-50' : ''}>
-                    <TableCell className="font-mono text-xs">{user.employee_id}</TableCell>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <UserAvatar src={user.image_url} name={user.full_name} size="xs" />
-                        <span className={!user.is_active ? 'text-gray-500' : ''}>{user.full_name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{(roles as TenantRole[] | undefined)?.find((r: TenantRole) => r._id === user.role_id)?.name || user.role}</Badge>
-                    </TableCell>
-                    <TableCell><Badge variant={user.is_active ? 'success' : 'default'}>{user.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
-                    <TableCell className="text-right">
-                       <ActionMenu actions={[
-                         { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
-                         ...(canManagePasswords ? [
-                           { label: 'Reset Password', icon: KeyRound, onClick: () => handleOpenResetPassword(user) }
-                         ] : []),
-                         { 
-                           label: user.is_active ? 'Deactivate' : 'Activate', 
-                           icon: user.is_active ? UserX : UserCheck, 
-                           onClick: () => handleToggleStatus(user) 
-                         },
-                         {
-                           label: 'Delete User',
-                           icon: Trash2,
-                           variant: 'danger',
-                           onClick: () => handleDeleteUser(user)
-                         }
-                       ]} />
-                    </TableCell>
+          <CardContent className="p-0">
+            {/* Desktop Full Table View (Hidden on mobile) */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(users as any[]).map((user: any) => (
+                    <TableRow key={user._id} className={!user.is_active ? 'bg-gray-50 dark:bg-white/5' : ''}>
+                      <TableCell className="font-mono text-xs">{user.employee_id || '-'}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <UserAvatar src={user.image_url} name={user.full_name} size="xs" />
+                          <span className={!user.is_active ? 'text-gray-500' : ''}>{user.full_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{(roles as TenantRole[] | undefined)?.find((r: TenantRole) => r._id === user.role_id)?.name || user.role}</Badge>
+                      </TableCell>
+                      <TableCell><Badge variant={user.is_active ? 'success' : 'default'}>{user.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                      <TableCell className="text-right">
+                         <ActionMenu actions={[
+                           { label: 'Edit', icon: Pencil, onClick: () => handleEditUser(user) },
+                           ...(canManagePasswords ? [
+                             { label: 'Reset Password', icon: KeyRound, onClick: () => handleOpenResetPassword(user) }
+                           ] : []),
+                           { 
+                             label: user.is_active ? 'Deactivate' : 'Activate', 
+                             icon: user.is_active ? UserX : UserCheck, 
+                             onClick: () => handleToggleStatus(user) 
+                           },
+                           {
+                             label: 'Delete User',
+                             icon: Trash2,
+                             variant: 'danger',
+                             onClick: () => handleDeleteUser(user)
+                           }
+                         ]} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Native Collapsible List View (NO horizontal scroll) */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-white/5">
+              {(users as any[]).map((user: any) => {
+                const uId = String(user._id || user.id);
+                const isExpanded = expandedUserIds.has(uId);
+                const roleName = (roles as TenantRole[] | undefined)?.find((r: TenantRole) => r._id === user.role_id)?.name || user.role;
+                const deptName = (departments as Department[] | undefined)?.find((d: Department) => d._id === user.department_id)?.name;
+
+                return (
+                  <div key={uId} className={`p-3.5 transition-colors ${!user.is_active ? 'bg-slate-50/60 dark:bg-white/5 opacity-80' : 'bg-white dark:bg-slate-900'}`}>
+                    {/* Collapsed Header (Tap to toggle) */}
+                    <div 
+                      onClick={() => toggleUserExpand(uId)}
+                      className="flex items-center justify-between gap-3 cursor-pointer select-none"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                          <UserAvatar src={user.image_url} name={user.full_name} size="sm" className="w-10 h-10 rounded-xl" />
+                          <span 
+                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white dark:border-slate-900 rounded-full ${
+                              user.is_active ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                              {user.full_name}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono text-[11px] text-slate-400 font-medium">
+                              {user.employee_id || 'ID N/A'}
+                            </span>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                            <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 rounded">
+                              {roleName}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={user.is_active ? 'success' : 'default'} className="text-[10px] font-semibold px-2 py-0.5">
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <div className={`p-1 text-slate-400 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                          <ChevronDown size={16} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expandable Details Drawer */}
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 space-y-3 animate-in fade-in-50 duration-200">
+                        {/* Key Info Details */}
+                        <div className="grid grid-cols-1 gap-1.5 bg-slate-50/80 dark:bg-white/5 p-2.5 rounded-xl text-xs">
+                          <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                            <span className="text-slate-400 flex items-center gap-1.5"><Mail size={12} /> Email:</span>
+                            <a href={`mailto:${user.email}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[210px]">{user.email}</a>
+                          </div>
+                          {user.phone && (
+                            <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                              <span className="text-slate-400 flex items-center gap-1.5"><Phone size={12} /> Phone:</span>
+                              <a href={`tel:${user.phone}`} className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline font-mono">{user.phone}</a>
+                            </div>
+                          )}
+                          {deptName && (
+                            <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                              <span className="text-slate-400 flex items-center gap-1.5"><Briefcase size={12} /> Department:</span>
+                              <span className="font-semibold">{deptName}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Mobile Action Buttons (Equally Divided, Full Width) */}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleEditUser(user)}
+                            className="flex-1 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 font-semibold text-xs inline-flex items-center justify-center gap-1 transition-colors active:scale-95"
+                          >
+                            <Pencil size={12} />
+                            <span>Edit</span>
+                          </button>
+
+                          {canManagePasswords && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenResetPassword(user)}
+                              className="flex-1 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold text-xs inline-flex items-center justify-center gap-1 transition-colors active:scale-95"
+                            >
+                              <KeyRound size={12} />
+                              <span>Password</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(user)}
+                            className={`flex-1 h-8 rounded-lg font-semibold text-xs inline-flex items-center justify-center gap-1 transition-colors active:scale-95 ${
+                              user.is_active
+                                ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                                : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                            }`}
+                          >
+                            {user.is_active ? <UserX size={12} /> : <UserCheck size={12} />}
+                            <span>{user.is_active ? 'Deactivate' : 'Activate'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            className="h-8 px-2.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 font-semibold text-xs inline-flex items-center justify-center transition-colors active:scale-95"
+                            title="Delete User"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
