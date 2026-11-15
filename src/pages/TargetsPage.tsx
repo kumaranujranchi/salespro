@@ -210,63 +210,66 @@ export function TargetsPage() {
       </div>
 
       <Card>
-        <CardContent className="py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            {!isExecutive ? (
+        <CardContent className="p-3.5 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              {!isExecutive ? (
+                <Select
+                  label="Member"
+                  value={selectedUserId}
+                  onChange={e => setSelectedUserId(e.target.value)}
+                  options={[{ label: 'All Team Members', value: '' }, ...(staff?.map(s => ({ label: s.full_name, value: s._id || s.id })) || [])]}
+                  className="w-full sm:w-56"
+                />
+              ) : <div className="p-2 bg-gray-50 dark:bg-white/5 rounded-xl border text-xs font-medium flex items-center justify-center">Your Targets</div>}
               <Select
-                label="Member"
-                value={selectedUserId}
-                onChange={e => setSelectedUserId(e.target.value)}
-                options={[{ label: 'All Team Members', value: '' }, ...(staff?.map(s => ({ label: s.full_name, value: s._id || s.id })) || [])]}
-                className="w-64"
+                label="Year"
+                value={selectedYear}
+                onChange={e => setSelectedYear(e.target.value)}
+                options={[2024, 2025, 2026, 2027].map(y => ({ label: y.toString(), value: y.toString() }))}
+                className="w-full sm:w-28"
               />
-            ) : <div className="p-2 bg-gray-50 dark:bg-white/5 rounded border text-sm font-medium">Viewing Your Targets</div>}
-            <Select
-              label="Year"
-              value={selectedYear}
-              onChange={e => setSelectedYear(e.target.value)}
-              options={[2024, 2025, 2026, 2027].map(y => ({ label: y.toString(), value: y.toString() }))}
-              className="w-32"
-            />
-          </div>
+            </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => setActiveMetric('revenue')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeMetric === 'revenue'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <DollarSign size={13} />
-              Revenue (₹)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveMetric('area')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeMetric === 'area'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Layers size={13} />
-              Area (Sq Ft)
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveMetric('units')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeMetric === 'units'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Hash size={13} />
-              Units (Count)
-            </button>
+            {/* Metric Switcher - Native Segmented Control */}
+            <div className="grid grid-cols-3 sm:flex items-center gap-1 p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setActiveMetric('revenue')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                  activeMetric === 'revenue'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <DollarSign size={13} />
+                <span>Revenue</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMetric('area')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                  activeMetric === 'area'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Layers size={13} />
+                <span>Area</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMetric('units')}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all ${
+                  activeMetric === 'units'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Hash size={13} />
+                <span>Units</span>
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -342,144 +345,277 @@ export function TargetsPage() {
          </Card>
       </div>
 
-      {/* Assigned Targets Management Table */}
+      {/* Assigned Targets Management Table / Mobile Cards */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-gray-100 dark:border-white/10">
-          <div>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <UserCheck size={18} className="text-emerald-600" />
-              Assigned Monthly Targets ({selectedYear})
-            </CardTitle>
-            <p className="text-xs text-gray-500 mt-0.5">Individual member monthly goals across customizable metrics</p>
+        <CardHeader className="p-3.5 sm:p-5 border-b border-gray-100 dark:border-white/10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-900/30">
+                <UserCheck size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                    Assigned Targets
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                    {selectedYear}
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-gray-500 truncate hidden sm:block">
+                  Individual member monthly goals across customizable metrics
+                </p>
+              </div>
+            </div>
+
+            <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              {targetList.length} Targets
+            </span>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
-            {targetList.length} Targets Found
-          </span>
+          <p className="text-[11px] text-gray-500 mt-2 sm:hidden leading-relaxed">
+            Individual monthly goals across customizable metrics
+          </p>
         </CardHeader>
         <CardContent className="p-0">
           {targetList.length === 0 ? (
-            <div className="p-8 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto text-slate-400">
-                <TargetIcon size={24} />
+            <div className="p-6 sm:p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3.5 shadow-sm border border-emerald-100/80 dark:border-emerald-900/30">
+                <TargetIcon size={28} strokeWidth={2.2} />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">No targets found for {selectedYear}</h3>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                No monthly targets have been assigned for this year yet. Click "Assign Target" to set customized goals for your sales team.
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                No Targets Set for {selectedYear}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mt-1.5 leading-relaxed">
+                Configure monthly revenue, area, or unit goals to track sales team achievements.
               </p>
               {canManage && (
-                <Button size="sm" onClick={() => { setEditingTarget(null); setIsModalOpen(true); }} className="!bg-emerald-600 hover:!bg-emerald-700 !text-white">
-                  <Plus size={15} className="mr-1" /> Assign First Target
-                </Button>
+                <div className="mt-4 pt-1">
+                  <Button
+                    size="sm"
+                    onClick={() => { setEditingTarget(null); setIsModalOpen(true); }}
+                    className="w-full sm:w-auto px-5 py-2 !bg-emerald-600 hover:!bg-emerald-700 active:scale-[0.98] !text-white text-xs font-semibold rounded-xl shadow-sm inline-flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Plus size={16} />
+                    <span>Assign First Target</span>
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100 dark:border-white/10">
-                  <tr>
-                    <th className="px-5 py-3">Team Member</th>
-                    <th className="px-5 py-3">Month</th>
-                    <th className="px-5 py-3">Configured Target</th>
-                    <th className="px-5 py-3">Actual Achieved</th>
-                    <th className="px-5 py-3">Completion</th>
-                    {canManage && <th className="px-5 py-3 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                  {targetList.map((t: any) => (
-                    <tr key={t._id || t.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-3.5">
-                        <div className="font-semibold text-gray-900 dark:text-white">{t.user_name || 'Team Member'}</div>
-                        <div className="text-[11px] text-gray-400 capitalize">{t.user_role?.replace('_', ' ') || 'Sales Executive'}</div>
-                      </td>
+            <>
+              {/* Desktop Table View (Hidden on mobile) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100 dark:border-white/10">
+                    <tr>
+                      <th className="px-5 py-3">Team Member</th>
+                      <th className="px-5 py-3">Month</th>
+                      <th className="px-5 py-3">Configured Target</th>
+                      <th className="px-5 py-3">Actual Achieved</th>
+                      <th className="px-5 py-3">Completion</th>
+                      {canManage && <th className="px-5 py-3 text-right">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                    {targetList.map((t: any) => (
+                      <tr key={t._id || t.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="font-semibold text-gray-900 dark:text-white">{t.user_name || 'Team Member'}</div>
+                          <div className="text-[11px] text-gray-400 capitalize">{t.user_role?.replace('_', ' ') || 'Sales Executive'}</div>
+                        </td>
 
-                      <td className="px-5 py-3.5 font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        {t.monthLabel}
-                      </td>
+                        <td className="px-5 py-3.5 font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          {t.monthLabel}
+                        </td>
 
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-wrap gap-1.5">
-                          {t.sqftTarget > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40">
-                              <Layers size={11} /> {t.sqftTarget.toLocaleString('en-IN')} Sq Ft
-                            </span>
-                          )}
-                          {t.unitsTarget > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
-                              <Hash size={11} /> {t.unitsTarget} Units
-                            </span>
-                          )}
-                          {t.revenueTarget > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40">
-                              <DollarSign size={11} /> ₹{t.revenueTarget.toLocaleString('en-IN')}
-                            </span>
-                          )}
-                          {t.sqftTarget === 0 && t.unitsTarget === 0 && t.revenueTarget === 0 && (
-                            <span className="text-xs text-gray-400 italic">Not set</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-wrap gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
-                          {t.sqftTarget > 0 && (
-                            <span>{t.achievedSqft.toLocaleString('en-IN')} Sq Ft</span>
-                          )}
-                          {t.unitsTarget > 0 && (
-                            <span>{t.achievedUnits} Units</span>
-                          )}
-                          {t.revenueTarget > 0 && (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹{t.achievedRevenue.toLocaleString('en-IN')}</span>
-                          )}
-                          {t.sqftTarget === 0 && t.unitsTarget === 0 && t.revenueTarget === 0 && (
-                            <span>-</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            Number(t.percent) >= 100 
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                              : Number(t.percent) >= 50
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-                              : 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300'
-                          }`}>
-                            {t.percent}%
-                          </span>
-                        </div>
-                      </td>
-
-                      {canManage && (
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => { setEditingTarget(t); setIsModalOpen(true); }}
-                              title="Edit Target"
-                              className="text-gray-500 hover:text-emerald-600"
-                            >
-                              <Pencil size={15} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(t._id || t.id)}
-                              title="Delete Target"
-                              className="text-gray-500 hover:text-rose-600"
-                            >
-                              <Trash2 size={15} />
-                            </Button>
+                        <td className="px-5 py-3.5">
+                          <div className="flex flex-wrap gap-1.5">
+                            {t.sqftTarget > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40">
+                                <Layers size={11} /> {t.sqftTarget.toLocaleString('en-IN')} Sq Ft
+                              </span>
+                            )}
+                            {t.unitsTarget > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40">
+                                <Hash size={11} /> {t.unitsTarget} Units
+                              </span>
+                            )}
+                            {t.revenueTarget > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40">
+                                <DollarSign size={11} /> ₹{t.revenueTarget.toLocaleString('en-IN')}
+                              </span>
+                            )}
+                            {t.sqftTarget === 0 && t.unitsTarget === 0 && t.revenueTarget === 0 && (
+                              <span className="text-xs text-gray-400 italic">Not set</span>
+                            )}
                           </div>
                         </td>
+
+                        <td className="px-5 py-3.5">
+                          <div className="flex flex-wrap gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                            {t.sqftTarget > 0 && (
+                              <span>{t.achievedSqft.toLocaleString('en-IN')} Sq Ft</span>
+                            )}
+                            {t.unitsTarget > 0 && (
+                              <span>{t.achievedUnits} Units</span>
+                            )}
+                            {t.revenueTarget > 0 && (
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">₹{t.achievedRevenue.toLocaleString('en-IN')}</span>
+                            )}
+                            {t.sqftTarget === 0 && t.unitsTarget === 0 && t.revenueTarget === 0 && (
+                              <span>-</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              Number(t.percent) >= 100 
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                : Number(t.percent) >= 50
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                                : 'bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300'
+                            }`}>
+                              {t.percent}%
+                            </span>
+                          </div>
+                        </td>
+
+                        {canManage && (
+                          <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => { setEditingTarget(t); setIsModalOpen(true); }}
+                                title="Edit Target"
+                                className="text-gray-500 hover:text-emerald-600"
+                              >
+                                <Pencil size={15} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(t._id || t.id)}
+                                title="Delete Target"
+                                className="text-gray-500 hover:text-rose-600"
+                              >
+                                <Trash2 size={15} />
+                              </Button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Native App Card List (Shown only on mobile) */}
+              <div className="block md:hidden p-3 space-y-3">
+                {targetList.map((t: any) => {
+                  const percentNum = Number(t.percent) || 0;
+                  const isComplete = percentNum >= 100;
+                  const isHalfway = percentNum >= 50;
+
+                  return (
+                    <div
+                      key={t._id || t.id}
+                      className="bg-slate-50/70 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/80 dark:border-white/5 space-y-3 shadow-2xs"
+                    >
+                      {/* Top Member & Month Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            {t.user_name || 'Team Member'}
+                          </div>
+                          <div className="text-[11px] text-slate-500 capitalize mt-0.5 truncate">
+                            {t.user_role?.replace('_', ' ') || 'Sales Executive'}
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-white/10 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-white/5">
+                            {t.monthLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Native Progress Bar & Completion % */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Completion Rate
+                          </span>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            isComplete
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : isHalfway
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+                              : 'bg-slate-200/80 text-slate-700 dark:bg-white/10 dark:text-gray-300'
+                          }`}>
+                            {t.percent}% Achieved
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-slate-200/70 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isComplete ? 'bg-emerald-500' : isHalfway ? 'bg-amber-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${Math.min(percentNum, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Target vs Achieved Micro-Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-white/90 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-200/60 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block uppercase font-medium">Target</span>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 space-y-0.5">
+                            {t.revenueTarget > 0 && <div>₹{t.revenueTarget.toLocaleString('en-IN')}</div>}
+                            {t.sqftTarget > 0 && <div>{t.sqftTarget.toLocaleString('en-IN')} Sq Ft</div>}
+                            {t.unitsTarget > 0 && <div>{t.unitsTarget} Units</div>}
+                            {t.revenueTarget === 0 && t.sqftTarget === 0 && t.unitsTarget === 0 && <span className="text-slate-400 italic">Not set</span>}
+                          </div>
+                        </div>
+
+                        <div className="bg-white/90 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-200/60 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block uppercase font-medium">Achieved</span>
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 space-y-0.5">
+                            {t.revenueTarget > 0 && <div>₹{t.achievedRevenue.toLocaleString('en-IN')}</div>}
+                            {t.sqftTarget > 0 && <div>{t.achievedSqft.toLocaleString('en-IN')} Sq Ft</div>}
+                            {t.unitsTarget > 0 && <div>{t.achievedUnits} Units</div>}
+                            {t.revenueTarget === 0 && t.sqftTarget === 0 && t.unitsTarget === 0 && <span className="text-slate-400">-</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Actions */}
+                      {canManage && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-white/5">
+                          <button
+                            type="button"
+                            onClick={() => { setEditingTarget(t); setIsModalOpen(true); }}
+                            className="flex-1 py-1.5 px-2 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <Pencil size={13} /> Edit Target
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(t._id || t.id)}
+                            className="py-1.5 px-2.5 text-xs font-semibold text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="Delete Target"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
