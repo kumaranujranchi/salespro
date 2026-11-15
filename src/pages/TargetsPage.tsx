@@ -188,23 +188,24 @@ export function TargetsPage() {
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
+          <div className="flex items-center gap-2 w-full sm:w-auto self-start sm:self-auto">
+            <button
+              type="button"
               onClick={() => setIsSettingsModalOpen(true)}
-              className="gap-2 border-gray-300 dark:border-white/10"
+              className="flex-1 sm:flex-none h-9 px-3 sm:px-4 text-xs font-semibold rounded-xl inline-flex items-center justify-center border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition-all whitespace-nowrap"
               title="Customize Organization Target Model"
             >
-              <Settings2 size={16} />
-              <span className="hidden sm:inline">Customize Model</span>
-            </Button>
-            <Button
+              <Settings2 size={14} className="mr-1.5 shrink-0" />
+              <span>Customize Model</span>
+            </button>
+            <button
+              type="button"
               onClick={() => { setEditingTarget(null); setIsModalOpen(true); }}
-              className="gap-1.5 !bg-emerald-600 hover:!bg-emerald-700 !text-white"
+              className="flex-1 sm:flex-none h-9 px-3 sm:px-4 text-xs font-semibold rounded-xl inline-flex items-center justify-center bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] shadow-xs active:scale-95 transition-all whitespace-nowrap"
             >
-              <Plus size={18} />
+              <Plus size={14} className="mr-1.5 shrink-0" />
               <span>Assign Target</span>
-            </Button>
+            </button>
           </div>
         )}
       </div>

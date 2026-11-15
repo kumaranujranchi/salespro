@@ -707,7 +707,7 @@ export function InventoryPage() {
                       </CardDescription>
                     </div>
                     {isAdmin && (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
                         {/* Excel Upload hidden input trigger */}
                         <input
                           type="file"
@@ -716,12 +716,22 @@ export function InventoryPage() {
                           accept=".xlsx, .xls, .csv"
                           className="hidden"
                         />
-                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                          <Upload size={16} className="mr-1.5" /> Upload Excel
-                        </Button>
-                        <Button variant="primary" size="sm" onClick={() => { resetUnitForm(); setIsUnitModalOpen(true); }}>
-                          <Plus size={16} className="mr-1.5" /> Add Unit
-                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1 sm:flex-none h-9 px-3.5 text-xs font-semibold rounded-xl inline-flex items-center justify-center border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-gray-50 text-gray-700 dark:text-gray-200 shadow-xs active:scale-95 transition-all whitespace-nowrap"
+                        >
+                          <Upload size={14} className="mr-1.5 shrink-0" />
+                          <span>Upload Excel</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { resetUnitForm(); setIsUnitModalOpen(true); }}
+                          className="flex-1 sm:flex-none h-9 px-3.5 text-xs font-semibold rounded-xl inline-flex items-center justify-center bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] shadow-xs active:scale-95 transition-all whitespace-nowrap"
+                        >
+                          <Plus size={14} className="mr-1.5 shrink-0" />
+                          <span>Add Unit</span>
+                        </button>
                       </div>
                     )}
                   </div>
