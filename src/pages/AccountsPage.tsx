@@ -615,13 +615,19 @@ _${companyName} Accounts & Recovery Team_`;
                   return (
                     <div
                       key={item.sId}
-                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs"
+                      onClick={() => toggleCardExpand(item.sId)}
+                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     >
                       <div className="p-3.5 space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <div className="font-bold text-slate-900 dark:text-white text-sm truncate">
-                              {item.customerName}
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                                {item.customerName}
+                              </span>
+                              <span className="text-slate-400 shrink-0">
+                                {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                              </span>
                             </div>
                             <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                               <span className="truncate">{item.projectName}</span>
@@ -664,7 +670,10 @@ _${companyName} Accounts & Recovery Team_`;
 
                         {/* Collapsible Details */}
                         {isExpanded && (
-                          <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs">
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs"
+                          >
                             <div className="flex items-center justify-between text-slate-500">
                               <span>Last Payment Date:</span>
                               <span className="font-medium text-slate-700 dark:text-slate-300">
@@ -677,7 +686,7 @@ _${companyName} Accounts & Recovery Team_`;
                         )}
 
                         {/* Card Actions & Collapse Toggle */}
-                        <div className="pt-2 flex items-center gap-1.5">
+                        <div className="pt-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => openRecordModalForSale(item)}
@@ -711,7 +720,10 @@ _${companyName} Accounts & Recovery Team_`;
 
                           <button
                             type="button"
-                            onClick={() => toggleCardExpand(item.sId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardExpand(item.sId);
+                            }}
                             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
                             aria-label={isExpanded ? "Collapse details" : "Expand details"}
                           >
@@ -879,7 +891,8 @@ _${companyName} Accounts & Recovery Team_`;
                   return (
                     <div
                       key={pId}
-                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs"
+                      onClick={() => toggleCardExpand(pId)}
+                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     >
                       <div className="p-3.5 space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
@@ -890,6 +903,9 @@ _${companyName} Accounts & Recovery Team_`;
                               </span>
                               <span className="text-[11px] text-slate-500">
                                 {new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                              <span className="text-slate-400 shrink-0">
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                               </span>
                             </div>
                             <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs mt-1 truncate">
@@ -912,7 +928,10 @@ _${companyName} Accounts & Recovery Team_`;
 
                         {/* Collapsible Details */}
                         {isExpanded && (
-                          <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs text-slate-500">
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs text-slate-500"
+                          >
                             <div className="flex items-center justify-between">
                               <span>Payment Type:</span>
                               <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{p.payment_type || 'Installment'}</span>
@@ -936,7 +955,7 @@ _${companyName} Accounts & Recovery Team_`;
                         )}
 
                         {/* Action Buttons & Toggle */}
-                        <div className="pt-2 flex items-center gap-1.5">
+                        <div className="pt-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {sale && (
                             <>
                               <button
@@ -968,7 +987,10 @@ _${companyName} Accounts & Recovery Team_`;
 
                           <button
                             type="button"
-                            onClick={() => toggleCardExpand(pId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardExpand(pId);
+                            }}
                             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
                             aria-label={isExpanded ? "Collapse details" : "Expand details"}
                           >

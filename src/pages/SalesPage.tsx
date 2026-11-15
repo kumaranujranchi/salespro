@@ -232,12 +232,21 @@ export function SalesPage() {
                    const isExpanded = expandedSaleId === sId;
 
                    return (
-                     <div key={sId} className="p-3.5 space-y-2.5 transition-colors">
+                     <div
+                       key={sId}
+                       onClick={() => toggleSaleExpand(sId)}
+                       className="p-3.5 space-y-2.5 transition-colors cursor-pointer hover:bg-slate-50/70 dark:hover:bg-white/5 active:bg-slate-100/60 dark:active:bg-white/10"
+                     >
                        {/* Top Row: Customer & Revenue */}
                        <div className="flex items-start justify-between gap-2">
                          <div className="min-w-0 flex-1">
-                           <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                             {sale.customer?.name || 'Customer'}
+                           <div className="flex items-center gap-1.5">
+                             <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                               {sale.customer?.name || 'Customer'}
+                             </span>
+                             <span className="text-slate-400 shrink-0">
+                               {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                             </span>
                            </div>
                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
                              <span className="truncate">{sale.project?.name || 'Project'}</span>
@@ -273,7 +282,10 @@ export function SalesPage() {
 
                        {/* Collapsible Expanded Details */}
                        {isExpanded && (
-                         <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-1.5 text-xs text-gray-600 dark:text-gray-300 bg-slate-50/50 dark:bg-white/5 p-2.5 rounded-lg">
+                         <div
+                           onClick={(e) => e.stopPropagation()}
+                           className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-1.5 text-xs text-gray-600 dark:text-gray-300 bg-slate-50/50 dark:bg-white/5 p-2.5 rounded-lg"
+                         >
                            {sale.rate_per_sqft && (
                              <div className="flex justify-between">
                                <span className="text-gray-400">Rate / Sq Ft:</span>
@@ -302,7 +314,7 @@ export function SalesPage() {
                        )}
 
                        {/* Mobile Action Buttons */}
-                       <div className="flex items-center gap-1.5 pt-1">
+                       <div className="flex items-center gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
                          {canEdit && (
                            <button
                              type="button"
@@ -331,7 +343,10 @@ export function SalesPage() {
 
                          <button
                            type="button"
-                           onClick={() => toggleSaleExpand(sId)}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             toggleSaleExpand(sId);
+                           }}
                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                            aria-label={isExpanded ? "Collapse details" : "Expand details"}
                          >
