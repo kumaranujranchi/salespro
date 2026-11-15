@@ -70,14 +70,20 @@ export function MobileLayout({
     const allAccessibleItems = navItems.filter(isAccessible);
 
     // Primary 4 items for bottom navigation
+    // Post Sales side: 1- Dashboard, 2- Sales, 3- Site Visit, 4- Target
+    const primarySalesPaths = ['/dashboard', '/sales', '/site-visits', '/targets'];
+    // CRM side: 1- Dashboard, 2- Leads, 3- Pipeline, 4- Site Visits
     const primaryCrmPaths = ['/crm', '/leads', '/crm/pipeline', '/site-visits'];
-    const primarySalesPaths = ['/dashboard', '/accounts', '/sales', '/reports'];
 
     const targetPrimaryPaths = activeModule === 'crm' ? primaryCrmPaths : primarySalesPaths;
 
     let bottomNavItems: NavItem[] = [];
     for (const path of targetPrimaryPaths) {
-        const matched = allAccessibleItems.find(item => item.path === path);
+        let matched = allAccessibleItems.find(item => item.path === path);
+        // Fallback for /site-visits if not directly in accessible items of this module
+        if (!matched && path === '/site-visits' && crmNavItems) {
+            matched = crmNavItems.find(item => item.path === '/site-visits');
+        }
         if (matched) bottomNavItems.push(matched);
     }
 
@@ -120,7 +126,8 @@ export function MobileLayout({
 
     const getBottomLabel = (label: string) => {
         if (label === 'Accounts & Collections') return 'Accounts';
-        if (label === 'Site Visits') return 'Visits';
+        if (label === 'Site Visits') return 'Site Visit';
+        if (label === 'Targets') return 'Target';
         if (label === 'My Performance') return 'Performance';
         if (label === 'Platform Overview') return 'Overview';
         return label;

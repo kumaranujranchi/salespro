@@ -93,6 +93,7 @@ const navGroups: NavGroup[] = [
   {
     label: 'Operations',
     items: [
+      { label: 'Site Visits', path: '/site-visits', icon: Calendar, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'driver', 'receptionist'] },
       { label: 'Directory', path: '/directory', icon: Contact, roles: ['super_admin', 'admin', 'director', 'team_leader', 'sales_executive', 'crm_staff', 'accountant', 'driver', 'receptionist'] },
       { label: 'Announcements', path: '/announcements', icon: Megaphone, roles: ['super_admin', 'admin', 'director', 'sales_executive', 'team_leader', 'receptionist'] },
     ]
@@ -382,15 +383,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     // Sync module state with URL
     const isCRMPath = location.pathname.startsWith('/crm') || 
-                      location.pathname.startsWith('/leads') ||
-                      location.pathname === '/site-visits';
+                      location.pathname.startsWith('/leads');
     if (isCRMPath) {
       if (!isCRMEnabled) {
         navigate('/dashboard');
         return;
       }
       setActiveModule('crm');
-    } else {
+    } else if (location.pathname !== '/site-visits') {
       setActiveModule('sales');
     }
   }, [location.pathname, isCRMEnabled, navigate]);
