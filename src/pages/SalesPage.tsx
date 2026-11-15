@@ -34,6 +34,12 @@ export function SalesPage() {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
 
+  // Mobile collapsible cards state
+  const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
+  const toggleSaleExpand = (id: string) => {
+    setExpandedSaleId(prev => (prev === id ? null : id));
+  };
+
   // Backend queries
   const sales = useQuery(api.sales.listSales, profile?.tenant_id ? { 
     tenant_id: profile.tenant_id as Id<"tenants"> 
@@ -137,16 +143,18 @@ export function SalesPage() {
   if (!sales || !payments) return <LoadingSpinner size="lg" className="min-h-screen" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-gray-100 dark:border-white/10 sm:border-0 sm:pb-0">
         <div>
-          <h1 className="text-3xl font-bold">Sales Dashboard</h1>
-          <p className="text-gray-500">Manage bookings and collection history</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Sales Dashboard</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Manage bookings and collection history</p>
         </div>
-        <Button variant="gradient" onClick={() => { setSelectedSale(null); setIsFormOpen(true); }}><Plus size={18} className="mr-2"/> New Sale</Button>
+        <Button variant="gradient" onClick={() => { setSelectedSale(null); setIsFormOpen(true); }} className="self-start sm:self-auto">
+          <Plus size={18} className="mr-2"/> New Sale
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KPICard title="Total Sales" value={metrics.totalSales} icon={Layers} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
         <KPICard title="This Month" value={metrics.thisMonth} icon={Calendar} iconColor="text-indigo-600" iconBgColor="bg-indigo-100" />
         <KPICard title="Total Area" value={metrics.totalArea.toLocaleString() + ' Sq Ft'} icon={PieChart} iconColor="text-orange-600" iconBgColor="bg-orange-100" />
@@ -155,16 +163,17 @@ export function SalesPage() {
 
       <Card>
         <CardHeader>
-           <div className="flex justify-between items-center">
+           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <CardTitle>Sales Records</CardTitle>
-              <div className="relative w-72">
+              <div className="relative w-full sm:w-72">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                 <Input placeholder="Search customer or project..." className="pl-10" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                 <Input placeholder="Search customer or project..." className="pl-10 w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
            </div>
         </CardHeader>
         <CardContent>
-           <div className="overflow-x-auto">
+           {/* Desktop Table View (Hidden on mobile) */}
+           <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
                  <thead className="bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-300">
                     <tr>
@@ -207,6 +216,133 @@ export function SalesPage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* Mobile Collapsible Cards View (Shown only on mobile) */}
+           <div className="block md:hidden">
+             {filteredSales.length === 0 ? (
+               <div className="py-10 px-4 text-center text-gray-400">
+                 <p className="font-medium text-sm text-gray-600 dark:text-gray-300">No sales records found.</p>
+                 <p className="text-xs text-gray-400 mt-1">Adjust search query or create a new sale.</p>
+               </div>
+             ) : (
+               <div className="divide-y divide-gray-100 dark:divide-white/5 -mx-4 -my-4">
+                 {filteredSales.map(sale => {
+                   const sId = String(sale._id || sale.id);
+                   const isExpanded = expandedSaleId === sId;
+
+                   return (
+                     <div key={sId} className="p-3.5 space-y-2.5 transition-colors">
+                       {/* Top Row: Customer & Revenue */}
+                       <div className="flex items-start justify-between gap-2">
+                         <div className="min-w-0 flex-1">
+                           <div className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                             {sale.customer?.name || 'Customer'}
+                           </div>
+                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                             <span className="truncate">{sale.project?.name || 'Project'}</span>
+                             <span>•</span>
+                             <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">Unit: {sale.unit_number || 'N/A'}</span>
+                           </div>
+                           {sale.customer?.phone && (
+                             <div className="text-[11px] text-gray-400 mt-0.5">
+                               {sale.customer?.phone}
+                             </div>
+                           )}
+                         </div>
+
+                         <div className="text-right shrink-0">
+                           <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                             {formatCurrency(sale.total_revenue)}
+                           </div>
+                           <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase mt-1 ${
+                             sale.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300' : 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'
+                           }`}>
+                             {(sale.status || 'Booked').toUpperCase()}
+                           </span>
+                         </div>
+                       </div>
+
+                       {/* Quick Info Bar */}
+                       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 bg-gray-50/80 dark:bg-white/5 px-2.5 py-1.5 rounded-lg">
+                         <span>Date: <strong className="text-slate-700 dark:text-slate-200">{safeFormatDate(sale.sale_date)}</strong></span>
+                         {sale.area_sqft ? (
+                           <span>Area: <strong className="text-slate-700 dark:text-slate-200">{Number(sale.area_sqft).toLocaleString()} Sq Ft</strong></span>
+                         ) : null}
+                       </div>
+
+                       {/* Collapsible Expanded Details */}
+                       {isExpanded && (
+                         <div className="pt-2 border-t border-gray-100 dark:border-white/5 space-y-1.5 text-xs text-gray-600 dark:text-gray-300 bg-slate-50/50 dark:bg-white/5 p-2.5 rounded-lg">
+                           {sale.rate_per_sqft && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400">Rate / Sq Ft:</span>
+                               <span className="font-medium">{formatCurrency(sale.rate_per_sqft)}</span>
+                             </div>
+                           )}
+                           {sale.customer?.email && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400">Email:</span>
+                               <span className="font-medium truncate max-w-[200px]">{sale.customer?.email}</span>
+                             </div>
+                           )}
+                           {sale.co_applicant?.name && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400">Co-Applicant:</span>
+                               <span className="font-medium">{sale.co_applicant.name} ({sale.co_applicant.relationship || 'Co-Applicant'})</span>
+                             </div>
+                           )}
+                           {sale.created_by_name && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400">Booked By:</span>
+                               <span className="font-medium">{sale.created_by_name}</span>
+                             </div>
+                           )}
+                         </div>
+                       )}
+
+                       {/* Mobile Action Buttons */}
+                       <div className="flex items-center gap-1.5 pt-1">
+                         {canEdit && (
+                           <button
+                             type="button"
+                             onClick={() => handleEdit(sale)}
+                             className="flex-1 py-1.5 px-2 text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg transition-colors flex items-center justify-center gap-1"
+                           >
+                             <Edit size={13} /> Edit
+                           </button>
+                         )}
+
+                         <button
+                           type="button"
+                           onClick={() => { setSelectedSale(sale); setIsDetailOpen(true); }}
+                           className="flex-1 py-1.5 px-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 rounded-lg transition-colors flex items-center justify-center gap-1"
+                         >
+                           <Eye size={13} /> Details
+                         </button>
+
+                         <button
+                           type="button"
+                           onClick={() => { setSelectedSale(sale); setIsPaymentOpen(true); }}
+                           className="flex-1 py-1.5 px-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 rounded-lg transition-colors flex items-center justify-center gap-1"
+                         >
+                           <CreditCard size={13} /> Payments
+                         </button>
+
+                         <button
+                           type="button"
+                           onClick={() => toggleSaleExpand(sId)}
+                           className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                           aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                         >
+                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                         </button>
+                       </div>
+                     </div>
+                   );
+                 })}
+               </div>
+             )}
            </div>
         </CardContent>
       </Card>
