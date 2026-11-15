@@ -29,7 +29,9 @@ import {
   ExternalLink,
   RefreshCw,
   Send,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -53,6 +55,12 @@ export function AccountsPage() {
   const [selectedSaleForPayment, setSelectedSaleForPayment] = useState<any | null>(null);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
   const [selectedSaleForLedger, setSelectedSaleForLedger] = useState<any | null>(null);
+
+  // Collapsible cards state for mobile view
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const toggleCardExpand = (id: string) => {
+    setExpandedCardId(prev => (prev === id ? null : id));
+  };
 
   // Form State for Recording Payment
   const [paymentForm, setPaymentForm] = useState({
@@ -302,16 +310,16 @@ _${companyName} Accounts & Recovery Team_`;
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-2 sm:py-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-2 border-b border-slate-200 dark:border-white/10">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
-              <CreditCard size={24} />
+            <div className="p-2 sm:p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+              <CreditCard size={22} className="sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                 Accounts & Collections
               </h1>
               <p className="text-xs sm:text-sm text-slate-500">
@@ -321,15 +329,15 @@ _${companyName} Accounts & Recovery Team_`;
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
             onClick={() => exportCollectionsExcel(collectionsList.filter(c => c.balanceDue > 0), tenant)}
-            className="border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="flex-1 sm:flex-initial border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs py-1.5"
           >
-            <Download size={15} className="mr-1.5" />
-            Export Collection Sheet
+            <Download size={14} className="mr-1.5" />
+            Export Sheet
           </Button>
           <Button
             size="sm"
@@ -337,53 +345,53 @@ _${companyName} Accounts & Recovery Team_`;
               setSelectedSaleForPayment(null);
               setIsRecordModalOpen(true);
             }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-1.5"
+            className="flex-1 sm:flex-initial bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-1.5 text-xs py-1.5"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             Record Payment
           </Button>
         </div>
       </div>
 
       {/* KPI Financial Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Sales Consideration</p>
-          <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+          <p className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Sales Consideration</p>
+          <h3 className="text-base sm:text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {formatCurrency(metrics.totalConsideration)}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-            <Building size={12} /> Across {collectionsList.length} total bookings
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 flex items-center gap-1 truncate">
+            <Building size={11} className="shrink-0" /> {collectionsList.length} total bookings
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
-          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Total Collected</p>
-          <h3 className="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+          <p className="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Total Collected</p>
+          <h3 className="text-base sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
             {formatCurrency(metrics.totalCollected)}
           </h3>
-          <p className="text-[11px] text-emerald-600/80 mt-1 flex items-center gap-1">
-            <CheckCircle2 size={12} /> {metrics.collectionEfficiency.toFixed(1)}% recovery rate
+          <p className="text-[10px] sm:text-[11px] text-emerald-600/80 mt-1 flex items-center gap-1 truncate">
+            <CheckCircle2 size={11} className="shrink-0" /> {metrics.collectionEfficiency.toFixed(1)}% recovery
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
-          <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Outstanding Dues</p>
-          <h3 className="text-lg sm:text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+          <p className="text-[11px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Outstanding Dues</p>
+          <h3 className="text-base sm:text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">
             {formatCurrency(metrics.totalOutstanding)}
           </h3>
-          <p className="text-[11px] text-rose-500/80 mt-1 flex items-center gap-1">
-            <AlertCircle size={12} /> Pending from {metrics.pendingCount} customers
+          <p className="text-[10px] sm:text-[11px] text-rose-500/80 mt-1 flex items-center gap-1 truncate">
+            <AlertCircle size={11} className="shrink-0" /> Pending: {metrics.pendingCount} customers
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
-          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Transactions Logged</p>
-          <h3 className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm">
+          <p className="text-[11px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Transactions</p>
+          <h3 className="text-base sm:text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
             {payments?.length || 0}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-            <Receipt size={12} /> Digital receipts generated
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1 flex items-center gap-1 truncate">
+            <Receipt size={11} className="shrink-0" /> Digital receipts
           </p>
         </div>
       </div>
@@ -395,7 +403,7 @@ _${companyName} Accounts & Recovery Team_`;
           <button
             type="button"
             onClick={() => setActiveTab('collections')}
-            className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-center ${
               activeTab === 'collections'
                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -406,7 +414,7 @@ _${companyName} Accounts & Recovery Team_`;
           <button
             type="button"
             onClick={() => setActiveTab('transactions')}
-            className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all text-center ${
               activeTab === 'transactions'
                 ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -417,8 +425,8 @@ _${companyName} Accounts & Recovery Team_`;
         </div>
 
         {/* Search & Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full sm:min-w-[200px] sm:w-auto flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
@@ -430,11 +438,11 @@ _${companyName} Accounts & Recovery Team_`;
           </div>
 
           {activeTab === 'collections' && (
-            <>
+            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
               <select
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
-                className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
+                className="w-full text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
               >
                 <option value="all">All Projects</option>
                 {projects?.map((proj: any) => (
@@ -447,20 +455,20 @@ _${companyName} Accounts & Recovery Team_`;
               <select
                 value={dueRangeFilter}
                 onChange={(e) => setDueRangeFilter(e.target.value as any)}
-                className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
+                className="w-full text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
               >
                 <option value="all">All Balances</option>
                 <option value="high">Dues ≥ ₹5 Lakhs</option>
                 <option value="very_high">Dues ≥ ₹25 Lakhs</option>
               </select>
-            </>
+            </div>
           )}
 
           {activeTab === 'transactions' && (
             <select
               value={modeFilter}
               onChange={(e) => setModeFilter(e.target.value)}
-              className="text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
+              className="w-full sm:w-auto text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl dark:text-white"
             >
               <option value="all">All Modes</option>
               <option value="upi">UPI</option>
@@ -475,7 +483,7 @@ _${companyName} Accounts & Recovery Team_`;
       {/* TAB 1: Outstanding Collections (Pending payments) */}
       {activeTab === 'collections' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+          <div className="p-4 border-b border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 Pending Recovery & Collections Tracker
@@ -484,12 +492,13 @@ _${companyName} Accounts & Recovery Team_`;
                 Track customers with outstanding payments, record payments directly, or send WhatsApp reminders.
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 rounded-lg">
+            <span className="self-start sm:self-auto text-xs font-semibold px-2.5 py-1 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 rounded-lg whitespace-nowrap">
               Showing {filteredCollections.length} Records
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View (Hidden on mobile) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead className="bg-slate-50/75 dark:bg-slate-800/50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80 dark:border-white/10">
                 <tr>
@@ -590,13 +599,139 @@ _${companyName} Accounts & Recovery Team_`;
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Collapsible Cards View (Shown only on mobile) */}
+          <div className="block md:hidden">
+            {filteredCollections.length === 0 ? (
+              <div className="py-12 px-4 text-center">
+                <CheckCircle2 size={38} className="mx-auto text-emerald-500 mb-2.5 opacity-70" />
+                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">No outstanding dues matching filters.</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">All customers are up-to-date or adjust search criteria.</p>
+              </div>
+            ) : (
+              <div className="p-3 space-y-3">
+                {filteredCollections.map((item) => {
+                  const isExpanded = expandedCardId === item.sId;
+                  return (
+                    <div
+                      key={item.sId}
+                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs"
+                    >
+                      <div className="p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                              {item.customerName}
+                            </div>
+                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                              <span className="truncate">{item.projectName}</span>
+                              <span>•</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">Unit {item.unitNumber}</span>
+                            </div>
+                            {item.customerPhone && (
+                              <div className="text-[11px] text-slate-400 mt-0.5">
+                                {item.customerPhone}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className={`inline-block font-bold text-xs px-2.5 py-1 rounded-lg ${
+                              item.balanceDue > 0
+                                ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            }`}>
+                              {item.balanceDue > 0 ? `${formatCurrency(item.balanceDue)} Due` : 'Cleared'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Financial Snapshot */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-white/5 text-xs">
+                          <div className="bg-white/80 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-200/50 dark:border-white/5">
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Consideration</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {formatCurrency(item.totalRevenue)}
+                            </span>
+                          </div>
+                          <div className="bg-white/80 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-200/50 dark:border-white/5">
+                            <span className="text-[10px] text-slate-400 block uppercase font-medium">Total Received</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(item.totalReceived)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Details */}
+                        {isExpanded && (
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between text-slate-500">
+                              <span>Last Payment Date:</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {item.lastPaymentDate
+                                  ? new Date(item.lastPaymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                  : 'No payments yet'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Card Actions & Collapse Toggle */}
+                        <div className="pt-2 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openRecordModalForSale(item)}
+                            className="flex-1 py-1.5 px-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center justify-center gap-1 shadow-2xs"
+                          >
+                            <Plus size={13} /> Record
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSaleForLedger(item);
+                              setIsLedgerModalOpen(true);
+                            }}
+                            className="p-1.5 px-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1"
+                            title="Statement Ledger"
+                          >
+                            <FileText size={14} /> Ledger
+                          </button>
+
+                          {item.balanceDue > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => sendCollectionReminderWhatsApp(item)}
+                              className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg transition-colors"
+                              title="Send WhatsApp Reminder"
+                            >
+                              <MessageSquare size={15} />
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => toggleCardExpand(item.sId)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
+                            aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                          >
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* TAB 2: Payment Transactions (Payment chadhna & receipts) */}
       {activeTab === 'transactions' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+          <div className="p-4 border-b border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 Recorded Payments & Receipts
@@ -611,13 +746,14 @@ _${companyName} Accounts & Recovery Team_`;
                 setSelectedSaleForPayment(null);
                 setIsRecordModalOpen(true);
               }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5"
+              className="self-start sm:self-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1.5"
             >
               <Plus size={14} /> Add Payment
             </Button>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View (Hidden on mobile) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs sm:text-sm">
               <thead className="bg-slate-50/75 dark:bg-slate-800/50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80 dark:border-white/10">
                 <tr>
@@ -720,6 +856,131 @@ _${companyName} Accounts & Recovery Team_`;
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Collapsible Cards View (Shown only on mobile) */}
+          <div className="block md:hidden">
+            {filteredPayments.length === 0 ? (
+              <div className="py-12 px-4 text-center">
+                <Receipt size={38} className="mx-auto text-slate-300 dark:text-slate-600 mb-2.5" />
+                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">No payment transactions found.</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Click "Add Payment" to record a new receipt.</p>
+              </div>
+            ) : (
+              <div className="p-3 space-y-3">
+                {filteredPayments.map((p: any) => {
+                  const sale = sales?.find(s => String(s.id || s._id) === String(p.sale_id));
+                  const customerName = sale?.customer?.name || sale?.lead_customer_name || 'Customer';
+                  const unitNo = sale?.unit_number || 'N/A';
+                  const projectName = sale?.project?.name || sale?.project_name || 'Project';
+                  const pId = String(p._id || p.id);
+                  const isExpanded = expandedCardId === pId;
+
+                  return (
+                    <div
+                      key={pId}
+                      className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-white/5 overflow-hidden transition-all shadow-2xs"
+                    >
+                      <div className="p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs font-bold text-slate-900 dark:text-white bg-slate-200/60 dark:bg-slate-700/60 px-1.5 py-0.5 rounded">
+                                RCP-{pId.slice(-6).toUpperCase()}
+                              </span>
+                              <span className="text-[11px] text-slate-500">
+                                {new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs mt-1 truncate">
+                              {customerName}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate">
+                              {projectName} • Unit {unitNo}
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                              +{formatCurrency(Number(p.amount) || 0)}
+                            </div>
+                            <span className="inline-block text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 mt-0.5">
+                              {p.payment_mode || 'Cash'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Details */}
+                        {isExpanded && (
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 space-y-1.5 text-xs text-slate-500">
+                            <div className="flex items-center justify-between">
+                              <span>Payment Type:</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{p.payment_type || 'Installment'}</span>
+                            </div>
+                            {p.transaction_reference && (
+                              <div className="flex items-center justify-between">
+                                <span>Ref / Cheque:</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">{p.transaction_reference}</span>
+                              </div>
+                            )}
+                            {p.remarks && (
+                              <div className="text-[11px] text-slate-400 italic">
+                                Note: {p.remarks}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span>Recorded By:</span>
+                              <span className="text-slate-600 dark:text-slate-400">{p.recorded_by || 'Staff'}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Buttons & Toggle */}
+                        <div className="pt-2 flex items-center gap-1.5">
+                          {sale && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => exportPaymentReceiptPDF(p, sale, tenant)}
+                                className="flex-1 py-1.5 px-2.5 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-2xs"
+                              >
+                                <Receipt size={13} /> Receipt PDF
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => sharePaymentReceiptWhatsApp(p, sale, tenant)}
+                                className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/60 dark:border-emerald-800/40 rounded-lg transition-colors"
+                                title="Share Receipt on WhatsApp"
+                              >
+                                <MessageSquare size={15} />
+                              </button>
+                            </>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePayment(p._id || p.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="Delete payment record"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleCardExpand(pId)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors"
+                            aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                          >
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
