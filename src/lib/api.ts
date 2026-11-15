@@ -1,8 +1,12 @@
 // RealSalePro REST API Client for Node.js + PostgreSQL Backend
 
+import { Capacitor } from '@capacitor/core';
 import { getAuthToken, handleSessionExpired } from './auth-token';
 
 export const getApiBaseUrl = (): string => {
+  if (Capacitor.isNativePlatform()) {
+    return 'https://realsalepro.com/api';
+  }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host !== 'localhost' && host !== '127.0.0.1') {

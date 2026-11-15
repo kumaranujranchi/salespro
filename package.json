@@ -11,9 +11,14 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview --config config/vite.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "test:smoke": "node scripts/smoke-test.js"
+    "test:smoke": "node scripts/smoke-test.js",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:build": "npm run build && npx cap copy android",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
@@ -37,6 +42,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "@eslint/js": "^9.9.1",
     "@supabase/supabase-js": "^2.87.1",
     "@testing-library/jest-dom": "^6.9.1",
