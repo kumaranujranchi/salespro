@@ -520,10 +520,21 @@ export function LeadFormModal({ isOpen, onClose, lead }: LeadFormModalProps) {
         </div>
 
         <ModalFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="h-11 sm:h-auto text-sm sm:text-base font-semibold whitespace-nowrap justify-center"
+          >
             Cancel
           </Button>
-          <Button type="submit" variant="primary" isLoading={loading}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={loading}
+            className="h-11 sm:h-auto text-sm sm:text-base font-semibold whitespace-nowrap justify-center"
+          >
             {lead ? 'Update Lead' : 'Create Lead'}
           </Button>
         </ModalFooter>

@@ -63,11 +63,12 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', footer }:
 
 interface ModalFooterProps {
   children: ReactNode;
+  className?: string;
 }
 
-export function ModalFooter({ children }: ModalFooterProps) {
+export function ModalFooter({ children, className = '' }: ModalFooterProps) {
   return (
-    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 [&>*]:flex-1 sm:[&>*]:flex-none">
+    <div className={`flex items-stretch sm:items-center justify-end gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 [&>*]:flex-1 sm:[&>*]:flex-none ${className}`}>
       {children}
     </div>
   );
