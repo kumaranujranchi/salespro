@@ -189,15 +189,15 @@ export function SalesPage() {
               : 'Manage your personal bookings and collection history'}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto self-start sm:self-auto">
           {canViewAllSales && (
-            <div className="inline-flex rounded-xl bg-gray-100 dark:bg-white/5 p-1 border border-gray-200 dark:border-white/10">
+            <div className="flex-[2] sm:flex-none inline-flex items-center h-9 rounded-xl bg-gray-100 dark:bg-white/5 p-1 border border-gray-200 dark:border-white/10">
               <button
                 type="button"
                 onClick={() => { setScope('all'); setSelectedExecutiveId('all'); }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                className={`flex-1 sm:flex-none h-full px-2 sm:px-3.5 text-xs font-semibold rounded-lg transition-all inline-flex items-center justify-center whitespace-nowrap ${
                   scope === 'all' && selectedExecutiveId === 'all'
-                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -206,9 +206,9 @@ export function SalesPage() {
               <button
                 type="button"
                 onClick={() => { setScope('my'); setSelectedExecutiveId('all'); }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                className={`flex-1 sm:flex-none h-full px-2 sm:px-3.5 text-xs font-semibold rounded-lg transition-all inline-flex items-center justify-center whitespace-nowrap ${
                   scope === 'my'
-                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-xs'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
@@ -216,9 +216,14 @@ export function SalesPage() {
               </button>
             </div>
           )}
-          <Button variant="gradient" onClick={() => { setSelectedSale(null); setIsFormOpen(true); }} className="self-start sm:self-auto">
-            <Plus size={18} className="mr-2"/> New Sale
-          </Button>
+          <button
+            type="button"
+            onClick={() => { setSelectedSale(null); setIsFormOpen(true); }}
+            className={`${canViewAllSales ? 'flex-1 sm:flex-none' : 'w-full sm:w-auto'} h-9 px-3 sm:px-3.5 text-xs font-semibold rounded-xl inline-flex items-center justify-center bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] shadow-xs active:scale-95 transition-all self-start sm:self-auto whitespace-nowrap`}
+          >
+            <Plus size={14} className="mr-1.5 shrink-0" />
+            <span>New Sale</span>
+          </button>
         </div>
       </div>
 
