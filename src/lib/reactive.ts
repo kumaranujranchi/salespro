@@ -317,7 +317,7 @@ async function resolveApiCall(functionKey: any, args: any) {
     return res;
   }
   if (key.includes('payments.listPayments') || key.includes('payments.list')) {
-    return await salesService.listPayments(args?.tenant_id, args?.sale_id);
+    return await salesService.listPayments(args?.tenant_id, args);
   }
   if (key.includes('payments.addPayment') || key.includes('payments.add')) {
     return await salesService.addPayment(args);

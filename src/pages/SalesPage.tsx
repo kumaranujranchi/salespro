@@ -40,17 +40,44 @@ export function SalesPage() {
     setExpandedSaleId(prev => (prev === id ? null : id));
   };
 
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const canViewAllSales = ['super_admin', 'admin', 'director', 'platform_admin', 'sales_manager'].includes(normalizedRole);
+  const [scope, setScope] = useState<'all' | 'my'>(canViewAllSales ? 'all' : 'my');
+  const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('all');
+
+  const effectiveExecutiveId = useMemo(() => {
+    if (!canViewAllSales) {
+      return (profile?.id || (profile as any)?._id) as string;
+    }
+    if (scope === 'my') {
+      return (profile?.id || (profile as any)?._id) as string;
+    }
+    if (selectedExecutiveId !== 'all') {
+      return selectedExecutiveId;
+    }
+    return undefined;
+  }, [canViewAllSales, scope, selectedExecutiveId, profile]);
+
   // Backend queries
   const sales = useQuery(api.sales.listSales, profile?.tenant_id ? { 
-    tenant_id: profile.tenant_id as Id<"tenants"> 
+    tenant_id: profile.tenant_id as Id<"tenants">,
+    executive_id: effectiveExecutiveId,
+    scope: scope
   } : "skip");
 
   const payments = useQuery(api.payments.listPayments, profile?.tenant_id ? {
-    tenant_id: profile.tenant_id as Id<"tenants">
+    tenant_id: profile.tenant_id as Id<"tenants">,
+    executive_id: effectiveExecutiveId,
+    scope: scope
   } : "skip");
 
   const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? {
     tenant_id: profile.tenant_id as Id<"tenants">
+  } : "skip");
+
+  const staff = useQuery(api.profiles.listUsersByTenant, (profile?.tenant_id && canViewAllSales) ? {
+    tenant_id: profile.tenant_id as Id<"tenants">,
+    is_active: true
   } : "skip");
 
   const deleteSale = useMutation(api.sales.deleteSale);
@@ -127,18 +154,20 @@ export function SalesPage() {
   }, [sales, searchQuery]);
 
   const metrics = useMemo(() => {
-    if (!filteredSales || !payments) return { totalSales: 0, thisMonth: 0, totalArea: 0, totalRevenue: 0, totalReceived: 0 };
+    if (!sales || !payments) return { totalSales: 0, thisMonth: 0, totalArea: 0, totalRevenue: 0, totalReceived: 0 };
     const now = new Date();
-    const activeSales = filteredSales.filter(s => s.status !== 'cancelled');
+    const activeSales = sales.filter(s => s.status !== 'cancelled');
+    const activeSaleIds = new Set(activeSales.map(s => String(s._id || s.id)));
+    const userPayments = payments.filter((p: any) => activeSaleIds.has(String(p.sale_id)));
     
     return {
       totalSales: activeSales.length,
       thisMonth: activeSales.filter(s => safeIsSameMonth(s.sale_date, now)).length,
       totalArea: activeSales.reduce((sum, s) => sum + (Number(s.area_sqft) || 0), 0),
       totalRevenue: activeSales.reduce((sum, s) => sum + (Number(s.total_revenue) || 0), 0),
-      totalReceived: payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+      totalReceived: userPayments.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0)
     };
-  }, [filteredSales, payments]);
+  }, [sales, payments]);
 
   if (!sales || !payments) return <LoadingSpinner size="lg" className="min-h-screen" />;
 
@@ -146,12 +175,51 @@ export function SalesPage() {
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-gray-100 dark:border-white/10 sm:border-0 sm:pb-0">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Sales Dashboard</h1>
-          <p className="text-xs sm:text-sm text-gray-500">Manage bookings and collection history</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold">Sales Dashboard</h1>
+            {!canViewAllSales && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                My Sales
+              </span>
+            )}
+          </div>
+          <p className="text-xs sm:text-sm text-gray-500">
+            {canViewAllSales
+              ? (scope === 'my' ? 'Showing your personal bookings and collection history' : 'Manage company bookings and collection history')
+              : 'Manage your personal bookings and collection history'}
+          </p>
         </div>
-        <Button variant="gradient" onClick={() => { setSelectedSale(null); setIsFormOpen(true); }} className="self-start sm:self-auto">
-          <Plus size={18} className="mr-2"/> New Sale
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {canViewAllSales && (
+            <div className="inline-flex rounded-xl bg-gray-100 dark:bg-white/5 p-1 border border-gray-200 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => { setScope('all'); setSelectedExecutiveId('all'); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  scope === 'all' && selectedExecutiveId === 'all'
+                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                All Sales
+              </button>
+              <button
+                type="button"
+                onClick={() => { setScope('my'); setSelectedExecutiveId('all'); }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  scope === 'my'
+                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                My Sales
+              </button>
+            </div>
+          )}
+          <Button variant="gradient" onClick={() => { setSelectedSale(null); setIsFormOpen(true); }} className="self-start sm:self-auto">
+            <Plus size={18} className="mr-2"/> New Sale
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -164,10 +232,31 @@ export function SalesPage() {
       <Card>
         <CardHeader>
            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-              <CardTitle>Sales Records</CardTitle>
-              <div className="relative w-full sm:w-72">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                 <Input placeholder="Search customer or project..." className="pl-10 w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <div className="flex items-center gap-2">
+                 <CardTitle>Sales Records</CardTitle>
+                 <span className="text-xs text-gray-400 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full font-medium">
+                   {filteredSales.length} {filteredSales.length === 1 ? 'Record' : 'Records'}
+                 </span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                 {canViewAllSales && scope === 'all' && staff && staff.length > 0 && (
+                   <select
+                     value={selectedExecutiveId}
+                     onChange={e => setSelectedExecutiveId(e.target.value)}
+                     className="text-xs bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   >
+                     <option value="all">All Executives</option>
+                     {staff.map((u: any) => (
+                       <option key={u._id || u.id} value={u._id || u.id}>
+                         {u.full_name || u.name}
+                       </option>
+                     ))}
+                   </select>
+                 )}
+                 <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <Input placeholder="Search customer or project..." className="pl-9 text-xs w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                 </div>
               </div>
            </div>
         </CardHeader>
@@ -180,6 +269,7 @@ export function SalesPage() {
                        <th className="px-4 py-3">Date</th>
                        <th className="px-4 py-3">Customer</th>
                        <th className="px-4 py-3">Project</th>
+                       {canViewAllSales && scope === 'all' && <th className="px-4 py-3">Executive</th>}
                        <th className="px-4 py-3 text-right">Revenue</th>
                        <th className="px-4 py-3 text-center">Status</th>
                        <th className="px-4 py-3 text-right">Actions</th>
@@ -197,6 +287,13 @@ export function SalesPage() {
                              <div>{sale.project?.name}</div>
                              <div className="text-xs text-gray-500">Unit: {sale.unit_number}</div>
                           </td>
+                          {canViewAllSales && scope === 'all' && (
+                             <td className="px-4 py-3">
+                                <div className="font-medium text-xs text-gray-700 dark:text-gray-300">
+                                   {sale.executive_name || sale.sales_executive?.name || 'Assigned Executive'}
+                                </div>
+                             </td>
+                          )}
                           <td className="px-4 py-3 text-right font-bold text-green-600">{formatCurrency(sale.total_revenue)}</td>
                           <td className="px-4 py-3 text-center">
                              <span className={`px-2 py-1 rounded-full text-xs ${sale.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -253,6 +350,11 @@ export function SalesPage() {
                              <span>•</span>
                              <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">Unit: {sale.unit_number || 'N/A'}</span>
                            </div>
+                           {canViewAllSales && scope === 'all' && (
+                             <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                               Executive: <span className="font-medium text-slate-700 dark:text-slate-200">{sale.executive_name || sale.sales_executive?.name || 'Executive'}</span>
+                             </div>
+                           )}
                            {sale.customer?.phone && (
                              <div className="text-[11px] text-gray-400 mt-0.5">
                                {sale.customer?.phone}

@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import { syncConvertedLeadsForTenant } from '../services/leadToSale.js';
+import { isPlatformRole, normalizeRole } from '../middleware/auth.js';
 
 const router = Router();
 
 // 1. List Sales
 router.get('/', async (req, res) => {
   try {
-    const { tenant_id, executive_id, project_id, status } = req.query;
+    const { tenant_id, executive_id, project_id, status, scope } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
 
     // Self-healing: automatically ensure every converted CRM lead has a Sale record
@@ -16,6 +17,10 @@ router.get('/', async (req, res) => {
     } catch (syncErr) {
       console.warn('Auto-sync converted leads warning:', syncErr.message);
     }
+
+    const callerRole = normalizeRole(req.user?.role || '');
+    const isPlatform = req.user ? isPlatformRole(req.user) : false;
+    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
 
     let sql = `
       SELECT s.*, 
@@ -35,10 +40,25 @@ router.get('/', async (req, res) => {
     `;
     const params = [tenant_id];
 
-    if (executive_id && executive_id !== 'all') {
+    // Determine executive filtering (user-specific isolation)
+    if (!canViewAll) {
+      // Non-privileged staff (e.g. sales_executive): strictly restricted to their own sales
+      const userExecId = req.user?.id || executive_id;
+      if (userExecId) {
+        params.push(userExecId);
+        sql += ` AND s.sales_executive_id = $${params.length}`;
+      }
+    } else if (scope === 'my') {
+      // Privileged user explicitly filtering to their own sales
+      if (req.user?.id) {
+        params.push(req.user.id);
+        sql += ` AND s.sales_executive_id = $${params.length}`;
+      }
+    } else if (executive_id && executive_id !== 'all') {
       params.push(executive_id);
       sql += ` AND s.sales_executive_id = $${params.length}`;
     }
+
     if (project_id && project_id !== 'all') {
       params.push(project_id);
       sql += ` AND s.project_id = $${params.length}`;
@@ -99,8 +119,18 @@ router.get('/', async (req, res) => {
 // 1a. Sales Overview for Dashboards
 router.get('/overview', async (req, res) => {
   try {
-    const { tenant_id, executive_id, view = 'overall' } = req.query;
+    let { tenant_id, executive_id, view = 'overall' } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
+
+    const callerRole = normalizeRole(req.user?.role || '');
+    const isPlatform = req.user ? isPlatformRole(req.user) : false;
+    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+
+    // If caller cannot view all sales, strictly force view='self' and executive_id=req.user.id
+    if (!canViewAll) {
+      view = 'self';
+      executive_id = req.user?.id || executive_id;
+    }
 
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -280,8 +310,16 @@ router.get('/overview', async (req, res) => {
 // 1b. Sales Analytics (Monthly breakdown for the year)
 router.get('/analytics', async (req, res) => {
   try {
-    const { tenant_id, executive_id, year } = req.query;
+    let { tenant_id, executive_id, year } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
+
+    const callerRole = normalizeRole(req.user?.role || '');
+    const isPlatform = req.user ? isPlatformRole(req.user) : false;
+    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+
+    if (!canViewAll) {
+      executive_id = req.user?.id || executive_id;
+    }
 
     const targetYear = parseInt(year) || new Date().getFullYear();
     const startOfYear = `${targetYear}-01-01`;
@@ -391,6 +429,15 @@ router.get('/leaderboard', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const b = req.body;
+    const callerRole = normalizeRole(req.user?.role || '');
+    const isPlatform = req.user ? isPlatformRole(req.user) : false;
+    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+
+    // If caller cannot manage/reassign sales, ensure sale is recorded under their own executive ID
+    const effectiveExecutiveId = (!canViewAll || !b.sales_executive_id)
+      ? (req.user?.id || b.sales_executive_id)
+      : b.sales_executive_id;
+
     const metadataJson = b.metadata
       ? (typeof b.metadata === 'object' ? JSON.stringify(b.metadata) : b.metadata)
       : '{}';
@@ -413,7 +460,7 @@ router.post('/', async (req, res) => {
          $36, $37, $38, $39, $40)
        RETURNING *`,
       [
-        b.tenant_id, b.customer_id || null, b.project_id, b.sales_executive_id, b.team_leader_id || null,
+        b.tenant_id, b.customer_id || null, b.project_id, effectiveExecutiveId, b.team_leader_id || null,
         b.sale_date || new Date().toISOString().split('T')[0], b.property_type || null, b.unit_number || null,
         b.area_sqft || 0, b.rate_per_sqft || 0, b.base_price || 0, b.total_revenue || 0, b.booking_amount || 0,
         b.status || 'booked',
@@ -492,13 +539,29 @@ router.patch('/:id', async (req, res) => {
 // 4. Payments for Sales
 router.get('/payments', async (req, res) => {
   try {
-    const { tenant_id, sale_id } = req.query;
+    const { tenant_id, sale_id, executive_id, scope } = req.query;
     let sql = 'SELECT * FROM payments WHERE tenant_id = $1';
     const params = [tenant_id];
 
     if (sale_id) {
       params.push(sale_id);
       sql += ` AND sale_id = $${params.length}`;
+    }
+
+    const callerRole = normalizeRole(req.user?.role || '');
+    const isPlatform = req.user ? isPlatformRole(req.user) : false;
+    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+
+    let effectiveExecId = executive_id;
+    if (!canViewAll) {
+      effectiveExecId = req.user?.id;
+    } else if (scope === 'my') {
+      effectiveExecId = req.user?.id;
+    }
+
+    if (effectiveExecId && effectiveExecId !== 'all') {
+      params.push(effectiveExecId);
+      sql += ` AND sale_id IN (SELECT id FROM sales WHERE tenant_id = $1 AND sales_executive_id = $${params.length})`;
     }
 
     sql += ' ORDER BY payment_date DESC';

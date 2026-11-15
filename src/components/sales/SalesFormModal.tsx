@@ -42,6 +42,10 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
     const staffList = useQuery(api.profiles.listActiveStaff, profile?.tenant_id ? { tenant_id: profile.tenant_id as Id<"tenants"> } : "skip");
 
     // Memoized dropdown options with automatic fallbacks so options are never empty
+    const currentUserId = String(profile?.id || (profile as any)?._id || '');
+    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    const canReassignExecutive = ['super_admin', 'admin', 'director', 'platform_admin', 'sales_manager', 'team_leader'].includes(normalizedRole);
+
     const executiveOptions = useMemo(() => {
         const rawStaff = Array.isArray(staffList) ? staffList : [];
         const rawExecs = Array.isArray(executives) ? executives : [];
@@ -233,7 +237,7 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                 customerName: '',
                 customerPhone: '',
                 customerEmail: '',
-                executiveId: '',
+                executiveId: currentUserId || '',
                 bookingDate: new Date().toISOString().slice(0, 10),
                 projectId: '',
                 unitNumber: '',
@@ -563,12 +567,19 @@ export function SalesFormModal({ isOpen, onClose, onSuccess, editingSale }: Sale
                             />
                             <Select 
                                 label="Sales Executive" 
-                                value={formData.executiveId} 
+                                value={formData.executiveId || currentUserId} 
                                 onChange={e => setFormData({ ...formData, executiveId: e.target.value })} 
-                                options={[
-                                    { label: 'Select Sales Executive', value: '' },
-                                    ...executiveOptions
-                                ]} 
+                                options={
+                                    canReassignExecutive
+                                        ? [
+                                            { label: 'Select Sales Executive', value: '' },
+                                            ...executiveOptions
+                                          ]
+                                        : [
+                                            { label: `${profile?.full_name || 'My Account'} (Current User)`, value: currentUserId }
+                                          ]
+                                } 
+                                disabled={!canReassignExecutive}
                                 required 
                             />
                         </div>

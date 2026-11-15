@@ -110,8 +110,8 @@ export const salesService = {
     api.get<any[]>('/sales/leaderboard', params),
   create: (data: any) => api.post<any>('/sales', data),
   update: (id: string, data: any) => api.patch<{ success: boolean }>(`/sales/${id}`, data),
-  listPayments: (tenantId: string, saleId?: string) =>
-    api.get<any[]>('/sales/payments', { tenant_id: tenantId, sale_id: saleId }),
+  listPayments: (tenantId: string, filters?: any) =>
+    api.get<any[]>('/sales/payments', { tenant_id: tenantId, ...(typeof filters === 'string' ? { sale_id: filters } : (filters || {})) }),
   addPayment: (data: any) => api.post<any>('/sales/payments', data),
   deletePayment: (id: string) => api.delete<{ success: boolean }>(`/sales/payments/${id}`),
 };

@@ -75,9 +75,20 @@ export function AccountsPage() {
   });
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
+  // Role-based visibility
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const canViewAll = ['super_admin', 'admin', 'director', 'platform_admin', 'accountant', 'sales_manager'].includes(normalizedRole);
+  const effectiveExecId = canViewAll ? undefined : (profile?.id || (profile as any)?._id);
+
   // Queries
-  const sales = useQuery(api.sales.getSales, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
-  const payments = useQuery(api.payments.listPayments, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
+  const sales = useQuery(api.sales.getSales, tenant?._id ? { 
+    tenant_id: tenant._id,
+    executive_id: effectiveExecId
+  } : "skip") as any[];
+  const payments = useQuery(api.payments.listPayments, tenant?._id ? { 
+    tenant_id: tenant._id,
+    executive_id: effectiveExecId
+  } : "skip") as any[];
   const projects = useQuery(api.projects.listAllProjects, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
 
   // Mutations

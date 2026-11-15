@@ -11,12 +11,14 @@ export function TargetAchievement() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const userId = profile?._id as Id<"profiles">;
 
+    const execId = (profile?.id || userId) as Id<"profiles">;
+
     // Backend queries
     const targetsData = useQuery(api.targets.listTargets, 
-        tenantId ? { tenant_id: tenantId } : "skip"
+        tenantId ? { tenant_id: tenantId, user_id: execId } : "skip"
     );
     const salesData = useQuery(api.sales.listSales, 
-        tenantId ? { tenant_id: tenantId } : "skip"
+        tenantId ? { tenant_id: tenantId, executive_id: execId } : "skip"
     );
 
     const loading = !targetsData || !salesData;

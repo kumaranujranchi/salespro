@@ -24,9 +24,16 @@ export function MobileDashboard() {
     const tenantId = profile?.tenant_id as Id<"tenants">;
     const userId = profile?._id as Id<"profiles">;
 
+    const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+    const isPrivileged = ['super_admin', 'admin', 'director', 'platform_admin', 'sales_manager'].includes(normalizedRole);
+
     // Backend queries
     const overview = useQuery(api.sales.getSalesOverview, 
-        tenantId && userId ? { tenant_id: tenantId, executive_id: userId, view: 'overall' } : "skip"
+        tenantId && userId ? { 
+            tenant_id: tenantId, 
+            executive_id: userId, 
+            view: isPrivileged ? 'overall' : 'self' 
+        } : "skip"
     );
     
     const leaderboard = useQuery(api.sales.getLeaderboard,
@@ -38,7 +45,10 @@ export function MobileDashboard() {
     ) || [];
 
     const recentSales = useQuery(api.sales.listSales,
-        tenantId ? { tenant_id: tenantId } : "skip"
+        tenantId ? { 
+            tenant_id: tenantId,
+            executive_id: isPrivileged ? undefined : (profile?.id || userId)
+        } : "skip"
     )?.slice(0, 5) || [];
 
     const staff = useQuery(api.profiles.listUsersByTenant,
