@@ -493,6 +493,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <MobileLayout
         navItems={currentNavItems.filter(canAccessNavItem)}
+        navGroups={navGroups.map(g => ({
+          label: g.label,
+          items: g.items.filter(canAccessNavItem)
+        })).filter(g => g.items.length > 0)}
+        crmNavItems={crmNavItems.filter(canAccessNavItem)}
         activeModule={activeModule}
         onModuleChange={handleModuleToggle}
         hasCRMAccess={hasCRMAccess}
