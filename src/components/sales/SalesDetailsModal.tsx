@@ -4,7 +4,7 @@ import { useQuery } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { Modal } from '../ui/Modal';
 import { format, parseISO } from 'date-fns';
-import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock, MessageSquare, AlertCircle } from 'lucide-react';
+import { User, MapPin, DollarSign, Calendar, CreditCard, Ban, Pencil, Trash2, FileText, FileSpreadsheet, Share2, Lock, MessageSquare, AlertCircle, Receipt } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { UpgradeToProModal } from '../ui/UpgradeToProModal';
 import { useAuth } from '../../contexts/AuthContext';
@@ -357,17 +357,30 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
             )}
 
             {/* Payment Ledger Actions */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Payment Ledger</h4>
-                    <p className="text-xs text-gray-500">Download or share the complete statement of accounts.</p>
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 sm:p-5 border border-slate-200/70 dark:border-white/5 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-800/40 shrink-0">
+                            <Receipt size={16} />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Payment Ledger & Receipts</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Download or share official statements and payment receipts.</p>
+                        </div>
+                    </div>
+                    {paymentItems.length > 0 && (
+                        <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 rounded-full self-start sm:self-auto">
+                            {paymentItems.length} {paymentItems.length === 1 ? 'Payment' : 'Payments'}
+                        </span>
+                    )}
                 </div>
-                <div className="flex flex-wrap gap-2.5">
+
+                <div className={`grid gap-2.5 ${paymentItems.length > 0 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-3'}`}>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerPDF(sale, paymentItems, tenant)}
-                        className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                        className="w-full justify-center bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-slate-200 dark:border-slate-700 h-9 rounded-xl text-xs font-semibold shadow-2xs"
                         title="Download PDF"
                     >
                         {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileText size={14} className="mr-1.5" />}
@@ -377,7 +390,7 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
                         variant="outline"
                         size="sm"
                         onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerExcel(sale, paymentItems, tenant)}
-                        className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        className="w-full justify-center bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-slate-200 dark:border-slate-700 h-9 rounded-xl text-xs font-semibold shadow-2xs"
                         title="Download Excel"
                     >
                         {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileSpreadsheet size={14} className="mr-1.5" />}
@@ -387,7 +400,7 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
                         variant="outline"
                         size="sm"
                         onClick={isFreePlan ? handleLockedLedgerClick : () => sharePaymentLedger(sale, paymentItems, tenant)}
-                        className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="w-full justify-center bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700 h-9 rounded-xl text-xs font-semibold shadow-2xs"
                         title="Share Ledger"
                     >
                         {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Share2 size={14} className="mr-1.5" />}
@@ -398,7 +411,7 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
                             variant="outline"
                             size="sm"
                             onClick={() => sharePaymentReceiptWhatsApp(paymentItems[paymentItems.length - 1], sale, tenant)}
-                            className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                            className="w-full justify-center bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-slate-200 dark:border-slate-700 h-9 rounded-xl text-xs font-semibold shadow-2xs"
                             title="Share Latest Payment Receipt on WhatsApp"
                         >
                             <MessageSquare size={14} className="mr-1.5" />
@@ -409,14 +422,34 @@ function SalesDetailsContent({ onClose, sale, onCancel, onEdit, onDelete, canEdi
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t dark:border-white/10">
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-3 pt-4 border-t dark:border-white/10">
                 {canEdit && (
                     <>
-                        <Button variant="outline" onClick={() => onEdit?.(sale)}><Pencil size={16} className="mr-2"/> Edit</Button>
-                        <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20" onClick={() => onCancel?.(sale)}><Ban size={16} className="mr-2"/> Cancel Sale</Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => onEdit?.(sale)}
+                            className="w-full sm:w-auto h-9 rounded-xl text-xs font-semibold justify-center"
+                        >
+                            <Pencil size={15} className="mr-1.5"/> Edit
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full sm:w-auto h-9 rounded-xl text-xs font-semibold justify-center text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-900/50" 
+                            onClick={() => onCancel?.(sale)}
+                        >
+                            <Ban size={15} className="mr-1.5"/> Cancel Sale
+                        </Button>
                     </>
                 )}
-                <Button onClick={onClose}>Close</Button>
+                <Button 
+                    size="sm" 
+                    onClick={onClose}
+                    className="w-full sm:w-auto h-9 rounded-xl text-xs font-semibold justify-center"
+                >
+                    Close
+                </Button>
             </div>
 
             <UpgradeToProModal

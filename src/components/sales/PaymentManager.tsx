@@ -146,13 +146,13 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                 </div>
 
                 {/* Ledger actions bar */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-slate-50 dark:bg-slate-800/40 p-3.5 sm:p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerPDF(sale, paymentItems, tenant)}
-                            className="bg-white dark:bg-transparent text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                            className="w-full justify-center bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 h-9 rounded-xl text-xs font-semibold"
                             title="Download PDF"
                         >
                             {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileText size={14} className="mr-1.5" />}
@@ -162,7 +162,7 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                             variant="outline"
                             size="sm"
                             onClick={isFreePlan ? handleLockedLedgerClick : () => exportPaymentLedgerExcel(sale, paymentItems, tenant)}
-                            className="bg-white dark:bg-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                            className="w-full justify-center bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 h-9 rounded-xl text-xs font-semibold"
                             title="Download Excel"
                         >
                             {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <FileSpreadsheet size={14} className="mr-1.5" />}
@@ -172,7 +172,7 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                             variant="outline"
                             size="sm"
                             onClick={isFreePlan ? handleLockedLedgerClick : () => sharePaymentLedger(sale, paymentItems, tenant)}
-                            className="bg-white dark:bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            className="w-full justify-center bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-9 rounded-xl text-xs font-semibold"
                             title="Share Ledger"
                         >
                             {isFreePlan ? <Lock size={14} className="mr-1.5" /> : <Share2 size={14} className="mr-1.5" />}
@@ -180,7 +180,11 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                         </Button>
                     </div>
                     {canEdit && (
-                        <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+                        <Button 
+                            size="sm" 
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="w-full sm:w-auto h-9 rounded-xl text-xs font-semibold justify-center"
+                        >
                             <Plus size={16} className="mr-1" /> Record Payment
                         </Button>
                     )}
