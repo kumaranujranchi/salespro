@@ -1,14 +1,23 @@
-import { SelectHTMLAttributes, forwardRef } from 'react';
+import { SelectHTMLAttributes, forwardRef, ReactNode } from 'react';
+
+interface SelectOption {
+  value: string;
+  label: string;
+}
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   helperText?: string;
-  options: { value: string; label: string }[];
+  options?: SelectOption[];
+  children?: ReactNode;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className = '', label, error, helperText, options, ...props }, ref) => {
+  ({ className = '', label, error, helperText, options, children, ...props }, ref) => {
+    const hasOptionsArray = Array.isArray(options) && options.length > 0;
+    const hasBlankOption = hasOptionsArray && options.some(opt => opt.value === '');
+
     return (
       <div className="w-full">
         {label && (
@@ -29,12 +38,20 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           `}
           {...props}
         >
-          <option value="" className="dark:bg-gray-900">Select an option</option>
-          {options.map((option, index) => (
-            <option key={`${option.value}-${index}`} value={option.value} className="dark:bg-gray-900">
-              {option.label}
-            </option>
-          ))}
+          {hasOptionsArray ? (
+            <>
+              {!hasBlankOption && !props.value && (
+                <option value="" className="dark:bg-gray-900">Select an option</option>
+              )}
+              {options.map((option, index) => (
+                <option key={`${option.value}-${index}`} value={option.value} className="dark:bg-gray-900">
+                  {option.label}
+                </option>
+              ))}
+            </>
+          ) : (
+            children
+          )}
         </select>
         {error && (
           <p className="mt-1 text-sm text-[#C62828]">{error}</p>

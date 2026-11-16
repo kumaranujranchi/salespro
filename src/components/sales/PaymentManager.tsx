@@ -21,6 +21,20 @@ interface PaymentManagerProps {
     canEdit?: boolean;
 }
 
+const PAYMENT_TYPE_OPTIONS = [
+    { value: 'booking_amount', label: 'Booking Amount' },
+    { value: 'installment', label: 'Installment' },
+    { value: 'part_payment', label: 'Part Payment' },
+    { value: 'registry_charge', label: 'Registry Charge' },
+];
+
+const PAYMENT_MODE_OPTIONS = [
+    { value: 'cheque', label: 'Cheque' },
+    { value: 'neft_rtgs', label: 'NEFT / RTGS' },
+    { value: 'upi', label: 'UPI / Online' },
+    { value: 'cash', label: 'Cash' },
+];
+
 export function PaymentManager(props: PaymentManagerProps) {
     if (!props.isOpen || !props.sale) return null;
     return <PaymentManagerContent {...props} />;
@@ -62,19 +76,29 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!sale || !profile?.tenant_id) return;
+
+        const numAmount = parseFloat(paymentData.amount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            toast.error("Please enter a valid payment amount");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
+            const saleDocId = String(sale._id || sale.id);
+            const recordedBy = String(profile.id || (profile as any)?._id || '');
+
             await addPayment({
                 tenant_id: profile.tenant_id as Id<"tenants">,
-                sale_id: (sale._id || sale.id) as Id<"sales">,
+                sale_id: saleDocId as Id<"sales">,
                 payment_date: paymentData.paymentDate,
-                amount: parseFloat(paymentData.amount),
+                amount: numAmount,
                 payment_type: paymentData.paymentType,
                 payment_mode: paymentData.paymentMode,
-                remarks: paymentData.remarks,
-                transaction_reference: paymentData.transactionReference,
-                recorded_by: profile.id as Id<"profiles">
+                remarks: paymentData.remarks.trim() || undefined,
+                transaction_reference: paymentData.transactionReference.trim() || undefined,
+                recorded_by: recordedBy ? (recordedBy as Id<"profiles">) : undefined
             });
 
             toast.success("Payment recorded successfully");
@@ -116,9 +140,9 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
         <Modal isOpen={isOpen} onClose={onClose} title={`Payments - ${customerDisplayName}`} size="xl">
             <div className="p-6 space-y-6">
                 <div className="grid grid-cols-3 gap-4">
-                    <SummaryCard title="Total Value" value={formatCurrency(totalRevenue)} color="text-gray-900" />
-                    <SummaryCard title="Received" value={formatCurrency(totalReceived)} color="text-green-600" subtitle={`${receivedPercentage.toFixed(1)}%`} />
-                    <SummaryCard title="Pending" value={formatCurrency(pendingAmount)} color="text-red-600" />
+                    <SummaryCard title="Total Value" value={formatCurrency(totalRevenue)} color="text-slate-900 dark:text-white" />
+                    <SummaryCard title="Received" value={formatCurrency(totalReceived)} color="text-emerald-600 dark:text-emerald-400" subtitle={`${receivedPercentage.toFixed(1)}%`} />
+                    <SummaryCard title="Pending" value={formatCurrency(pendingAmount)} color="text-red-600 dark:text-red-400" />
                 </div>
 
                 {/* Ledger actions bar */}
@@ -163,45 +187,65 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                 </div>
 
                 {showAddForm && (
-                    <form onSubmit={handleAddPayment} className="p-4 bg-gray-50 rounded-lg border space-y-4">
-                        <h4 className="font-bold text-sm">New Payment Entry</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-xs text-gray-500">Date</label>
-                                <Input type="date" value={paymentData.paymentDate} onChange={e => setPaymentData({...paymentData, paymentDate: e.target.value})} required />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500">Amount (₹)</label>
-                                <Input type="number" step="0.01" value={paymentData.amount} onChange={e => setPaymentData({...paymentData, amount: e.target.value})} required placeholder="0.00" />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500">Payment Type</label>
-                                <Select value={paymentData.paymentType} onChange={e => setPaymentData({...paymentData, paymentType: e.target.value})}>
-                                    <option value="booking_amount">Booking Amount</option>
-                                    <option value="installment">Installment</option>
-                                    <option value="part_payment">Part Payment</option>
-                                    <option value="registry_charge">Registry Charge</option>
-                                </Select>
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-500">Mode</label>
-                                <Select value={paymentData.paymentMode} onChange={e => setPaymentData({...paymentData, paymentMode: e.target.value})}>
-                                    <option value="cheque">Cheque</option>
-                                    <option value="neft_rtgs">NEFT/RTGS</option>
-                                    <option value="upi">UPI</option>
-                                    <option value="cash">Cash</option>
-                                </Select>
-                            </div>
+                    <form onSubmit={handleAddPayment} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-4">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-white">New Payment Entry</h4>
+                            <button 
+                                type="button" 
+                                onClick={() => setShowAddForm(false)} 
+                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                                <X size={16} />
+                            </button>
                         </div>
-                        <div>
-                            <label className="text-xs text-gray-500">Reference / Cheque No.</label>
-                            <Input value={paymentData.transactionReference} onChange={e => setPaymentData({...paymentData, transactionReference: e.target.value})} placeholder="UTR / Cheque No" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Input 
+                                label="Payment Date" 
+                                type="date" 
+                                value={paymentData.paymentDate} 
+                                onChange={e => setPaymentData({...paymentData, paymentDate: e.target.value})} 
+                                required 
+                            />
+                            <Input 
+                                label="Amount (₹)" 
+                                type="number" 
+                                step="0.01" 
+                                min="0.01"
+                                value={paymentData.amount} 
+                                onChange={e => setPaymentData({...paymentData, amount: e.target.value})} 
+                                required 
+                                placeholder="0.00" 
+                            />
+                            <Select 
+                                label="Payment Type" 
+                                value={paymentData.paymentType} 
+                                onChange={e => setPaymentData({...paymentData, paymentType: e.target.value})}
+                                options={PAYMENT_TYPE_OPTIONS}
+                                required
+                            />
+                            <Select 
+                                label="Payment Mode" 
+                                value={paymentData.paymentMode} 
+                                onChange={e => setPaymentData({...paymentData, paymentMode: e.target.value})}
+                                options={PAYMENT_MODE_OPTIONS}
+                                required
+                            />
                         </div>
-                        <div>
-                            <label className="text-xs text-gray-500">Remarks</label>
-                            <Input value={paymentData.remarks} onChange={e => setPaymentData({...paymentData, remarks: e.target.value})} placeholder="Optional remarks" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Input 
+                                label="Reference / Cheque No." 
+                                value={paymentData.transactionReference} 
+                                onChange={e => setPaymentData({...paymentData, transactionReference: e.target.value})} 
+                                placeholder="UTR / Cheque No (optional)" 
+                            />
+                            <Input 
+                                label="Remarks" 
+                                value={paymentData.remarks} 
+                                onChange={e => setPaymentData({...paymentData, remarks: e.target.value})} 
+                                placeholder="Optional remarks" 
+                            />
                         </div>
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                             <Button variant="ghost" size="sm" type="button" onClick={() => setShowAddForm(false)}>Cancel</Button>
                             <Button size="sm" type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Payment"}</Button>
                         </div>
@@ -209,58 +253,74 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
                 )}
 
                 {/* History Table */}
-                <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+                    <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800">
                             <tr>
-                                <th className="px-4 py-2">Date</th>
-                                <th className="px-4 py-2">Type</th>
-                                <th className="px-4 py-2 text-right">Amount</th>
-                                <th className="px-4 py-2 text-right">Actions</th>
+                                <th className="px-4 py-2.5">Date</th>
+                                <th className="px-4 py-2.5">Type</th>
+                                <th className="px-4 py-2.5">Mode</th>
+                                <th className="px-4 py-2.5 text-right">Amount</th>
+                                <th className="px-4 py-2.5 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y">
-                            {paymentItems.map(p => (
-                                <tr key={p._id || p.id}>
-                                    <td className="px-4 py-2">{p.payment_date}</td>
-                                    <td className="px-4 py-2 capitalize">{p.payment_type}</td>
-                                    <td className="px-4 py-2 text-right font-bold">{formatCurrency(p.amount)}</td>
-                                    <td className="px-4 py-2 text-right">
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <button
-                                                type="button"
-                                                onClick={() => exportPaymentReceiptPDF(p, sale, tenant)}
-                                                className="p-1 rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
-                                                title="Download Payment Receipt (PDF)"
-                                            >
-                                                <Receipt size={15} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => sharePaymentReceiptWhatsApp(p, sale, tenant)}
-                                                className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
-                                                title="Share Receipt on WhatsApp"
-                                            >
-                                                <MessageSquare size={15} />
-                                            </button>
-                                            {canEdit && (
-                                                <button 
-                                                    onClick={async () => {
-                                                        if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
-                                                             await deletePayment({ id: p._id || p.id });
-                                                            toast.success("Payment record deleted successfully");
-                                                        }
-                                                    }} 
-                                                    className="text-red-500 hover:text-red-700 ml-1 p-1 rounded hover:bg-red-50"
-                                                    title="Delete Payment"
-                                                >
-                                                    <X size={14}/>
-                                                </button>
-                                            )}
-                                        </div>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {paymentItems.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500">
+                                        No payments recorded yet. Click <strong>&quot;+ Record Payment&quot;</strong> above to add the first installment or booking amount.
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                paymentItems.map(p => (
+                                    <tr key={p._id || p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">{p.payment_date}</td>
+                                        <td className="px-4 py-2.5 capitalize text-slate-600 dark:text-slate-400">
+                                            {String(p.payment_type || '').replace(/_/g, ' ')}
+                                        </td>
+                                        <td className="px-4 py-2.5 uppercase text-slate-500 dark:text-slate-400 text-[10px]">
+                                            {String(p.payment_mode || '').replace(/_/g, ' ')}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                            {formatCurrency(p.amount)}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => exportPaymentReceiptPDF(p, sale, tenant)}
+                                                    className="p-1 rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                                    title="Download Payment Receipt (PDF)"
+                                                >
+                                                    <Receipt size={15} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => sharePaymentReceiptWhatsApp(p, sale, tenant)}
+                                                    className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                                    title="Share Receipt on WhatsApp"
+                                                >
+                                                    <MessageSquare size={15} />
+                                                </button>
+                                                {canEdit && (
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if (await dialog.confirm("Are you sure you want to delete this payment record?")) {
+                                                                await deletePayment({ id: p._id || p.id });
+                                                                toast.success("Payment record deleted successfully");
+                                                            }
+                                                        }} 
+                                                        className="text-red-500 hover:text-red-700 ml-1 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                                        title="Delete Payment"
+                                                    >
+                                                        <X size={14}/>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -279,10 +339,10 @@ function PaymentManagerContent({ isOpen, onClose, sale, canEdit = false }: Payme
 
 function SummaryCard({ title, value, color, subtitle }: any) {
     return (
-        <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <p className="text-xs text-gray-500">{title}</p>
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-2xs">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{title}</p>
             <p className={`text-xl font-bold ${color}`}>{value}</p>
-            {subtitle && <p className="text-[10px] text-gray-400">{subtitle}</p>}
+            {subtitle && <p className="text-[10px] text-slate-400 dark:text-slate-500">{subtitle}</p>}
         </div>
     );
 }

@@ -320,10 +320,16 @@ async function resolveApiCall(functionKey: any, args: any) {
     return await salesService.listPayments(args?.tenant_id, args);
   }
   if (key.includes('payments.addPayment') || key.includes('payments.add')) {
-    return await salesService.addPayment(args);
+    const res = await salesService.addPayment(args);
+    invalidateQuery('payments');
+    invalidateQuery('sales');
+    return res;
   }
   if (key.includes('payments.deletePayment') || key.includes('payments.delete') || key.includes('payments.remove')) {
-    return await salesService.deletePayment(args?.id || args?._id);
+    const res = await salesService.deletePayment(args?.id || args?._id);
+    invalidateQuery('payments');
+    invalidateQuery('sales');
+    return res;
   }
 
   // PROJECTS & INVENTORY - UNITS
