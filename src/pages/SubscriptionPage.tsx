@@ -288,7 +288,7 @@ export function SubscriptionPage() {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textDark[0], textDark[1], textDark[2]);
     doc.text(`Invoice Date: ${invDate}`, invBoxX + 4, sellerY + 9);
-    doc.text(`Payment Gateway: Razorpay Online`, invBoxX + 4, sellerY + 14);
+    doc.text('Payment Mode: Online (UPI / Card / NetBanking)', invBoxX + 4, sellerY + 14);
     doc.text(`Payment ID: ${paymentId}`, invBoxX + 4, sellerY + 19);
 
     // Status Paid pill
@@ -305,6 +305,19 @@ export function SubscriptionPage() {
     const address = profileForm.address || companyProfile?.address || '';
     const email = profileForm.email || companyProfile?.email || (tenant as any)?.email || '';
     const phone = profileForm.phone || companyProfile?.phone || '';
+
+    // Clean plan name (strip raw gateway texts like "via Razorpay", "(monthly)")
+    let cleanPlanName = 'RealSalePro Pro Plan';
+    if (record.description) {
+      cleanPlanName = record.description
+        .replace(/via\s+razorpay/gi, '')
+        .replace(/\(monthly\)/gi, '')
+        .replace(/\(yearly\)/gi, '')
+        .trim();
+      if (!cleanPlanName || cleanPlanName.toLowerCase() === 'subscription') {
+        cleanPlanName = 'RealSalePro Pro Plan';
+      }
+    }
 
     const billBoxY = 72;
     const billBoxH = 26;
@@ -348,7 +361,7 @@ export function SubscriptionPage() {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textDark[0], textDark[1], textDark[2]);
-    doc.text(`Subscription Plan: ${record.description || 'RealSalePro Pro Plan'}`, custRightX, billBoxY + 10.5);
+    doc.text(`Subscription Plan: ${cleanPlanName}`, custRightX, billBoxY + 10.5);
     doc.text(`Billing Cycle: Monthly Subscription`, custRightX, billBoxY + 15.5);
     doc.text(`Payment Status: Paid in Full (Online)`, custRightX, billBoxY + 20.5);
 
@@ -361,7 +374,7 @@ export function SubscriptionPage() {
       body: [
         [
           '1',
-          `${record.description || 'RealSalePro Pro Plan Subscription'}\n• Real Estate Cloud CRM Platform Access & Features`,
+          `${cleanPlanName} Subscription\n• Real Estate Cloud CRM Platform Access & Features`,
           'Monthly',
           '1',
           `INR ${totalAmount.toFixed(2)}`,
@@ -451,7 +464,7 @@ export function SubscriptionPage() {
     doc.text('Terms & Conditions:', 14, footerY + 4.5);
     doc.text('1. All software subscriptions and CRM services are delivered digitally via cloud infrastructure.', 14, footerY + 8);
     doc.text('2. This is an authentic computer-generated digital invoice and does not require a physical signature.', 14, footerY + 11.5);
-    doc.text('3. Secured & processed online via Razorpay Payments Software.', 14, footerY + 15);
+    doc.text('3. Secured digital payment verified & confirmed.', 14, footerY + 15);
 
     // Signatory
     const sigX = 145;
