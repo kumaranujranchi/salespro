@@ -1216,10 +1216,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="footer__col">
           <h3>Company</h3>
           <a href="#stories">About us</a>
-          <a href="https://realsalepro.com/referral-program">Refer &amp; earn</a>
-          <a href="https://realsalepro.com/contact">Careers</a>
-          <a href="https://realsalepro.com/contact">Contact</a>
-          <a href="https://realsalepro.com/pricing">Pricing</a>
           <a href="/referral-program">Refer &amp; earn</a>
           <a href="/affiliate/terms">Affiliate Program</a>
           <a href="/contact">Contact Support</a>
@@ -1239,14 +1235,8 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <div class="footer__wordmark" aria-hidden="true">RealSalePro</div>
 
       <div class="footer__bottom">
-        <p>© <span id="year">2025</span> RealSalePro. All rights reserved.</p>
         <p>© <span id="year">2026</span> RealSalePro. All rights reserved.</p>
         <div class="footer__legal">
-          <a href="https://realsalepro.com/privacy">Privacy Policy</a>
-          <a href="https://realsalepro.com/terms">Terms of Service</a>
-          <a href="https://realsalepro.com/refund-policy">Refund Policy</a>
-          <a href="https://realsalepro.com/shipping-policy">Shipping Policy</a>
-          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
           <a href="/refund-policy">Refund Policy</a>
