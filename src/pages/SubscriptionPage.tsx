@@ -634,7 +634,7 @@ export function SubscriptionPage() {
                         Unlock Full CRM Scale with <span className="bg-gradient-to-r from-[#00E576] to-[#69F0AE] bg-clip-text text-transparent">RealSalePro Pro</span>
                       </h2>
                       <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-                        You are currently on the Free Starter plan (capped at 1,000 leads). Upgrade your workspace to unlock 2,00,000 leads storage, unlimited team accounts, DeepSeek AI Copilot, automated Meta webhooks, and priority WhatsApp support.
+                        You are currently on the Free Starter plan (capped at 1,000 leads). Upgrade your workspace to unlock 2,00,000 leads storage, unlimited team accounts, AI Sales Copilot, automated Meta webhooks, and priority WhatsApp support.
                       </p>
                     </div>
 
@@ -860,10 +860,13 @@ export function SubscriptionPage() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-3.5">Feature / Module</th>
-                      <th className="px-6 py-3.5 text-center">Free Forever Plan</th>
-                      <th className="px-6 py-3.5 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300">
-                        Pro Plan (Recommended)
+                      <th className="w-5/12 px-6 py-4 text-left">Feature / Module</th>
+                      <th className="w-3/12 px-6 py-4 text-left">Free Forever Plan</th>
+                      <th className="w-4/12 px-6 py-4 text-left bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 border-l border-emerald-500/20">
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span>Pro Plan (Recommended)</span>
+                        </div>
                       </th>
                     </tr>
                   </thead>
@@ -873,9 +876,12 @@ export function SubscriptionPage() {
                         Leads Storage Capacity
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Total customer leads stored in your workspace</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">1,000 Leads</td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        2,00,000 Leads (200x)
+                      <td className="px-6 py-4 text-left text-slate-600 dark:text-slate-300 font-medium">1,000 Leads</td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>2,00,000 Leads (200x)</span>
+                        </div>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
@@ -883,21 +889,27 @@ export function SubscriptionPage() {
                         Team Member Accounts
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Admins, sales managers, telecallers, and executives</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Up to 5 Users</td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        Unlimited Team Users
+                      <td className="px-6 py-4 text-left text-slate-600 dark:text-slate-300 font-medium">Up to 5 Users</td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Unlimited Team Users</span>
+                        </div>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
-                        DeepSeek AI Sales Copilot
+                        AI Sales Copilot
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">AI lead qualification, follow-up suggestions &amp; intelligence</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-400 font-medium">
-                        <span className="inline-flex items-center gap-1 text-slate-400 text-xs"><Lock className="w-3.5 h-3.5" /> Locked</span>
+                      <td className="px-6 py-4 text-left text-slate-400 font-medium">
+                        <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs"><Lock className="w-3.5 h-3.5" /> Locked</span>
                       </td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        Unlimited AI Responses
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Unlimited AI Responses</span>
+                        </div>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
@@ -905,9 +917,12 @@ export function SubscriptionPage() {
                         Meta Ads &amp; Portal Integrations
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Facebook, Instagram, 99acres, Housing.com webhooks</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Basic / Manual</td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        Automated Live Webhooks
+                      <td className="px-6 py-4 text-left text-slate-600 dark:text-slate-300 font-medium">Basic / Manual</td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Automated Live Webhooks</span>
+                        </div>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
@@ -915,9 +930,12 @@ export function SubscriptionPage() {
                         Bulk Data Export &amp; Lead Deletion
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Export to Excel/CSV and permanent lead cleanup</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-400 font-medium">Restricted</td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        Full Admin Privileges
+                      <td className="px-6 py-4 text-left text-slate-400 font-medium">Restricted</td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Full Admin Privileges</span>
+                        </div>
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
@@ -925,9 +943,12 @@ export function SubscriptionPage() {
                         Customer &amp; Technical Support
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Response time and support channels</p>
                       </td>
-                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Standard Email</td>
-                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
-                        Dedicated WhatsApp &amp; Priority
+                      <td className="px-6 py-4 text-left text-slate-600 dark:text-slate-300 font-medium">Standard Email</td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Dedicated WhatsApp &amp; Priority</span>
+                        </div>
                       </td>
                     </tr>
                   </tbody>

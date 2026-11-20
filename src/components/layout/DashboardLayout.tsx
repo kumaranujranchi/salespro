@@ -357,7 +357,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       console.error('AI chat error:', err);
       const isProErr = String(err?.message || '').includes('PRO_REQUIRED') || String(err?.message || '').includes('exclusive Pro Plan feature');
       const errReply = isProErr
-        ? "🔒 **AI Sales Copilot is exclusive to Pro Plan.**\n\nPlease upgrade your organization's subscription to Pro to enjoy real-time AI sales coaching powered by DeepSeek."
+        ? "🔒 **AI Sales Copilot is exclusive to Pro Plan.**\n\nPlease upgrade your organization's subscription to Pro to enjoy real-time AI sales coaching."
         : "I'm your RealSalePro AI Sales Copilot. How can I assist you with your sales pipeline, property pitches, or CRM workflows today?";
       setChatMessages([
         ...updatedMessages,
@@ -1145,7 +1145,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#0A1C37] animate-pulse"></span>
                   <span className="text-[10px] text-[#0A1C37] opacity-80 font-medium">
-                    {isProPlan ? 'Powered by DeepSeek AI' : 'Pro Plan Exclusive'}
+                    {isProPlan ? 'AI Sales Copilot' : 'Pro Plan Exclusive'}
                   </span>
                 </div>
               </div>
@@ -1183,7 +1183,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   AI Sales Copilot
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Real-time sales coaching powered by DeepSeek AI. Master real estate objection handling, cold calling scripts, and complete RealSalePro CRM processes.
+                  Real-time sales coaching powered by AI. Master real estate objection handling, cold calling scripts, and complete RealSalePro CRM processes.
                 </p>
               </div>
 
@@ -1202,7 +1202,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
                 <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <Sparkles size={14} className="text-emerald-500 shrink-0" />
-                  <span>DeepSeek AI Conversational Intelligence</span>
+                  <span>AI Conversational Intelligence</span>
                 </div>
               </div>
 
@@ -1288,7 +1288,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         featureName="AI Sales Copilot"
-        description="Upgrade to RealSalePro Pro to unlock DeepSeek-powered AI Sales Copilot, real-time sales coaching, cold calling scripts, and complete CRM workflow guidance."
+        description="Upgrade to RealSalePro Pro to unlock AI Sales Copilot, real-time sales coaching, cold calling scripts, and complete CRM workflow guidance."
       />
     </div>
   );

@@ -312,7 +312,7 @@ export function UpgradeToProModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-200">
                   <div className="flex items-center gap-2">
                     <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
-                    <span><strong>DeepSeek AI Copilot</strong></span>
+                    <span><strong>AI Sales Copilot</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
