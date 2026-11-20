@@ -26,6 +26,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ImageCropper } from '../components/ImageCropper';
 import { useToast } from '../contexts/ToastContext';
+import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
 
 // Helper to resolve logo URL
 function LogoPreview({ storageId }: { storageId: string }) {
@@ -69,6 +70,7 @@ export function SubscriptionPage() {
     logo_url: ''
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const initialLoadDone = useRef(false);
 
   // Backend mutations
@@ -399,8 +401,8 @@ export function SubscriptionPage() {
             </div>
             {!isActive && (
               <button
-                onClick={() => navigate('/pricing')}
-                className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 shrink-0"
+                onClick={() => setShowUpgradeModal(true)}
+                className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <Zap className="w-4 h-4" />
                 Upgrade
@@ -695,8 +697,8 @@ export function SubscriptionPage() {
                 <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
                   Manage up to 2,00,000 leads and unlock unlimited team users. Upgrade now.
                 </p>
-                <button onClick={() => navigate('/pricing')} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
-                  View Plans →
+                <button onClick={() => setShowUpgradeModal(true)} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
+                  Upgrade to Pro Now →
                 </button>
               </div>
             )}
@@ -790,6 +792,14 @@ export function SubscriptionPage() {
           cropShape="rect"
         />
       )}
+
+      {/* In-App Direct Upgrade Modal */}
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="RealSalePro Pro Plan"
+        description="Upgrade your workspace directly via UPI or cards to unlock 2,00,000 leads, unlimited users, and AI Copilot."
+      />
     </div>
   );
 }
