@@ -120,29 +120,32 @@ export function PlatformDashboard() {
       </div>
 
       {/* DPDP Act (India) Compliance & 3-Year Retention Hub */}
-      <div className="bg-gradient-to-br from-emerald-950/20 via-[#071d14] to-[#04120c] border-2 border-emerald-500/30 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+      <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 rounded-2xl p-6 shadow-md shadow-emerald-500/5 relative overflow-hidden">
+        {/* Subtle decorative emerald accent glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 shadow-xs">
                 🇮🇳 DPDP Act, 2023 Statutory Compliance
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-black/40 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> 3-Year Immutable WORM
+              <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shadow-xs">
+                <Lock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 3-Year Immutable WORM
               </span>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Privacy &amp; Cookie Consent Audit Ledger
             </h2>
-            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-normal">
               Verifiable proof of consent records for CRM landing page visitors. Protected by engine-level database triggers that prevent accidental update or deletion.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 relative z-10">
             <Link
               to="/platform/consent-audit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs sm:text-sm hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/25 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/25 cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Open Consent Audit Ledger</span>
@@ -153,28 +156,28 @@ export function PlatformDashboard() {
 
         {/* Quick Metrics */}
         {consentSummary && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-emerald-500/15">
-            <div className="bg-black/30 p-3 rounded-xl border border-emerald-500/20">
-              <span className="text-[11px] text-slate-400 block">Total Logged Proofs</span>
-              <span className="text-lg font-bold text-white mt-0.5 block">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 relative z-10">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">Total Logged Proofs</span>
+              <span className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1 block">
                 {Number(consentSummary.total_records || 0).toLocaleString()}
               </span>
             </div>
-            <div className="bg-black/30 p-3 rounded-xl border border-emerald-500/20">
-              <span className="text-[11px] text-emerald-400 block">Granted (Opt-In)</span>
-              <span className="text-lg font-bold text-emerald-300 mt-0.5 block">
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/70 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 block">Granted (Opt-In)</span>
+              <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 block">
                 {Number(consentSummary.granted_count || 0).toLocaleString()}
               </span>
             </div>
-            <div className="bg-black/30 p-3 rounded-xl border border-emerald-500/20">
-              <span className="text-[11px] text-slate-400 block">Rejected (Essential Only)</span>
-              <span className="text-lg font-bold text-slate-300 mt-0.5 block">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">Rejected (Essential Only)</span>
+              <span className="text-2xl font-extrabold text-slate-700 dark:text-slate-300 mt-1 block">
                 {Number(consentSummary.rejected_count || 0).toLocaleString()}
               </span>
             </div>
-            <div className="bg-black/30 p-3 rounded-xl border border-emerald-500/20">
-              <span className="text-[11px] text-amber-400 block">Withdrawn (Revoked)</span>
-              <span className="text-lg font-bold text-amber-300 mt-0.5 block">
+            <div className="bg-amber-50/70 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200 dark:border-amber-800/70 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-400 block">Withdrawn (Revoked)</span>
+              <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1 block">
                 {Number(consentSummary.withdrawn_count || 0).toLocaleString()}
               </span>
             </div>
