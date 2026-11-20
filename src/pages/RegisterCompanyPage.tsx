@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useAction } from "../lib/reactive";
 import { api } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
-import { authService } from '../lib/services';
+import { authService, whatsappHubService } from '../lib/services';
 import {
   ArrowRight,
   ArrowLeft,
@@ -19,7 +19,8 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 import { SEOHead } from '../components/seo/SEOHead';
 
@@ -89,13 +90,27 @@ export function RegisterCompanyPage() {
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
+      let waSuccess = false;
+      if (formData.phone && formData.phone.trim()) {
+        try {
+          const waRes = await whatsappHubService.sendOtp(formData.phone.trim(), 'signup_verification', newOtp);
+          if (waRes?.success) waSuccess = true;
+        } catch (waErr) {
+          console.warn('WhatsApp OTP resend warning:', waErr);
+        }
+      }
+
       await authService.sendRegistrationOtp({
         email: formData.email.trim(),
         name: formData.fullName.trim(),
         otp: newOtp
       });
       
-      setSuccess(`A fresh 6-digit code has been sent to ${formData.email}.`);
+      setSuccess(
+        waSuccess
+          ? `A fresh 6-digit verification code has been sent to your WhatsApp and Email.`
+          : `A fresh 6-digit code has been sent to ${formData.email}.`
+      );
       setResendTimer(30);
     } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Failed to resend verification code');
@@ -131,10 +146,24 @@ export function RegisterCompanyPage() {
         return;
       }
 
-      // 2. Generate and dispatch secure 6-digit OTP via verified Hostinger SMTP
+      // 2. Generate and dispatch secure 6-digit OTP
       const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(newOtp);
 
+      // A. Dispatch via WhatsApp if mobile phone number is provided
+      let waSuccess = false;
+      if (formData.phone && formData.phone.trim()) {
+        try {
+          const waRes = await whatsappHubService.sendOtp(formData.phone.trim(), 'signup_verification', newOtp);
+          if (waRes?.success) {
+            waSuccess = true;
+          }
+        } catch (waErr) {
+          console.warn('WhatsApp OTP dispatch warning:', waErr);
+        }
+      }
+
+      // B. Dispatch via verified Email (Ensures 100% reliable backup)
       await authService.sendRegistrationOtp({
         email: formData.email.trim(),
         name: formData.fullName.trim(),
@@ -143,7 +172,11 @@ export function RegisterCompanyPage() {
 
       setVerificationStep(true);
       setResendTimer(30);
-      setSuccess(`Verification code sent to ${formData.email}! Please check your inbox.`);
+      setSuccess(
+        waSuccess
+          ? `Verification code sent to your WhatsApp (${formData.phone}) and Email (${formData.email})!`
+          : `Verification code sent to ${formData.email}! Please check your inbox.`
+      );
     } catch (err: any) {
       if (err?.status === 409 || err?.message?.toLowerCase().includes('already registered')) {
         setIsAlreadyRegistered(true);
@@ -481,11 +514,17 @@ export function RegisterCompanyPage() {
               /* Step 2: OTP Verification Form with Generous Spacing */
               <form className="space-y-6" onSubmit={verifyOtpAndRegister}>
                 
-                {/* Email Chip Banner */}
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
-                    <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{formData.email}</span>
+                {/* Verification Target Chips */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {formData.phone && (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>WhatsApp: {formData.phone}</span>
+                    </div>
+                  )}
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-xs font-medium">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Email: {formData.email}</span>
                   </div>
                 </div>
 
@@ -512,7 +551,7 @@ export function RegisterCompanyPage() {
                   </div>
 
                   <p className="text-xs text-slate-400 mt-2">
-                    Check your inbox or spam folder if you haven't received the code.
+                    Check your WhatsApp or email inbox for your 6-digit verification code.
                   </p>
                 </div>
 
