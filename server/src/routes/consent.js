@@ -2,6 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { recordConsent, getLatestConsent, getConsentAuditLogs } from '../services/consentService.js';
 import { requireAuth } from '../middleware/auth.js';
+import { query } from '../db/index.js';
 
 const router = Router();
 
@@ -204,6 +205,101 @@ router.get('/export-csv', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Failed to export DPDP CSV audit logs:', err);
     return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/consent/delete-account & /api/consent/delete-account
+ * Registered User Self-Service Account & Personal Data Deletion
+ * Statutory implementation of DPDP Act, 2023 Section 12 (Right to Erasure)
+ */
+router.post('/delete-account', requireAuth, async (req, res) => {
+  try {
+    const { confirmation } = req.body || {};
+    if (confirmation !== 'DELETE') {
+      return res.status(400).json({ error: 'Please type DELETE to confirm permanent account and personal data erasure.' });
+    }
+
+    const profileId = req.user?.id;
+    if (!profileId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Verify profile exists
+    const checkRes = await query(`SELECT id, full_name, email, role, tenant_id FROM profiles WHERE id = $1`, [profileId]);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    const profile = checkRes.rows[0];
+
+    // Safety guard: platform administrator root accounts cannot be erased via self-service
+    if (profile.role === 'platform_admin') {
+      return res.status(403).json({ error: 'Platform administrator accounts cannot be self-deleted. Contact root technical support.' });
+    }
+
+    // Unlink any subordinate profiles reporting to this user
+    await query(`UPDATE profiles SET reporting_manager_id = NULL WHERE reporting_manager_id = $1`, [profileId]);
+
+    // Unassign leads assigned to this user to preserve lead pipeline history safely
+    await query(`UPDATE leads SET sales_executive_id = NULL WHERE sales_executive_id = $1`, [profileId]);
+
+    // Attempt clean row deletion; if foreign keys from sales/invoices prevent full delete, anonymize all personal data
+    const anonymizedEmail = `erased_${profileId.slice(0, 8)}@privacy-erased.invalid`;
+    let isFullyDeleted = false;
+
+    try {
+      await query(`DELETE FROM profiles WHERE id = $1`, [profileId]);
+      isFullyDeleted = true;
+    } catch (delErr) {
+      // Retain only non-PII row with all personal identifying data permanently wiped
+      await query(`
+        UPDATE profiles 
+        SET full_name = 'Erased User',
+            email = $1,
+            phone = NULL,
+            password = NULL,
+            password_hash = NULL,
+            image_url = NULL,
+            dob = NULL,
+            marriage_anniversary = NULL,
+            is_active = false
+        WHERE id = $2
+      `, [anonymizedEmail, profileId]);
+    }
+
+    // Log the statutory DPDP erasure event in the immutable audit ledger
+    const clientIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '0.0.0.0';
+
+    const userAgent = req.headers['user-agent'] || 'Unknown Browser';
+
+    await recordConsent({
+      anonymousId: req.cookies?.dpdp_consent_id || crypto.randomUUID(),
+      userId: String(profileId),
+      policyVersion: 'v1.0-2026',
+      language: 'en',
+      actionType: 'DATA_ERASED',
+      preferences: { essential: false, analytics: false, marketing: false },
+      noticeTextHash: 'USER_INITIATED_RIGHT_TO_ERASURE_DPDP_SEC_12',
+      ipAddress: clientIp,
+      userAgent,
+    });
+
+    // Clear client-side DPDP tracking cookie
+    res.clearCookie('dpdp_consent_id', { path: '/' });
+
+    return res.json({
+      success: true,
+      message: 'Account and personal data have been permanently erased in compliance with Section 12 of the DPDP Act, 2023.',
+      is_fully_deleted: isFullyDeleted,
+    });
+  } catch (err) {
+    console.error('Account erasure error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to erase account data' });
   }
 });
 

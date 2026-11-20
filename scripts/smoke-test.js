@@ -914,6 +914,18 @@ function testDpdpActConsentCompliance() {
   } else {
     logFail('Platform Admin Audit Ledger integration check failed', 'Check PlatformDashboard.tsx, DashboardLayout.tsx & ConsentAuditPage.tsx');
   }
+
+  // 7. DPDP Section 12 Right to Erasure & Account Self-Service Deletion
+  const consentRoutesCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/consent.js'), 'utf8');
+  const hasErasureBackend = consentRoutesCode.includes('/delete-account') && consentRoutesCode.includes('DATA_ERASED');
+  const settingsPageCode = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/SettingsPage.tsx'), 'utf8');
+  const hasErasureFrontend = settingsPageCode.includes('Section 12 Right to Erasure') && settingsPageCode.includes('handleConfirmDeleteAccount') && settingsPageCode.includes('delete-account');
+
+  if (hasErasureBackend && hasErasureFrontend) {
+    logPass('DPDP Section 12 Right to Erasure verified: Self-service account deletion UI with DELETE verification & audit log');
+  } else {
+    logFail('DPDP Section 12 Right to Erasure check failed', 'Check server/src/routes/consent.js & src/pages/SettingsPage.tsx');
+  }
 }
 
 // ---------------------------------------------------------

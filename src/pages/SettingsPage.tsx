@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useMutation } from "../lib/reactive";
 import { api } from '../lib/api-endpoints';
+import { getApiBaseUrl } from '../lib/api';
+import { getAuthToken } from '../lib/auth-token';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
-import { Settings, Target, Save, Building2, Image, UploadCloud, Trash2, ShieldCheck, Phone, Lock, Car, CheckCircle2 } from 'lucide-react';
+import { Settings, Target, Save, Building2, Image, UploadCloud, Trash2, ShieldCheck, Phone, Lock, Car, CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 
 export function SettingsPage() {
-  const { tenant, refreshTenant, profile } = useAuth();
+  const { tenant, refreshTenant, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const updateTenantMutation = useMutation(api.tenants.update);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  
+  // Data Privacy & Erasure State (DPDP Act, 2023)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   
   const [settings, setSettings] = useState({
     targetModel: 'area'
@@ -269,6 +278,38 @@ export function SettingsPage() {
       toast.error(error.message || 'Failed to save site visit settings.');
     } finally {
       setSavingSiteVisits(false);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (deleteConfirmationText.trim() !== 'DELETE') return;
+    setIsDeletingAccount(true);
+    try {
+      const token = getAuthToken();
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/v1/consent/delete-account`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ confirmation: 'DELETE' }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to erase account');
+      }
+
+      toast.success('Your account and personal data have been permanently erased (DPDP Act, 2023).');
+      setIsDeleteModalOpen(false);
+      setDeleteConfirmationText('');
+      await signOut();
+      navigate('/login');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to erase account. Please contact support.');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -600,6 +641,128 @@ export function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* DPDP Act 2023 - Data Privacy & Account Erasure Card */}
+      <Card className="border-rose-200 dark:border-rose-900/40 bg-gradient-to-b from-rose-50/30 to-transparent dark:from-rose-950/10">
+        <CardHeader className="border-b border-rose-100 dark:border-rose-900/30">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+              <ShieldAlert size={20} className="text-rose-600" />
+              Data Privacy &amp; Account Erasure (DPDP Act, 2023)
+            </CardTitle>
+            <span className="text-[10px] font-mono uppercase tracking-wider bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 px-2.5 py-0.5 rounded-full font-bold">
+              Section 12 Right to Erasure
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Under Chapter III, Section 12 of India&apos;s <strong>Digital Personal Data Protection Act, 2023</strong>, registered data principals possess the statutory Right to Erasure. If you wish to permanently terminate your account and erase your personal records from our active databases, you can initiate that below.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20">
+              <div className="font-semibold text-rose-800 dark:text-rose-300 mb-1 flex items-center gap-1.5">
+                <Trash2 size={14} /> What Will Be Permanently Erased:
+              </div>
+              <ul className="list-disc pl-4 space-y-0.5 text-slate-600 dark:text-slate-400 text-[11px]">
+                <li>Personal profile details (Name, Phone, Email)</li>
+                <li>Authentication credentials &amp; session tokens</li>
+                <li>Personal device identifiers &amp; preferences</li>
+              </ul>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40">
+              <div className="font-semibold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
+                <Lock size={14} /> Legally Retained Audit Trails:
+              </div>
+              <ul className="list-disc pl-4 space-y-0.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                <li>Statutory 3-Year DPDP Consent Audit Ledger</li>
+                <li>Tax &amp; GST compliance invoice transactions</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <Button
+              variant="destructive"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+            >
+              <Trash2 size={16} /> Delete Account &amp; Erase Personal Data
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Deletion Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 rounded-2xl shadow-2xl p-6 text-slate-900 dark:text-slate-100 space-y-4">
+            <div className="flex items-start justify-between border-b border-rose-100 dark:border-rose-900/40 pb-3">
+              <div className="flex items-center gap-2 text-rose-600">
+                <AlertTriangle size={22} />
+                <h3 className="font-bold text-base">Permanent Account Erasure</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteConfirmationText('');
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              This action is <strong>irreversible</strong>. In compliance with Section 12 of the DPDP Act, your account and personal identifying information will be immediately erased, active sessions will be terminated, and you will be signed out permanently.
+            </p>
+
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300 space-y-1">
+              <p className="font-semibold">To confirm permanent erasure, please type:</p>
+              <div className="font-mono font-bold tracking-widest text-center text-sm bg-white dark:bg-slate-900 py-1 rounded border border-rose-300 dark:border-rose-800 select-all">
+                DELETE
+              </div>
+            </div>
+
+            <div>
+              <Input
+                type="text"
+                placeholder='Type "DELETE" to confirm'
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                className="text-center font-mono font-bold tracking-widest uppercase"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteConfirmationText('');
+                }}
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleConfirmDeleteAccount}
+                disabled={deleteConfirmationText.trim() !== 'DELETE' || isDeletingAccount}
+                isLoading={isDeletingAccount}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+              >
+                Permanently Erase My Account
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
