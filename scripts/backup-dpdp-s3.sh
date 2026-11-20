@@ -23,12 +23,12 @@ elif [ -f "./server/.env" ]; then
   set +a
 fi
 
-# Database credentials (defaults from environment or local postgres)
+# Database credentials (loaded securely from environment or server/.env)
 export PGHOST="${PGHOST:-localhost}"
 export PGPORT="${PGPORT:-5432}"
 export PGUSER="${PGUSER:-salesprouser}"
 export PGDATABASE="${PGDATABASE:-salespro}"
-export PGPASSWORD="${PGPASSWORD:-SalesProPass@2026}"
+export PGPASSWORD="${PGPASSWORD}"
 
 echo "======================================================================"
 echo "  RealSalePro: DPDP 3-Year Immutable Audit Backup -> AWS S3"
