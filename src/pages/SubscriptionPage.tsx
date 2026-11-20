@@ -35,12 +35,33 @@ import autoTable from 'jspdf-autotable';
 import { ImageCropper } from '../components/ImageCropper';
 import { useToast } from '../contexts/ToastContext';
 import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
+import { loadImageAsDataUrl } from '../utils/export';
 
 // Helper to normalize amount from either paise (e.g. 150000) or rupees (e.g. 1500)
 function normalizeAmountInRupees(amount: any): number {
   const num = Number(amount || 0);
   if (num > 50000) return num / 100;
   return num;
+}
+
+// Helper to convert number to English currency words for GST Tax Invoice
+function convertNumberToWords(amount: number): string {
+  const rounded = Math.round(amount);
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function numToWords(n: number): string {
+    if (n === 0) return '';
+    if (n < 20) return ones[n] + ' ';
+    if (n < 100) return tens[Math.floor(n / 10)] + ' ' + (n % 10 !== 0 ? ones[n % 10] + ' ' : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred ' + (n % 100 !== 0 ? numToWords(n % 100) : '');
+    if (n < 100000) return numToWords(Math.floor(n / 1000)) + 'Thousand ' + (n % 1000 !== 0 ? numToWords(n % 1000) : '');
+    if (n < 10000000) return numToWords(Math.floor(n / 100000)) + 'Lakh ' + (n % 100000 !== 0 ? numToWords(n % 100000) : '');
+    return numToWords(Math.floor(n / 10000000)) + 'Crore ' + (n % 10000000 !== 0 ? numToWords(n % 10000000) : '');
+  }
+
+  const words = numToWords(rounded).trim();
+  return words ? `INR ${words} Only` : `INR ${rounded.toFixed(2)}`;
 }
 
 // Helper to resolve logo URL
@@ -168,143 +189,346 @@ export function SubscriptionPage() {
     }
   };
 
-  const generateInvoice = (record: any) => {
+  const generateInvoice = async (record: any) => {
     const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Brand Colors
-    const primaryColor = '#0A1C37'; // Deep Navy
+    // Brand Palette
+    const navyColor = [15, 23, 42]; // Slate 900
+    const emeraldColor = [5, 150, 105]; // Emerald 600
+    const textDark = [51, 65, 85]; // Slate 700
+    const textMuted = [100, 116, 139]; // Slate 500
 
-    // Header
-    doc.setFontSize(22);
-    doc.setTextColor(primaryColor);
+    // 1. Top Header with RealSalePro Official Brand Logo
+    try {
+      const logoData = await loadImageAsDataUrl('/images/RealSalePro_DarkLogo.png');
+      if (logoData) {
+        const logoW = 50;
+        const logoH = (logoData.height / logoData.width) * logoW;
+        doc.addImage(logoData.dataUrl, 'PNG', 14, 11, logoW, logoH);
+      } else {
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+        doc.text('RealSalePro CRM', 14, 21);
+      }
+    } catch {
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+      doc.text('RealSalePro CRM', 14, 21);
+    }
+
+    // Top Right TAX INVOICE
+    doc.setFontSize(21);
     doc.setFont('helvetica', 'bold');
-    doc.text('TAX INVOICE', 14, 25);
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text('TAX INVOICE', 196, 20, { align: 'right' });
 
-    // --- Seller Details (Platform: RealSalePro) ---
-    doc.setFontSize(13);
-    doc.setTextColor(0, 0, 0);
-    doc.text('RealSalePro CRM', 14, 38);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(emeraldColor[0], emeraldColor[1], emeraldColor[2]);
+    doc.text('Original for Recipient • GST Invoicing', 196, 25.5, { align: 'right' });
+
+    // Decorative divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(14, 29, 196, 29);
+
+    // 2. Supplier / Seller Details (Left) vs Invoice Details Box (Right)
+    const sellerY = 34;
+
+    // --- Supplier / Seller: Synergy Brand Architect (Brand: RealSalePro CRM) ---
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('SOLD BY / SUPPLIER:', 14, sellerY);
+
+    doc.setFontSize(10.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text('Synergy Brand Architect', 14, sellerY + 5);
+
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(emeraldColor[0], emeraldColor[1], emeraldColor[2]);
+    doc.text('(Brand: RealSalePro CRM • SaaS Software)', 14, sellerY + 9.5);
+
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text('Patna, Bihar, India', 14, 44);
-    doc.text('Email: support@realsalepro.com', 14, 49);
-    doc.text('Website: https://realsalepro.com', 14, 54);
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    doc.text('Regd. Office: Patna, Bihar, India - 800001', 14, sellerY + 14);
+    doc.text('State: Bihar | State Code: 10 (Supplier State)', 14, sellerY + 18.5);
+    doc.text('Email: billing@realsalepro.com | support@realsalepro.com', 14, sellerY + 23);
+    doc.text('Website: https://realsalepro.com', 14, sellerY + 27.5);
 
-    // Invoice Details (Right Side)
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    const rightColX = 135;
+    // --- Invoice Metadata Box (Right Side) ---
+    const invBoxX = 120;
+    const invBoxW = 76;
+    const invBoxH = 34;
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(invBoxX, sellerY - 2, invBoxW, invBoxH, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(invBoxX, sellerY - 2, invBoxW, invBoxH, 2, 2, 'D');
+
     const invDate = new Date(record.created_at || record._creationTime || Date.now()).toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: 'numeric'
     });
     const invId = (record.id || record._id || 'INV').slice(0, 8).toUpperCase();
-    doc.text(`Invoice Date: ${invDate}`, rightColX, 38);
-    doc.text(`Invoice #: INV-${invId}`, rightColX, 44);
-    doc.text(`Payment ID: ${record.razorpay_payment_id || record.payment_id || 'pay_online'}`, rightColX, 49);
-    doc.setTextColor(0, 150, 60);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Status: PAID`, rightColX, 54);
+    const paymentId = record.razorpay_payment_id || record.payment_id || 'pay_online';
 
-    // --- Bill To (Buyer: Tenant Company Profile) ---
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text(`Invoice #: INV-${invId}`, invBoxX + 4, sellerY + 3.5);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    doc.text(`Invoice Date: ${invDate}`, invBoxX + 4, sellerY + 9);
+    doc.text(`Payment Gateway: Razorpay Online`, invBoxX + 4, sellerY + 14);
+    doc.text(`Payment ID: ${paymentId}`, invBoxX + 4, sellerY + 19);
+
+    // Status Paid pill
+    doc.setFillColor(209, 250, 229); // emerald 100
+    doc.roundedRect(invBoxX + 4, sellerY + 23, 26, 5, 1, 1, 'F');
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(6, 95, 70); // emerald 800
+    doc.text('STATUS: PAID', invBoxX + 6.5, sellerY + 26.8);
+
+    // 3. Customer / Bill To Box
     const companyProfile = (tenant as any)?.settings?.company_profile;
     const companyName = profileForm.name || tenant?.name || 'Valued Customer';
-    const billToY = 68;
+    const address = profileForm.address || companyProfile?.address || '';
+    const email = profileForm.email || companyProfile?.email || (tenant as any)?.email || '';
+    const phone = profileForm.phone || companyProfile?.phone || '';
+    const taxId = (profileForm.tax_id || companyProfile?.tax_id || '').trim().toUpperCase();
+
+    // Check Place of Supply and GST Inter vs Intra State
+    const lowerAddress = address.toLowerCase();
+    const isBiharGstin = taxId.length >= 2 && taxId.startsWith('10');
+    const isBiharAddress = lowerAddress.includes('bihar') || lowerAddress.includes('patna');
+    const isIntraState = isBiharGstin || (isBiharAddress && !lowerAddress.includes('jharkhand') && !lowerAddress.includes('delhi'));
+
+    let customerStateName = 'Other Territory';
+    let customerStateCode = '96';
+    if (isIntraState) {
+      customerStateName = 'Bihar';
+      customerStateCode = '10';
+    } else if (lowerAddress.includes('jharkhand') || taxId.startsWith('20')) {
+      customerStateName = 'Jharkhand';
+      customerStateCode = '20';
+    } else if (lowerAddress.includes('delhi') || taxId.startsWith('07')) {
+      customerStateName = 'Delhi';
+      customerStateCode = '07';
+    } else if (lowerAddress.includes('west bengal') || taxId.startsWith('19')) {
+      customerStateName = 'West Bengal';
+      customerStateCode = '19';
+    } else if (lowerAddress.includes('maharashtra') || taxId.startsWith('27')) {
+      customerStateName = 'Maharashtra';
+      customerStateCode = '27';
+    } else if (lowerAddress.includes('uttar pradesh') || taxId.startsWith('09')) {
+      customerStateName = 'Uttar Pradesh';
+      customerStateCode = '09';
+    }
+
+    const billBoxY = 72;
+    const billBoxH = 26;
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(14, billBoxY, 182, billBoxH, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(14, billBoxY, 182, billBoxH, 2, 2, 'D');
+
+    // Left Bill To Details
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('BILL TO (CUSTOMER):', 18, billBoxY + 5);
 
     doc.setFontSize(10);
-    doc.setTextColor(primaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('BILL TO (CUSTOMER):', 14, billToY);
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text(companyName, 18, billBoxY + 10.5);
 
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(11);
-    doc.text(companyName, 14, billToY + 6);
-
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-
-    let currentBillToY = billToY + 11;
-
-    const address = profileForm.address || companyProfile?.address;
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
     if (address) {
-      doc.text(address, 14, currentBillToY);
-      currentBillToY += 5;
+      doc.text(address.length > 55 ? `${address.slice(0, 52)}...` : address, 18, billBoxY + 15.5);
+    }
+    const contactParts = [];
+    if (email) contactParts.push(email);
+    if (phone) contactParts.push(phone);
+    if (contactParts.length > 0) {
+      doc.text(contactParts.join(' | '), 18, billBoxY + 20.5);
     }
 
-    const contactInfo = [];
-    const email = profileForm.email || companyProfile?.email || (tenant as any)?.email;
-    const phone = profileForm.phone || companyProfile?.phone;
-    if (email) contactInfo.push(email);
-    if (phone) contactInfo.push(phone);
-    if (contactInfo.length > 0) {
-      doc.text(contactInfo.join(' | '), 14, currentBillToY);
-      currentBillToY += 5;
-    }
+    // Right Bill To Details (GSTIN & Place of Supply)
+    const custRightX = 115;
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('PLACE OF SUPPLY & TAX DETAILS:', custRightX, billBoxY + 5);
 
-    const taxId = profileForm.tax_id || companyProfile?.tax_id;
-    if (taxId) {
-      doc.text(`GSTIN / Tax ID: ${taxId}`, 14, currentBillToY);
-    }
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    doc.text(`Place of Supply: ${customerStateName} (${customerStateCode})`, custRightX, billBoxY + 10.5);
+    doc.text(`Customer GSTIN / Tax ID: ${taxId || 'Unregistered Consumer (B2C)'}`, custRightX, billBoxY + 15.5);
+    doc.text(`Supply Type: ${isIntraState ? 'Intra-State (CGST + SGST)' : 'Inter-State (IGST Applicable)'}`, custRightX, billBoxY + 20.5);
 
-    // Calculations
+    // 4. Line Items Table
     const totalAmount = normalizeAmountInRupees(record.amount);
     const baseAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - baseAmount;
+    const cgstAmount = isIntraState ? gstAmount / 2 : 0;
+    const sgstAmount = isIntraState ? gstAmount / 2 : 0;
+    const igstAmount = isIntraState ? 0 : gstAmount;
 
-    // Table
     autoTable(doc, {
-      startY: Math.max(currentBillToY + 8, billToY + 28),
-      head: [['Description', 'Qty', 'Base Amount', 'GST (18%)', 'Total Amount']],
+      startY: 102,
+      head: [['#', 'Service Description', 'SAC Code', 'Qty', 'Taxable Value', 'GST Rate', 'Total Amount']],
       body: [
         [
-          record.description || 'Pro Plan Subscription',
+          '1',
+          `${record.description || 'Pro Plan Subscription (Monthly)'}\n• Real Estate Cloud CRM Platform Access`,
+          '998313',
           '1',
           `INR ${baseAmount.toFixed(2)}`,
-          `INR ${gstAmount.toFixed(2)}`,
+          isIntraState ? '18% (9%+9%)' : '18% (IGST)',
           `INR ${totalAmount.toFixed(2)}`
         ],
       ],
       theme: 'grid',
-      headStyles: { fillColor: [10, 28, 55] }, // Dark Navy #0A1C37
-      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: {
+        fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 4,
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 4,
+        textColor: [51, 65, 85],
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        1: { cellWidth: 70 },
+        2: { halign: 'center', cellWidth: 20 },
+        3: { halign: 'center', cellWidth: 12 },
+        4: { halign: 'right', cellWidth: 24 },
+        5: { halign: 'center', cellWidth: 22 },
+        6: { halign: 'right', cellWidth: 24 },
+      },
     });
 
-    // Total Section
     // @ts-expect-error - lastAutoTable exists on jsPDF instance
-    const finalY = doc.lastAutoTable.finalY + 10;
+    const finalY = doc.lastAutoTable.finalY + 8;
 
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('Subtotal:', 130, finalY);
-    doc.text('IGST (18%):', 130, finalY + 6);
-
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
+    // 5. Amount in Words & Tax Breakdown
+    // Left: Words & Statutory Note
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.text('Grand Total:', 130, finalY + 14);
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('TOTAL AMOUNT IN WORDS:', 14, finalY);
 
-    doc.setFontSize(10);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text(convertNumberToWords(totalAmount), 14, finalY + 5);
+
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text(`INR ${baseAmount.toFixed(2)}`, 195, finalY, { align: 'right' });
-    doc.text(`INR ${gstAmount.toFixed(2)}`, 195, finalY + 6, { align: 'right' });
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    if (isIntraState) {
+      doc.text('Tax Note: Both Supplier & Place of Supply are in Bihar. CGST (9%) & SGST (9%) applied.', 14, finalY + 11);
+    } else {
+      doc.text(`Tax Note: Supplier in Bihar (10), Place of Supply in ${customerStateName} (${customerStateCode}). IGST (18%) charged as per IGST Act, 2017.`, 14, finalY + 11);
+    }
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0, 180, 70);
-    doc.text(`INR ${totalAmount.toFixed(2)}`, 195, finalY + 14, { align: 'right' });
+    // Right: Calculation Summary
+    const sumX = 132;
+    const valX = 196;
+    let curSumY = finalY;
 
-    // Footer
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
     doc.setFont('helvetica', 'normal');
-    const pageHeight = doc.internal.pageSize.height;
-    doc.text('This is an official computer-generated GST tax invoice and does not require a physical signature.', 14, pageHeight - 20);
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    doc.text('Taxable Subtotal:', sumX, curSumY);
+    doc.text(`INR ${baseAmount.toFixed(2)}`, valX, curSumY, { align: 'right' });
+    curSumY += 5;
 
-    // Save
-    doc.save(`Invoice_INV-${invId}.pdf`);
+    if (isIntraState) {
+      doc.text('CGST (9%):', sumX, curSumY);
+      doc.text(`INR ${cgstAmount.toFixed(2)}`, valX, curSumY, { align: 'right' });
+      curSumY += 4.5;
+
+      doc.text('SGST (9%):', sumX, curSumY);
+      doc.text(`INR ${sgstAmount.toFixed(2)}`, valX, curSumY, { align: 'right' });
+      curSumY += 4.5;
+    } else {
+      doc.text('IGST (18%):', sumX, curSumY);
+      doc.text(`INR ${igstAmount.toFixed(2)}`, valX, curSumY, { align: 'right' });
+      curSumY += 5;
+    }
+
+    doc.text('Total GST Tax:', sumX, curSumY);
+    doc.text(`INR ${gstAmount.toFixed(2)}`, valX, curSumY, { align: 'right' });
+    curSumY += 6.5;
+
+    // Grand Total Highlight Box
+    doc.setFillColor(236, 253, 245); // emerald 50
+    doc.roundedRect(sumX - 2, curSumY - 4.5, 66, 9.5, 1.5, 1.5, 'F');
+    doc.setDrawColor(16, 185, 129); // emerald 500
+    doc.roundedRect(sumX - 2, curSumY - 4.5, 66, 9.5, 1.5, 1.5, 'D');
+
+    doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text('Grand Total:', sumX + 2, curSumY + 2);
+
+    doc.setTextColor(5, 150, 105); // emerald 600
+    doc.text(`INR ${totalAmount.toFixed(2)}`, valX - 2, curSumY + 2, { align: 'right' });
+
+    // 6. Footer & Signatory Block
+    const footerY = pageHeight - 30;
+
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, footerY, 196, footerY);
+
+    // Terms / Legal Declaration
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('Terms & Conditions:', 14, footerY + 4.5);
+    doc.text('1. All software subscriptions and CRM services are delivered digitally via cloud infrastructure.', 14, footerY + 8);
+    doc.text('2. This is an authentic computer-generated GST tax invoice issued under Rule 46 of the CGST Rules, 2017.', 14, footerY + 11.5);
+    doc.text('3. Secured & processed online via Razorpay Payments Software.', 14, footerY + 15);
+
+    // Signatory
+    const sigX = 145;
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
+    doc.text('For Synergy Brand Architect', sigX, footerY + 4.5);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(emeraldColor[0], emeraldColor[1], emeraldColor[2]);
+    doc.text('(Brand: RealSalePro CRM)', sigX, footerY + 8.5);
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('Authorized Signatory / Accounts Dept', sigX, footerY + 19);
+
+    // Save PDF
+    doc.save(`Invoice_RealSalePro_${invId}.pdf`);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
