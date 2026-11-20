@@ -39,25 +39,37 @@ import {
   MapPin,
   Lock,
   Unlock,
+  Building,
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
 import { UpgradeToProModal } from '../../components/ui/UpgradeToProModal';
 
 export function WhatsAppCommandCenterPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { tenant, profile, isActualPlatformAdmin } = useAuth();
   const isPlatformAdmin = location.pathname.startsWith('/platform') || profile?.role === 'platform_admin' || (!tenant?.id && profile?.role === 'super_admin') || Boolean(isActualPlatformAdmin);
+  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
+  const isTenantAdmin = isPlatformAdmin || ['super_admin', 'admin', 'director'].includes(normalizedRole);
   const isFreePlan = !isPlatformAdmin && (tenant?.plan_tier === 'free');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings'>('inbox');
+  const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings' | 'agent_access'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
   const [testingConnection, setTestingConnection] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [showAiKey, setShowAiKey] = useState(false);
   const [isApiLocked, setIsApiLocked] = useState(true);
+
+  // Multi-Agent & Team Access state
+  const [teamAgents, setTeamAgents] = useState<any[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [savingAgentsAccess, setSavingAgentsAccess] = useState(false);
+  const [agentSearch, setAgentSearch] = useState('');
+  const [reassigningAgent, setReassigningAgent] = useState(false);
 
   // Intelligence & Learning Patterns state
   const [learningPatterns, setLearningPatterns] = useState<any[]>([]);
@@ -163,17 +175,22 @@ export function WhatsAppCommandCenterPage() {
   const [copiedVerifyToken, setCopiedVerifyToken] = useState(false);
 
   useEffect(() => {
-    if (!isPlatformAdmin && (activeTab === 'intelligence' || activeTab === 'otp')) {
+    if (!isTenantAdmin && activeTab !== 'inbox') {
+      setActiveTab('inbox');
+    } else if (!isPlatformAdmin && (activeTab === 'intelligence' || activeTab === 'otp')) {
       setActiveTab('inbox');
     }
-  }, [isPlatformAdmin, activeTab]);
+  }, [isPlatformAdmin, isTenantAdmin, activeTab]);
 
   // Load Initial Data
   useEffect(() => {
     if (isFreePlan) return;
     loadConfig();
     loadConversations();
-  }, [statusFilter, isFreePlan]);
+    if (isTenantAdmin) {
+      loadTeamAgents();
+    }
+  }, [statusFilter, isFreePlan, isTenantAdmin]);
 
   // Periodic poll for new messages in inbox
   useEffect(() => {
@@ -409,6 +426,67 @@ export function WhatsAppCommandCenterPage() {
       alert(`Error saving learning feedback: ${err.message}`);
     } finally {
       setLabelingConv(false);
+    }
+  };
+
+  const loadTeamAgents = async () => {
+    setLoadingAgents(true);
+    try {
+      const res = await whatsappHubService.getAgents(
+        isPlatformAdmin ? { tenant_id: tenant?.id } : { tenant_id: tenant?.id }
+      );
+      if (res?.success) {
+        setTeamAgents(res.agents || []);
+        setSelectedAgentIds(res.enabledAgentIds || []);
+      }
+    } catch (err) {
+      console.error('Failed to load team agents:', err);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const handleToggleAgentAccess = (agentId: string) => {
+    setSelectedAgentIds(prev => 
+      prev.includes(agentId) ? prev.filter(id => id !== agentId) : [...prev, agentId]
+    );
+  };
+
+  const handleSaveAgentsAccess = async () => {
+    setSavingAgentsAccess(true);
+    try {
+      const res = await whatsappHubService.saveAgentsAccess({
+        enabledAgentIds: selectedAgentIds,
+        tenant_id: tenant?.id,
+      });
+      if (res.success) {
+        alert('Team access permissions updated successfully! Active incoming chats will now be auto-assigned to enabled team members.');
+        await loadTeamAgents();
+      }
+    } catch (err: any) {
+      alert(`Failed to save team access: ${err.message}`);
+    } finally {
+      setSavingAgentsAccess(false);
+    }
+  };
+
+  const handleReassignConversation = async (agentId: string) => {
+    if (!selectedConv) return;
+    setReassigningAgent(true);
+    try {
+      const res = await whatsappHubService.assignConversation(selectedConv.id, agentId);
+      if (res.success) {
+        setSelectedConv((prev: any) => ({
+          ...prev,
+          assigned_to: res.assigned_to,
+          assigned_agent_name: res.assigned_agent_name,
+        }));
+        await loadConversations(true);
+      }
+    } catch (err: any) {
+      alert(`Failed to reassign conversation: ${err.message}`);
+    } finally {
+      setReassigningAgent(false);
     }
   };
 
@@ -688,43 +766,54 @@ export function WhatsAppCommandCenterPage() {
       ) : (
         <>
       {/* Navigation Stick Tabs */}
-      <div className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl inline-flex flex-wrap items-center gap-1 shrink-0 max-w-full">
-        {[
-          { id: 'inbox', label: 'Live Chat', icon: MessageSquare, badge: summary.agent_requested_count > 0 ? summary.agent_requested_count : undefined },
-          { id: 'api_setup', label: 'API Setup', icon: Settings },
-          { id: 'templates', label: 'Templates', icon: FileText, onClick: () => loadTemplates() },
-          { id: 'widget', label: 'Website Widget & AI Bot', icon: Globe },
-          { id: 'automations', label: 'Lead Automations', icon: Zap },
-          { id: 'broadcast', label: 'Bulk Broadcasts', icon: Radio, onClick: () => { loadBroadcasts(); loadTemplates(); } },
-          ...(isPlatformAdmin ? [{ id: 'otp', label: 'OTP Engine', icon: Key }] : []),
-          ...(isPlatformAdmin ? [{ id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() }] : []),
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id || (tab.id === 'api_setup' && activeTab === 'settings');
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as any);
-                if (tab.onClick) tab.onClick();
-              }}
-              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
-                isActive
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-slate-700/80 font-semibold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/40 border border-transparent'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {isTenantAdmin ? (
+        <div className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl inline-flex flex-wrap items-center gap-1 shrink-0 max-w-full">
+          {[
+            { id: 'inbox', label: 'Live Chat', icon: MessageSquare, badge: summary.agent_requested_count > 0 ? summary.agent_requested_count : undefined },
+            { id: 'agent_access', label: 'Team Access', icon: Users, onClick: () => loadTeamAgents() },
+            { id: 'api_setup', label: 'API Setup', icon: Settings },
+            { id: 'templates', label: 'Templates', icon: FileText, onClick: () => loadTemplates() },
+            { id: 'widget', label: 'Website Widget & AI Bot', icon: Globe },
+            { id: 'automations', label: 'Lead Automations', icon: Zap },
+            { id: 'broadcast', label: 'Bulk Broadcasts', icon: Radio, onClick: () => { loadBroadcasts(); loadTemplates(); } },
+            ...(isPlatformAdmin ? [{ id: 'otp', label: 'OTP Engine', icon: Key }] : []),
+            ...(isPlatformAdmin ? [{ id: 'intelligence', label: 'AI Learning', icon: Brain, onClick: () => loadLearningPatterns() }] : []),
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id || (tab.id === 'api_setup' && activeTab === 'settings');
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  if (tab.onClick) tab.onClick();
+                }}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-slate-700/80 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/40 border border-transparent'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Sales Executive Live Workspace — Displaying only chats assigned to you.</span>
+          </div>
+          <span className="text-[11px] text-slate-400">Zero-Collision Active Routing</span>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* TAB 1: LIVE CHAT INBOX                                                    */}
@@ -818,6 +907,19 @@ export function WhatsAppCommandCenterPage() {
                           {conv.last_message || 'Started conversation'}
                         </p>
 
+                        <div className="flex items-center gap-1.5 flex-wrap my-1">
+                          {conv.crm_lead_name && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> CRM Lead
+                            </span>
+                          )}
+                          {isTenantAdmin && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium truncate max-w-[140px]">
+                              {conv.assigned_agent_name ? `👤 ${conv.assigned_agent_name}` : 'Unassigned'}
+                            </span>
+                          )}
+                        </div>
+
                         <div className="flex items-center justify-between mt-2">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                             isAgentNeeded
@@ -891,8 +993,32 @@ export function WhatsAppCommandCenterPage() {
                     </div>
                   </div>
 
-                  {/* Bot Toggle & Status Controls */}
-                  <div className="flex items-center gap-2">
+                  {/* Bot Toggle & Status Controls & Agent Assignment */}
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {/* Agent Assignment Selector (For Admins) / Display (For Non-Admins) */}
+                    <div className="flex items-center gap-1.5 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                      <span className="text-[11px] text-slate-500 font-medium">Assigned:</span>
+                      {isTenantAdmin ? (
+                        <select
+                          value={selectedConv.assigned_to || ''}
+                          onChange={(e) => handleReassignConversation(e.target.value)}
+                          disabled={reassigningAgent}
+                          className="text-xs py-0.5 px-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                        >
+                          <option value="">Unassigned</option>
+                          {teamAgents.map((ag: any) => (
+                            <option key={ag.id} value={ag.id}>
+                              {ag.full_name || ag.name} {ag.id === profile?.id ? '(You)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {selectedConv.assigned_agent_name || (selectedConv.assigned_to === profile?.id ? 'You' : 'Assigned')}
+                        </span>
+                      )}
+                    </div>
+
                     {selectedConv.status === 'bot_active' ? (
                       <button
                         onClick={() => handleToggleBot('agent_chatting')}
@@ -908,6 +1034,84 @@ export function WhatsAppCommandCenterPage() {
                         title="Resumes automated prospect bot"
                       >
                         <Play className="w-3.5 h-3.5" /> Resume Bot
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* CRM Lead Recognition & In-Chat Context Card */}
+                <div className={`px-4 py-2.5 border-b text-xs flex items-center justify-between flex-wrap gap-2 shrink-0 ${
+                  selectedConv.crm_lead_id 
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-950 dark:text-emerald-200' 
+                    : 'bg-slate-100/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  {selectedConv.crm_lead_id ? (
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                        <span>CRM Lead Found:</span>
+                        <span className="font-extrabold text-slate-900 dark:text-white underline decoration-emerald-500/50">
+                          {selectedConv.crm_lead_name || 'Lead'}
+                        </span>
+                        {selectedConv.crm_lead_code && (
+                          <span className="font-mono text-[11px] px-1.5 py-0.5 bg-emerald-200/60 dark:bg-emerald-900/60 rounded font-semibold text-emerald-800 dark:text-emerald-300">
+                            {selectedConv.crm_lead_code}
+                          </span>
+                        )}
+                      </div>
+
+                      {selectedConv.crm_lead_status && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-200/70 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300">
+                          Status: {selectedConv.crm_lead_status}
+                        </span>
+                      )}
+
+                      {selectedConv.crm_lead_project_name && (
+                        <span className="text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-1 font-medium">
+                          <Building className="w-3.5 h-3.5 text-slate-400" />
+                          {selectedConv.crm_lead_project_name}
+                        </span>
+                      )}
+
+                      {selectedConv.crm_lead_budget && (
+                        <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium">
+                          Budget: <strong>{selectedConv.crm_lead_budget}</strong>
+                        </span>
+                      )}
+
+                      {selectedConv.crm_lead_agent_name && (
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                          CRM Owner: <strong>{selectedConv.crm_lead_agent_name}</strong>
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                        New Visitor (Not in CRM yet)
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    {selectedConv.crm_lead_id ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/leads?search=${encodeURIComponent(selectedConv.crm_lead_code || selectedConv.phone)}`)}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+                      >
+                        <span>Open CRM Profile</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/leads?newLeadPhone=${encodeURIComponent(selectedConv.phone)}&newLeadName=${encodeURIComponent(selectedConv.customer_name || '')}`)}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[11px] font-bold bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add as CRM Lead</span>
                       </button>
                     )}
                   </div>
@@ -2637,6 +2841,160 @@ export function WhatsAppCommandCenterPage() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: TEAM ACCESS & MULTI-AGENT CHAT ROUTING                               */}
+      {/* ========================================================================= */}
+      {isTenantAdmin && activeTab === 'agent_access' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
+                  <Users className="w-5 h-5" />
+                </div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  WhatsApp Multi-Agent Chat Access & Auto-Routing
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                Control which team members have access to the WhatsApp Live Chat system. Active conversations are automatically routed to enabled agents with strict collision prevention (agents only see chats assigned to them).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const allIds = teamAgents.map(a => a.id);
+                  if (selectedAgentIds.length === teamAgents.length) {
+                    setSelectedAgentIds([]);
+                  } else {
+                    setSelectedAgentIds(allIds);
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+              >
+                {selectedAgentIds.length === teamAgents.length ? 'Deselect All' : 'Select All'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveAgentsAccess}
+                disabled={savingAgentsAccess}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                {savingAgentsAccess ? 'Saving Permissions...' : 'Save Team Access'}
+              </button>
+            </div>
+          </div>
+
+          {/* Search and Summary */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Filter team members by name, email, or role..."
+                value={agentSearch}
+                onChange={(e) => setAgentSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div className="text-xs text-slate-500">
+              Enabled Agents for Auto-Assignment: <strong className="text-emerald-600 font-bold">{selectedAgentIds.length}</strong> of {teamAgents.length}
+            </div>
+          </div>
+
+          {/* Agents Grid / Table */}
+          {loadingAgents ? (
+            <div className="py-12 text-center text-xs text-slate-400">Loading team members...</div>
+          ) : teamAgents.length === 0 ? (
+            <div className="py-12 text-center space-y-2">
+              <Users className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs font-semibold text-slate-500">No team members found</p>
+              <p className="text-[11px] text-slate-400">Add sales executives in User Management to enable their WhatsApp chat access.</p>
+            </div>
+          ) : (
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {teamAgents
+                .filter(a => {
+                  if (!agentSearch) return true;
+                  const q = agentSearch.toLowerCase();
+                  return (
+                    (a.full_name || a.name || '').toLowerCase().includes(q) ||
+                    (a.email || '').toLowerCase().includes(q) ||
+                    (a.role || '').toLowerCase().includes(q)
+                  );
+                })
+                .map((ag) => {
+                  const isEnabled = selectedAgentIds.includes(ag.id);
+                  const isSelf = ag.id === profile?.id;
+
+                  return (
+                    <div
+                      key={ag.id}
+                      onClick={() => handleToggleAgentAccess(ag.id)}
+                      className={`p-4 flex items-center justify-between gap-4 cursor-pointer transition-colors ${
+                        isEnabled ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => handleToggleAgentAccess(ag.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded text-emerald-600 border-slate-300 dark:border-slate-700 focus:ring-emerald-500 cursor-pointer"
+                        />
+
+                        <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs shrink-0">
+                          {(ag.full_name || ag.name || 'U')[0].toUpperCase()}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                              {ag.full_name || ag.name}
+                            </span>
+                            {isSelf && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 font-semibold text-slate-700 dark:text-slate-300">
+                                You
+                              </span>
+                            )}
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium capitalize">
+                              {(ag.role || 'User').replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate">{ag.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 shrink-0">
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                            {ag.activeChatsCount || 0}
+                          </span>
+                          <span className="text-[11px] text-slate-400 block">active chats</span>
+                        </div>
+
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isEnabled
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
+                          {isEnabled ? 'Chat Enabled' : 'No Access'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
         </>

@@ -46,10 +46,10 @@ function normalizeAmountInRupees(amount: any): number {
 // Helper to resolve logo URL
 function LogoPreview({ storageId }: { storageId: string }) {
   const url = useQuery(api.files.getUrl, storageId.length > 20 ? { storageId: storageId as Id<"_storage"> } : "skip");
-  
+
   if (storageId.startsWith('http')) return <img src={storageId} alt="Logo" className="max-w-[85%] max-h-[85%] object-contain" />;
   if (!url) return <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700" />;
-  
+
   return <img src={url} alt="Logo" className="max-w-[85%] max-h-[85%] object-contain" />;
 }
 
@@ -68,9 +68,9 @@ export function SubscriptionPage() {
   const { tenant } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  
+
   // Backend queries
-  const billingHistory = useQuery(api.tenants.listBillingHistory, 
+  const billingHistory = useQuery(api.tenants.listBillingHistory,
     tenant?._id ? { tenant_id: tenant._id as Id<"tenants"> } : "skip"
   ) || [];
 
@@ -100,19 +100,19 @@ export function SubscriptionPage() {
 
   // Sync profile form with tenant data on load
   useEffect(() => {
-     if (tenant && !initialLoadDone.current) {
-        const settings = tenant.settings as TenantSettings | undefined;
-        setProfileForm({
-          name: tenant.name || '',
-          address: settings?.company_profile?.address || '',
-          email: settings?.company_profile?.email || '',
-          phone: settings?.company_profile?.phone || '',
-          website: settings?.company_profile?.website || '',
-          tax_id: settings?.company_profile?.tax_id || '',
-          logo_url: settings?.company_profile?.logo_url || ''
-        });
-        initialLoadDone.current = true;
-     }
+    if (tenant && !initialLoadDone.current) {
+      const settings = tenant.settings as TenantSettings | undefined;
+      setProfileForm({
+        name: tenant.name || '',
+        address: settings?.company_profile?.address || '',
+        email: settings?.company_profile?.email || '',
+        phone: settings?.company_profile?.phone || '',
+        website: settings?.company_profile?.website || '',
+        tax_id: settings?.company_profile?.tax_id || '',
+        logo_url: settings?.company_profile?.logo_url || ''
+      });
+      initialLoadDone.current = true;
+    }
   }, [tenant]);
 
   const _daysRemaining = useMemo(() => {
@@ -145,7 +145,7 @@ export function SubscriptionPage() {
     if (!tenant?._id) return;
     setShowCropper(false);
     setIsUploadingLogo(true);
-    
+
     try {
       // 1. Generate upload URL
       const postUrl = await generateUploadUrl();
@@ -157,7 +157,7 @@ export function SubscriptionPage() {
         body: croppedBlob,
       });
       const { storageId } = await result.json();
-      
+
       setProfileForm(prev => ({ ...prev, logo_url: storageId }));
       toast.success('Logo cropped and ready to save!');
     } catch (error: any) {
@@ -225,7 +225,7 @@ export function SubscriptionPage() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    
+
     let currentBillToY = billToY + 11;
 
     const address = profileForm.address || companyProfile?.address;
@@ -369,7 +369,7 @@ export function SubscriptionPage() {
   const billingCycleLabel = tenant.billing_cycle === 'yearly' ? 'Yearly' : tenant.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly';
   const billingAmount = tenant.billing_cycle === 'yearly' ? 12000 : tenant.billing_cycle === 'semi_annual' ? 7200 : 1500;
   const nextBillingDateObj = tenant.next_billing_date ? new Date(tenant.next_billing_date) : null;
-  const formattedRenewalDate = nextBillingDateObj 
+  const formattedRenewalDate = nextBillingDateObj
     ? nextBillingDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
     : getNextBillingDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const leadsCount = Number((tenant as any)?.leads_count || 0);
@@ -438,7 +438,7 @@ export function SubscriptionPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400">Update your business information for invoices and documents</p>
                 </div>
               </div>
-              
+
               <form onSubmit={handleSaveProfile} className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -454,7 +454,7 @@ export function SubscriptionPage() {
                       placeholder="e.g., Acme Corporation"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                       <Globe className="w-4 h-4" /> Website
@@ -467,7 +467,7 @@ export function SubscriptionPage() {
                       placeholder="e.g., https://www.acme.com"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                       <Mail className="w-4 h-4" /> Business Email
@@ -481,7 +481,7 @@ export function SubscriptionPage() {
                       placeholder="e.g., contact@acme.com"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                       <Phone className="w-4 h-4" /> Phone Number
@@ -524,7 +524,7 @@ export function SubscriptionPage() {
                         ) : (
                           <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                         )}
-                        
+
                         {/* Safe Zone Overlay */}
                         <div className="absolute inset-0 pointer-events-none border border-[#10B981]/20 border-dashed m-3 rounded" title="Safe Zone: Keep your logo inside this area for best results on bills." />
                       </div>
@@ -556,13 +556,13 @@ export function SubscriptionPage() {
                           className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-surface-dark border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95"
                         >
                           {isUploadingLogo ? (
-                             <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
-                             <Upload size={18} />
+                            <Upload size={18} />
                           )}
                           {profileForm.logo_url ? 'Change Logo' : 'Upload Logo'}
                         </button>
-                        
+
                         {profileForm.logo_url && (
                           <button
                             type="button"

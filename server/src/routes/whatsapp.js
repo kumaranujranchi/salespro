@@ -292,8 +292,11 @@ router.post('/test-confirmation', requireAuth, async (req, res) => {
 
 router.get('/conversations', requireAuth, async (req, res) => {
   try {
-    const { status, search, limit, offset, tenant_id, scope } = req.query;
+    const { status, search, limit, offset, tenant_id, scope, assigned_to } = req.query;
     const isPlatform = isPlatformRole(req.user);
+    const userRole = (req.user?.role || '').toLowerCase();
+    const isTenantAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
+
     let effectiveTenantId;
     if (isPlatform) {
       if (scope === 'all' || tenant_id === 'all') {
@@ -309,14 +312,23 @@ router.get('/conversations', requireAuth, async (req, res) => {
       effectiveTenantId = 'none';
     }
 
+    // Role-based Multi-Agent Visibility:
+    // Non-admin agents can ONLY view conversations assigned to them.
+    // This strictly ensures zero collision and prevents agents from seeing other agents' chats!
+    let effectiveAssignedTo = assigned_to || null;
+    if (!isTenantAdmin) {
+      effectiveAssignedTo = req.user?.id || 'none';
+    }
+
     const data = await listConversations({
       status,
       search,
       limit,
       offset,
       tenantId: effectiveTenantId,
+      assignedTo: effectiveAssignedTo,
     });
-    return res.json({ success: true, ...data });
+    return res.json({ success: true, ...data, isTenantAdmin });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -325,15 +337,22 @@ router.get('/conversations', requireAuth, async (req, res) => {
 router.get('/conversations/:id/messages', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
-    const convCheck = await query('SELECT tenant_id FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+    const userRole = (req.user?.role || '').toLowerCase();
+    const isTenantAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
+
+    const convCheck = await query('SELECT tenant_id, assigned_to FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
     if (!convCheck.rows[0]) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
-    const convTenantId = convCheck.rows[0].tenant_id;
+    const convRow = convCheck.rows[0];
 
     if (!isPlatform) {
-      if (!req.user?.tenant_id || convTenantId !== req.user.tenant_id) {
+      if (!req.user?.tenant_id || convRow.tenant_id !== req.user.tenant_id) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+      // Non-admin agent check: must be assigned to this conversation
+      if (!isTenantAdmin && convRow.assigned_to && convRow.assigned_to !== req.user?.id) {
+        return res.status(403).json({ error: 'Access denied: this conversation is assigned to another team member.' });
       }
     }
 
@@ -352,15 +371,21 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
     }
 
     const isPlatform = isPlatformRole(req.user);
-    const convCheck = await query('SELECT tenant_id FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+    const userRole = (req.user?.role || '').toLowerCase();
+    const isTenantAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
+
+    const convCheck = await query('SELECT tenant_id, assigned_to FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
     if (!convCheck.rows[0]) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
-    const convTenantId = convCheck.rows[0].tenant_id;
+    const convRow = convCheck.rows[0];
 
     if (!isPlatform) {
-      if (!req.user?.tenant_id || convTenantId !== req.user.tenant_id) {
+      if (!req.user?.tenant_id || convRow.tenant_id !== req.user.tenant_id) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
+      }
+      if (!isTenantAdmin && convRow.assigned_to && convRow.assigned_to !== req.user?.id) {
+        return res.status(403).json({ error: 'Access denied: this conversation is assigned to another team member.' });
       }
     }
 
@@ -375,6 +400,121 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
     return res.json(result);
   } catch (err) {
     return res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/conversations/:id/assign', requireAuth, async (req, res) => {
+  try {
+    const { agentId } = req.body;
+    const isPlatform = isPlatformRole(req.user);
+    const tenantId = req.user?.tenant_id;
+    const userRole = (req.user?.role || '').toLowerCase();
+    const isTenantAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
+
+    if (!isTenantAdmin) {
+      return res.status(403).json({ error: 'Only administrators can reassign conversations.' });
+    }
+
+    let convCheck;
+    if (isPlatform) {
+      convCheck = await query('SELECT * FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
+    } else {
+      convCheck = await query('SELECT * FROM whatsapp_conversations WHERE id = $1 AND tenant_id = $2', [req.params.id, tenantId]);
+    }
+
+    if (!convCheck.rows[0]) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    let agentName = 'Unassigned';
+    if (agentId) {
+      const agentRes = await query('SELECT full_name FROM profiles WHERE id = $1', [agentId]);
+      agentName = agentRes.rows[0]?.full_name || 'Agent';
+    }
+
+    await query(`
+      UPDATE whatsapp_conversations 
+      SET assigned_to = $1, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $2
+    `, [agentId || null, req.params.id]);
+
+    return res.json({ success: true, message: `Conversation assigned to ${agentName}`, assigned_to: agentId, assigned_agent_name: agentName });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Super Admin Management of Permitted WhatsApp Chat Agents
+ */
+router.get('/agents', requireAuth, async (req, res) => {
+  try {
+    const isPlatform = isPlatformRole(req.user);
+    const tenantId = req.user?.tenant_id || (isPlatform ? req.query.tenant_id : null);
+    if (!tenantId) {
+      return res.json({ success: true, agents: [], enabledAgentIds: [] });
+    }
+
+    const tenantRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const enabledAgentIds = tenantRes.rows[0]?.settings?.integrations?.whatsapp?.enabled_agent_ids || [];
+
+    const profilesRes = await query(`
+      SELECT p.id, p.full_name, p.email, p.role, p.phone,
+             (SELECT COUNT(*) FROM whatsapp_conversations wc WHERE wc.tenant_id = $1 AND wc.assigned_to = p.id AND wc.status != 'closed') AS active_chats_count
+      FROM profiles p
+      WHERE p.tenant_id = $1
+      ORDER BY p.full_name ASC
+    `, [tenantId]);
+
+    const agents = profilesRes.rows.map(p => ({
+      ...p,
+      hasWhatsAppAccess: enabledAgentIds.includes(p.id) || ['super_admin', 'admin', 'director'].includes(p.role),
+      isConfiguredEnabled: enabledAgentIds.includes(p.id),
+      activeChatsCount: parseInt(p.active_chats_count || 0, 10),
+    }));
+
+    return res.json({ success: true, agents, enabledAgentIds });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/agents-access', requireAuth, async (req, res) => {
+  try {
+    const userRole = (req.user?.role || '').toLowerCase();
+    const isPlatform = isPlatformRole(req.user);
+    const isAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Only administrators can manage WhatsApp team access.' });
+    }
+
+    const tenantId = req.user?.tenant_id || (isPlatform ? req.body.tenant_id : null);
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant ID required' });
+    }
+
+    const { enabledAgentIds } = req.body;
+    if (!Array.isArray(enabledAgentIds)) {
+      return res.status(400).json({ error: 'enabledAgentIds array required' });
+    }
+
+    const tenantRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const currentSettings = tenantRes.rows[0]?.settings || {};
+    const integrations = currentSettings.integrations || {};
+    const whatsapp = integrations.whatsapp || {};
+
+    whatsapp.enabled_agent_ids = enabledAgentIds;
+    integrations.whatsapp = whatsapp;
+    currentSettings.integrations = integrations;
+
+    await query('UPDATE tenants SET settings = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [
+      JSON.stringify(currentSettings),
+      tenantId,
+    ]);
+
+    return res.json({ success: true, message: 'WhatsApp team agent access saved successfully', enabledAgentIds });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

@@ -1551,6 +1551,22 @@ export async function processIncomingWebhook(body) {
             } catch (leadSyncErr) {
               console.warn('[WhatsApp Lead Auto-Capture] Error syncing lead:', leadSyncErr.message);
             }
+
+            // Multi-Agent Auto-Assignment to Permitted Agent or CRM Lead Owner
+            if (!conversation.assigned_to) {
+              try {
+                const assignedAgentId = await autoAssignConversation({
+                  tenantId: matchedTenantId,
+                  conversationId: conversation.id,
+                  customerPhone: fromPhone,
+                });
+                if (assignedAgentId) {
+                  conversation.assigned_to = assignedAgentId;
+                }
+              } catch (assignErr) {
+                console.warn('[WhatsApp Auto-Assign] Warning assigning conversation:', assignErr.message);
+              }
+            }
           }
 
           // Extract & persist lead details (Name, City, Company) from message text for sales follow-up
@@ -1756,53 +1772,153 @@ export async function toggleBotStatus({ conversationId, status }) {
 }
 
 /**
- * List Conversations with filters, tenant scoping, and unread counts
+ * Automatically assign conversation to active permitted agent or CRM lead owner
  */
-export async function listConversations({ status = 'all', search = '', limit = 50, offset = 0, tenantId = null } = {}) {
+export async function autoAssignConversation({ tenantId, conversationId, customerPhone }) {
+  if (!tenantId || !conversationId) return null;
+
+  try {
+    // 1. Check if conversation already has an assigned agent
+    const checkRes = await query('SELECT assigned_to FROM whatsapp_conversations WHERE id = $1', [conversationId]);
+    if (checkRes.rows[0]?.assigned_to) {
+      return checkRes.rows[0].assigned_to;
+    }
+
+    // 2. Look up tenant's permitted WhatsApp agents
+    const tenantRes = await query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+    const enabledAgentIds = tenantRes.rows[0]?.settings?.integrations?.whatsapp?.enabled_agent_ids || [];
+
+    // 3. Match CRM lead owner first (Sticky routing)
+    const last10Digits = String(customerPhone || '').replace(/\D/g, '').slice(-10);
+    if (last10Digits.length === 10) {
+      const leadRes = await query(`
+        SELECT sales_executive_id, id FROM leads 
+        WHERE tenant_id = $1 
+          AND RIGHT(REGEXP_REPLACE(mobile, '\\D', '', 'g'), 10) = $2
+          AND sales_executive_id IS NOT NULL 
+        LIMIT 1
+      `, [tenantId, last10Digits]);
+
+      const leadAgentId = leadRes.rows[0]?.sales_executive_id;
+      if (leadAgentId && (enabledAgentIds.length === 0 || enabledAgentIds.includes(leadAgentId))) {
+        await query(`
+          UPDATE whatsapp_conversations 
+          SET assigned_to = $1, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = $2 AND assigned_to IS NULL
+        `, [leadAgentId, conversationId]);
+        console.log(`[WhatsApp Auto-Assign] Assigned conversation ${conversationId} to existing CRM lead owner ${leadAgentId}`);
+        return leadAgentId;
+      }
+    }
+
+    // 4. If no lead owner match, distribute round-robin to permitted agent with least active chats
+    if (enabledAgentIds.length > 0) {
+      const agentRes = await query(`
+        SELECT p.id, p.full_name
+        FROM profiles p
+        WHERE p.tenant_id = $1 AND p.id = ANY($2::text[])
+        ORDER BY (
+          SELECT COUNT(*) FROM whatsapp_conversations wc
+          WHERE wc.tenant_id = $1 AND wc.assigned_to = p.id AND wc.status != 'closed'
+        ) ASC
+        LIMIT 1
+      `, [tenantId, enabledAgentIds]);
+
+      if (agentRes.rows[0]) {
+        const assignedId = agentRes.rows[0].id;
+        await query(`
+          UPDATE whatsapp_conversations 
+          SET assigned_to = $1, updated_at = CURRENT_TIMESTAMP 
+          WHERE id = $2 AND assigned_to IS NULL
+        `, [assignedId, conversationId]);
+        console.log(`[WhatsApp Auto-Assign] Assigned conversation ${conversationId} to permitted agent ${assignedId} (${agentRes.rows[0].full_name})`);
+        return assignedId;
+      }
+    }
+  } catch (err) {
+    console.error('[WhatsApp Auto-Assign Error]:', err.message);
+  }
+  return null;
+}
+
+/**
+ * List Conversations with filters, tenant scoping, CRM lead enrichment, and unread counts
+ */
+export async function listConversations({ status = 'all', search = '', limit = 50, offset = 0, tenantId = null, assignedTo = null } = {}) {
   await initWhatsAppSchema();
 
-  let sql = 'SELECT * FROM whatsapp_conversations WHERE 1=1';
+  let whereClause = 'WHERE 1=1';
   const params = [];
   let summaryWhere = 'WHERE 1=1';
   const summaryParams = [];
 
   if (tenantId === 'none') {
-    sql += ' AND 1=0';
+    whereClause += ' AND 1=0';
     summaryWhere += ' AND 1=0';
   } else if (tenantId === 'platform') {
-    sql += ' AND tenant_id IS NULL';
+    whereClause += ' AND c.tenant_id IS NULL';
     summaryWhere += ' AND tenant_id IS NULL';
   } else if (tenantId && tenantId !== 'all') {
     params.push(tenantId);
-    sql += ` AND tenant_id = $${params.length}`;
+    whereClause += ` AND c.tenant_id = $${params.length}`;
     summaryParams.push(tenantId);
     summaryWhere += ` AND tenant_id = $${summaryParams.length}`;
   } else if (tenantId === 'all') {
     // All tenants - Super platform admin audit only
   } else {
-    // When tenantId is null or omitted, DEFAULT TO PLATFORM CONVERSATIONS (tenant_id IS NULL)
-    // NEVER EVER leak other tenants' data when tenantId is omitted!
-    sql += ' AND tenant_id IS NULL';
+    whereClause += ' AND c.tenant_id IS NULL';
     summaryWhere += ' AND tenant_id IS NULL';
+  }
+
+  if (assignedTo) {
+    params.push(assignedTo);
+    whereClause += ` AND c.assigned_to = $${params.length}`;
+    summaryParams.push(assignedTo);
+    summaryWhere += ` AND assigned_to = $${summaryParams.length}`;
   }
 
   if (status && status !== 'all') {
     params.push(status);
-    sql += ` AND status = $${params.length}`;
+    whereClause += ` AND c.status = $${params.length}`;
   }
 
   if (search && search.trim()) {
     params.push(`%${search.trim().toLowerCase()}%`);
-    sql += ` AND (LOWER(customer_name) LIKE $${params.length} OR phone LIKE $${params.length} OR LOWER(last_message) LIKE $${params.length})`;
+    whereClause += ` AND (LOWER(c.customer_name) LIKE $${params.length} OR c.phone LIKE $${params.length} OR LOWER(c.last_message) LIKE $${params.length})`;
   }
 
-  sql += ' ORDER BY last_message_at DESC';
+  const limitParamIdx = params.length + 1;
+  const offsetParamIdx = params.length + 2;
+
+  const sql = `
+    SELECT c.*,
+           p.full_name AS assigned_agent_name,
+           l.id AS crm_lead_id,
+           l.lead_id AS crm_lead_code,
+           l.customer_name AS crm_lead_name,
+           l.lead_status AS crm_lead_status,
+           l.budget_range AS crm_lead_budget,
+           prj.name AS crm_lead_project_name,
+           l_agent.full_name AS crm_lead_agent_name
+    FROM whatsapp_conversations c
+    LEFT JOIN profiles p ON p.id = c.assigned_to
+    LEFT JOIN LATERAL (
+      SELECT l.id, l.lead_id, l.customer_name, l.lead_status, l.budget_range, l.project_id, l.sales_executive_id
+      FROM leads l
+      WHERE (l.tenant_id = c.tenant_id OR (c.tenant_id IS NULL AND l.tenant_id IS NOT NULL))
+        AND RIGHT(REGEXP_REPLACE(l.mobile, '\\D', '', 'g'), 10) = RIGHT(REGEXP_REPLACE(c.phone, '\\D', '', 'g'), 10)
+      ORDER BY l.created_at DESC
+      LIMIT 1
+    ) l ON true
+    LEFT JOIN projects prj ON prj.id = l.project_id
+    LEFT JOIN profiles l_agent ON l_agent.id = l.sales_executive_id
+    ${whereClause}
+    ORDER BY c.last_message_at DESC
+    LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}
+  `;
 
   params.push(Math.min(100, Math.max(1, parseInt(limit, 10))));
-  sql += ` LIMIT $${params.length}`;
-
   params.push(Math.max(0, parseInt(offset, 10)));
-  sql += ` OFFSET $${params.length}`;
 
   const res = await query(sql, params);
 

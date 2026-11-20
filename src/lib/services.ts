@@ -345,6 +345,12 @@ export const whatsappHubService = {
     api.post<{ success: boolean; label: string; authenticityScore: number }>(`/whatsapp/conversations/${conversationId}/label`, { label, notes }),
   getLearningPatterns: (params?: { tenant_id?: string; scope?: string }) =>
     api.get<{ success: boolean; patterns: any[] }>('/whatsapp/learning-patterns', params),
+  getAgents: (params?: { tenant_id?: string }) =>
+    api.get<{ success: boolean; agents: any[]; enabledAgentIds: string[] }>('/whatsapp/agents', params),
+  saveAgentsAccess: (data: { enabledAgentIds: string[]; tenant_id?: string }) =>
+    api.post<{ success: boolean; message: string; enabledAgentIds: string[] }>('/whatsapp/agents-access', data),
+  assignConversation: (conversationId: string, agentId: string) =>
+    api.post<{ success: boolean; message: string; assigned_to: string; assigned_agent_name: string }>(`/whatsapp/conversations/${conversationId}/assign`, { agentId }),
 };
 
 export const aiService = {

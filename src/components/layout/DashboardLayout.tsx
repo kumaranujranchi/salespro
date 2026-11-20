@@ -498,6 +498,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const roleAccess = !item.roles || normalizedRoles.includes(userRole);
     if (!roleAccess) return false;
 
+    // WhatsApp Multi-Agent Access Control:
+    // Super Admin / Admin / Director always have access.
+    // Other roles only see WhatsApp if explicitly enabled by Super Admin in tenant settings.
+    if (item.path === '/configuration/whatsapp') {
+      const isSuperOrAdmin = ['super_admin', 'admin', 'director', 'platform_admin'].includes(userRole);
+      const enabledAgentIds = (tenant?.settings as any)?.integrations?.whatsapp?.enabled_agent_ids || [];
+      const isEnabledAgent = Boolean(profile?.id && Array.isArray(enabledAgentIds) && enabledAgentIds.includes(profile.id));
+      if (!isSuperOrAdmin && !isEnabledAgent) {
+        return false;
+      }
+    }
+
     // 3. Global Tenant Feature Flags
     const features = tenant?.settings?.features;
     if (features) {
