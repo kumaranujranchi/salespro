@@ -29,6 +29,12 @@ if [ "$LOCAL" != "$REMOTE" ]; then
   # Pull latest code
   git pull origin main
 
+  # If package.json changed or dependencies are missing, install them
+  if [ ! -d "node_modules/lenis" ] || git diff --name-only HEAD@{1} HEAD 2>/dev/null | grep -q "package.json"; then
+    echo "📦 Installing missing npm dependencies..."
+    npm install --no-audit || true
+  fi
+
   # Build frontend Vite production bundle so dist/ assets are updated
   echo "🔨 Building frontend assets (Vite)..."
   npm run build || true
