@@ -407,9 +407,16 @@ export function UpgradeToProModal({
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-white/5">
-            <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-            <span>Instant In-App Activation • UPI, Cards &amp; NetBanking via Razorpay</span>
+          <div className="text-center space-y-1 pt-1 border-t border-slate-100 dark:border-white/5">
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              <ShieldCheck size={14} className="text-emerald-500 shrink-0" />
+              <span>Instant In-App Activation • UPI, Cards &amp; NetBanking</span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              By subscribing, you agree to our{' '}
+              <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">Terms</a> &amp;{' '}
+              <a href="/terms#dpa" target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">Data Processing Agreement (DPA)</a>.
+            </p>
           </div>
         </div>
       </div>

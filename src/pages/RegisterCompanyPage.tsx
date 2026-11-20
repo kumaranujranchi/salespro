@@ -546,6 +546,13 @@ export function RegisterCompanyPage() {
                       </>
                     )}
                   </button>
+
+                  <p className="text-[11px] text-slate-400 text-center leading-relaxed px-2">
+                    By registering, you agree to RealSalePro's{' '}
+                    <Link to="/terms" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Terms of Service</Link>,{' '}
+                    <Link to="/terms#dpa" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Data Processing Agreement (DPA)</Link>, and{' '}
+                    <Link to="/privacy" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Privacy Policy</Link>.
+                  </p>
                 </div>
               </form>
             ) : (
