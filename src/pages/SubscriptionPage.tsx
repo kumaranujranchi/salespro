@@ -441,16 +441,20 @@ export function SubscriptionPage() {
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(navyColor[0], navyColor[1], navyColor[2]);
-    doc.text(convertNumberToWords(totalAmount), 14, finalY + 5);
+    const wordsLines = doc.splitTextToSize(convertNumberToWords(totalAmount), 108);
+    doc.text(wordsLines, 14, finalY + 5);
+
+    const wordsHeight = wordsLines.length * 4;
+    const taxNoteY = finalY + 5 + wordsHeight + 2;
 
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-    if (isIntraState) {
-      doc.text('Tax Note: Both Supplier & Place of Supply are in Bihar. CGST (9%) & SGST (9%) applied.', 14, finalY + 11);
-    } else {
-      doc.text(`Tax Note: Supplier in Bihar (10), Place of Supply in ${customerStateName} (${customerStateCode}). IGST (18%) charged as per IGST Act, 2017.`, 14, finalY + 11);
-    }
+    const taxNote = isIntraState
+      ? 'Tax Note: Both Supplier & Place of Supply are in Bihar. CGST (9%) & SGST (9%) applied.'
+      : `Tax Note: Supplier in Bihar (10), Place of Supply in ${customerStateName} (${customerStateCode}). IGST (18%) charged as per IGST Act, 2017.`;
+    const taxNoteLines = doc.splitTextToSize(taxNote, 108);
+    doc.text(taxNoteLines, 14, taxNoteY);
 
     // Right: Calculation Summary
     const sumX = 132;
