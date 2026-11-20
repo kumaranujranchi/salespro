@@ -12,11 +12,23 @@ BACKUP_FILE="${TEMP_DIR}/dpdp_consent_audit_${BACKUP_DATE}.sql.gz"
 S3_BUCKET="${S3_BACKUP_BUCKET:-realsalepro-dpdp-immutable-backups}"
 S3_PREFIX="${S3_BACKUP_PREFIX:-dpdp_audit_ledgers}"
 
+# Automatically load environment variables from server/.env if present
+if [ -f "/var/www/salespro/server/.env" ]; then
+  set -a
+  source /var/www/salespro/server/.env 2>/dev/null || true
+  set +a
+elif [ -f "./server/.env" ]; then
+  set -a
+  source ./server/.env 2>/dev/null || true
+  set +a
+fi
+
 # Database credentials (defaults from environment or local postgres)
-PG_HOST="${PGHOST:-localhost}"
-PG_PORT="${PGPORT:-5432}"
-PG_USER="${PGUSER:-salesprouser}"
-PG_DB="${PGDATABASE:-salespro}"
+export PGHOST="${PGHOST:-localhost}"
+export PGPORT="${PGPORT:-5432}"
+export PGUSER="${PGUSER:-salesprouser}"
+export PGDATABASE="${PGDATABASE:-salespro}"
+export PGPASSWORD="${PGPASSWORD:-SalesProPass@2026}"
 
 echo "======================================================================"
 echo "  RealSalePro: DPDP 3-Year Immutable Audit Backup -> AWS S3"
