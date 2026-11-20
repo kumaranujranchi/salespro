@@ -128,7 +128,7 @@ export function UpgradeToProModal({
         subscription_id: subscriptionId,
         name: 'RealSalePro',
         description: `Pro Plan (${activePlan.name}) - ₹${activePlan.totalPrice.toLocaleString('en-IN')}`,
-        image: tenant.settings?.appearance?.logo_url || tenant.settings?.company_profile?.logo_url || undefined,
+        image: 'https://realsalepro.com/images/RealSalePro_Favicon.png',
         prefill: {
           name: tenant.name,
           email: user?.email || profile?.email || '',

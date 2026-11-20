@@ -177,7 +177,7 @@ export function PricingPage() {
         subscription_id: subscription.razorpay_subscription_id,
         name: 'RealSalePro',
         description: `${planName} Subscription`,
-        image: tenant.settings?.appearance?.logo_url || tenant.settings?.company_profile?.logo_url || undefined,
+        image: 'https://realsalepro.com/images/RealSalePro_Favicon.png',
         prefill: {
           name: tenant.name,
           email: user.email,
