@@ -29,6 +29,10 @@ if [ "$LOCAL" != "$REMOTE" ]; then
   # Pull latest code
   git pull origin main
 
+  # Build frontend Vite production bundle so dist/ assets are updated
+  echo "🔨 Building frontend assets (Vite)..."
+  npm run build || true
+
   # Restart Node.js backend with PM2 and reload environment variables
   pm2 restart salespro-api --update-env > /dev/null 2>&1 || true
   
