@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
 import { WebsiteWhatsAppWidget } from '../components/whatsapp/WebsiteWhatsAppWidget';
+import { RelatedSolutionsCluster } from '../components/seo/RelatedSolutionsCluster';
 import { ShieldCheck, AlertTriangle, FileText, Server, CheckCircle2, ArrowLeft, ArrowRight, Lock, UserCheck, Database, Scale } from 'lucide-react';
 import { initLandingInteractions } from './landingInteractions';
 import '../styles/landing.css';
@@ -209,7 +210,7 @@ export function BlogDPDPPage() {
                         Determines the purpose and means of collecting leads; must prove valid notice and consent; must honor opt-out and erasure requests.
                       </td>
                       <td className="py-3 px-4 text-slate-600 italic">
-                        Greenfield Developers or an Apex Realty broker collecting site visit inquiries.
+                        Greenfield Developers or an <Link to="/crm-for-real-estate-brokers" className="text-emerald-700 underline font-medium hover:text-emerald-800">Apex Realty channel partner</Link> collecting <Link to="/features/lead-management" className="text-emerald-700 underline font-medium hover:text-emerald-800">site visit inquiries</Link>.
                       </td>
                     </tr>
                     <tr className="hover:bg-slate-50 transition-colors">
@@ -237,7 +238,7 @@ export function BlogDPDPPage() {
                         Owns the personal data. Has statutory rights to access, correct, withdraw consent, and demand permanent erasure of their details.
                       </td>
                       <td className="py-3 px-4 text-slate-600 italic">
-                        Mr. Sharma inquiring about a 3BHK flat on your website or Meta ad campaign.
+                        Mr. Sharma inquiring about a 3BHK flat via <Link to="/free-real-estate-crm" className="text-emerald-700 underline font-medium hover:text-emerald-800">Meta or WhatsApp lead sync</Link>.
                       </td>
                     </tr>
                   </tbody>
@@ -257,7 +258,7 @@ export function BlogDPDPPage() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>Purchasing leaked CD-ROMs or Excel spreadsheets containing phone numbers of car owners, club members, or HNI investors.</li>
                 <li>Conducting cold telemarketing calls without prior consent or TRAI DND scrub.</li>
-                <li>Storing unencrypted homebuyer KYC documents (Aadhaar, PAN cards, income proofs) on personal laptops or unprotected Google Sheets.</li>
+                <li>Storing unencrypted homebuyer KYC documents (Aadhaar, PAN cards, income proofs) on personal laptops or <Link to="/templates/real-estate-crm-excel-template" className="text-emerald-700 underline font-medium hover:text-emerald-800">unprotected Excel spreadsheets or Google Sheets</Link>.</li>
               </ul>
               <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl my-4 text-sm text-red-900">
                 <strong>Statutory Liability:</strong> Under Section 6 and Section 33 of the DPDP Act, processing personal data without verifiable consent carries penalties of up to <strong>₹250 Crores per breach</strong>. When a homebuyer files a grievance with the Data Protection Board of India, the <strong>Data Fiduciary (the Builder/Broker)</strong> must provide cryptographic proof of when and how consent was given.
@@ -333,6 +334,9 @@ export function BlogDPDPPage() {
                 <li><strong>Ultra-Low Latency:</strong> Sub-20ms database response for agents and calling teams across India.</li>
                 <li><strong>Statutory WORM Protection:</strong> Write-Once-Read-Many database triggers protect consent audit records from unauthorized deletion for 3 years.</li>
               </ul>
+              <p className="mt-4">
+                For developers requiring custom private infrastructure, RealSalePro also offers <Link to="/integration" className="text-emerald-700 underline font-medium hover:text-emerald-800">enterprise self-hosted database integration</Link> to connect directly to private AWS RDS instances. You can also explore our localized <Link to="/real-estate-crm-india" className="text-emerald-700 underline font-medium hover:text-emerald-800">Indian real estate CRM platform features</Link> and our <Link to="/pricing" className="text-emerald-700 underline font-medium hover:text-emerald-800">transparent subscription pricing</Link>.
+              </p>
             </section>
 
             {/* Section: 5-Step Actionable Checklist */}
@@ -403,6 +407,11 @@ export function BlogDPDPPage() {
           </div>
 
         </article>
+
+        {/* SEO Cross-Linking Hub */}
+        <div className="mt-20">
+          <RelatedSolutionsCluster currentPath="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor" />
+        </div>
       </main>
 
       {/* WhatsApp Floating Widget */}

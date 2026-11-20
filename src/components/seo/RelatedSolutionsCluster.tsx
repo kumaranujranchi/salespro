@@ -56,6 +56,13 @@ const solutions: SolutionItem[] = [
     description: 'Bring your own PostgreSQL or AWS RDS database for 100% data sovereignty behind your private firewall.'
   },
   {
+    path: '/blog/dpdp-act-real-estate-data-fiduciary-vs-processor',
+    badge: 'Legal & DPDP Act',
+    title: 'DPDP Act Real Estate Guide',
+    anchorText: 'DPDP Act Compliance for Real Estate',
+    description: 'Learn Data Fiduciary vs Processor statutory liabilities, ₹250 Cr penalty rules, and mandatory DPA contracts.'
+  },
+  {
     path: '/pricing',
     badge: 'Transparent Plans',
     title: 'Fair, Predictable Pricing',
