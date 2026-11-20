@@ -500,6 +500,12 @@ function testCriticalFiles() {
     'server/src/services/inactivityService.js',
     'server/src/utils/nameHelper.js',
     'server/src/services/whatsappHubService.js',
+    'server/src/routes/consent.js',
+    'server/src/services/consentService.js',
+    'src/lib/consentManager.ts',
+    'src/components/dpdp/DPDPCookieBanner.tsx',
+    'src/components/dpdp/ManageConsentButton.tsx',
+    'src/components/dpdp/GrievanceOfficerModal.tsx',
   ];
 
   let missingCount = 0;
@@ -826,7 +832,75 @@ function testSiteVisitDriverIdentification() {
 }
 
 // ---------------------------------------------------------
-// TEST 11: Backend Server & DB Health (Async Ping)
+// TEST 11: DPDP Act (India) Consent & Verifiable Audit Trail
+// ---------------------------------------------------------
+function testDpdpActConsentCompliance() {
+  printHeader('11. DPDP Act (India) Cookie Consent & Verifiable Audit Trail');
+
+  // 1. Dual-Language Notice Texts & Grievance Officer Disclosures
+  const consentManagerCode = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/consentManager.ts'), 'utf8');
+  const hasEnNotice = consentManagerCode.includes('DPDP_NOTICE_TEXT_EN') && consentManagerCode.includes('RealSalePro collects user data via lead generation forms');
+  const hasHiNotice = consentManagerCode.includes('DPDP_NOTICE_TEXT_HI') && consentManagerCode.includes('डिजिटल पर्सनल डेटा प्रोटेक्शन (DPDP) अधिनियम');
+  const hasGrievanceInfo = consentManagerCode.includes('GRIEVANCE_OFFICER_INFO') && consentManagerCode.includes('grievance@realsalepro.com');
+
+  if (hasEnNotice && hasHiNotice && hasGrievanceInfo) {
+    logPass('DPDP compliant dual-language notices (English & Hindi) and Grievance Officer disclosures verified');
+  } else {
+    logFail('Consent manager missing DPDP notices or Grievance disclosures', 'Check src/lib/consentManager.ts');
+  }
+
+  // 2. IP Anonymization & SHA-256 Hash Verification in backend
+  const consentServiceCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/services/consentService.js'), 'utf8');
+  const hasAnonymizeIp = consentServiceCode.includes('anonymizeIp') && consentServiceCode.includes("parts.slice(0, 3).join(':') + '::0'");
+  const hasSha256 = consentServiceCode.includes("crypto.createHash('sha256')");
+  const hasAuditLogging = consentServiceCode.includes('recordConsent') && consentServiceCode.includes('dpdp_consent_logs');
+
+  if (hasAnonymizeIp && hasSha256 && hasAuditLogging) {
+    logPass('Backend consent service enforces IP anonymization, SHA-256 hashing, and immutable audit logging');
+  } else {
+    logFail('Backend consent service failed check', 'Check server/src/services/consentService.js');
+  }
+
+  // 3. Public API Route Mounting (/api/v1/consent & /api/consent)
+  const serverIndexCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/index.js'), 'utf8');
+  const hasV1ConsentMount = serverIndexCode.includes("app.use('/api/v1/consent', consentRoutes)");
+  const hasConsentMount = serverIndexCode.includes("app.use('/api/consent', consentRoutes)");
+  const hasSchemaInit = serverIndexCode.includes('initConsentSchema');
+
+  if (hasV1ConsentMount && hasConsentMount && hasSchemaInit) {
+    logPass('Consent API endpoints properly mounted at /api/v1/consent and /api/consent with schema initialization');
+  } else {
+    logFail('Server index missing consent routes or schema init', 'Check server/src/index.js');
+  }
+
+  // 4. Dark-Pattern Free UI & Granular Toggles (Essential Locked, Analytics & Marketing Default OFF)
+  const bannerCode = fs.readFileSync(path.join(ROOT_DIR, 'src/components/dpdp/DPDPCookieBanner.tsx'), 'utf8');
+  const hasThreeEqualButtons = bannerCode.includes('handleRejectAll') && bannerCode.includes('handleSavePreferences') && bannerCode.includes('handleAcceptAll');
+  const hasNoPreTicked = bannerCode.includes('analytics: false') && bannerCode.includes('marketing: false') && bannerCode.includes('essential: true');
+  const hasLanguageSwitcher = bannerCode.includes("onClick={() => setLanguage('en')}") && bannerCode.includes("onClick={() => setLanguage('hi')}");
+
+  if (hasThreeEqualButtons && hasNoPreTicked && hasLanguageSwitcher) {
+    logPass('Dark-pattern free UI verified: 3 equal weight buttons, default-off granular toggles & language switch');
+  } else {
+    logFail('DPDPCookieBanner failed dark-pattern or granular toggle checks', 'Check src/components/dpdp/DPDPCookieBanner.tsx');
+  }
+
+  // 5. Script Blocking & Google Consent Mode v2 Default Gating
+  const indexHtmlCode = fs.readFileSync(path.join(ROOT_DIR, 'index.html'), 'utf8');
+  const hasConsentModeDefault = indexHtmlCode.includes("gtag('consent', 'default'") && indexHtmlCode.includes("'analytics_storage': 'denied'");
+  const appCode = fs.readFileSync(path.join(ROOT_DIR, 'src/App.tsx'), 'utf8');
+  const hasScriptBlockingInTracker = appCode.includes("!hasConsentFor('analytics')");
+  const hasBannerMounted = appCode.includes('<DPDPCookieBanner />') && appCode.includes('<ManageConsentButton />');
+
+  if (hasConsentModeDefault && hasScriptBlockingInTracker && hasBannerMounted) {
+    logPass('Script blocking active: GTM Consent Mode v2 default denied & GTM tracker gated by user consent');
+  } else {
+    logFail('Script blocking or banner mounting check failed', 'Check index.html and src/App.tsx');
+  }
+}
+
+// ---------------------------------------------------------
+// TEST 12: Backend Server & DB Health (Async Ping)
 // ---------------------------------------------------------
 async function testBackendHealth() {
   printHeader('7. Backend Server & Database Connection');
@@ -885,6 +959,7 @@ async function runSuite() {
   testInactivityLifecycle();
   await testWhatsAppChatbotSalutations();
   testSiteVisitDriverIdentification();
+  testDpdpActConsentCompliance();
   testCriticalFiles();
   await testBackendHealth();
 

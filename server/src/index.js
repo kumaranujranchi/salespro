@@ -18,6 +18,7 @@ import capiRoutes from './routes/capi.js';
 import metaRoutes from './routes/meta.js';
 import whatsappRoutes from './routes/whatsapp.js';
 import aiRoutes from './routes/ai.js';
+import consentRoutes from './routes/consent.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -73,6 +74,10 @@ app.post('/api/tenants/register', registerTenantHandler);
 
 // Public WhatsApp Webhook & OTP router (internal admin routes guard themselves with requireAuth)
 app.use('/api/whatsapp', whatsappRoutes);
+
+// Public DPDP Act (India) Consent & Preferences Logging API
+app.use('/api/v1/consent', consentRoutes);
+app.use('/api/consent', consentRoutes);
 
 // File Upload & Storage resolver (Public upload endpoint for avatars, receipts, and brand assets)
 app.post('/api/files/upload', (req, res) => {
@@ -135,6 +140,14 @@ app.listen(PORT, async () => {
     console.log('✔ RealSalePro In-House WhatsApp Cloud Engine & Schema initialized');
   } catch (err) {
     console.error('WhatsApp schema initialization error:', err.message);
+  }
+
+  // Initialize DPDP Act (India) Consent Audit Ledger & Schema
+  try {
+    const { initConsentSchema } = await import('./services/consentService.js');
+    await initConsentSchema();
+  } catch (err) {
+    console.error('DPDP Consent schema initialization error:', err.message);
   }
 
   // Initialize Inactivity Schema & Automated 30-Day Inactivity Scheduler

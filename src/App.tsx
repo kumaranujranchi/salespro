@@ -64,23 +64,44 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { Toaster } from 'sonner';
+import { hasConsentFor } from './lib/consentManager';
+import { DPDPCookieBanner } from './components/dpdp/DPDPCookieBanner';
+import { ManageConsentButton } from './components/dpdp/ManageConsentButton';
 
 function GTMPageViewTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && (window as any).dataLayer) {
-        (window as any).dataLayer.push({
-          event: 'page_view',
-          page_path: location.pathname + location.search,
-          page_location: window.location.href,
-          page_title: document.title,
-        });
+    const trackPage = () => {
+      // DPDP Act (India) Script Blocking: Non-essential analytics must NOT fire without explicit user consent
+      if (!hasConsentFor('analytics')) {
+        return;
       }
-    } catch {
-      // Ignore tracking errors
-    }
+      try {
+        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+          (window as any).dataLayer.push({
+            event: 'page_view',
+            page_path: location.pathname + location.search,
+            page_location: window.location.href,
+            page_title: document.title,
+          });
+        }
+      } catch {
+        // Ignore tracking errors
+      }
+    };
+
+    trackPage();
+
+    // Listen for consent grant events so if the user clicks Accept while on the page, the initial view fires
+    const handleConsentUpdated = (e: any) => {
+      if (e?.detail?.preferences?.analytics) {
+        trackPage();
+      }
+    };
+
+    window.addEventListener('dpdp_consent_updated', handleConsentUpdated);
+    return () => window.removeEventListener('dpdp_consent_updated', handleConsentUpdated);
   }, [location]);
 
   return null;
@@ -95,6 +116,8 @@ function App() {
             <TutorialProvider>
               <ErrorBoundary>
                 <GTMPageViewTracker />
+                <DPDPCookieBanner />
+                <ManageConsentButton />
                 <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={Capacitor.isNativePlatform() ? <Navigate to="/login" replace /> : <LandingPage />} />
