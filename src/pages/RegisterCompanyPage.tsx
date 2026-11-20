@@ -32,8 +32,10 @@ export function RegisterCompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-  const [isResending, setIsResending] = useState(false);
+  const [resendTimerWa, setResendTimerWa] = useState(0);
+  const [resendTimerEmail, setResendTimerEmail] = useState(0);
+  const [isResendingWa, setIsResendingWa] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -54,8 +56,10 @@ export function RegisterCompanyPage() {
   });
 
   const [verificationStep, setVerificationStep] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [whatsappOtp, setWhatsappOtp] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [generatedWhatsappOtp, setGeneratedWhatsappOtp] = useState<string | null>(null);
+  const [generatedEmailOtp, setGeneratedEmailOtp] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -72,50 +76,66 @@ export function RegisterCompanyPage() {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (resendTimer > 0) {
+    if (resendTimerWa > 0 || resendTimerEmail > 0) {
       timer = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
+        setResendTimerWa((prev) => (prev > 0 ? prev - 1 : 0));
+        setResendTimerEmail((prev) => (prev > 0 ? prev - 1 : 0));
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [resendTimer]);
+  }, [resendTimerWa, resendTimerEmail]);
 
-  const handleResendCode = async () => {
-    if (resendTimer > 0 || isResending) return;
-    setIsResending(true);
+  const handleResendWhatsapp = async () => {
+    if (resendTimerWa > 0 || isResendingWa) return;
+    setIsResendingWa(true);
     setError(null);
-    setSuccess(null);
 
     try {
-      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(newOtp);
-
-      let waSuccess = false;
-      if (formData.phone && formData.phone.trim()) {
-        try {
-          const waRes = await whatsappHubService.sendOtp(formData.phone.trim(), 'signup_verification', newOtp);
-          if (waRes?.success) waSuccess = true;
-        } catch (waErr) {
-          console.warn('WhatsApp OTP resend warning:', waErr);
-        }
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+      let newWaOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      while (newWaOtp === generatedEmailOtp) {
+        newWaOtp = Math.floor(100000 + Math.random() * 900000).toString();
       }
+      setGeneratedWhatsappOtp(newWaOtp);
+
+      const waRes = await whatsappHubService.sendOtp(cleanPhone, 'signup_verification', newWaOtp);
+      if (!waRes?.success) {
+        throw new Error(waRes?.error || 'Failed to dispatch WhatsApp OTP.');
+      }
+
+      setSuccess(`A fresh WhatsApp verification code was sent to ${formData.phone}.`);
+      setResendTimerWa(30);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'Failed to resend WhatsApp verification code');
+    } finally {
+      setIsResendingWa(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (resendTimerEmail > 0 || isResendingEmail) return;
+    setIsResendingEmail(true);
+    setError(null);
+
+    try {
+      let newEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      while (newEmailOtp === generatedWhatsappOtp) {
+        newEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      }
+      setGeneratedEmailOtp(newEmailOtp);
 
       await authService.sendRegistrationOtp({
         email: formData.email.trim(),
         name: formData.fullName.trim(),
-        otp: newOtp
+        otp: newEmailOtp
       });
-      
-      setSuccess(
-        waSuccess
-          ? `A fresh 6-digit verification code has been sent to your WhatsApp and Email.`
-          : `A fresh 6-digit code has been sent to ${formData.email}.`
-      );
-      setResendTimer(30);
+
+      setSuccess(`A fresh Email verification code was sent to ${formData.email}.`);
+      setResendTimerEmail(30);
     } catch (err: any) {
-      setError(err instanceof Error ? err.message : 'Failed to resend verification code');
+      setError(err instanceof Error ? err.message : 'Failed to resend Email verification code');
     } finally {
-      setIsResending(false);
+      setIsResendingEmail(false);
     }
   };
 
@@ -128,6 +148,12 @@ export function RegisterCompanyPage() {
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters");
+      return;
+    }
+
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setError("Please enter a valid 10-digit mobile number with WhatsApp.");
       return;
     }
 
@@ -146,43 +172,39 @@ export function RegisterCompanyPage() {
         return;
       }
 
-      // 2. Generate and dispatch secure 6-digit OTP
-      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(newOtp);
-
-      // A. Dispatch via WhatsApp if mobile phone number is provided
-      let waSuccess = false;
-      if (formData.phone && formData.phone.trim()) {
-        try {
-          const waRes = await whatsappHubService.sendOtp(formData.phone.trim(), 'signup_verification', newOtp);
-          if (waRes?.success) {
-            waSuccess = true;
-          }
-        } catch (waErr) {
-          console.warn('WhatsApp OTP dispatch warning:', waErr);
-        }
+      // 2. Generate two completely separate, unique 6-digit OTPs
+      const newEmailOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      let newWaOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      while (newWaOtp === newEmailOtp) {
+        newWaOtp = Math.floor(100000 + Math.random() * 900000).toString();
       }
 
-      // B. Dispatch via verified Email (Ensures 100% reliable backup)
+      setGeneratedEmailOtp(newEmailOtp);
+      setGeneratedWhatsappOtp(newWaOtp);
+
+      // A. Dispatch WhatsApp OTP to user's mobile number (MANDATORY)
+      const waRes = await whatsappHubService.sendOtp(cleanPhone, 'signup_verification', newWaOtp);
+      if (!waRes?.success) {
+        throw new Error(waRes?.error || 'Unable to deliver WhatsApp verification code to this mobile number. Please ensure the number is registered on WhatsApp.');
+      }
+
+      // B. Dispatch Email OTP to user's email address (MANDATORY)
       await authService.sendRegistrationOtp({
         email: formData.email.trim(),
         name: formData.fullName.trim(),
-        otp: newOtp
+        otp: newEmailOtp
       });
 
       setVerificationStep(true);
-      setResendTimer(30);
-      setSuccess(
-        waSuccess
-          ? `Verification code sent to your WhatsApp (${formData.phone}) and Email (${formData.email})!`
-          : `Verification code sent to ${formData.email}! Please check your inbox.`
-      );
+      setResendTimerWa(30);
+      setResendTimerEmail(30);
+      setSuccess(`Two separate verification codes have been sent: one to your WhatsApp (${formData.phone}) and another to your Email (${formData.email}). Both are required to verify your identity.`);
     } catch (err: any) {
       if (err?.status === 409 || err?.message?.toLowerCase().includes('already registered')) {
         setIsAlreadyRegistered(true);
         setError("This email is already registered. Please sign in instead.");
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to send verification code. Please check your email.');
+        setError(err instanceof Error ? err.message : 'Failed to send verification codes. Please check your details.');
       }
     } finally {
       setLoading(false);
@@ -194,10 +216,26 @@ export function RegisterCompanyPage() {
     setLoading(true);
     setError(null);
 
-    const isValid = (otp.trim() === generatedOtp?.trim());
+    const cleanWaInput = whatsappOtp.replace(/\D/g, '').trim();
+    const cleanEmailInput = emailOtp.replace(/\D/g, '').trim();
 
-    if (!isValid) {
-      setError("Invalid verification code. Please check your email inbox or spam folder.");
+    const isWaCorrect = cleanWaInput === generatedWhatsappOtp?.trim();
+    const isEmailCorrect = cleanEmailInput === generatedEmailOtp?.trim();
+
+    if (!isWaCorrect && !isEmailCorrect) {
+      setError("Both WhatsApp and Email verification codes are incorrect. Please check the codes sent to your phone and email.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isWaCorrect) {
+      setError(`Invalid WhatsApp verification code. Please check your WhatsApp messages on ${formData.phone}.`);
+      setLoading(false);
+      return;
+    }
+
+    if (!isEmailCorrect) {
+      setError(`Invalid Email verification code. Please check your inbox at ${formData.email}.`);
       setLoading(false);
       return;
     }
@@ -277,15 +315,15 @@ export function RegisterCompanyPage() {
 
           <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold tracking-wide">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>100% Free Forever • No Card Needed</span>
+            <span>{verificationStep ? 'Dual Identity Verification' : '100% Free Forever • No Card Needed'}</span>
           </div>
 
           <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            {verificationStep ? 'Verify Your Email' : 'Create Your Free Workspace'}
+            {verificationStep ? 'Verify WhatsApp & Email' : 'Create Your Free Workspace'}
           </h1>
           <p className="mt-2 text-sm text-slate-300">
             {verificationStep
-              ? 'We sent a 6-digit cryptographic verification code to your email.'
+              ? 'Enter the two separate 6-digit verification codes sent to your WhatsApp and Email.'
               : 'Turn real estate enquiries into bookings from one calm tab.'}
           </p>
         </div>
@@ -511,51 +549,147 @@ export function RegisterCompanyPage() {
                 </div>
               </form>
             ) : (
-              /* Step 2: OTP Verification Form with Generous Spacing */
-              <form className="space-y-6" onSubmit={verifyOtpAndRegister}>
+              /* Step 2: Dual OTP Verification Form */
+              <form className="space-y-5" onSubmit={verifyOtpAndRegister}>
                 
-                {/* Verification Target Chips */}
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {formData.phone && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
-                      <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>WhatsApp: {formData.phone}</span>
-                    </div>
-                  )}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-xs font-medium">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Email: {formData.email}</span>
+                {/* Security Requirement Banner */}
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200/90 leading-relaxed flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-emerald-300">Mandatory Dual Verification:</span> To keep workspaces secure and eliminate fake numbers, both your WhatsApp and Email must be verified with their independent 6-digit codes.
                   </div>
                 </div>
 
-                {/* Enter Verification Code Input Section */}
-                <div className="text-center">
-                  <label className="block text-sm font-semibold text-emerald-100 mb-3 tracking-wide">
-                    Enter 6-Digit Verification Code
-                  </label>
-                  
-                  <div className="my-3 flex justify-center">
+                {/* WhatsApp Verification Card */}
+                <div className="p-4 rounded-xl bg-[#061810] border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-emerald-100 flex items-center gap-1.5">
+                          WhatsApp Verification Code
+                          {whatsappOtp.trim().length === 6 && whatsappOtp.trim() === generatedWhatsappOtp && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                              <CheckCircle2 className="w-3 h-3" /> Matched
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Sent to <span className="text-white font-mono">{formData.phone}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resend WhatsApp Code */}
+                    <div className="text-right">
+                      {resendTimerWa > 0 ? (
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          Resend in <strong className="text-emerald-400">{resendTimerWa}s</strong>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResendWhatsapp}
+                          disabled={isResendingWa}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          {isResendingWa ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            'Resend Code'
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center pt-1">
                     <input
-                      name="otp"
+                      name="whatsappOtp"
                       type="text"
                       inputMode="numeric"
                       autoComplete="one-time-code"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      value={whatsappOtp}
+                      onChange={(e) => setWhatsappOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       required
                       placeholder="••••••"
-                      className="w-full max-w-xs text-center text-3xl font-mono font-bold tracking-[0.4em] py-3.5 px-4 rounded-xl bg-[#0a2318] border-2 border-emerald-500/40 text-white placeholder-emerald-900/60 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all shadow-inner"
+                      className="w-full text-center text-2xl font-mono font-bold tracking-[0.4em] py-2.5 px-4 rounded-xl bg-[#0a2318] border-2 border-emerald-500/40 text-white placeholder-emerald-900/60 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all shadow-inner"
                       maxLength={6}
                       autoFocus
                     />
                   </div>
-
-                  <p className="text-xs text-slate-400 mt-2">
-                    Check your WhatsApp or email inbox for your 6-digit verification code.
-                  </p>
                 </div>
 
-                {/* Alerts with Clean Breathing Room */}
+                {/* Email Verification Card */}
+                <div className="p-4 rounded-xl bg-[#061810] border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <Mail className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-emerald-100 flex items-center gap-1.5">
+                          Email Verification Code
+                          {emailOtp.trim().length === 6 && emailOtp.trim() === generatedEmailOtp && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                              <CheckCircle2 className="w-3 h-3" /> Matched
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 truncate max-w-[200px] sm:max-w-[240px]">
+                          Sent to <span className="text-white font-mono">{formData.email}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resend Email Code */}
+                    <div className="text-right">
+                      {resendTimerEmail > 0 ? (
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          Resend in <strong className="text-emerald-400">{resendTimerEmail}s</strong>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResendEmail}
+                          disabled={isResendingEmail}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 cursor-pointer"
+                        >
+                          {isResendingEmail ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            'Resend Code'
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center pt-1">
+                    <input
+                      name="emailOtp"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={emailOtp}
+                      onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                      placeholder="••••••"
+                      className="w-full text-center text-2xl font-mono font-bold tracking-[0.4em] py-2.5 px-4 rounded-xl bg-[#0a2318] border-2 border-emerald-500/40 text-white placeholder-emerald-900/60 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all shadow-inner"
+                      maxLength={6}
+                    />
+                  </div>
+                </div>
+
+                {/* Alerts */}
                 {error && (
                   <div className="bg-red-500/15 border border-red-500/40 text-red-300 p-3.5 rounded-xl text-xs text-center flex items-center justify-center gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
@@ -570,11 +704,11 @@ export function RegisterCompanyPage() {
                   </div>
                 )}
 
-                {/* Primary Verification Button */}
+                {/* Primary Dual Verification Button */}
                 <div className="space-y-4 pt-2">
                   <button
                     type="submit"
-                    disabled={loading || otp.length < 6}
+                    disabled={loading || whatsappOtp.trim().length < 6 || emailOtp.trim().length < 6}
                     className="w-full flex items-center justify-center py-3.5 px-4 rounded-xl font-bold text-[#04120c] bg-[#10b981] hover:bg-[#059669] active:scale-[0.99] transition-all shadow-lg shadow-emerald-500/25 text-sm tracking-wide disabled:opacity-50 cursor-pointer"
                   >
                     {loading ? (
@@ -583,37 +717,11 @@ export function RegisterCompanyPage() {
                         Verifying & Creating Workspace...
                       </>
                     ) : (
-                      'Verify & Create Account'
+                      'Verify Both Codes & Create Account'
                     )}
                   </button>
 
-                  {/* Resend Cooldown Section */}
-                  <div className="text-center pt-1">
-                    {resendTimer > 0 ? (
-                      <p className="text-xs text-slate-400">
-                        Resend verification code in{' '}
-                        <span className="font-bold text-emerald-400">{resendTimer}s</span>
-                      </p>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleResendCode}
-                        disabled={isResending}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 underline underline-offset-4 decoration-emerald-500/40 cursor-pointer"
-                      >
-                        {isResending ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Didn't receive the code? Resend"
-                        )}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Back to Edit Email */}
+                  {/* Back to Edit Info */}
                   <div className="text-center">
                     <button
                       type="button"
@@ -624,7 +732,7 @@ export function RegisterCompanyPage() {
                       }}
                       className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
                     >
-                      ← Change Email / Go Back
+                      ← Change Phone or Email / Go Back
                     </button>
                   </div>
                 </div>
