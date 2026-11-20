@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor } from '../lib/capacitor';
 import { useAuth } from '../contexts/AuthContext';
 import { useBackend } from '../lib/reactive';
 import { api } from '../lib/api-endpoints';

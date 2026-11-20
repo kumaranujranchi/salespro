@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor } from '../lib/capacitor';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { landingHtml } from './landingHtml';
