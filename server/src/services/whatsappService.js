@@ -149,10 +149,16 @@ export async function sendLeadWelcomeWhatsApp({ tenantId, lead }) {
     }
 
     // Fetch tenant settings
-    const tenantRes = await query('SELECT id, name, settings FROM tenants WHERE id = $1', [tenantId]);
+    const tenantRes = await query('SELECT id, name, settings, plan_tier, subscription_status FROM tenants WHERE id = $1', [tenantId]);
     if (tenantRes.rows.length === 0) return null;
 
     const tenant = tenantRes.rows[0];
+    const isPro = tenant.plan_tier === 'pro' || tenant.plan_tier === 'enterprise' || tenant.subscription_status === 'active';
+    if (!isPro) {
+      console.log(`[WhatsApp Auto-Confirmation] Skipped for tenant ${tenantId}: WhatsApp integration is exclusive to Pro Plan.`);
+      return null;
+    }
+
     const settings = tenant.settings || {};
     const whatsapp = settings.integrations?.whatsapp;
 

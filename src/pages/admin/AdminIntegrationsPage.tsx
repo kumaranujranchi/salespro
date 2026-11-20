@@ -1045,6 +1045,10 @@ export function AdminIntegrationsPage() {
   };
 
   const handleSaveWhatsappSettings = async () => {
+    if (isFreePlan) {
+      handleLockedFeatureClick('WhatsApp Business API');
+      return;
+    }
     if (!tenant?._id) return;
     setSavingWhatsapp(true);
 

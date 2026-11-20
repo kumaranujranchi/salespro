@@ -927,6 +927,21 @@ export function SubscriptionPage() {
                     </tr>
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        WhatsApp Business API &amp; Automation
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Official Cloud API, automated lead welcome, 2-way live chat &amp; broadcasts</p>
+                      </td>
+                      <td className="px-6 py-4 text-left text-slate-400 font-medium">
+                        <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs"><Lock className="w-3.5 h-3.5" /> Locked (Pro Only)</span>
+                      </td>
+                      <td className="px-6 py-4 text-left bg-emerald-50/30 dark:bg-emerald-950/15 border-l border-emerald-500/10">
+                        <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <span>Full WhatsApp Suite Included</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
                         Bulk Data Export &amp; Lead Deletion
                         <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Export to Excel/CSV and permanent lead cleanup</p>
                       </td>

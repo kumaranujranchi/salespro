@@ -29,6 +29,18 @@ import {
 
 const router = Router();
 
+async function isTenantPro(tenantId) {
+  if (!tenantId) return true;
+  try {
+    const res = await query('SELECT plan_tier, subscription_status FROM tenants WHERE id = $1', [tenantId]);
+    const row = res.rows[0];
+    return row?.plan_tier === 'pro' || row?.plan_tier === 'enterprise' || row?.subscription_status === 'active';
+  } catch (err) {
+    console.error('Error checking tenant pro tier for WhatsApp:', err);
+    return false;
+  }
+}
+
 /**
  * =========================================================================
  * 1. META WEBHOOK ENDPOINTS (Public for Meta verification & events)
@@ -199,6 +211,13 @@ router.post('/config', requireAuth, async (req, res) => {
     if (!tenantId && !isPlatform) {
       return res.status(403).json({ error: 'Unauthorized to modify platform configuration' });
     }
+    if (tenantId && !isPlatform && !(await isTenantPro(tenantId))) {
+      return res.status(403).json({
+        success: false,
+        error: 'WhatsApp features are exclusive to the Pro Plan. Please upgrade your subscription to access WhatsApp tools.',
+        code: 'PRO_REQUIRED'
+      });
+    }
     const updated = await updateWhatsAppConfig(req.body, tenantId);
     return res.json({ success: true, message: 'WhatsApp configuration saved', config: updated });
   } catch (err) {
@@ -220,6 +239,13 @@ router.post('/test-connection', requireAuth, async (req, res) => {
     } else {
       tenantId = req.user?.tenant_id || null;
     }
+    if (tenantId && !isPlatform && !(await isTenantPro(tenantId))) {
+      return res.status(403).json({
+        success: false,
+        error: 'WhatsApp features are exclusive to the Pro Plan. Please upgrade your subscription to access WhatsApp tools.',
+        code: 'PRO_REQUIRED'
+      });
+    }
     const { phoneNumberId, accessToken } = req.body;
     const result = await testMetaConnection({ phoneNumberId, accessToken, tenantId });
     if (!result.success) {
@@ -235,6 +261,13 @@ router.post('/test-confirmation', requireAuth, async (req, res) => {
   try {
     const isPlatform = isPlatformRole(req.user);
     const tenantId = req.user?.tenant_id || (isPlatform ? (req.body.tenant_id || null) : null);
+    if (tenantId && !isPlatform && !(await isTenantPro(tenantId))) {
+      return res.status(403).json({
+        success: false,
+        error: 'WhatsApp features are exclusive to the Pro Plan. Please upgrade your subscription to access WhatsApp tools.',
+        code: 'PRO_REQUIRED'
+      });
+    }
     const { testPhone, toPhone, customMessage } = req.body;
     const targetPhone = testPhone || toPhone;
     if (!targetPhone) {

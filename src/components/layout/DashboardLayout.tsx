@@ -962,7 +962,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                               {!isCollapsed && (
                                 <span className="relative z-10 font-semibold text-[13px] tracking-wide flex items-center justify-between w-full">
                                   <span>{item.label}</span>
-                                  {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
+                                  {(item.label === 'Integrations' || item.label === 'Support' || item.label === 'WhatsApp') && tenant?.plan_tier === 'free' && (
                                     <span className={`
                                       ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
                                       ${isActive 
@@ -1030,7 +1030,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         {!isCollapsed && (
                           <span className="relative z-10 font-semibold text-[13.5px] tracking-wide flex items-center justify-between w-full">
                             <span>{item.label}</span>
-                            {(item.label === 'Integrations' || item.label === 'Support') && tenant?.plan_tier === 'free' && (
+                            {(item.label === 'Integrations' || item.label === 'Support' || item.label === 'WhatsApp') && tenant?.plan_tier === 'free' && (
                               <span className={`
                                 ml-2 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider
                                 ${isActive 

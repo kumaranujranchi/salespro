@@ -43,11 +43,14 @@ import {
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { whatsappHubService, formatPhoneDisplay } from '../../lib/services';
+import { UpgradeToProModal } from '../../components/ui/UpgradeToProModal';
 
 export function WhatsAppCommandCenterPage() {
   const location = useLocation();
   const { tenant, profile, isActualPlatformAdmin } = useAuth();
   const isPlatformAdmin = location.pathname.startsWith('/platform') || profile?.role === 'platform_admin' || (!tenant?.id && profile?.role === 'super_admin') || Boolean(isActualPlatformAdmin);
+  const isFreePlan = !isPlatformAdmin && (tenant?.plan_tier === 'free');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'inbox' | 'api_setup' | 'templates' | 'widget' | 'automations' | 'broadcast' | 'otp' | 'intelligence' | 'settings'>('inbox');
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
@@ -167,12 +170,14 @@ export function WhatsAppCommandCenterPage() {
 
   // Load Initial Data
   useEffect(() => {
+    if (isFreePlan) return;
     loadConfig();
     loadConversations();
-  }, [statusFilter]);
+  }, [statusFilter, isFreePlan]);
 
   // Periodic poll for new messages in inbox
   useEffect(() => {
+    if (isFreePlan) return;
     const interval = setInterval(() => {
       loadConversations(true);
       if (selectedConv) {
@@ -180,7 +185,7 @@ export function WhatsAppCommandCenterPage() {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [selectedConv]);
+  }, [selectedConv, isFreePlan]);
 
   const loadConfig = async () => {
     try {
@@ -415,7 +420,7 @@ export function WhatsAppCommandCenterPage() {
         ...config,
         ...(isPlatformAdmin ? { scope: 'platform', tenant_id: null } : { tenant_id: tenant?.id }),
       });
-      alert('WhatsApp and DeepSeek AI configuration saved successfully!');
+      alert('WhatsApp and AI configuration saved successfully!');
       setIsApiLocked(true);
       await checkConnection();
     } catch (err: any) {
@@ -543,7 +548,11 @@ export function WhatsAppCommandCenterPage() {
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                 WhatsApp Command Center
-                {config.phoneNumberId && config.accessToken ? (
+                {isFreePlan ? (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                    PRO EXCLUSIVE
+                  </span>
+                ) : config.phoneNumberId && config.accessToken ? (
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                     {config.displayPhone ? `Connected: ${config.displayPhone}` : 'Meta Cloud API Connected'}
                   </span>
@@ -560,41 +569,124 @@ export function WhatsAppCommandCenterPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {isFreePlan ? (
           <button
-            onClick={checkConnection}
-            disabled={testingConnection}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+            onClick={() => setShowUpgradeModal(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#00E576] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-[#0A1C37] shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${testingConnection ? 'animate-spin' : ''}`} />
-            {testingConnection ? 'Testing Meta API...' : 'Test Connection'}
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>Upgrade to Pro</span>
           </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={checkConnection}
+              disabled={testingConnection}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${testingConnection ? 'animate-spin' : ''}`} />
+              {testingConnection ? 'Testing Meta API...' : 'Test Connection'}
+            </button>
 
-          {connectionStatus && (
-            <div className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${
-              connectionStatus.success
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
-                : connectionStatus.notConfigured
-                ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-                : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400'
-            }`}>
-              {connectionStatus.success ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              ) : connectionStatus.notConfigured ? (
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-              ) : (
-                <XCircle className="w-4 h-4 text-rose-600" />
-              )}
-              {connectionStatus.success
-                ? `Connected: ${connectionStatus.displayPhoneNumber || 'Verified'}`
-                : connectionStatus.notConfigured
-                ? 'Setup Pending'
-                : 'Disconnected'}
-            </div>
-          )}
-        </div>
+            {connectionStatus && (
+              <div className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${
+                connectionStatus.success
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+                  : connectionStatus.notConfigured
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400'
+              }`}>
+                {connectionStatus.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                ) : connectionStatus.notConfigured ? (
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-rose-600" />
+                )}
+                {connectionStatus.success
+                  ? `Connected: ${connectionStatus.displayPhoneNumber || 'Verified'}`
+                  : connectionStatus.notConfigured
+                  ? 'Setup Pending'
+                  : 'Disconnected'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {isFreePlan ? (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-8 sm:p-12 text-center max-w-3xl mx-auto shadow-xl space-y-8 animate-fadeIn my-6">
+          <div className="relative inline-block">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/25 mx-auto">
+              <MessageSquare className="w-10 h-10" />
+            </div>
+            <div className="absolute -bottom-2 -right-2 bg-amber-500 text-white p-2 rounded-xl shadow-lg border-2 border-white dark:border-slate-900">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="space-y-3 max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+              <Zap className="w-3.5 h-3.5" />
+              Pro Plan Exclusive Feature
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              WhatsApp Command Center
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
+              Official WhatsApp Business Cloud API, automated lead welcomes, 2-way live chat, and AI conversation bots are exclusive to the <strong>Pro Plan</strong>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Instant Lead Auto-Welcome</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Automate verified brochures &amp; greetings within 30s of ad submission.</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Live 2-Way Chat Inbox</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Engage buyer inquiries directly from CRM with your sales team.</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Bulk Launch Broadcasts</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Reach thousands of prospective buyers for new project launches.</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">AI Sales Assistant &amp; Widget</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">24/7 lead qualification, price objection handling &amp; site booking.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#00E576] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-[#0A1C37] font-extrabold text-sm shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              <span>Upgrade to Pro Plan</span>
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-white font-bold text-sm transition-colors cursor-pointer"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Navigation Stick Tabs */}
       <div className="p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl inline-flex flex-wrap items-center gap-1 shrink-0 max-w-full">
         {[
@@ -1113,7 +1205,7 @@ export function WhatsAppCommandCenterPage() {
                   Active Learned Domain Signatures & Qualification Probes
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  These real estate intent patterns and dynamic qualification questions are actively injected into the DeepSeek AI prompt.
+                  These real estate intent patterns and dynamic qualification questions are actively injected into the AI prompt.
                 </p>
               </div>
               <button
@@ -1805,7 +1897,7 @@ export function WhatsAppCommandCenterPage() {
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      DeepSeek AI Sales Engine &amp; Copilot
+                      AI Sales Engine &amp; Copilot
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         Active &amp; Pre-Configured
                       </span>
@@ -1834,7 +1926,7 @@ export function WhatsAppCommandCenterPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-semibold text-slate-700 dark:text-slate-300">
-                      DeepSeek API Key
+                      AI Engine API Key
                     </label>
                     <button
                       type="button"
@@ -1873,7 +1965,7 @@ export function WhatsAppCommandCenterPage() {
 
                 <div>
                   <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                    DeepSeek Model Architecture
+                    AI Model Architecture
                   </label>
                   <select
                     disabled={isApiLocked}
@@ -2547,6 +2639,16 @@ export function WhatsAppCommandCenterPage() {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {/* In-App Direct Upgrade Modal for WhatsApp Command Center */}
+      <UpgradeToProModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="WhatsApp Command Center"
+        description="Upgrade your workspace directly via UPI or cards to unlock official Meta WhatsApp Cloud API, automated lead welcomes, 2-way live inbox, broadcast campaigns, and AI chatbots."
+      />
     </div>
   );
 }
