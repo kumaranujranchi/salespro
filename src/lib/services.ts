@@ -357,3 +357,41 @@ export const aiService = {
   chat: (data: { messages: any[]; tenant_id?: string; profileId?: string }) =>
     api.post<{ reply: string }>('/ai/chat', data),
 };
+
+export interface DpdpConsentAuditLog {
+  id: string;
+  anonymous_id: string;
+  user_id?: string;
+  policy_version: string;
+  language: string;
+  action_type: 'GRANTED' | 'REJECTED' | 'UPDATED' | 'WITHDRAWN';
+  preferences_essential: boolean;
+  preferences_analytics: boolean;
+  preferences_marketing: boolean;
+  notice_text_hash: string;
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+}
+
+export interface DpdpConsentSummary {
+  total_records?: string | number;
+  granted_count?: string | number;
+  rejected_count?: string | number;
+  updated_count?: string | number;
+  withdrawn_count?: string | number;
+  analytics_granted_count?: string | number;
+  marketing_granted_count?: string | number;
+}
+
+export const consentAdminService = {
+  getAuditLogs: (params?: { limit?: number; offset?: number; action_type?: string; language?: string }) =>
+    api.get<{
+      success: boolean;
+      total: number;
+      limit: number;
+      offset: number;
+      logs: DpdpConsentAuditLog[];
+      summary: DpdpConsentSummary;
+    }>('/v1/consent/audit-logs', params),
+};

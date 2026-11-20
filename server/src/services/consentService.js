@@ -30,9 +30,24 @@ export async function initConsentSchema() {
       CREATE INDEX IF NOT EXISTS idx_dpdp_consent_anon ON dpdp_consent_logs (anonymous_id);
       CREATE INDEX IF NOT EXISTS idx_dpdp_consent_action ON dpdp_consent_logs (action_type);
       CREATE INDEX IF NOT EXISTS idx_dpdp_consent_created ON dpdp_consent_logs (created_at DESC);
+
+      -- 3-Year Statutory Retention & WORM (Write-Once-Read-Many) Immutability Trigger
+      -- Completely prohibits UPDATE and DELETE operations at the database engine level
+      CREATE OR REPLACE FUNCTION prevent_dpdp_consent_modification()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        RAISE EXCEPTION 'DPDP Act Statutory Violation: dpdp_consent_logs is an immutable 3-year legal audit ledger. UPDATE and DELETE operations are strictly prohibited.';
+      END;
+      $$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS trg_prevent_dpdp_consent_update_delete ON dpdp_consent_logs;
+      CREATE TRIGGER trg_prevent_dpdp_consent_update_delete
+      BEFORE UPDATE OR DELETE ON dpdp_consent_logs
+      FOR EACH ROW
+      EXECUTE FUNCTION prevent_dpdp_consent_modification();
     `);
     schemaInitialized = true;
-    console.log('✔ DPDP Act (India) Consent Audit Ledger & Schema initialized');
+    console.log('✔ DPDP Act (India) Consent Audit Ledger (3-Year WORM Protected) initialized');
   } catch (err) {
     console.error('DPDP Consent schema initialization error:', err.message);
   }

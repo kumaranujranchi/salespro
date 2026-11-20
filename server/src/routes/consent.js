@@ -141,4 +141,70 @@ router.get('/audit-logs', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/v1/consent/export-csv
+ * Generates an immutable 3-year statutory compliance CSV audit report
+ */
+router.get('/export-csv', requireAuth, async (req, res) => {
+  try {
+    const role = req.user?.role;
+    const isAllowed = ['super_admin', 'platform_admin', 'admin'].includes(role);
+    if (!isAllowed) {
+      return res.status(403).json({ error: 'Access denied: requires Admin role for DPDP audit exports' });
+    }
+
+    const { logs } = await getConsentAuditLogs({ limit: 10000, offset: 0 });
+
+    const headers = [
+      'Proof ID',
+      'Anonymous Identifier',
+      'User ID',
+      'Policy Version',
+      'Language',
+      'Consent Action',
+      'Essential Cookies',
+      'Analytics Cookies',
+      'Marketing Cookies',
+      'Notice Text SHA256 Hash',
+      'Masked IP Address',
+      'User Agent',
+      'Timestamp (UTC)',
+    ];
+
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = logs.map((log) => [
+      escapeCsv(log.id),
+      escapeCsv(log.anonymous_id),
+      escapeCsv(log.user_id || 'N/A'),
+      escapeCsv(log.policy_version),
+      escapeCsv(log.language),
+      escapeCsv(log.action_type),
+      escapeCsv(log.preferences_essential ? 'TRUE' : 'FALSE'),
+      escapeCsv(log.preferences_analytics ? 'TRUE' : 'FALSE'),
+      escapeCsv(log.preferences_marketing ? 'TRUE' : 'FALSE'),
+      escapeCsv(log.notice_text_hash),
+      escapeCsv(log.ip_address),
+      escapeCsv(log.user_agent),
+      escapeCsv(new Date(log.created_at).toISOString()),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="DPDP_Consent_Audit_Ledger_${new Date().toISOString().slice(0, 10)}.csv"`
+    );
+    return res.send(csvContent);
+  } catch (err) {
+    console.error('Failed to export DPDP CSV audit logs:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

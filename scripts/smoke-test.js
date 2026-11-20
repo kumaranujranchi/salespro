@@ -506,6 +506,7 @@ function testCriticalFiles() {
     'src/components/dpdp/DPDPCookieBanner.tsx',
     'src/components/dpdp/ManageConsentButton.tsx',
     'src/components/dpdp/GrievanceOfficerModal.tsx',
+    'src/pages/admin/ConsentAuditPage.tsx',
   ];
 
   let missingCount = 0;
@@ -849,28 +850,31 @@ function testDpdpActConsentCompliance() {
     logFail('Consent manager missing DPDP notices or Grievance disclosures', 'Check src/lib/consentManager.ts');
   }
 
-  // 2. IP Anonymization & SHA-256 Hash Verification in backend
+  // 2. IP Anonymization & SHA-256 Hash Verification & 3-Year WORM Trigger in backend
   const consentServiceCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/services/consentService.js'), 'utf8');
   const hasAnonymizeIp = consentServiceCode.includes('anonymizeIp') && consentServiceCode.includes("parts.slice(0, 3).join(':') + '::0'");
   const hasSha256 = consentServiceCode.includes("crypto.createHash('sha256')");
   const hasAuditLogging = consentServiceCode.includes('recordConsent') && consentServiceCode.includes('dpdp_consent_logs');
+  const hasWormTrigger = consentServiceCode.includes('prevent_dpdp_consent_modification') && consentServiceCode.includes('UPDATE and DELETE operations are strictly prohibited');
 
-  if (hasAnonymizeIp && hasSha256 && hasAuditLogging) {
-    logPass('Backend consent service enforces IP anonymization, SHA-256 hashing, and immutable audit logging');
+  if (hasAnonymizeIp && hasSha256 && hasAuditLogging && hasWormTrigger) {
+    logPass('Backend consent service enforces IP anonymization, SHA-256 hashing, and 3-Year WORM immutability trigger');
   } else {
     logFail('Backend consent service failed check', 'Check server/src/services/consentService.js');
   }
 
-  // 3. Public API Route Mounting (/api/v1/consent & /api/consent)
+  // 3. Public API Route Mounting & CSV Export
   const serverIndexCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/index.js'), 'utf8');
   const hasV1ConsentMount = serverIndexCode.includes("app.use('/api/v1/consent', consentRoutes)");
   const hasConsentMount = serverIndexCode.includes("app.use('/api/consent', consentRoutes)");
   const hasSchemaInit = serverIndexCode.includes('initConsentSchema');
+  const consentRouteCode = fs.readFileSync(path.join(ROOT_DIR, 'server/src/routes/consent.js'), 'utf8');
+  const hasCsvExport = consentRouteCode.includes("router.get('/export-csv'");
 
-  if (hasV1ConsentMount && hasConsentMount && hasSchemaInit) {
-    logPass('Consent API endpoints properly mounted at /api/v1/consent and /api/consent with schema initialization');
+  if (hasV1ConsentMount && hasConsentMount && hasSchemaInit && hasCsvExport) {
+    logPass('Consent API endpoints properly mounted at /api/v1/consent, /api/consent with schema init and statutory CSV export');
   } else {
-    logFail('Server index missing consent routes or schema init', 'Check server/src/index.js');
+    logFail('Server index or route missing consent endpoints/export', 'Check server/src/index.js & consent.js');
   }
 
   // 4. Dark-Pattern Free UI & Granular Toggles (Essential Locked, Analytics & Marketing Default OFF)
@@ -896,6 +900,19 @@ function testDpdpActConsentCompliance() {
     logPass('Script blocking active: GTM Consent Mode v2 default denied & GTM tracker gated by user consent');
   } else {
     logFail('Script blocking or banner mounting check failed', 'Check index.html and src/App.tsx');
+  }
+
+  // 6. Platform Admin Consent Audit Hub & Dashboard Integration
+  const platformDashCode = fs.readFileSync(path.join(ROOT_DIR, 'src/pages/PlatformDashboard.tsx'), 'utf8');
+  const hasPlatformAuditLink = platformDashCode.includes('/platform/consent-audit') && platformDashCode.includes('DPDP Act, 2023 Statutory Compliance');
+  const dashboardLayoutCode = fs.readFileSync(path.join(ROOT_DIR, 'src/components/layout/DashboardLayout.tsx'), 'utf8');
+  const hasSidebarAuditLink = dashboardLayoutCode.includes("path: '/platform/consent-audit'");
+  const hasAuditPageFile = fs.existsSync(path.join(ROOT_DIR, 'src/pages/admin/ConsentAuditPage.tsx'));
+
+  if (hasPlatformAuditLink && hasSidebarAuditLink && hasAuditPageFile) {
+    logPass('Platform Admin Dashboard & Navigation Ledger seamlessly integrated with 3-year statutory view');
+  } else {
+    logFail('Platform Admin Audit Ledger integration check failed', 'Check PlatformDashboard.tsx, DashboardLayout.tsx & ConsentAuditPage.tsx');
   }
 }
 
