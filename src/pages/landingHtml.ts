@@ -52,6 +52,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <nav class="nav__links" aria-label="Primary">
         <a href="#features">Features</a>
         <a href="#pricing">Pricing</a>
+        <a href="#blog">Blog</a>
         <a href="#faq">FAQ</a>
       </nav>
       <div class="nav__actions">
@@ -67,6 +68,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
     <div class="nav__mobile" id="mobileMenu" hidden>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
+      <a href="#blog">Blog</a>
       <a href="#faq">FAQ</a>
       <a href="https://realsalepro.com/login">Log in</a>
       <a class="btn btn--primary" href="https://realsalepro.com/register">Start free <svg class="icon"><use href="#i-arrow"/></svg></a>
@@ -1087,6 +1089,68 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       </div>
     </section>
 
+    <!-- ============ KNOWLEDGE HUB & BLOG ============ -->
+    <section class="section section--paper" id="blog" style="border-top: 1px solid rgba(10,32,24,0.06); padding: 80px 0; background: #ffffff;">
+      <div class="container">
+        <header class="sec-head" style="max-width: 720px; margin-bottom: 48px;">
+          <p class="eyebrow" data-reveal><span class="eyebrow__no">09</span> Knowledge Hub &amp; Compliance</p>
+          <h2 class="sec-head__title" data-reveal data-reveal-delay="60">Insights for Indian<br /><em>Real Estate Leaders</em>.</h2>
+          <p class="sec-head__lede" data-reveal data-reveal-delay="120">
+            Legal breakdowns, regulatory guides, and growth playbooks tailored for builders, developers, and property brokers.
+          </p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 32px;" data-reveal data-reveal-delay="180">
+          <article style="background: linear-gradient(135deg, #04140e 0%, #08261b 100%); border: 1px solid rgba(16,185,129,0.3); border-radius: 28px; padding: 36px 32px; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(4,20,14,0.18);">
+            <div style="position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%); pointer-events: none;"></div>
+            <div>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4);">
+                  🇮🇳 DPDP Act 2023 Statutory Guide
+                </span>
+                <span style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">6 min read • Updated Nov 2026</span>
+              </div>
+
+              <h3 style="font-family: var(--font-display); font-size: clamp(22px, 3.5vw, 32px); font-weight: 800; color: #ffffff; line-height: 1.25; margin-bottom: 14px;">
+                DPDP Act (India) for Real Estate: Are You a Data Fiduciary or Processor?
+              </h3>
+
+              <p style="font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.65; max-width: 820px; margin-bottom: 24px;">
+                How India's Digital Personal Data Protection Act, 2023 impacts real estate developers and brokers. Clear breakdown of the 3 statutory roles, why buying leaked Excel lead lists is now illegal, penalties up to ₹250 Crores, and the mandatory Data Processing Agreement (DPA).
+              </p>
+
+              <!-- Role Highlights Matrix -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px;">
+                <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 16px;">
+                  <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #fbbf24;">Builder / Broker</span>
+                  <div style="font-size: 15px; font-weight: 700; color: #ffffff; margin-top: 2px;">Data Fiduciary</div>
+                  <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; line-height: 1.4;">Collects consent, owns lead intent, strictly liable for lawful lead acquisition.</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 16px;">
+                  <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #34d399;">RealSalePro CRM</span>
+                  <div style="font-size: 15px; font-weight: 700; color: #ffffff; margin-top: 2px;">Data Processor</div>
+                  <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; line-height: 1.4;">Secures, encrypts, and hosts records on AWS Mumbai strictly under a binding DPA.</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 16px;">
+                  <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #60a5fa;">Homebuyer / Investor</span>
+                  <div style="font-size: 15px; font-weight: 700; color: #ffffff; margin-top: 2px;">Data Principal</div>
+                  <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px; line-height: 1.4;">Holds statutory rights to access, update, and demand total erasure of their details.</p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <a href="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor" class="btn btn--primary" style="font-size: 14px; padding: 12px 24px; font-weight: 700; text-decoration: none;">
+                <span>Read Full Compliance Guide</span>
+                <svg class="icon"><use href="#i-arrow"/></svg>
+              </a>
+              <span style="font-size: 12px; color: rgba(255,255,255,0.5);">Compliant with DPDP Act, 2023 &amp; IT Act, 2000</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ FAQ ============ -->
     <section class="section section--paper section--alt" id="faq">
       <div class="container faq-wrap">
@@ -1216,6 +1280,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <div class="footer__col">
           <h3>Company</h3>
           <a href="#stories">About us</a>
+          <a href="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor">DPDP Compliance Guide</a>
           <a href="/referral-program">Refer &amp; earn</a>
           <a href="/affiliate/terms">Affiliate Program</a>
           <a href="/contact">Contact Support</a>

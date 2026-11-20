@@ -211,7 +211,7 @@ export function LeadsPage() {
   const canCreateLead = canCreate('leads');
   const canEditLead = canEdit('leads');
   const canDeleteLead = canDelete('leads');
-  const canExportLeads = canExport('leads');
+  const canExportLeads = isSuperAdmin; // Strict Data Security: Bulk leads export is restricted to Super Admin only
   const canAssignLeads = canAssign('leads');
   const canViewAllLeads = isAdmin || ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
 
@@ -600,8 +600,8 @@ export function LeadsPage() {
   };
 
   const handleExportCSV = () => {
-    if (!canExportLeads) {
-      toast.error('You do not have permission to export leads.');
+    if (!isSuperAdmin) {
+      toast.error('Data Protection Policy: Only Super Admin is authorized to export leads in bulk.');
       return;
     }
     if (leads.length === 0) return;

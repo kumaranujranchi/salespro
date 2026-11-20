@@ -1270,6 +1270,59 @@ const routes = [
     content: `<div style="text-align:center;padding:60px 20px;color:#fff;"><h1 style="font-size:28px;">Partner Program Application</h1><p>Join our partner network.</p></div>`
   },
 
+  // --- Blog / DPDP Act Guide ---
+  {
+    path: '/blog/dpdp-act-real-estate-data-fiduciary-vs-processor',
+    title: 'DPDP Act (India) for Real Estate: Data Fiduciary vs Processor Guide | RealSalePro',
+    description: 'Comprehensive guide on India\'s Digital Personal Data Protection (DPDP) Act, 2023 for builders, brokers, and channel partners. Learn key roles, penalties up to ₹250 Cr, DPA agreements, and cloud residency.',
+    canonical: 'https://realsalepro.com/blog/dpdp-act-real-estate-data-fiduciary-vs-processor',
+    noindex: false,
+    content: `
+      <div style="max-width:1100px;margin:0 auto;padding:40px 20px;font-family:sans-serif;color:#fff;">
+        <nav style="margin-bottom:24px;"><a href="/" style="color:#10b981;text-decoration:none;">&larr; Back to RealSalePro Home</a></nav>
+        <span style="display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(16,185,129,0.15);color:#34d399;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:16px;">DPDP Act 2023 Guide</span>
+        <h1 style="font-size:38px;line-height:1.2;margin:0 0 16px 0;font-weight:800;">DPDP Act (India) for Real Estate: Are You a Data Fiduciary or Processor?</h1>
+        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">A comprehensive legal and operational guide on India's Digital Personal Data Protection Act, 2023 for real estate builders, developers, and brokers. Learn your statutory roles, the mandatory Data Processing Agreement (DPA), penalties up to ₹250 Crores, and how to stay 100% compliant.</p>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px;">
+          <a href="/register" style="display:inline-block;background:#10b981;color:#000;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;">Start Free Compliant CRM</a>
+          <a href="/terms#dpa" style="display:inline-block;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Review Data Processing Agreement</a>
+        </div>
+      </div>
+    `,
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://realsalepro.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://realsalepro.com/blog" },
+            { "@type": "ListItem", "position": 3, "name": "DPDP Act for Real Estate", "item": "https://realsalepro.com/blog/dpdp-act-real-estate-data-fiduciary-vs-processor" }
+          ]
+        }
+      ]
+    }
+  },
+
+  {
+    path: '/blog',
+    title: 'Real Estate Compliance & Proptech Blog | RealSalePro',
+    description: 'Guides, legal breakdowns, and sales strategies for Indian builders, developers, and brokers. Learn about DPDP Act compliance, lead conversion, and RERA best practices.',
+    canonical: 'https://realsalepro.com/blog',
+    noindex: false,
+    content: `
+      <div style="max-width:1100px;margin:0 auto;padding:40px 20px;font-family:sans-serif;color:#fff;">
+        <nav style="margin-bottom:24px;"><a href="/" style="color:#10b981;text-decoration:none;">&larr; Back to RealSalePro Home</a></nav>
+        <h1 style="font-size:38px;line-height:1.2;margin:0 0 16px 0;font-weight:800;">RealSalePro Knowledge Hub &amp; Blog</h1>
+        <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.8);max-width:800px;margin-bottom:32px;">Insights, legal compliance guides, and proptech playbooks for modern real estate professionals.</p>
+        <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;">
+          <a href="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor" style="color:#34d399;font-size:22px;font-weight:700;text-decoration:none;display:block;margin-bottom:8px;">DPDP Act (India) for Real Estate: Are You a Data Fiduciary or Processor? &rarr;</a>
+          <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.6;">How India's Digital Personal Data Protection Act, 2023 impacts builders, brokers, and channel partners.</p>
+        </div>
+      </div>
+    `
+  },
+
   // --- 404 (Noindex) ---
   {
     path: '/404',

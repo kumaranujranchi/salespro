@@ -9,13 +9,17 @@ import { Badge } from '../components/ui/Badge';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { 
   FileText, Download, Filter, Calendar as CalendarIcon, 
-  TrendingUp, Users, Award, MapPin, PhoneCall, Car, Gauge 
+  TrendingUp, Users, Award, MapPin, PhoneCall, Car, Gauge, Lock
 } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 import { isLeadPhoneMasked, maskPhoneNumber } from '../utils/phoneMasking';
 
 export function ReportsPage() {
   const { profile, tenant } = useAuth();
+  const toast = useToast();
   const isPhoneMasked = isLeadPhoneMasked(tenant, profile);
+  const normalizedRole = String(profile?.role || '').toLowerCase().trim();
+  const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'platform_admin';
   
   // Default date range: current month to today
   const defaultDates = useMemo(() => {
@@ -49,6 +53,11 @@ export function ReportsPage() {
   // Export CSV Handler
   const handleExportCSV = () => {
     if (!reportData) return;
+    
+    if (activeTab === 'leads' && !isSuperAdmin) {
+      toast.error('Data Protection Policy: Only Super Admin is authorized to export lead registers.');
+      return;
+    }
     
     let dataToExport: any[] = [];
     let headers: string[] = [];
@@ -112,13 +121,20 @@ export function ReportsPage() {
           <p className="text-gray-500 mt-1">Export, track, and download metrics across lead channels, bookings, and executive achievements.</p>
         </div>
         <div>
-          <Button 
-            onClick={handleExportCSV} 
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-sm font-semibold transition-all duration-200"
-            disabled={!reportData}
-          >
-            <Download size={18} /> Export CSV
-          </Button>
+          {activeTab === 'leads' && !isSuperAdmin ? (
+            <div className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-semibold shadow-sm">
+              <Lock size={14} className="text-slate-400" />
+              <span>Lead Export Restricted to Super Admin</span>
+            </div>
+          ) : (
+            <Button 
+              onClick={handleExportCSV} 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-sm font-semibold transition-all duration-200"
+              disabled={!reportData}
+            >
+              <Download size={18} /> Export CSV
+            </Button>
+          )}
         </div>
       </div>
 

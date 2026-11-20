@@ -30,6 +30,7 @@ import { CRMDashboardPage } from './pages/CRMDashboardPage';
 import { PipelinePage } from './pages/PipelinePage';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
+import { BlogDPDPPage } from './pages/BlogDPDPPage';
 import { RefundPolicy } from './pages/RefundPolicy';
 import { ShippingPolicy } from './pages/ShippingPolicy';
 import { PricingPage } from './pages/PricingPage';
@@ -133,6 +134,8 @@ function App() {
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/data-deletion" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/blog" element={<BlogDPDPPage />} />
+                <Route path="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor" element={<BlogDPDPPage />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/shipping-policy" element={<ShippingPolicy />} />
                 <Route path="/pricing" element={<PricingPage />} />

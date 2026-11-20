@@ -123,6 +123,23 @@ const sitemapData: SitemapSection[] = [
     ]
   },
   {
+    title: 'Knowledge Hub & Legal Guides',
+    badge: 'Education',
+    description: 'Statutory compliance breakdowns and guides for Indian real estate developers and brokers.',
+    links: [
+      {
+        title: 'DPDP Act (India) for Real Estate: Data Fiduciary vs Processor',
+        path: '/blog/dpdp-act-real-estate-data-fiduciary-vs-processor',
+        description: 'Complete legal guide on Data Fiduciary vs Processor roles, mandatory DPA contracts, and ₹250 Cr penalties under the DPDP Act, 2023.'
+      },
+      {
+        title: 'Knowledge Hub & Blog',
+        path: '/blog',
+        description: 'Articles, compliance updates, and proptech playbooks for real estate businesses.'
+      }
+    ]
+  },
+  {
     title: 'Legal, Privacy & Compliance',
     badge: 'Compliance',
     description: 'Data security standards and consumer protection terms.',

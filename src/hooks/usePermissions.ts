@@ -7,9 +7,11 @@ export function usePermissions() {
 
   // Super Admin & Platform Admin always have complete, unrestricted access
   const normalizedRole = String(profile?.role || '').toLowerCase().trim();
-  const isAdmin =
+  const isSuperAdmin =
     normalizedRole === 'super_admin' ||
-    normalizedRole === 'platform_admin' ||
+    normalizedRole === 'platform_admin';
+  const isAdmin =
+    isSuperAdmin ||
     normalizedRole === 'admin' ||
     normalizedRole.includes('admin');
 
@@ -17,6 +19,11 @@ export function usePermissions() {
   const permissions = (profile?.role_details?.permissions || profile?.permissions || {}) as any;
 
   const can = (moduleName: string, action: PermissionAction = 'view'): boolean => {
+    // SECURITY: Bulk leads export is strictly restricted to Super Admin only
+    if (action === 'export' && moduleName.toLowerCase() === 'leads') {
+      return isSuperAdmin;
+    }
+
     if (isAdmin) return true;
 
     // 1. Direct granular module permission check (e.g., permissions.modules.leads.edit)
@@ -66,6 +73,7 @@ export function usePermissions() {
 
   return {
     isAdmin,
+    isSuperAdmin,
     permissions,
     can,
     canView: (moduleName: string) => can(moduleName, 'view'),
