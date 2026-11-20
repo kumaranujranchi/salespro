@@ -498,7 +498,7 @@ export async function testMetaConnection({ phoneNumberId = null, accessToken = n
   }
 
   try {
-    const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(targetPhoneId)}?fields=verified_name,display_phone_number,quality_rating,code_verification_status&access_token=${encodeURIComponent(targetToken)}`;
+    const url = `https://graph.facebook.com/v21.0/${encodeURIComponent(targetPhoneId)}?fields=verified_name,display_phone_number,quality_rating,code_verification_status,name_status,status&access_token=${encodeURIComponent(targetToken)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -516,6 +516,8 @@ export async function testMetaConnection({ phoneNumberId = null, accessToken = n
       displayPhoneNumber: data.display_phone_number || '+91 ••••• •••••',
       qualityRating: data.quality_rating || 'GREEN',
       codeVerificationStatus: data.code_verification_status || 'VERIFIED',
+      nameStatus: data.name_status || 'PENDING_REVIEW',
+      status: data.status || 'CONNECTED',
     };
   } catch (err) {
     return { success: false, error: err.message };

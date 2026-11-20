@@ -1890,7 +1890,7 @@ export function WhatsAppCommandCenterPage() {
                   <span>{connectionStatus.success ? 'Official Meta API Connected & Ready' : 'Connection Failed'}</span>
                 </div>
                 {connectionStatus.success ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs pt-1">
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">VERIFIED BUSINESS NAME</span>
                       <strong className="font-semibold">{connectionStatus.verifiedName || tenant?.name || 'Verified Business Account'}</strong>
@@ -1898,6 +1898,18 @@ export function WhatsAppCommandCenterPage() {
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">DISPLAY PHONE NUMBER</span>
                       <strong className="font-mono">{connectionStatus.displayPhoneNumber || config.displayPhone || '+91 ••••• •••••'}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">NAME REVIEW STATUS</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                        connectionStatus.nameStatus === 'APPROVED'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
+                          : connectionStatus.nameStatus === 'PENDING_REVIEW'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300'
+                      }`}>
+                        {connectionStatus.nameStatus ? connectionStatus.nameStatus.replace(/_/g, ' ') : 'PENDING REVIEW'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 block text-[10px]">META QUALITY RATING</span>

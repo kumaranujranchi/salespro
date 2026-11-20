@@ -310,7 +310,7 @@ export const whatsappHubService = {
   saveConfig: (data: any) =>
     api.post<{ success: boolean; message: string; config: any }>('/whatsapp/config', data),
   testConnection: (data?: { phoneNumberId?: string; accessToken?: string; tenant_id?: string; scope?: string }) =>
-    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; error?: string; notConfigured?: boolean }>('/whatsapp/test-connection', data || {}),
+    api.post<{ success: boolean; verifiedName?: string; displayPhoneNumber?: string; qualityRating?: string; codeVerificationStatus?: string; nameStatus?: string; status?: string; error?: string; notConfigured?: boolean }>('/whatsapp/test-connection', data || {}),
   testConfirmation: (data: { testPhone: string; customMessage?: string; tenant_id?: string }) =>
     api.post<{ success: boolean; messageId?: string; message?: string; error?: string }>('/whatsapp/test-confirmation', data),
   getWidgetConfig: (tenantId: string) =>
