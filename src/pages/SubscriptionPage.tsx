@@ -19,7 +19,15 @@ import {
   Globe,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Sparkles,
+  ShieldCheck,
+  ArrowRight,
+  Users,
+  CheckCircle2,
+  FileText,
+  Lock,
+  Database
 } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 import jsPDF from 'jspdf';
@@ -27,6 +35,13 @@ import autoTable from 'jspdf-autotable';
 import { ImageCropper } from '../components/ImageCropper';
 import { useToast } from '../contexts/ToastContext';
 import { UpgradeToProModal } from '../components/ui/UpgradeToProModal';
+
+// Helper to normalize amount from either paise (e.g. 150000) or rupees (e.g. 1500)
+function normalizeAmountInRupees(amount: any): number {
+  const num = Number(amount || 0);
+  if (num > 50000) return num / 100;
+  return num;
+}
 
 // Helper to resolve logo URL
 function LogoPreview({ storageId }: { storageId: string }) {
@@ -157,95 +172,104 @@ export function SubscriptionPage() {
     const doc = new jsPDF();
 
     // Brand Colors
-    const primaryColor = '#4F46E5'; // Indigo 600
+    const primaryColor = '#0A1C37'; // Deep Navy
 
     // Header
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.setTextColor(primaryColor);
+    doc.setFont('helvetica', 'bold');
     doc.text('TAX INVOICE', 14, 25);
 
-    // --- Seller Details (Platform: SalesPro) ---
-    doc.setFontSize(14);
+    // --- Seller Details (Platform: RealSalePro) ---
+    doc.setFontSize(13);
     doc.setTextColor(0, 0, 0);
-    doc.text('SalesPro', 14, 40);
-    doc.setFontSize(10);
+    doc.text('RealSalePro CRM', 14, 38);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text('Patna, Bihar', 14, 46);
-    doc.text('Email: support@realsalepro.com', 14, 52);
-    doc.text('Website: https://realsalepro.com', 14, 58);
+    doc.text('Patna, Bihar, India', 14, 44);
+    doc.text('Email: support@realsalepro.com', 14, 49);
+    doc.text('Website: https://realsalepro.com', 14, 54);
 
     // Invoice Details (Right Side)
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    const rightColX = 140;
-    doc.text(`Invoice Date: ${new Date(record.created_at || record._creationTime).toLocaleDateString()}`, rightColX, 40);
-    doc.text(`Invoice #: ${record._id?.slice(0, 8).toUpperCase()}`, rightColX, 46);
-    doc.text(`Payment ID: ${record.razorpay_payment_id}`, rightColX, 52);
+    const rightColX = 135;
+    const invDate = new Date(record.created_at || record._creationTime || Date.now()).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    const invId = (record.id || record._id || 'INV').slice(0, 8).toUpperCase();
+    doc.text(`Invoice Date: ${invDate}`, rightColX, 38);
+    doc.text(`Invoice #: INV-${invId}`, rightColX, 44);
+    doc.text(`Payment ID: ${record.razorpay_payment_id || record.payment_id || 'pay_online'}`, rightColX, 49);
+    doc.setTextColor(0, 150, 60);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Status: PAID`, rightColX, 54);
 
     // --- Bill To (Buyer: Tenant Company Profile) ---
     const companyProfile = (tenant as any)?.settings?.company_profile;
-    const companyName = tenant?.name || 'Valued Customer';
-    const billToY = 75;
+    const companyName = profileForm.name || tenant?.name || 'Valued Customer';
+    const billToY = 68;
 
     doc.setFontSize(10);
     doc.setTextColor(primaryColor);
-    doc.text('BILL TO:', 14, billToY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('BILL TO (CUSTOMER):', 14, billToY);
 
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
     doc.text(companyName, 14, billToY + 6);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
     
     let currentBillToY = billToY + 11;
 
-    if (companyProfile?.address) {
-      doc.text(companyProfile.address, 14, currentBillToY);
+    const address = profileForm.address || companyProfile?.address;
+    if (address) {
+      doc.text(address, 14, currentBillToY);
       currentBillToY += 5;
     }
 
     const contactInfo = [];
-    if (companyProfile?.email) contactInfo.push(companyProfile.email);
-    if (companyProfile?.phone) contactInfo.push(companyProfile.phone);
+    const email = profileForm.email || companyProfile?.email || (tenant as any)?.email;
+    const phone = profileForm.phone || companyProfile?.phone;
+    if (email) contactInfo.push(email);
+    if (phone) contactInfo.push(phone);
     if (contactInfo.length > 0) {
       doc.text(contactInfo.join(' | '), 14, currentBillToY);
       currentBillToY += 5;
     }
 
-    if (companyProfile?.website) {
-      doc.text(companyProfile.website, 14, currentBillToY);
-      currentBillToY += 5;
-    }
-
-    if (companyProfile?.tax_id) {
-      doc.text(`GSTIN: ${companyProfile.tax_id}`, 14, currentBillToY);
-    } else if ((tenant as any)?.email) {
-      doc.text((tenant as any).email, 14, currentBillToY);
+    const taxId = profileForm.tax_id || companyProfile?.tax_id;
+    if (taxId) {
+      doc.text(`GSTIN / Tax ID: ${taxId}`, 14, currentBillToY);
     }
 
     // Calculations
-    const totalAmount = record.amount / 100; // Convert paise to rupees
+    const totalAmount = normalizeAmountInRupees(record.amount);
     const baseAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - baseAmount;
 
     // Table
     autoTable(doc, {
-      startY: billToY + 25,
-      head: [['Description', 'Base Amount', 'GST (18%)', 'Total']],
+      startY: Math.max(currentBillToY + 8, billToY + 28),
+      head: [['Description', 'Qty', 'Base Amount', 'GST (18%)', 'Total Amount']],
       body: [
         [
-          record.description || 'Subscription Plan',
+          record.description || 'RealSalePro Pro Plan Subscription',
+          '1',
           `INR ${baseAmount.toFixed(2)}`,
           `INR ${gstAmount.toFixed(2)}`,
           `INR ${totalAmount.toFixed(2)}`
         ],
       ],
       theme: 'grid',
-      headStyles: { fillColor: [79, 70, 229] }, // Indigo 600
-      styles: { fontSize: 10, cellPadding: 5 },
+      headStyles: { fillColor: [10, 28, 55] }, // Dark Navy #0A1C37
+      styles: { fontSize: 9, cellPadding: 5 },
     });
 
     // Total Section
@@ -264,24 +288,23 @@ export function SubscriptionPage() {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    // Align values to the right margin (approx 195mm for A4)
     doc.text(`INR ${baseAmount.toFixed(2)}`, 195, finalY, { align: 'right' });
     doc.text(`INR ${gstAmount.toFixed(2)}`, 195, finalY + 6, { align: 'right' });
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(primaryColor);
+    doc.setTextColor(0, 180, 70);
     doc.text(`INR ${totalAmount.toFixed(2)}`, 195, finalY + 14, { align: 'right' });
 
     // Footer
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.setFont('helvetica', 'normal');
     const pageHeight = doc.internal.pageSize.height;
-    doc.text('This is a computer generated invoice and does not require a signature.', 14, pageHeight - 20);
+    doc.text('This is an official computer-generated GST tax invoice and does not require a physical signature.', 14, pageHeight - 20);
 
     // Save
-    doc.save(`Invoice_${record._id?.slice(0, 8)}.pdf`);
+    doc.save(`Invoice_INV-${invId}.pdf`);
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -327,37 +350,12 @@ export function SubscriptionPage() {
   }
 
   const isPro = tenant.plan_tier === 'pro';
-  const isActive = tenant.subscription_status === 'active';
-
-  const planFeatures = isPro ? [
-    'All Pro Features Included',
-    'Up to 2,00,000 Leads Limit',
-    'Lead Deletion Enabled',
-    'Unlimited Users',
-    'Real-time Analytics',
-    'Priority Email Support',
-    'Full CRM Module Access',
-    'Lead Management',
-    'Sales Tracking',
-    'Custom Reports'
-  ] : [
-    'All Pro Features Included',
-    'Up to 2,00,000 Leads (1,000 Max for Free Plan)',
-    'Up to 5 Users (Unlimited for Pro)',
-    'Real-time Analytics',
-    'Standard Email Support',
-    'Full CRM Module Access',
-    'Lead Management',
-    'Sales Tracking',
-    'Custom Reports'
-  ];
 
   // Calculate generic next billing date if not in DB
   const getNextBillingDate = () => {
     if (tenant.next_billing_date) return new Date(tenant.next_billing_date);
 
     // Fallback based on last update or creation
-    // This is just for display if real data is missing
     const baseDate = new Date();
     if (tenant.billing_cycle === 'yearly') {
       return new Date(baseDate.setFullYear(baseDate.getFullYear() + 1));
@@ -368,7 +366,16 @@ export function SubscriptionPage() {
     }
   };
 
+  const billingCycleLabel = tenant.billing_cycle === 'yearly' ? 'Yearly' : tenant.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly';
   const billingAmount = tenant.billing_cycle === 'yearly' ? 12000 : tenant.billing_cycle === 'semi_annual' ? 7200 : 1500;
+  const nextBillingDateObj = tenant.next_billing_date ? new Date(tenant.next_billing_date) : null;
+  const formattedRenewalDate = nextBillingDateObj 
+    ? nextBillingDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : getNextBillingDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const leadsCount = Number((tenant as any)?.leads_count || 0);
+  const maxLeads = isPro ? 200000 : 1000;
+  const leadsPercent = Math.min(100, Math.round((leadsCount / maxLeads) * 100));
+  const remainingLeads = Math.max(0, maxLeads - leadsCount);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0E1A15] py-8 transition-colors duration-300">
@@ -377,35 +384,43 @@ export function SubscriptionPage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Settings & Subscription
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Settings &amp; Subscription
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-              Manage your company profile and subscription details
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm sm:text-base">
+              Manage your workspace subscription, billing cycle, usage quotas, and tax invoices.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex bg-white dark:bg-surface-dark p-1 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
               <button
                 onClick={() => setActiveTab('subscription')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'subscription' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${activeTab === 'subscription' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
               >
-                Subscription
+                Subscription &amp; Billing
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'profile' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${activeTab === 'profile' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
               >
                 Company Profile
               </button>
             </div>
-            {!isActive && (
+            {!isPro ? (
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className="bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] hover:from-[#00C853] hover:to-[#00B048] px-5 py-2.5 rounded-xl text-sm font-extrabold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 transition-all flex items-center gap-2 shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
-                <Zap className="w-4 h-4" />
-                Upgrade
+                <Zap className="w-4 h-4 fill-current text-[#0A1C37]" />
+                <span>Upgrade to Pro</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-700 dark:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer border border-slate-200 dark:border-white/10"
+              >
+                <Zap className="w-4 h-4 text-emerald-500" />
+                <span>Change Plan / Cycle</span>
               </button>
             )}
           </div>
@@ -581,7 +596,7 @@ export function SubscriptionPage() {
                   <button
                     type="submit"
                     disabled={isSavingProfile}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSavingProfile ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -595,189 +610,447 @@ export function SubscriptionPage() {
             </div>
           </div>
         ) : (
-          <>
-            {/* Status Dashboard Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
+          <div className="space-y-8 animate-fadeIn">
+            {/* 1. Hero Plan Banner */}
+            {!isPro ? (
+              <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#0A1C37] via-[#0E2544] to-[#0A1C37] text-white border border-emerald-500/20 shadow-xl overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-[#00E576]/15 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+                <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Card 1: Current Plan */}
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
-                  <Shield className="w-6 h-6" />
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                  Active
-                </span>
-              </div>
-              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
-                Current Plan
-              </h3>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {isPro ? 'Pro Plan' : 'Free Forever Plan'}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-gray-400">
-                {isPro
-                  ? `Billed ${tenant.billing_cycle === 'yearly' ? 'Yearly' : tenant.billing_cycle === 'semi_annual' ? 'Every 6 Months' : 'Monthly'}`
-                  : 'Manage up to 1,000 leads'
-                }
-              </div>
-            </div>
-          </div>
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="space-y-4 max-w-2xl">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 text-white backdrop-blur-md border border-white/10">
+                        <Shield className="w-3.5 h-3.5 text-slate-300" />
+                        Free Forever Plan
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        ● Active Workspace
+                      </span>
+                    </div>
 
-          {/* Card 2: Billing Status */}
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
-                  <CreditCard className="w-6 h-6" />
-                </div>
-              </div>
-              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
-                Upcoming Invoice
-              </h3>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {isPro ? formatCurrency(billingAmount) : '₹0'}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-gray-400 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  {isPro 
-                    ? `Renewing on ${getNextBillingDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` 
-                    : 'No upcoming renewals'}
-                </span>
-              </div>
-            </div>
-          </div>
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                        Unlock Full CRM Scale with <span className="bg-gradient-to-r from-[#00E576] to-[#69F0AE] bg-clip-text text-transparent">RealSalePro Pro</span>
+                      </h2>
+                      <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
+                        You are currently on the Free Starter plan (capped at 1,000 leads). Upgrade your workspace to unlock 2,00,000 leads storage, unlimited team accounts, DeepSeek AI Copilot, automated Meta webhooks, and priority WhatsApp support.
+                      </p>
+                    </div>
 
-          {/* Card 3: Usage / Stats */}
-          <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 dark:bg-blue-900/20 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
-                  <Zap className="w-6 h-6" />
-                </div>
-              </div>
-              <h3 className="text-slate-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider mb-1">
-                Leads Managed
-              </h3>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                {((tenant as any).leads_count || 0).toLocaleString()} / {isPro ? '2,00,000' : '1,000'}
-              </div>
-              <div className="text-sm text-slate-600 dark:text-gray-400">
-                {isPro ? 'Upgrade custom for more limits' : 'Upgrade to Pro for more leads'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Plan Features List */}
-          <div className="lg:col-span-1 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 p-6 h-fit">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              Included in your plan
-            </h3>
-            <ul className="space-y-4">
-              {planFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3 text-sm">
-                  <div className="mt-0.5 w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
+                        <Zap className="w-4 h-4 text-[#00E576] shrink-0" />
+                        <span>2,00,000 Leads</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
+                        <Users className="w-4 h-4 text-[#00E576] shrink-0" />
+                        <span>Unlimited Users</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
+                        <Sparkles className="w-4 h-4 text-[#00E576] shrink-0" />
+                        <span>AI Sales Copilot</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
+                        <ShieldCheck className="w-4 h-4 text-[#00E576] shrink-0" />
+                        <span>Live Meta Sync</span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-slate-600 dark:text-slate-300 font-medium">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            {!isPro && (
-              <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 text-sm mb-2">Upgrade to Pro for more leads &amp; users</h4>
-                <p className="text-xs text-indigo-700 dark:text-indigo-400 mb-3">
-                  Manage up to 2,00,000 leads and unlock unlimited team users. Upgrade now.
-                </p>
-                <button onClick={() => setShowUpgradeModal(true)} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
-                  Upgrade to Pro Now →
-                </button>
+
+                  <div className="w-full lg:w-auto shrink-0 bg-white/10 backdrop-blur-xl border border-white/15 rounded-2xl p-5 sm:p-6 text-center lg:text-left flex flex-col justify-between space-y-4">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+                        Starting from
+                      </span>
+                      <div className="flex items-baseline justify-center lg:justify-start gap-1.5">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-white">₹1,000</span>
+                        <span className="text-sm text-slate-300 font-medium">/ mo</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        ₹12,000 billed yearly (Save 33%) • Or ₹1,500/mo
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#00E576] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-[#0A1C37] font-extrabold text-sm shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
+                    >
+                      <span>Upgrade to Pro Now</span>
+                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    </button>
+
+                    <div className="flex items-center justify-center lg:justify-start gap-1.5 text-[11px] text-slate-400">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>Instant In-App Activation • Razorpay Secured</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#062417] via-[#0A3622] to-[#062417] text-white border border-emerald-500/30 shadow-xl overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-[#00E576]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="space-y-3 max-w-2xl">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
+                        PRO Workspace Active
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-400/20 text-emerald-300">
+                        ● Active Subscription
+                      </span>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                        RealSalePro <span className="text-[#00E576]">Pro Plan</span>
+                      </h2>
+                      <p className="text-emerald-100/90 text-sm sm:text-base mt-1 leading-relaxed">
+                        Your workspace is active with 2,00,000 leads quota, unlimited users, AI Copilot, and automated portal sync.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-emerald-200/90 pt-1">
+                      <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                        <CreditCard className="w-4 h-4 text-emerald-400" />
+                        Billed {billingCycleLabel} ({formatCurrency(billingAmount)})
+                      </span>
+                      <span className="flex items-center gap-1.5 bg-black/20 px-3 py-1.5 rounded-lg border border-white/10">
+                        <Calendar className="w-4 h-4 text-emerald-400" />
+                        Next Renewal: <strong className="text-white ml-0.5">{formattedRenewalDate}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full lg:w-auto shrink-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="py-3 px-6 rounded-xl bg-white/15 hover:bg-white/20 text-white font-bold text-sm border border-white/20 backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                    >
+                      <Zap className="w-4 h-4 text-emerald-400" />
+                      <span>Change Plan / Cycle</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Billing History Table */}
-          <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-white/10 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-slate-400" />
-                Payment History
-              </h3>
-              <button className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
-                Download All
-              </button>
+            {/* 2. Key Status Tiles */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Tile 1: Plan Tier */}
+              <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isPro ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>
+                      {isPro ? 'Pro Active' : 'Free Active'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Current Plan
+                  </p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                    {isPro ? 'Pro Workspace' : 'Free Forever Plan'}
+                  </h3>
+                </div>
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>{isPro ? `Billed ${billingCycleLabel}` : 'Free Starter Tier'}</span>
+                  {!isPro && (
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                    >
+                      Upgrade →
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Tile 2: Next Billing Date & Renewal */}
+              <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400">
+                      <Calendar className="w-6 h-6" />
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5">
+                      {isPro ? 'Auto-Renewal' : 'No Expiry'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Next Billing Date
+                  </p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                    {isPro ? formattedRenewalDate : 'No Renewals'}
+                  </h3>
+                </div>
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span>Upcoming Amount</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-sm">
+                    {isPro ? formatCurrency(billingAmount) : '₹0'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tile 3: Leads Quota */}
+              <div className="bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
+                      <Database className="w-6 h-6" />
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${leadsPercent >= 90 ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : leadsPercent >= 75 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
+                      {leadsPercent}% Used
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Leads Storage Limit
+                  </p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                    {leadsCount.toLocaleString('en-IN')} <span className="text-sm font-normal text-slate-400">/ {maxLeads.toLocaleString('en-IN')}</span>
+                  </h3>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-white/5 space-y-2">
+                  <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${leadsPercent >= 90 ? 'bg-rose-500' : leadsPercent >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.max(leadsPercent, 3)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>{remainingLeads.toLocaleString('en-IN')} leads remaining</span>
+                    {!isPro && (
+                      <span className="text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer hover:underline" onClick={() => setShowUpgradeModal(true)}>
+                        Expand →
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-auto">
-              {billingHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
-                    <Receipt className="w-8 h-8 text-slate-300 dark:text-slate-500" />
-                  </div>
-                  <h4 className="text-slate-900 dark:text-white font-medium mb-1">No payment history yet</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs">
-                    Once you make a payment, your invoices and receipts will appear here.
+            {/* 3. Feature Capabilities Comparison Matrix */}
+            <div className="bg-white dark:bg-surface-dark rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
+              <div className="p-6 border-b border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                    Workspace Capabilities &amp; Limits
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Compare features available in your current plan vs RealSalePro Pro.
                   </p>
                 </div>
-              ) : (
+                {!isPro && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="self-start sm:self-auto text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3.5 py-1.5 rounded-lg border border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all cursor-pointer"
+                  >
+                    Unlock All Pro Features →
+                  </button>
+                )}
+              </div>
+
+              <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 font-medium">
+                  <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Date</th>
-                      <th className="px-6 py-4">Description</th>
-                      <th className="px-6 py-4">Amount</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Invoice</th>
+                      <th className="px-6 py-3.5">Feature / Module</th>
+                      <th className="px-6 py-3.5 text-center">Free Forever Plan</th>
+                      <th className="px-6 py-3.5 text-center bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300">
+                        Pro Plan (Recommended)
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {billingHistory.map((record: any) => (
-                      <tr key={record._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                          {new Date(record._creationTime).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
-                          {record.description || 'Pro Subscription'}
-                          <div className="text-xs text-slate-400 font-normal mt-0.5">{record.razorpay_payment_id}</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                          {formatCurrency(record.amount / 100)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize 
-                            ${record.status === 'captured' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'}
-                          `}>
-                            {record.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => generateInvoice(record)}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                            title="Download Invoice"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        Leads Storage Capacity
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Total customer leads stored in your workspace</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">1,000 Leads</td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        2,00,000 Leads (200x)
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        Team Member Accounts
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Admins, sales managers, telecallers, and executives</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Up to 5 Users</td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        Unlimited Team Users
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        DeepSeek AI Sales Copilot
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">AI lead qualification, follow-up suggestions &amp; intelligence</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-400 font-medium">
+                        <span className="inline-flex items-center gap-1 text-slate-400 text-xs"><Lock className="w-3.5 h-3.5" /> Locked</span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        Unlimited AI Responses
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        Meta Ads &amp; Portal Integrations
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Facebook, Instagram, 99acres, Housing.com webhooks</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Basic / Manual</td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        Automated Live Webhooks
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        Bulk Data Export &amp; Lead Deletion
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Export to Excel/CSV and permanent lead cleanup</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-400 font-medium">Restricted</td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        Full Admin Privileges
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">
+                        Customer &amp; Technical Support
+                        <p className="text-xs font-normal text-slate-500 dark:text-slate-400">Response time and support channels</p>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300 font-medium">Standard Email</td>
+                      <td className="px-6 py-4 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10">
+                        Dedicated WhatsApp &amp; Priority
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
+              </div>
+
+              {!isPro && (
+                <div className="p-4 bg-slate-50 dark:bg-white/5 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                  <span className="text-xs text-slate-600 dark:text-slate-300">
+                    Ready to empower your team? Upgrade starts at just <strong>₹1,000 / month</strong>.
+                  </span>
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#00E576] to-[#00C853] hover:from-[#00C853] hover:to-[#00B048] text-[#0A1C37] font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current" />
+                    <span>Upgrade Workspace Now</span>
+                  </button>
+                </div>
               )}
             </div>
-          </div>
+
+            {/* 4. Billing History & Official Tax Invoices */}
+            <div className="bg-white dark:bg-surface-dark rounded-3xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden shadow-sm">
+              <div className="p-6 border-b border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-indigo-500" />
+                    Billing History &amp; Tax Invoices
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Official GST-compliant tax invoices for all subscription payments and renewals.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-x-auto">
+                {billingHistory.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex items-center justify-center mb-4 text-slate-400">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-slate-900 dark:text-white font-bold text-base mb-1">
+                      No invoices generated yet
+                    </h4>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mb-4 leading-relaxed">
+                      When you upgrade to Pro or renew your plan, official GST-compliant tax invoices will appear here for instant PDF download.
+                    </p>
+                    {!isPro && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="px-4 py-2 bg-gradient-to-r from-[#00E576] to-[#00C853] text-[#0A1C37] rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        Upgrade to Pro Plan
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4">Invoice # &amp; Date</th>
+                        <th className="px-6 py-4">Description</th>
+                        <th className="px-6 py-4">Payment Ref</th>
+                        <th className="px-6 py-4">Amount</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Tax Invoice</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {billingHistory.map((record: any) => {
+                        const invId = (record.id || record._id || 'INV').slice(0, 8).toUpperCase();
+                        const invDate = new Date(record.created_at || record._creationTime || Date.now()).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        });
+                        const amountInRupees = normalizeAmountInRupees(record.amount);
+
+                        return (
+                          <tr key={record._id || record.id} className="hover:bg-slate-50/60 dark:hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-bold text-slate-900 dark:text-white">#INV-{invId}</div>
+                              <div className="text-xs text-slate-400 mt-0.5">{invDate}</div>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                              {record.description || 'RealSalePro Pro Plan'}
+                            </td>
+                            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono text-xs">
+                              {record.razorpay_payment_id || record.payment_id || 'pay_online'}
+                            </td>
+                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                              ₹{amountInRupees.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 capitalize">
+                                <CheckCircle2 className="w-3 h-3" />
+                                {record.status || 'Paid'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => generateInvoice(record)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-lg transition-colors cursor-pointer"
+                                title="Download PDF Tax Invoice"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>PDF</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-          </>
+          </div>
         )}
       </div>
+
       {/* Cropper Modal */}
       {cropImageSrc && (
         <ImageCropper
@@ -788,7 +1061,7 @@ export function SubscriptionPage() {
           }}
           imageSrc={cropImageSrc}
           onCropComplete={handleCropComplete}
-          aspect={1} // Square works best for most logos, but we could make it 3:1 if user wants
+          aspect={1}
           cropShape="rect"
         />
       )}

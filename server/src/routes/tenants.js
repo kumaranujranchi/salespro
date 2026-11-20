@@ -334,7 +334,11 @@ router.get('/:id/billing-history', requireTenantAccess, async (req, res) => {
       'SELECT * FROM billing_history WHERE tenant_id = $1 ORDER BY created_at DESC',
       [req.params.id]
     );
-    return res.json(result.rows.map(r => ({ ...r, _id: r.id })));
+    return res.json(result.rows.map(r => ({
+      ...r,
+      _id: r.id,
+      _creationTime: r.created_at ? new Date(r.created_at).getTime() : Date.now()
+    })));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

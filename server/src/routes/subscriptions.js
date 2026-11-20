@@ -320,17 +320,18 @@ router.post('/verify', requireAuth, async (req, res) => {
     }
 
     const nextBillingDate = new Date();
-    let amount = 1500;
+    let amountInRupees = 1500;
     if (billingCycle === 'yearly') {
       nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-      amount = 12000;
+      amountInRupees = 12000;
     } else if (billingCycle === 'semi_annual') {
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 6);
-      amount = 7200;
+      amountInRupees = 7200;
     } else {
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-      amount = 1500;
+      amountInRupees = 1500;
     }
+    const amountInPaise = amountInRupees * 100;
 
     // Update tenant subscription status in database
     await query(`
@@ -344,14 +345,14 @@ router.post('/verify', requireAuth, async (req, res) => {
       WHERE id = $5
     `, [planTier, billingCycle, nextBillingDate.toISOString(), subscriptionId || null, targetTenantId]);
 
-    // Insert record into billing_history
+    // Insert record into billing_history (amount stored in paise for Razorpay standard)
     try {
       await query(`
         INSERT INTO billing_history (tenant_id, amount, status, razorpay_payment_id, description, created_at)
         VALUES ($1, $2, 'paid', $3, $4, CURRENT_TIMESTAMP)
       `, [
         targetTenantId,
-        amount,
+        amountInPaise,
         paymentId || `pay_${Date.now()}`,
         `RealSalePro Pro Plan (${billingCycle}) via Razorpay`
       ]);
