@@ -1288,7 +1288,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         featureName="AI Sales Copilot"
-        description="Upgrade to RealSalePro Pro to unlock AI Sales Copilot, real-time sales coaching, cold calling scripts, and complete CRM workflow guidance."
+        description="Upgrade to the Pro Plan to unlock AI Sales Copilot, real-time sales coaching, cold calling scripts, and complete CRM workflow guidance."
       />
     </div>
   );

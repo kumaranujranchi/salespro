@@ -150,7 +150,7 @@ export function UpgradeToProModal({
 
             invalidateQuery('tenants');
             invalidateQuery('subscriptions');
-            toast.success('🎉 Pro Plan activated successfully! Welcome to RealSalePro Pro!');
+            toast.success('🎉 Pro Plan activated successfully! Welcome to Pro!');
             onClose();
           } catch (verifyErr: any) {
             console.error('Subscription verification warning:', verifyErr);

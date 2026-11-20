@@ -260,7 +260,7 @@ export function SubscriptionPage() {
       head: [['Description', 'Qty', 'Base Amount', 'GST (18%)', 'Total Amount']],
       body: [
         [
-          record.description || 'RealSalePro Pro Plan Subscription',
+          record.description || 'Pro Plan Subscription',
           '1',
           `INR ${baseAmount.toFixed(2)}`,
           `INR ${gstAmount.toFixed(2)}`,
@@ -631,7 +631,7 @@ export function SubscriptionPage() {
 
                     <div>
                       <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                        Unlock Full CRM Scale with <span className="bg-gradient-to-r from-[#00E576] to-[#69F0AE] bg-clip-text text-transparent">RealSalePro Pro</span>
+                        Unlock Full CRM Scale with <span className="bg-gradient-to-r from-[#00E576] to-[#69F0AE] bg-clip-text text-transparent">Pro Plan</span>
                       </h2>
                       <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
                         You are currently on the Free Starter plan (capped at 1,000 leads). Upgrade your workspace to unlock 2,00,000 leads storage, unlimited team accounts, AI Sales Copilot, automated Meta webhooks, and priority WhatsApp support.
@@ -705,7 +705,7 @@ export function SubscriptionPage() {
 
                     <div>
                       <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                        RealSalePro <span className="text-[#00E576]">Pro Plan</span>
+                        Workspace Active: <span className="text-[#00E576]">Pro Plan</span>
                       </h2>
                       <p className="text-emerald-100/90 text-sm sm:text-base mt-1 leading-relaxed">
                         Your workspace is active with 2,00,000 leads quota, unlimited users, AI Copilot, and automated portal sync.
@@ -843,7 +843,7 @@ export function SubscriptionPage() {
                     Workspace Capabilities &amp; Limits
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Compare features available in your current plan vs RealSalePro Pro.
+                    Compare features available in your current plan vs Pro Plan.
                   </p>
                 </div>
                 {!isPro && (
@@ -1036,7 +1036,7 @@ export function SubscriptionPage() {
                               <div className="text-xs text-slate-400 mt-0.5">{invDate}</div>
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                              {record.description || 'RealSalePro Pro Plan'}
+                              {record.description || 'Pro Plan Subscription'}
                             </td>
                             <td className="px-6 py-4 text-slate-500 dark:text-slate-400 font-mono text-xs">
                               {record.razorpay_payment_id || record.payment_id || 'pay_online'}
@@ -1091,7 +1091,7 @@ export function SubscriptionPage() {
       <UpgradeToProModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        featureName="RealSalePro Pro Plan"
+        featureName="Pro Plan"
         description="Upgrade your workspace directly via UPI or cards to unlock 2,00,000 leads, unlimited users, and AI Copilot."
       />
     </div>
