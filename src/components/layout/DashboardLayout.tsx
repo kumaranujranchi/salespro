@@ -224,7 +224,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [imageError, setImageError] = useState(false);
-  const { profile, tenant, signOut } = useAuth();
+  const { profile, tenant, signOut, isActualPlatformAdmin } = useAuth();
   const { startTutorial } = useTutorial();
   const navigate = useNavigate();
   const location = useLocation();
