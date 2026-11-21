@@ -926,12 +926,23 @@ export async function extractAndSaveLeadDetails({ conversation, messageText }) {
 
 /**
  * Natural Human Sales Rule Engine (Fallback & Direct Numbers)
+ * Session-aware: Inspects conversation history to prevent repetitive robotic greetings.
  */
-export function evaluateVisitorIntent(messageText, customerName, companyName = null) {
+export function evaluateVisitorIntent(messageText, customerName, companyName = null, conversationHistory = []) {
   const text = String(messageText || '').trim().toLowerCase();
   const personalName = extractCleanPersonalName(customerName);
   const detectedCompany = companyName || extractCompanyName(customerName);
-  const nameSalutation = personalName ? ` ${personalName} ji` : '';
+  const salutation = personalName ? `${personalName} ji` : 'sir';
+  const namePrefix = personalName ? `Namaste ${personalName} ji!` : 'Namaste sir!';
+
+  // Detect whether Rahul has already greeted the visitor in this conversation session
+  const hasGreetingSent = Array.isArray(conversationHistory) && conversationHistory.some(m =>
+    m.sender_type === 'agent' && (
+      (m.body && m.body.includes('Main Rahul hoon')) ||
+      (m.body && m.body.includes('Namaste')) ||
+      (m.body && m.body.includes('RealSalePro'))
+    )
+  );
 
   // 1. Handover to Live Support / Call / Human
   if (
@@ -941,14 +952,12 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     text.includes('agent') ||
     text.includes('human') ||
     text.includes('talk') ||
-    text.includes('help') ||
-    text.includes('representative') ||
     text.includes('call me') ||
     text.includes('executive') ||
     text.includes('specialist')
   ) {
     const timeCtx = getIndiaTimeContext();
-    const salutationPrefix = personalName ? `Ji bilkul ${personalName} ji!` : 'Ji bilkul sir!';
+    const salutationPrefix = `Ji bilkul ${salutation}!`;
     if (timeCtx.isWorkingHours) {
       return {
         intent: 'agent_handover',
@@ -962,7 +971,7 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     }
   }
 
-  // 2. Demo / Free 1,000 Leads Account / Register
+  // 2. Demo / Free 1,000 Leads Account / Register / Walkthrough
   if (
     text === '1' ||
     text.includes('demo') ||
@@ -973,17 +982,15 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     text.includes('signup') ||
     text.includes('sign up') ||
     text.includes('register') ||
-    text.includes('start') ||
-    text.includes('onboard')
+    text.includes('walkthrough')
   ) {
-    const greeting = personalName ? `Namaste ${personalName} ji!` : 'Namaste sir!';
     return {
       intent: 'demo_trial',
-      reply: `${greeting} Aap hamara 100% Free Forever plan direct shuru kar sakte hain (1,000 leads tak lifetime free, koi credit card nahi chahiye):\n\n👉 https://realsalepro.com/register\n\nAgar aap 15-minute ka live screen walkthrough chahte hain, toh kripya apna Name aur City bata dijiye, main demo schedule karwa deta hoon!`,
+      reply: `${namePrefix} Aap hamara 100% Free Forever plan direct shuru kar sakte hain (1,000 leads tak lifetime free, koi credit card nahi chahiye):\n\n👉 https://realsalepro.com/register\n\nAgar aap 15-minute ka live screen walkthrough chahte hain, toh kripya convenient date aur time bata dijiye, main demo schedule karwa deta hoon!`,
     };
   }
 
-  // 3. Pricing / Plans
+  // 3. Pricing / Plans / Cost
   if (
     text === '2' ||
     text.includes('price') ||
@@ -992,7 +999,9 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     text.includes('cost') ||
     text.includes('charge') ||
     text.includes('rate') ||
-    text.includes('per user')
+    text.includes('per user') ||
+    text.includes('kitna lagega') ||
+    text.includes('charges')
   ) {
     return {
       intent: 'pricing',
@@ -1000,7 +1009,7 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     };
   }
 
-  // 4. Features / Masking / Webhooks
+  // 4. Features / Masking / Webhooks / Security
   if (
     text === '3' ||
     text.includes('feature') ||
@@ -1009,11 +1018,12 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     text.includes('magicbricks') ||
     text.includes('99acres') ||
     text.includes('theft') ||
-    text.includes('pipeline')
+    text.includes('pipeline') ||
+    text.includes('security')
   ) {
     return {
       intent: 'features',
-      reply: `RealSalePro mein do sabse popular features hain:\n1. Staff Phone Masking — telecallers ko last 5 digits hide rehte hain taaki client data safe rahe.\n2. Sub-30s Webhooks — Meta Ads aur portals se leads instant sync hoti hain.\n\nAap 1,000 leads tak free mein test kar sakte hain: https://realsalepro.com/register\n\nAapka project kis city mein hai?`,
+      reply: `RealSalePro mein do sabse popular features hain:\n1. *Staff Phone Masking* — telecallers ko last 5 digits hide rehte hain taaki client data safe rahe aur leak na ho.\n2. *Sub-30s Webhooks* — Meta Ads aur property portals se leads instant sync hoti hain.\n\nAap 1,000 leads tak free mein test kar sakte hain: https://realsalepro.com/register\n\nAapka project kis city mein hai?`,
     };
   }
 
@@ -1032,24 +1042,120 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     };
   }
 
-  // Default Greeting (Completely human, asks for Name early, never attaches "ji" to company)
-  if (personalName) {
+  // 6. Conversational Check-ins / Casual Greetings ("kya haal chal", "kaise ho", "how are you")
+  if (
+    text.includes('haal chal') ||
+    text.includes('hal chal') ||
+    text.includes('haal') ||
+    text.includes('kaise ho') ||
+    text.includes('kaise hain') ||
+    text.includes('how are you') ||
+    text.includes('aur batao') ||
+    text.includes('kya chal raha')
+  ) {
+    if (hasGreetingSent) {
+      return {
+        intent: 'casual_chit_chat',
+        reply: `Sab badhiya ${salutation}! 🙏 Aap batayein, aapka real estate business kaisa chal raha hai? Kya aap apne projects ya leads manage karne ke liye naya CRM dekh rahe hain?`,
+      };
+    } else {
+      return {
+        intent: 'greeting_human',
+        reply: `Namaste ${salutation}! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nSab badhiya sir! Aap batayein, aapki real estate team ke liye main kaise help kar sakta hoon?`,
+      };
+    }
+  }
+
+  // 7. CRM Requirement / Need Software / Leads Inquiries ("need crm", "crm chahiye", "acha i need crm")
+  if (
+    text.includes('crm') ||
+    text.includes('software') ||
+    text.includes('lead management') ||
+    text.includes('system') ||
+    text.includes('leads') ||
+    text.includes('telecalling')
+  ) {
     return {
-      intent: 'greeting_human',
-      reply: `Namaste ${personalName} ji! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon?`,
+      intent: 'crm_requirement',
+      reply: `Ji ${salutation}! RealSalePro specially real estate builders aur brokers ke liye banaya gaya hai. Isme aapko lead leakage rokne ke liye phone masking, sub-30s Meta Ads lead sync, aur automated WhatsApp follow-ups milte hain.\n\nAap majorly residential projects handle karte hain ya plot/commercial? Aur team mein lagbhag kitne members ya telecallers hain?`,
     };
   }
 
-  if (detectedCompany) {
+  // 8. Team Size / Telecaller Staff Mention ("5 log", "10 users", "15 telecallers")
+  const teamMatch = text.match(/\b(\d{1,3})\s*(?:log|users?|members?|telecallers?|staff|people)?\b/);
+  if (
+    teamMatch ||
+    text.includes('telecaller') ||
+    text.includes('calling team') ||
+    text.includes('team size')
+  ) {
     return {
-      intent: 'greeting_human',
-      reply: `Namaste sir! 🙏 Main Rahul hoon RealSalePro sales team se.\n\n${detectedCompany} ke liye aapki kaise help kar sakta hoon? Aur aage baat karne ke liye aapka shubh naam jaan sakta hoon?`,
+      intent: 'team_size',
+      reply: `Got it ${salutation}! Hamare *Free Forever Plan* mein 5 team members aur 1,000 active leads lifetime free rehti hain (no credit card required). Aur agar aapki team badi hai, toh hamare *Pro Plan* (₹1,000/month) mein *Unlimited Team Members* milte hain bina kisi per-user extra charge ke!\n\nAap abhi 1 minute mein apna free account start kar sakte hain:\n👉 https://realsalepro.com/register\n\nKya aap chahenge ki main aapke liye 15-minute ka live screen walkthrough schedule karwa doon?`,
     };
   }
 
+  // 9. City / Location Mentions
+  const indianCities = [
+    'patna', 'ranchi', 'delhi', 'noida', 'gurgaon', 'gurugram', 'bangalore', 'bengaluru',
+    'mumbai', 'pune', 'lucknow', 'jaipur', 'kolkata', 'hyderabad', 'ahmedabad', 'chandigarh',
+    'indore', 'bhopal', 'bhubaneswar', 'ghaziabad', 'faridabad', 'surat', 'nagpur', 'kanpur'
+  ];
+  const matchedCity = indianCities.find(c => text.includes(c));
+  if (matchedCity) {
+    const formattedCity = matchedCity.charAt(0).toUpperCase() + matchedCity.slice(1);
+    return {
+      intent: 'city_acknowledged',
+      reply: `Bahut badhiya ${salutation}! ${formattedCity} mein RealSalePro ke zariye kafi builders aur brokers apni daily leads aur telecallers ki follow-up efficiency track kar rahe hain.\n\nAapka current lead management system Excel sheet pe chal raha hai ya koi aur software use kar rahe hain?`,
+    };
+  }
+
+  // 10. Affirmations / Short Acknowledging Responses ("acha", "theek hai", "ok", "haan", "sure")
+  if (
+    text === 'acha' ||
+    text === 'achha' ||
+    text === 'theek hai' ||
+    text === 'thik hai' ||
+    text === 'ok' ||
+    text === 'okay' ||
+    text === 'sure' ||
+    text === 'haan' ||
+    text === 'yes' ||
+    text === 'batao' ||
+    text === 'sahi hai' ||
+    text === 'bataiye'
+  ) {
+    return {
+      intent: 'affirmation',
+      reply: `Ji ${salutation}! Aap RealSalePro par direct apna 100% Free Forever CRM account bana sakte hain (1,000 leads tak zero cost, lifetime valid):\n👉 https://realsalepro.com/register\n\nAgar aap chahein toh hum ek quick 15-minute live screen demo schedule kar sakte hain jisme main aapko lead distribution aur staff phone masking live dikha doon. Demo ke liye convenient time batayein?`,
+    };
+  }
+
+  // 11. Initial Greeting vs Ongoing Conversation Follow-up
+  if (!hasGreetingSent) {
+    // If this is the start of the chat, send the friendly human introduction
+    if (personalName) {
+      return {
+        intent: 'greeting_human',
+        reply: `Namaste ${personalName} ji! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon?`,
+      };
+    }
+    if (detectedCompany) {
+      return {
+        intent: 'greeting_human',
+        reply: `Namaste sir! 🙏 Main Rahul hoon RealSalePro sales team se.\n\n${detectedCompany} ke liye aapki kaise help kar sakta hoon? Aur aage baat karne ke liye aapka shubh naam jaan sakta hoon?`,
+      };
+    }
+    return {
+      intent: 'greeting_human',
+      reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aage connect karne ke liye aapka shubh naam jaan sakta hoon?`,
+    };
+  }
+
+  // If greeting has ALREADY occurred in this session, NEVER repeat the initial greeting!
   return {
-    intent: 'greeting_human',
-    reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aage connect karne ke liye aapka shubh naam jaan sakta hoon?`,
+    intent: 'follow_up_prompt',
+    reply: `Ji ${salutation}! Main aapki kya specific help kar sakta hoon — kya aapko software features ka demo dekhna hai, pricing plans samajhni hai, ya free trial account start karna hai?`,
   };
 }
 
@@ -1107,12 +1213,12 @@ export async function generateSalesAiReply({
 
   // If user explicitly clicks or types a direct option (1, 2, 3, 4, 5)
   if (['1', '2', '3', '4', '5'].includes(text)) {
-    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName, conversationHistory);
   }
 
   // If AI is disabled or no API key is configured yet, fall back to rule engine
   if (!config.aiEnabled || !apiKey) {
-    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName, conversationHistory);
   }
 
   const systemPrompt = `You are Rahul, a senior real estate sales executive at RealSalePro (https://realsalepro.com) chatting with an inbound prospect on WhatsApp.
@@ -1302,8 +1408,8 @@ CRITICAL OFF-HOURS CALLING RULE:
     const data = await res.json();
 
     if (!res.ok || !data.choices?.[0]?.message?.content) {
-      console.warn('[DeepSeek AI] API response error:', data);
-      return evaluateVisitorIntent(messageText, customerName);
+      console.warn('⚠️ [DeepSeek AI API Warning]:', data.error?.message || `HTTP ${res.status}`, '- Falling back to intelligent rule engine.');
+      return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName, conversationHistory);
     }
 
     let reply = data.choices[0].message.content.trim();
@@ -1360,8 +1466,8 @@ CRITICAL OFF-HOURS CALLING RULE:
       reply,
     };
   } catch (err) {
-    console.error('[Sales AI] Call failed, fallback to rule engine:', err.message);
-    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName);
+    console.error('⚠️ [Sales AI] Call failed, fallback to rule engine:', err.message);
+    return evaluateVisitorIntent(messageText, effectivePersonalName, effectiveCompanyName, conversationHistory);
   }
 }
 
@@ -1610,7 +1716,7 @@ export async function processIncomingWebhook(body) {
               const salutation = effectivePersonalName ? ` ${effectivePersonalName} ji` : '';
               handoverReply = `Ji bilkul${salutation}! Main hamari property sales team ko notify kar diya hai, hamare advisor jald hi aapse is chat par connect karenge.${agentPhone ? `\n\nAgar immediate baat karni ho toh aap humein direct call bhi kar sakte hain: ${agentPhone}.` : ''}`;
             } else {
-              const handover = evaluateVisitorIntent('5', effectivePersonalName, currentCompanyName);
+              const handover = evaluateVisitorIntent('5', effectivePersonalName, currentCompanyName, history);
               handoverReply = handover.reply;
             }
 
