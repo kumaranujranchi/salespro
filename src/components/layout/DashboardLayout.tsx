@@ -442,6 +442,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // We block platform-level items even for super_admin if not explicitly allowed
     // Also, Super Admin specifically requested to NOT see 'My Performance'
     const isPlatformItem = item.path.startsWith('/platform') || item.path === '/referral-management';
+    if (isActualPlatformAdmin && isPlatformItem) return true;
     if (profile?.role === 'super_admin') {
       if (item.path === '/performance') return false;
       if (!isPlatformItem) return true;

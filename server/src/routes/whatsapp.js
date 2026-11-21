@@ -82,6 +82,7 @@ router.post('/webhook', async (req, res) => {
   res.status(200).send('EVENT_RECEIVED');
 
   try {
+    console.log('📥 [Meta Webhook Inbound] Received event:', JSON.stringify(req.body));
     await processIncomingWebhook(req.body);
   } catch (err) {
     console.error('❌ [Meta Webhook] Error processing event:', err.message);
@@ -298,11 +299,15 @@ router.get('/conversations', requireAuth, async (req, res) => {
     const isTenantAdmin = isPlatform || ['super_admin', 'admin', 'director'].includes(userRole);
 
     let effectiveTenantId;
-    if (isPlatform) {
+    if (isPlatform || userRole === 'super_admin' || userRole === 'platform_admin') {
       if (scope === 'all' || tenant_id === 'all') {
         effectiveTenantId = 'all';
-      } else if (tenant_id && tenant_id !== 'platform') {
+      } else if (scope === 'platform' || tenant_id === 'platform') {
+        effectiveTenantId = 'platform';
+      } else if (tenant_id) {
         effectiveTenantId = tenant_id;
+      } else if (req.user?.tenant_id) {
+        effectiveTenantId = req.user.tenant_id;
       } else {
         effectiveTenantId = 'platform';
       }
@@ -346,8 +351,8 @@ router.get('/conversations/:id/messages', requireAuth, async (req, res) => {
     }
     const convRow = convCheck.rows[0];
 
-    if (!isPlatform) {
-      if (!req.user?.tenant_id || convRow.tenant_id !== req.user.tenant_id) {
+    if (!isPlatform && userRole !== 'super_admin' && userRole !== 'platform_admin') {
+      if (!req.user?.tenant_id || (convRow.tenant_id && convRow.tenant_id !== req.user.tenant_id)) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
       }
       // Non-admin agent check: must be assigned to this conversation
@@ -380,8 +385,8 @@ router.post('/conversations/:id/reply', requireAuth, async (req, res) => {
     }
     const convRow = convCheck.rows[0];
 
-    if (!isPlatform) {
-      if (!req.user?.tenant_id || convRow.tenant_id !== req.user.tenant_id) {
+    if (!isPlatform && userRole !== 'super_admin' && userRole !== 'platform_admin') {
+      if (!req.user?.tenant_id || (convRow.tenant_id && convRow.tenant_id !== req.user.tenant_id)) {
         return res.status(403).json({ error: 'Access denied to this conversation' });
       }
       if (!isTenantAdmin && convRow.assigned_to && convRow.assigned_to !== req.user?.id) {
@@ -416,7 +421,7 @@ router.post('/conversations/:id/assign', requireAuth, async (req, res) => {
     }
 
     let convCheck;
-    if (isPlatform) {
+    if (isPlatform || userRole === 'super_admin' || userRole === 'platform_admin') {
       convCheck = await query('SELECT * FROM whatsapp_conversations WHERE id = $1', [req.params.id]);
     } else {
       convCheck = await query('SELECT * FROM whatsapp_conversations WHERE id = $1 AND tenant_id = $2', [req.params.id, tenantId]);

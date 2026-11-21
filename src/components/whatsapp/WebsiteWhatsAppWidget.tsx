@@ -114,9 +114,15 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
 
       {/* Interactive WhatsApp Chatbot Drawer Modal */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[400px] max-w-[95vw] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300">
+        <div
+          data-lenis-prevent="true"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-[360px] sm:w-[400px] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-5rem)] sm:max-h-[620px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-300"
+          style={{
+            overscrollBehavior: 'contain',
+          }}
+        >
           {/* Header */}
-          <div className="bg-[#075E54] text-white p-4 flex items-center justify-between" style={{ backgroundColor: '#075E54', color: '#ffffff' }}>
+          <div className="bg-[#075E54] text-white p-4 flex items-center justify-between shrink-0" style={{ backgroundColor: '#075E54', color: '#ffffff' }}>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm border border-white/20">
@@ -147,7 +153,17 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
           </div>
 
           {/* Chat Background Body */}
-          <div className="p-4 bg-[#e5ddd5]/25 dark:bg-slate-950/70 space-y-3 max-h-[360px] overflow-y-auto">
+          <div
+            data-lenis-prevent="true"
+            className="p-4 bg-[#e5ddd5]/25 dark:bg-slate-950/70 space-y-3 flex-1 min-h-0 overflow-y-auto overscroll-contain"
+            style={{
+              overscrollBehavior: 'contain',
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+            }}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             {/* Sales Advisor Welcome Bubble */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-sm p-3.5 shadow-sm border border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-800 dark:text-slate-100 leading-relaxed space-y-1.5">
               <div className="flex items-center gap-1.5 font-bold text-[10px] text-emerald-600 uppercase tracking-wider">
@@ -193,7 +209,7 @@ export function WebsiteWhatsAppWidget({ defaultOpen = false }: WebsiteWhatsAppWi
           </div>
 
           {/* Footer Input */}
-          <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2 shrink-0">
             <div className="flex items-center gap-2">
               <input
                 type="text"

@@ -1956,6 +1956,10 @@ export function WhatsAppCommandCenterPage() {
               <div className="text-xs text-emerald-800 dark:text-emerald-400">
                 Verify Token: <code className="bg-white/80 dark:bg-slate-900 px-2 py-0.5 rounded font-mono font-bold">{config.webhookVerifyToken || 'realsalepro_wa_secret'}</code>
               </div>
+
+              <div className="mt-2 p-2.5 rounded-lg bg-emerald-100/70 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700/60 text-[11px] text-emerald-900 dark:text-emerald-200 leading-normal">
+                <strong>Crucial Step:</strong> In Meta Developer Portal under <strong>Webhook fields</strong>, click <strong>Manage</strong> and check the <strong>messages</strong> box! If <code>messages</code> is not subscribed, Meta will test OK but will not forward customer WhatsApp chats here.
+              </div>
             </div>
           </div>
 

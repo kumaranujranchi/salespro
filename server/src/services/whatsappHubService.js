@@ -1428,6 +1428,8 @@ export async function processIncomingWebhook(body) {
 
           if (!fromPhone || !messageText) continue;
 
+          console.log(`💬 [WhatsApp Inbound] Received message from ${fromPhone}: "${messageText}"`);
+
           // Multi-Tenant Routing: Check if incoming phone_number_id matches any registered tenant
           const incomingPhoneNumberId = value.metadata?.phone_number_id;
           let matchedTenantId = null;
@@ -1446,6 +1448,8 @@ export async function processIncomingWebhook(body) {
               matchedTenant = tenantMatchRes.rows[0];
             }
           }
+
+          console.log(`💬 [WhatsApp Inbound] Routing matched tenant: ${matchedTenantId || 'Platform (RealSalePro)'}`);
 
           // Find or create conversation scoped to tenant (or platform if matchedTenantId is null)
           let convRes = await query(`
@@ -1635,78 +1639,82 @@ export async function processIncomingWebhook(body) {
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
 
-          // 1. Run Real-time Lead Authenticity & Threat Scoring
-          const leadAnalysis = await analyzeLeadAuthenticity({
-            messageText,
-            conversation,
-            conversationHistory: history,
-          });
-
-          // Persist updated intelligence metrics into conversation metadata
-          const currentMeta = conversation.metadata || {};
-          const updatedMeta = {
-            ...currentMeta,
-            authenticity_score: leadAnalysis.authenticityScore,
-            lead_classification: leadAnalysis.category,
-            threat_level: leadAnalysis.threatLevel,
-            token_shield_active: leadAnalysis.tokenShieldActive,
-            evasive_count: leadAnalysis.evasiveCount,
-            last_analyzed_at: new Date().toISOString(),
-          };
-
-          await query(`
-            UPDATE whatsapp_conversations
-            SET metadata = $1::jsonb, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $2
-          `, [JSON.stringify(updatedMeta), conversation.id]);
-          conversation.metadata = updatedMeta;
-
-          // 2. Token Shield Circuit Breaker: If visitor is suspicious/competitor/spammer, send gatekeeper reply and SAVE LLM TOKENS!
-          if (leadAnalysis.tokenShieldActive && leadAnalysis.gatekeeperResponse) {
-            console.log(`🛡️ [Token Shield] Active for ${conversation.phone} (Score: ${leadAnalysis.authenticityScore}, Category: ${leadAnalysis.category}). Bypassing LLM.`);
-            if (config.botEnabled) {
-              await sendBotReply(conversation, leadAnalysis.gatekeeperResponse);
-            }
-            continue;
-          }
-
-          // 3. Generate dynamic response via Sales AI
-          let replyText = '';
-          if (conversation.tenant_id) {
-            // For tenant, use the tenant's AI chatbot trained on their property projects & business info
-            try {
-              const widgetRes = await generateWidgetChatReply({
-                tenantId: conversation.tenant_id,
-                message: messageText,
-                conversationHistory: history.map(h => ({
-                  role: h.sender_type === 'visitor' ? 'user' : 'assistant',
-                  content: h.body,
-                })),
-              });
-              replyText = widgetRes?.reply;
-            } catch (err) {
-              console.warn('[WhatsApp Bot] Tenant AI error, using fallback:', err.message);
-              const salutation = effectivePersonalName ? ` ${effectivePersonalName} ji` : '';
-              replyText = `Namaste${salutation}! Thank you for messaging ${config.businessName || 'us'}. Our property consultant will connect with you shortly.`;
-            }
-          } else {
-            // Platform landing page AI
-            const learnedGuidance = await getLearnedGuidanceForPrompt();
-            const aiRes = await generateSalesAiReply({
+          try {
+            // 1. Run Real-time Lead Authenticity & Threat Scoring
+            const leadAnalysis = await analyzeLeadAuthenticity({
               messageText,
-              customerName: effectivePersonalName,
+              conversation,
               conversationHistory: history,
-              conversationMetadata: conversation.metadata || {},
-              learnedGuidance,
-              recommendedProbe: leadAnalysis.recommendedProbe,
-              tenantId: null,
             });
-            replyText = aiRes?.reply;
-          }
 
-          // Send Bot Reply if enabled
-          if (config.botEnabled && replyText) {
-            await sendBotReply(conversation, replyText);
+            // Persist updated intelligence metrics into conversation metadata
+            const currentMeta = conversation.metadata || {};
+            const updatedMeta = {
+              ...currentMeta,
+              authenticity_score: leadAnalysis.authenticityScore,
+              lead_classification: leadAnalysis.category,
+              threat_level: leadAnalysis.threatLevel,
+              token_shield_active: leadAnalysis.tokenShieldActive,
+              evasive_count: leadAnalysis.evasiveCount,
+              last_analyzed_at: new Date().toISOString(),
+            };
+
+            await query(`
+              UPDATE whatsapp_conversations
+              SET metadata = $1::jsonb, updated_at = CURRENT_TIMESTAMP
+              WHERE id = $2
+            `, [JSON.stringify(updatedMeta), conversation.id]);
+            conversation.metadata = updatedMeta;
+
+            // 2. Token Shield Circuit Breaker: If visitor is suspicious/competitor/spammer, send gatekeeper reply and SAVE LLM TOKENS!
+            if (leadAnalysis.tokenShieldActive && leadAnalysis.gatekeeperResponse) {
+              console.log(`🛡️ [Token Shield] Active for ${conversation.phone} (Score: ${leadAnalysis.authenticityScore}, Category: ${leadAnalysis.category}). Bypassing LLM.`);
+              if (config.botEnabled) {
+                await sendBotReply(conversation, leadAnalysis.gatekeeperResponse);
+              }
+              continue;
+            }
+
+            // 3. Generate dynamic response via Sales AI
+            let replyText = '';
+            if (conversation.tenant_id) {
+              // For tenant, use the tenant's AI chatbot trained on their property projects & business info
+              try {
+                const widgetRes = await generateWidgetChatReply({
+                  tenantId: conversation.tenant_id,
+                  message: messageText,
+                  conversationHistory: history.map(h => ({
+                    role: h.sender_type === 'visitor' ? 'user' : 'assistant',
+                    content: h.body,
+                  })),
+                });
+                replyText = widgetRes?.reply;
+              } catch (err) {
+                console.warn('[WhatsApp Bot] Tenant AI error, using fallback:', err.message);
+                const salutation = effectivePersonalName ? ` ${effectivePersonalName} ji` : '';
+                replyText = `Namaste${salutation}! Thank you for messaging ${config.businessName || 'us'}. Our property consultant will connect with you shortly.`;
+              }
+            } else {
+              // Platform landing page AI
+              const learnedGuidance = await getLearnedGuidanceForPrompt();
+              const aiRes = await generateSalesAiReply({
+                messageText,
+                customerName: effectivePersonalName,
+                conversationHistory: history,
+                conversationMetadata: conversation.metadata || {},
+                learnedGuidance,
+                recommendedProbe: leadAnalysis.recommendedProbe,
+                tenantId: null,
+              });
+              replyText = aiRes?.reply;
+            }
+
+            // Send Bot Reply if enabled
+            if (config.botEnabled && replyText) {
+              await sendBotReply(conversation, replyText);
+            }
+          } catch (aiErr) {
+            console.warn('⚠️ [WhatsApp AI / Bot Response Warning]:', aiErr.message);
           }
         }
       }

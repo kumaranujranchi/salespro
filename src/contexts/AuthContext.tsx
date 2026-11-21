@@ -65,9 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Determine if current logged in user is genuine SaaS/Platform Admin
   // (Strict check based on underlying database profile/session email)
   const isActualPlatformAdmin = Boolean(
-    (profileData && (profileData.role === 'platform_admin' || profileData.email === 'admin@realsalepro.com')) ||
-    (profile && (profile.email === 'admin@realsalepro.com' || (profile as any)._actual_role === 'platform_admin')) ||
-    (sessionUser && (sessionUser.email === 'admin@realsalepro.com' || sessionUser.email === 'admin@salespro.com'))
+    (profileData && (profileData.role === 'platform_admin' || profileData.email === 'admin@realsalepro.com' || profileData.email === 'kumaranujranchi@gmail.com')) ||
+    (profile && (profile.email === 'admin@realsalepro.com' || profile.email === 'kumaranujranchi@gmail.com' || (profile as any)._actual_role === 'platform_admin')) ||
+    (sessionUser && (sessionUser.email === 'admin@realsalepro.com' || sessionUser.email === 'admin@salespro.com' || sessionUser.email === 'kumaranujranchi@gmail.com'))
   );
 
   // In-memory / session-stored role override for SaaS Admin QA testing

@@ -89,7 +89,11 @@ export function isPlatformRole(user) {
   const role = normalizeRole(user.role);
   if (role === 'platform_admin') return true;
   const email = (user.email || '').toLowerCase().trim();
-  if (email === 'admin@realsalepro.com' || email === 'admin@salespro.com') return true;
+  if (
+    email === 'admin@realsalepro.com' ||
+    email === 'admin@salespro.com' ||
+    email === 'kumaranujranchi@gmail.com'
+  ) return true;
   if (!user.tenant_id && role === 'super_admin') return true;
   return false;
 }
