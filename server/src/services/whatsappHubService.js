@@ -1077,7 +1077,7 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
   ) {
     return {
       intent: 'crm_requirement',
-      reply: `Ji ${salutation}! RealSalePro specially real estate builders aur brokers ke liye banaya gaya hai. Isme aapko lead leakage rokne ke liye phone masking, sub-30s Meta Ads lead sync, aur automated WhatsApp follow-ups milte hain.\n\nAap majorly residential projects handle karte hain ya plot/commercial? Aur team mein lagbhag kitne members ya telecallers hain?`,
+      reply: `Ji ${salutation}! RealSalePro specially real estate builders aur brokers ke liye banaya gaya hai. Isme aapko lead leakage rokne ke liye phone masking, sub-30s Meta Ads lead sync, aur automated WhatsApp follow-ups milte hain.\n\nAage badhne ke liye best step kya rahega?\n1️⃣ 1,000 Leads Free Forever Account Setup (Zero Cost)\n2️⃣ 15-Minute Live Screen Walkthrough Schedule Karein\n3️⃣ Pricing & Unlimited Users Details Dekhein\n\nAap 1, 2 ya 3 reply kar sakte hain!`,
     };
   }
 
@@ -1131,24 +1131,17 @@ export function evaluateVisitorIntent(messageText, customerName, companyName = n
     };
   }
 
-  // 11. Initial Greeting vs Ongoing Conversation Follow-up
+  // 11. Initial Greeting vs Ongoing Conversation Follow-up (High-Converting Interactive Options)
   if (!hasGreetingSent) {
-    // If this is the start of the chat, send the friendly human introduction
-    if (personalName) {
-      return {
-        intent: 'greeting_human',
-        reply: `Namaste ${personalName} ji! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon?`,
-      };
-    }
-    if (detectedCompany) {
-      return {
-        intent: 'greeting_human',
-        reply: `Namaste sir! 🙏 Main Rahul hoon RealSalePro sales team se.\n\n${detectedCompany} ke liye aapki kaise help kar sakta hoon? Aur aage baat karne ke liye aapka shubh naam jaan sakta hoon?`,
-      };
-    }
+    const greetingHeader = personalName
+      ? `Namaste ${personalName} ji! 🙏 Main Rahul hoon RealSalePro sales team se.`
+      : detectedCompany
+        ? `Namaste sir! 🙏 Main Rahul hoon RealSalePro sales team se ${detectedCompany} ke liye.`
+        : `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.`;
+
     return {
       intent: 'greeting_human',
-      reply: `Namaste! 🙏 Main Rahul hoon RealSalePro sales team se.\n\nAapki kaise help kar sakta hoon? Aur aage connect karne ke liye aapka shubh naam jaan sakta hoon?`,
+      reply: `${greetingHeader}\n\nAapki real estate business growth ke liye main kaise help kar sakta hoon?\n\n1️⃣ 1,000 Leads Free Forever Account Setup (Zero Cost Demo)\n2️⃣ Pricing & Unlimited Users Plan (₹1,000/mo)\n3️⃣ Telecaller Phone Masking Info (Stop Client Data Theft)\n4️⃣ Free Real Estate Excel CRM Template\n5️⃣ Talk to Senior Sales Specialist (Direct Call)\n\nAap 1 se 5 koi bhi option number reply kar sakte hain, ya apna sawaal likh sakte hain!`,
     };
   }
 
@@ -1313,8 +1306,8 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
    - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
 
   try {
-    // Complete Session Memory: take up to 100 recent messages of the ongoing conversation
-    const historyMessages = conversationHistory.slice(-100).map((m) => ({
+    // Cost-Optimized Context Window: take last 6 messages (3 turns) for maximum relevance & minimum token cost
+    const historyMessages = conversationHistory.slice(-6).map((m) => ({
       role: m.sender_type === 'visitor' ? 'user' : 'assistant',
       content: m.body,
     }));
@@ -1744,6 +1737,28 @@ export async function processIncomingWebhook(body) {
             LIMIT 100
           `, [conversation.id]);
           const history = (historyRes.rows || []).reverse();
+
+          // Anti-Spam Rate Limiting: Max 20 inbound messages per 24h per phone to prevent bot loop / token abuse
+          const dailyCountRes = await query(`
+            SELECT COUNT(*) as cnt
+            FROM whatsapp_messages
+            WHERE conversation_id = $1
+              AND created_at >= NOW() - INTERVAL '24 hours'
+              AND direction = 'inbound'
+          `, [conversation.id]);
+          const dailyInboundCount = parseInt(dailyCountRes.rows[0]?.cnt || '0', 10);
+
+          if (dailyInboundCount > 20) {
+            console.log(`🛡️ [Rate Limit Shield] Conversation ${conversation.id} (${conversation.phone}) reached daily limit (${dailyInboundCount} msgs). Switching to human sales.`);
+            const limitReply = `Namaste ${effectivePersonalName ? `${effectivePersonalName} ji` : 'sir'}! 🙏 Hamari daily automated chat limit reach ho chuki hai taaki hum har client ko dedicated support de sakein.\n\nAapki inquiry sales manager ko assign kar di gayi hai. Direct connect karne ke liye kripya helpline +91 70797 37773 par direct call karein.`;
+            await query(`
+              UPDATE whatsapp_conversations
+              SET status = 'agent_requested', updated_at = CURRENT_TIMESTAMP
+              WHERE id = $1
+            `, [conversation.id]);
+            await sendBotReply(conversation, limitReply);
+            continue;
+          }
 
           try {
             // 1. Run Real-time Lead Authenticity & Threat Scoring
