@@ -205,9 +205,9 @@ export function FreeCRMPage() {
               </div>
 
               <ul className="hero__facts" data-reveal data-reveal-delay="320" style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid rgba(255, 255, 255, 0.14)' }}>
-                <li><b>₹0</b><span>Free forever plan</span></li>
-                <li><b>1,000</b><span>Lead capacity</span></li>
-                <li><b>4.8<span className="star">★</span></b><span>1,056 reviews</span></li>
+                <li><b>₹0</b><span>Free forever tier</span></li>
+                <li><b>1,000</b><span>Free lead capacity</span></li>
+                <li><b>100%</b><span>Indian Real Estate Ready</span></li>
               </ul>
 
               <div className="hero__proof" data-reveal data-reveal-delay="380">
@@ -217,7 +217,7 @@ export function FreeCRMPage() {
                   <i style={{ background: 'linear-gradient(135deg,#8fb7ff,#3f6fd8)' }}>NP</i>
                   <i style={{ background: 'linear-gradient(135deg,#c0f08a,#79b131)' }}>VJ</i>
                 </span>
-                <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
+                <p>Trusted by <strong>50+ builder &amp; broker teams</strong> managing ₹100 Cr+ inventory.</p>
               </div>
             </div>
 

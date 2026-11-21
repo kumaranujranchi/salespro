@@ -19,8 +19,11 @@ import {
   Upload,
   Filter,
   Sparkles,
-  Building2
+  Building2,
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
+import { UnitCostSheetModal } from '../components/inventory/UnitCostSheetModal';
 import * as XLSX from 'xlsx';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -104,6 +107,9 @@ export function InventoryPage() {
 
   // Unit Details State (Read-only view for agents)
   const [selectedUnitForDetails, setSelectedUnitForDetails] = useState<any | null>(null);
+
+  // Unit Cost Sheet & Demand Letter State
+  const [selectedUnitForCostSheet, setSelectedUnitForCostSheet] = useState<any | null>(null);
 
   // Excel Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -780,13 +786,20 @@ export function InventoryPage() {
                               <TableCell className="text-right pr-6">
                                 {isAdmin ? (
                                   <ActionMenu actions={[
+                                    { label: 'Cost Sheet & Quotation', icon: FileSpreadsheet, onClick: () => setSelectedUnitForCostSheet(unit) },
+                                    { label: 'Demand Letter', icon: FileText, onClick: () => setSelectedUnitForCostSheet(unit) },
                                     { label: 'Edit Details', icon: Pencil, onClick: () => handleEditUnit(unit) },
                                     { label: 'Delete', icon: Trash2, variant: 'danger', onClick: () => handleDeleteUnit(unit._id) }
                                   ]} />
                                 ) : (
-                                  <Button variant="ghost" size="sm" onClick={() => setSelectedUnitForDetails(unit)}>
-                                    View Specifications
-                                  </Button>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button variant="outline" size="sm" onClick={() => setSelectedUnitForCostSheet(unit)} className="text-xs flex items-center gap-1 text-emerald-600 border-emerald-500/30">
+                                      <FileSpreadsheet className="w-3.5 h-3.5" /> Cost Sheet
+                                    </Button>
+                                    <Button variant="ghost" size="sm" onClick={() => setSelectedUnitForDetails(unit)}>
+                                      Specs
+                                    </Button>
+                                  </div>
                                 )}
                               </TableCell>
                             </TableRow>
@@ -1314,6 +1327,16 @@ export function InventoryPage() {
           )}
         </div>
       </Modal>
+
+      {/* Builder Cost Sheet & Demand Letter Modal */}
+      {selectedUnitForCostSheet && (
+        <UnitCostSheetModal
+          isOpen={!!selectedUnitForCostSheet}
+          onClose={() => setSelectedUnitForCostSheet(null)}
+          unit={selectedUnitForCostSheet}
+          project={selectedProject}
+        />
+      )}
     </div>
   );
 }

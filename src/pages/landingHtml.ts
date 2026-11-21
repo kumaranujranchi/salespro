@@ -107,16 +107,16 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <a class="btn btn--primary btn--lg" href="https://realsalepro.com/register">
               <span>Start free — no card</span><svg class="icon"><use href="#i-arrow"/></svg>
             </a>
-            <a class="btn btn--ghost btn--lg" href="mailto:support@realsalepro.com?subject=Demo%20request%20—%20RealSalePro">
+            <a class="btn btn--ghost btn--lg" href="https://wa.me/917079737773?text=Namaste%20Rahul!%20I%20would%20like%20to%20schedule%20a%2015-minute%20live%20demo%20of%20RealSalePro." target="_blank" rel="noopener">
               <span class="btn__play"><svg class="icon"><use href="#i-play"/></svg></span>
-              <span>Book a demo</span>
+              <span>Schedule Live Demo</span>
             </a>
           </div>
 
           <ul class="hero__facts" data-reveal data-reveal-delay="320" style="margin-top: 48px !important; padding-top: 32px !important; border-top: 1px solid rgba(255, 255, 255, 0.14) !important;">
-            <li><b>₹0</b><span>Free forever plan</span></li>
-            <li><b>1,000</b><span>Lead capacity</span></li>
-            <li><b>4.8<span class="star">★</span></b><span>1,056 reviews</span></li>
+            <li><b>₹0</b><span>Free forever tier</span></li>
+            <li><b>1,000</b><span>Free lead capacity</span></li>
+            <li><b>100%</b><span>Indian Real Estate Ready</span></li>
           </ul>
 
           <div class="hero__proof" data-reveal data-reveal-delay="380">
@@ -126,7 +126,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
               <i style="--av:linear-gradient(135deg,#8fb7ff,#3f6fd8)">NP</i>
               <i style="--av:linear-gradient(135deg,#c0f08a,#79b131)">VJ</i>
             </span>
-            <p>Trusted by <strong>10,000+ users</strong> and 50+ developer teams across India.</p>
+            <p>Trusted by <strong>50+ builder &amp; broker teams</strong> managing ₹100 Cr+ inventory.</p>
           </div>
         </div>
 
@@ -916,11 +916,11 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         </p>
 
         <div class="stats" data-reveal data-reveal-delay="80">
-          <div class="stat"><b data-count="4.8" data-decimals="1">4.8</b><span>Average rating</span></div>
-          <div class="stat"><b data-count="1056">1,056</b><span>Customer reviews</span></div>
-          <div class="stat"><b data-count="10000" data-suffix="+">10,000+</b><span>Active users</span></div>
-          <div class="stat"><b data-count="50" data-suffix="+">50+</b><span>Developers onboard</span></div>
-          <div class="stat"><b>₹0</b><span>To get started</span></div>
+          <div class="stat"><b data-count="50" data-suffix="+">50+</b><span>Developer Teams</span></div>
+          <div class="stat"><b data-count="100" data-prefix="₹" data-suffix=" Cr+">₹100 Cr+</b><span>Inventory Tracked</span></div>
+          <div class="stat"><b data-count="30" data-suffix="s">&lt;30s</b><span>Lead Sync Speed</span></div>
+          <div class="stat"><b data-count="99.9" data-suffix="%">99.9%</b><span>Cloud Reliability</span></div>
+          <div class="stat"><b>₹0</b><span>Free Forever Tier</span></div>
         </div>
       </div>
     </section>
@@ -968,7 +968,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
             <div class="price__amount">
               <b data-price>₹1,000</b><em>/month</em>
             </div>
-            <p class="price__desc" data-price-note>Billed ₹12,000 annually — save 33%.</p>
+            <p class="price__desc" data-price-note><strike style="opacity: 0.6; margin-right: 4px;">₹1,500</strike> Billed ₹12,000 annually — <strong>save 33%</strong> off monthly rate.</p>
             <a class="btn btn--primary btn--block" href="/pricing" style="margin-top: 22px !important; margin-bottom: 26px !important;">Upgrade to Pro <svg class="icon"><use href="#i-arrow"/></svg></a>
             <ul class="price__list" style="display: grid !important; gap: 13px !important; margin-top: 0 !important; padding: 0 !important;">
               <li><svg class="icon"><use href="#i-check"/></svg> Everything in Free</li>
@@ -1300,7 +1300,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
       <div class="footer__wordmark" aria-hidden="true">RealSalePro</div>
 
       <div class="footer__bottom">
-        <p>© <span id="year">2026</span> RealSalePro. All rights reserved.</p>
+        <p>© <span id="year">2026</span> RealSalePro · Powered by Synergy Brand Architect · AWS Mumbai Cloud Infrastructure · In Statutory Compliance with Digital Personal Data Protection (DPDP) Act, 2023 &amp; IT Act, 2000.</p>
         <div class="footer__legal">
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
