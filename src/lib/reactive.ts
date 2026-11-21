@@ -258,7 +258,9 @@ async function resolveApiCall(functionKey: any, args: any) {
   if (key.includes('sales.getLeaderboard')) {
     return await salesService.getLeaderboard(args);
   }
-  if (key.includes('sales.listSales') || key.includes('sales.list')) {
+  // `sales.getSales` (Accounts & Accountant dashboard) must stay below the
+  // getSalesOverview / getSalesAnalytics checks, which share this prefix.
+  if (key.includes('sales.listSales') || key.includes('sales.list') || key.includes('sales.getSales')) {
     return await salesService.list(args?.tenant_id, args);
   }
   if (key.includes('sales.createSale') || key.includes('sales.create')) {

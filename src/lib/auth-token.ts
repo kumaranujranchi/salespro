@@ -1,3 +1,5 @@
+import { isOfflineSession } from './dev-offline';
+
 const TOKEN_KEY = 'crm_auth_token';
 const SESSION_USER_KEY = 'crm_session_user';
 
@@ -41,6 +43,10 @@ let redirectingToLogin = false;
 // Called when the API answers 401: drop the stale session and send the user
 // back to the login page.
 export function handleSessionExpired() {
+  // Local dev offline dummy session: the API is expected to reject its fake
+  // token, so don't sign out. (`import.meta.env.DEV` is false in production.)
+  if (import.meta.env.DEV && isOfflineSession()) return;
+
   setAuthToken(null);
   setStoredSessionUser(null);
 

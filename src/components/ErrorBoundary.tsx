@@ -5,6 +5,8 @@ interface Props {
   children: ReactNode;
   fallbackTitle?: string;
   fallbackMessage?: string;
+  /** When this changes (e.g. the route path), a caught error is cleared. */
+  resetKey?: string;
 }
 
 interface State {
@@ -24,6 +26,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+  }
+
+  public componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   private handleReset = () => {

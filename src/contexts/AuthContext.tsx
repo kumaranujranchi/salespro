@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { useQuery, useMutation, useBackend } from "../lib/reactive";
 import { api, Id } from '../lib/api-endpoints';
 import { authService } from '../lib/services';
-import { getAuthToken, getStoredSessionUser, setAuthToken, setStoredSessionUser } from '../lib/auth-token';
+import { getAuthToken, getStoredSessionUser, handleSessionExpired, setAuthToken, setStoredSessionUser } from '../lib/auth-token';
 import { Profile, Tenant, ReferralCampaign, UserRole } from '../types/database';
+import { clearOfflineSession, getOfflineSession } from '../lib/dev-offline';
 
 interface AuthContextType {
   user: { id: string; email?: string } | null;
@@ -31,6 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return getStoredSessionUser<{ id: string; email?: string }>();
   });
   const [isSigningIn, setIsSigningIn] = useState(false);
+
+  // LOCAL DEV ONLY: offline dummy session from the Dev Mode switcher (no API /
+  // database). getOfflineSession() always returns null in production builds.
+  const [offline] = useState(() => (sessionUser ? getOfflineSession() : null));
   const backend = useBackend();
 
   // Persist sessionUser to localStorage on every change
@@ -41,26 +46,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Fetch profile from the backend
-  const profileData = useQuery(api.profiles.getByUserId, 
-    sessionUser ? { userId: sessionUser.id } : "skip" as any
+  const fetchedProfile = useQuery(api.profiles.getByUserId,
+    sessionUser && !offline ? { userId: sessionUser.id } : "skip" as any
   ) as Profile | null | undefined;
+  const profileData = offline ? offline.profile : fetchedProfile;
 
   const promoteMutation = useMutation(api.profiles.promoteToPlatformAdmin);
   const promotedEmailRef = useRef<string | null>(null);
 
   // Fetch affiliate campaign from the backend
-  const affiliateData = useQuery(api.referrals.getCampaignByCreator,
-    sessionUser ? { userId: sessionUser.id } : "skip"
+  const fetchedAffiliate = useQuery(api.referrals.getCampaignByCreator,
+    sessionUser && !offline ? { userId: sessionUser.id } : "skip"
   );
+  const affiliateData = offline ? offline.affiliate : fetchedAffiliate;
 
   // Fetch tenant from the backend
-  const tenantData = useQuery(api.tenants.getById,
-    profileData?.tenant_id ? { id: profileData.tenant_id as Id<"tenants"> } : "skip"
+  const fetchedTenant = useQuery(api.tenants.getById,
+    profileData?.tenant_id && !offline ? { id: profileData.tenant_id as Id<"tenants"> } : "skip"
   ) as Tenant | null | undefined;
+  const tenantData = offline ? offline.tenant : fetchedTenant;
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(null);
+  // Offline dev sessions start populated so protected routes don't bounce to
+  // /login on the first render of a fresh page load.
+  const [profile, setProfile] = useState<Profile | null>(offline?.profile ?? null);
+  const [tenant, setTenant] = useState<Tenant | null>(offline?.tenant ?? null);
+  const [affiliate, setAffiliate] = useState<ReferralCampaign | null>(offline?.affiliate ?? null);
 
   // Determine if current logged in user is genuine SaaS/Platform Admin
   // (Strict check based on underlying database profile/session email)
@@ -69,6 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (profile && (profile.email === 'admin@realsalepro.com' || (profile as any)._actual_role === 'platform_admin')) ||
     (sessionUser && (sessionUser.email === 'admin@realsalepro.com' || sessionUser.email === 'admin@salespro.com'))
   );
+
+  // Local dev builds (`vite dev`) let ANY user preview another role's UI via the
+  // Dev Mode button. `import.meta.env.DEV` is statically false in production
+  // builds, so there this stays limited to the genuine platform admin.
+  const canOverrideRole = isActualPlatformAdmin || import.meta.env.DEV;
 
   // In-memory / session-stored role override for SaaS Admin QA testing
   const [activeRoleOverride, setActiveRoleOverrideState] = useState<UserRole | null>(() => {
@@ -84,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const setActiveRoleOverride = (role: UserRole | null) => {
-    if (!isActualPlatformAdmin) return;
+    if (!canOverrideRole) return;
     setActiveRoleOverrideState(role);
     try {
       if (typeof window !== 'undefined') {
@@ -101,17 +116,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Ensure role override is completely cleared if user is not platform admin
   useEffect(() => {
-    if (sessionUser && !isActualPlatformAdmin && activeRoleOverride) {
+    if (sessionUser && !canOverrideRole && activeRoleOverride) {
       setActiveRoleOverrideState(null);
       try {
         sessionStorage.removeItem('realsalepro_qa_role_override');
       } catch {}
     }
-  }, [sessionUser, isActualPlatformAdmin, activeRoleOverride]);
+  }, [sessionUser, canOverrideRole, activeRoleOverride]);
 
   // Derived effective profile (applies role override for QA testing while preserving real admin profile)
-  const effectiveProfile: Profile | null = (profile && isActualPlatformAdmin && activeRoleOverride)
-    ? ({ ...profile, role: activeRoleOverride, _actual_role: 'platform_admin' } as Profile)
+  const effectiveProfile: Profile | null = (profile && canOverrideRole && activeRoleOverride)
+    ? ({
+        ...profile,
+        role: activeRoleOverride,
+        // In dev previews, drop the real user's custom role permissions so the
+        // previewed role falls back to its own default menus/dashboards.
+        ...(import.meta.env.DEV ? { role_details: undefined } : {}),
+        _actual_role: isActualPlatformAdmin ? 'platform_admin' : profile.role,
+      } as Profile)
     : profile;
 
   // Derived loading state to prevent race conditions during query fetching
@@ -202,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     promotedEmailRef.current = null;
+    if (import.meta.env.DEV) clearOfflineSession();
     setActiveRoleOverrideState(null);
     try {
       sessionStorage.removeItem('realsalepro_qa_role_override');
@@ -234,7 +257,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshTenant,
       setSessionUser,
       isActualPlatformAdmin,
-      activeRoleOverride: isActualPlatformAdmin ? activeRoleOverride : null,
+      activeRoleOverride: canOverrideRole ? activeRoleOverride : null,
       setActiveRoleOverride
     }}>
       {children}

@@ -16,6 +16,7 @@ import systemRoutes from './routes/system.js';
 import capiRoutes from './routes/capi.js';
 import metaRoutes from './routes/meta.js';
 import whatsappRoutes from './routes/whatsapp.js';
+import devRoutes, { isDevRoleSwitchEnabled } from './routes/dev.js';
 import { enforceTenantScope, requireAuth } from './middleware/auth.js';
 import { pool } from './db/index.js';
 
@@ -71,6 +72,14 @@ app.post('/api/tenants/register', registerTenantHandler);
 
 // Public WhatsApp Webhook & OTP router (internal admin routes guard themselves with requireAuth)
 app.use('/api/whatsapp', whatsappRoutes);
+
+// LOCAL-ONLY dev role switcher ("log in as" any user for testing).
+// Mounted only when ENABLE_DEV_ROLE_SWITCH=true and NODE_ENV !== production;
+// the router additionally rejects anything not sent directly from localhost.
+if (isDevRoleSwitchEnabled()) {
+  app.use('/api/dev', devRoutes);
+  console.warn('🧪 Dev role switcher enabled at /api/dev (localhost only). Never enable this in production.');
+}
 
 // Everything below requires a valid session token, and tenant-scoped
 // requests are pinned to the caller's own tenant.

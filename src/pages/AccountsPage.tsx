@@ -71,6 +71,14 @@ export function AccountsPage() {
   const sales = useQuery(api.sales.getSales, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
   const payments = useQuery(api.payments.listPayments, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
   const projects = useQuery(api.projects.listAllProjects, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
+  const staff = useQuery(api.profiles.listUsersByTenant, tenant?._id ? { tenant_id: tenant._id } : "skip") as any[];
+
+  // payments.recorded_by stores a profile id; resolve it to a display name.
+  const staffNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (staff || []).forEach((u: any) => map.set(String(u.id || u._id), u.full_name || u.email));
+    return map;
+  }, [staff]);
 
   // Mutations
   const addPaymentMutation = useMutation(api.payments.addPayment);
@@ -224,7 +232,7 @@ export function AccountsPage() {
         payment_mode: paymentForm.payment_mode,
         transaction_reference: paymentForm.transaction_reference,
         remarks: paymentForm.remarks,
-        recorded_by: profile?.full_name || profile?.email || 'Accountant'
+        recorded_by: profile?.id || profile?._id
       });
 
       toast.success(`Payment of ${formatCurrency(amt)} recorded successfully!`);
@@ -680,7 +688,7 @@ _${companyName} Accounts & Recovery Team_`;
                           {p.remarks && <span className="text-slate-400 italic block truncate">{p.remarks}</span>}
                         </td>
                         <td className="py-3.5 px-4 text-xs text-slate-500">
-                          {p.recorded_by || 'Staff'}
+                          {staffNameById.get(String(p.recorded_by)) || 'Staff'}
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">

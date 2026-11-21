@@ -4,6 +4,7 @@ import { useQuery } from "../../lib/reactive";
 import { api, Id } from '../../lib/api-endpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loader2, Copy, CheckCircle, ExternalLink, IndianRupee, Users, TrendingUp, LogOut } from 'lucide-react';
+import { PublicShell } from '../../components/public/PublicShell';
 
 export function AffiliateDashboardPage() {
   const { user, profile, affiliate, signOut } = useAuth();
@@ -11,7 +12,7 @@ export function AffiliateDashboardPage() {
   const [copied, setCopied] = useState(false);
 
   // Backend queries
-  const statsData = useQuery(api.referrals.getCampaignStats, 
+  const statsData = useQuery(api.referrals.getCampaignStats,
     affiliate ? { campaign_id: affiliate._id as Id<"referral_campaigns"> } : "skip"
   );
 
@@ -43,206 +44,203 @@ export function AffiliateDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-      </div>
+      <PublicShell hideFooter>
+        <section className="pp-dash pp-dash--center">
+          <Loader2 className="pp-spin pp-spin--lg" aria-label="Loading" />
+        </section>
+      </PublicShell>
     );
   }
 
   if (!affiliate) {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No Active Partner Account Found</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">You haven't registered as a partner yet.</p>
-            <a href="/affiliate/register" className="bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-emerald-700 transition">
-                Register Now
+      <PublicShell hideFooter>
+        <section className="pp-dash pp-dash--center">
+          <div className="container pp-dash__empty">
+            <h2 className="sec-head__title">No Active Partner Account Found</h2>
+            <p className="sec-head__lede">You haven't registered as a partner yet.</p>
+            <a href="/affiliate/register" className="btn btn--primary btn--lg">
+              <span>Register Now</span>
+              <svg className="icon"><use href="#i-arrow" /></svg>
             </a>
-        </div>
+          </div>
+        </section>
+      </PublicShell>
     );
   }
 
   const referralLink = `${window.location.origin}/register?ref=${affiliate.code}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              Partner Dashboard <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full border border-emerald-200">Active</span>
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-               Welcome back, {profile?.full_name || user?.email || 'Partner'}.
-            </p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
-             <div>
-               <label className="text-xs text-gray-500 uppercase font-bold tracking-wider block mb-1">Your Unique Code</label>
-               <div className="text-2xl font-mono font-bold text-emerald-600">{affiliate.code}</div>
-             </div>
-             <div className="h-10 w-px bg-gray-200 dark:bg-gray-700"></div>
-             <button 
-               onClick={copyLink}
-               className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-600 transition-colors"
-             >
-               {copied ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-               {copied ? 'Copied!' : 'Copy Link'}
-             </button>
-          </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-gray-500 hover:text-red-600 transition-colors"
-            title="Sign Out"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+    <PublicShell hideFooter>
+      <section className="pp-dash">
+        <div className="container pp-dash__stack">
 
-        {/* Share Section */}
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 rounded-2xl p-8 text-white shadow-lg">
-             <h2 className="text-xl font-bold mb-4">Start Earning 20% Commission</h2>
-             <p className="text-emerald-50 mb-6 max-w-2xl">
-               Share this link with your network. When they sign up using your link, they currently get a 10% discount, and you earn recurring revenue.
-             </p>
-             <div className="flex flex-col sm:flex-row gap-4 max-w-3xl">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={referralLink} 
-                  className="flex-1 px-4 py-3 rounded-lg text-gray-900 font-mono text-sm border-0 focus:ring-2 focus:ring-white/50"
-                />
-                <button 
-                   onClick={() => {
-                        navigator.clipboard.writeText(referralLink);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                   }}
-                   className="bg-white text-emerald-700 px-6 py-3 rounded-lg font-bold hover:bg-emerald-50 transition flex items-center justify-center gap-2"
+          {/* Header */}
+          <div className="pp-dash__head">
+            <div className="pp-dash__title">
+              <h1>
+                Partner <em>Dashboard</em> <span className="pp-badge">Active</span>
+              </h1>
+              <p>
+                Welcome back, {profile?.full_name || user?.email || 'Partner'}.
+              </p>
+            </div>
+            <div className="pp-dash__actions">
+              <div className="pp-card pp-dash__code">
+                <div>
+                  <span className="pp-dash__code-label">Your Unique Code</span>
+                  <div className="pp-dash__code-value">{affiliate.code}</div>
+                </div>
+                <div className="pp-dash__sep" aria-hidden="true"></div>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="pp-dash__copy"
                 >
-                    {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    Copy Link
+                  {copied ? <CheckCircle /> : <Copy />}
+                  {copied ? 'Copied!' : 'Copy Link'}
                 </button>
-                <a 
-                   href={referralLink} 
-                   target="_blank" 
-                   rel="noopener noreferrer"
-                   className="bg-emerald-700/50 border border-white/20 text-white px-6 py-3 rounded-lg font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2"
-                >
-                    <ExternalLink className="w-5 h-5" />
-                    Test Link
-                </a>
-             </div>
-        </div>
+              </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg">
-                        <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Referrals</p>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalReferrals}</h3>
-                    </div>
-                </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="pp-card pp-dash__logout"
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut />
+              </button>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-lg">
-                        <IndianRupee className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Paid Earnings</p>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">₹{stats.totalEarnings.toLocaleString()}</h3>
-                    </div>
-                </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-lg">
-                        <TrendingUp className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Pending Payout</p>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">₹{stats.pendingPayouts.toLocaleString()}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
+          </div>
 
-        {/* Recent Referrals Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                <h3 className="font-bold text-gray-900 dark:text-white">Recent Referrals</h3>
+          {/* Share Section */}
+          <div className="pp-card pp-dash__share">
+            <h2>Start Earning 20% Commission</h2>
+            <p>
+              Share this link with your network. When they sign up using your link, they currently get a 10% discount, and you earn recurring revenue.
+            </p>
+            <div className="pp-dash__share-row">
+              <input
+                type="text"
+                readOnly
+                value={referralLink}
+                className="pp-input pp-input--mono"
+                aria-label="Your referral link"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(referralLink);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="btn btn--primary"
+              >
+                {copied ? <CheckCircle className="icon" /> : <Copy className="icon" />}
+                <span>Copy Link</span>
+              </button>
+              <a
+                href={referralLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn--ghost"
+              >
+                <ExternalLink className="icon" />
+                <span>Test Link</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="pp-grid pp-grid--3">
+            <div className="pp-card pp-dash__stat">
+              <span className="pp-icon"><Users /></span>
+              <div>
+                <p>Total Referrals</p>
+                <div className="pp-stat">{stats.totalReferrals}</div>
+              </div>
+            </div>
+            <div className="pp-card pp-dash__stat">
+              <span className="pp-icon"><IndianRupee /></span>
+              <div>
+                <p>Paid Earnings</p>
+                <div className="pp-stat">₹{stats.totalEarnings.toLocaleString()}</div>
+              </div>
+            </div>
+            <div className="pp-card pp-dash__stat">
+              <span className="pp-icon"><TrendingUp /></span>
+              <div>
+                <p>Pending Payout</p>
+                <div className="pp-stat">₹{stats.pendingPayouts.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Referrals Table */}
+          <div className="pp-card pp-table-card">
+            <div className="pp-table-card__head">
+              <h3>Recent Referrals</h3>
             </div>
             {referrals.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    No referrals yet. Share your code to get started!
-                </div>
+              <div className="pp-table-card__empty">
+                No referrals yet. Share your code to get started!
+              </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium">
-                            <tr>
-                                <th className="px-6 py-3">Tenant Name</th>
-                                <th className="px-6 py-3">Date Joined</th>
-                                <th className="px-6 py-3">Status</th>
-                                <th className="px-6 py-3">Plan</th>
-                                <th className="px-6 py-3">Commission</th>
-                                <th className="px-6 py-3">Payout Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {referrals.map((ref: any) => {
-                                const isConverted = ref.referred_tenant?.subscription_status === 'active';
-                                const commission = isConverted ? 
-                                    (ref.referred_tenant?.plan_tier === 'enterprise' ? 5000 : 2000) : 0; // Dummy logic
-                                
-                                return (
-                                <tr key={ref._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                        {ref.referred_tenant?.name || 'Unknown'}
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                                        {new Date(ref._creationTime).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                            isConverted 
-                                            ? 'bg-green-100 text-green-700' 
-                                            : 'bg-blue-100 text-blue-700'
-                                        }`}>
-                                            {isConverted ? 'Active' : 'Trial'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 capitalize">
-                                        {ref.referred_tenant?.plan_tier || 'Starter'}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                        {isConverted ? `₹${commission.toLocaleString()}` : '—'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                            ref.payout_status === 'paid'
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                            {ref.payout_status === 'paid' ? 'Paid' : 'Pending'}
-                                        </span>
-                                    </td>
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
+              <div className="pp-table-wrap">
+                <table className="pp-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant Name</th>
+                      <th>Date Joined</th>
+                      <th>Status</th>
+                      <th>Plan</th>
+                      <th>Commission</th>
+                      <th>Payout Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {referrals.map((ref: any) => {
+                      const isConverted = ref.referred_tenant?.subscription_status === 'active';
+                      const commission = isConverted ?
+                        (ref.referred_tenant?.plan_tier === 'enterprise' ? 5000 : 2000) : 0; // Dummy logic
 
-      </div>
-    </div>
+                      return (
+                        <tr key={ref._id}>
+                          <td className="pp-table__strong">
+                            {ref.referred_tenant?.name || 'Unknown'}
+                          </td>
+                          <td>
+                            {new Date(ref._creationTime).toLocaleDateString()}
+                          </td>
+                          <td>
+                            <span className={`pp-pill ${isConverted ? 'pp-pill--success' : 'pp-pill--info'}`}>
+                              {isConverted ? 'Active' : 'Trial'}
+                            </span>
+                          </td>
+                          <td className="pp-table__cap">
+                            {ref.referred_tenant?.plan_tier || 'Starter'}
+                          </td>
+                          <td className="pp-table__strong">
+                            {isConverted ? `₹${commission.toLocaleString()}` : '—'}
+                          </td>
+                          <td>
+                            <span className={`pp-pill ${ref.payout_status === 'paid' ? 'pp-pill--success' : 'pp-pill--muted'}`}>
+                              {ref.payout_status === 'paid' ? 'Paid' : 'Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </section>
+    </PublicShell>
   );
 }

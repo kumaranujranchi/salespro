@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { DialogProvider } from './contexts/DialogContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -47,7 +47,11 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AdminIntegrationsPage } from './pages/admin/AdminIntegrationsPage';
 import { ServerHealthPage } from './pages/admin/ServerHealthPage';
 import { WhatsAppCommandCenterPage } from './pages/admin/WhatsAppCommandCenterPage';
-import { AdminRoleSwitcherBar } from './components/admin/AdminRoleSwitcherBar';
+import { lazy, Suspense } from 'react';
+
+// Local-only Dev Mode role switcher. `import.meta.env.DEV` is false in
+// production builds, so this chunk is never emitted or loaded there.
+const DevRoleSwitcher = import.meta.env.DEV ? lazy(() => import('./components/dev/DevRoleSwitcher')) : null;
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { FreeCRMPage } from './pages/FreeCRMPage';
 import { ExcelTemplatePage } from './pages/ExcelTemplatePage';
@@ -63,13 +67,20 @@ import { TutorialProvider } from './contexts/TutorialContext';
 import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
+  const location = useLocation();
   return (
     <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
           <DialogProvider>
             <TutorialProvider>
-              <ErrorBoundary>
+              {/* Outside the ErrorBoundary so the dev tools (and page tour) stay usable when a page crashes. */}
+              {DevRoleSwitcher && (
+                <Suspense fallback={null}>
+                  <DevRoleSwitcher />
+                </Suspense>
+              )}
+              <ErrorBoundary resetKey={location.pathname}>
                 <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />

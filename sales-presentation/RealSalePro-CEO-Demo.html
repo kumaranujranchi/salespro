@@ -1,0 +1,1674 @@
+<title>RealSalePro Leadership Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a fixed 1600x900 presentation stage scaled to fit the window; below 760px it becomes a stacked, scrollable reading view.
+   Single dark theme by choice: it mirrors RealSalePro's own forest-and-emerald brand, with "paper" slides for rhythm. */
+:root{
+  color-scheme: dark;
+  --bg:#08130f;            /* deep forest, page ground */
+  --bg-2:#0e1c16;
+  --panel:#11221b;         /* raised surfaces */
+  --panel-2:#162b22;
+  --line:rgba(214,240,226,.10);
+  --line-strong:rgba(214,240,226,.20);
+  --ink:#eef4ef;
+  --muted:#9db4a9;
+  --faint:#6f877c;
+  --emerald:#10b981;
+  --mint:#5ef2b0;
+  --paper:#f3f1e8;
+  --paper-ink:#0a2018;
+  --paper-muted:#51695a;
+  --amber:#f2b84b;
+  --amber-ink:#2a1d04;
+  --rose:#f0857a;
+  --sky:#7cc4f0;
+  --hot:#ff8a5c; --warm:#f2b84b; --cold:#7cc4f0;
+  --font-display:"Bricolage Grotesque","Manrope",system-ui,sans-serif;
+  --font-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --r:20px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:18px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:6px}
+
+/* ---------- stage ---------- */
+#viewport{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);bottom:calc(60px + env(safe-area-inset-bottom,0px));display:grid;place-items:center;overflow:hidden;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#stage{width:1600px;height:900px;position:relative;flex:none;transform-origin:center center;border-radius:28px;overflow:hidden;background:var(--bg-2);box-shadow:0 40px 120px rgba(0,0,0,.55),0 0 0 1px var(--line)}
+.slide{position:absolute;inset:0;padding:64px 96px 60px;display:none;flex-direction:column;gap:28px;background:
+  radial-gradient(900px 500px at 92% -10%, rgba(16,185,129,.13), transparent 60%),
+  radial-gradient(700px 500px at -10% 110%, rgba(94,242,176,.06), transparent 60%), var(--bg-2);color:var(--ink)}
+.slide.active{display:flex}
+.slide.paper{--ink:var(--paper-ink);--muted:var(--paper-muted);--faint:#7d8f84;--panel:#ffffff;--panel-2:#e9e6da;--line:rgba(10,32,24,.12);--line-strong:rgba(10,32,24,.24);--mint:#047857;--emerald:#059669;background:var(--paper)}
+.slide.divider{justify-content:flex-end;background:
+  radial-gradient(1100px 700px at 80% 20%, rgba(16,185,129,.22), transparent 60%), var(--bg)}
+
+/* entrance motion: content is visible at rest, animation only plays on activation */
+@media (prefers-reduced-motion:no-preference){
+  .slide.active .rv{animation:rise .7s var(--ease) both}
+  .slide.active .rv.d1{animation-delay:.06s}.slide.active .rv.d2{animation-delay:.14s}
+  .slide.active .rv.d3{animation-delay:.22s}.slide.active .rv.d4{animation-delay:.3s}
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- type ---------- */
+.eyebrow{font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);display:flex;align-items:center;gap:12px}
+.eyebrow .num{color:var(--faint)}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.02em;font-weight:700}
+h1{font-size:84px;line-height:.98}
+h2{font-size:54px;line-height:1.02}
+h3{font-size:24px;line-height:1.2;letter-spacing:-.01em}
+em.s{font-family:var(--font-serif);font-style:italic;font-weight:400;color:var(--mint);letter-spacing:-.01em}
+.lead{font-size:23px;color:var(--muted);max-width:60ch;margin:0;line-height:1.45}
+p{margin:0}
+.small{font-size:15px;color:var(--muted)}
+.tiny{font-size:13px;color:var(--faint)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.num-tab{font-variant-numeric:tabular-nums}
+
+/* ---------- layout ---------- */
+.head{display:flex;flex-direction:column;gap:14px;max-width:1180px}
+.body{flex:1;min-height:0;display:grid;gap:28px}
+.g2{grid-template-columns:1fr 1fr}
+.g-55{grid-template-columns:1.1fr .9fr}
+.g-46{grid-template-columns:.85fr 1.15fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px 24px;min-width:0}
+.card.flat{background:transparent}
+.mock{background:var(--panel);border:1px solid var(--line-strong);border-radius:22px;padding:20px;position:relative;min-width:0;box-shadow:0 30px 80px rgba(0,0,0,.25)}
+.paper .mock{box-shadow:0 24px 60px rgba(10,32,24,.12)}
+.mock-tag{position:absolute;top:-11px;right:18px;font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--bg);color:var(--muted);border:1px solid var(--line-strong);padding:3px 9px;border-radius:99px}
+.paper .mock-tag{background:var(--paper)}
+
+/* ---------- status pills ---------- */
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px 5px 9px;border-radius:99px;white-space:nowrap;line-height:1}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.live{color:var(--mint);background:rgba(94,242,176,.12);border:1px solid rgba(94,242,176,.3)}
+.pill.next{color:var(--amber);background:rgba(242,184,75,.12);border:1px solid rgba(242,184,75,.35)}
+.paper .pill.live{color:#047857;background:rgba(4,120,87,.08);border-color:rgba(4,120,87,.25)}
+.paper .pill.next{color:#9a6400;background:rgba(242,184,75,.16);border-color:rgba(154,100,0,.3)}
+.status{display:flex;gap:10px 26px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--line);margin-top:auto}
+.status .it{display:flex;gap:10px;align-items:center;font-size:15px;color:var(--muted)}
+.status .it b{color:var(--ink);font-weight:600}
+
+/* ---------- small atoms ---------- */
+.chip{border:1px solid var(--line-strong);background:transparent;border-radius:99px;padding:8px 14px;font-size:15px;font-weight:600;color:var(--ink);transition:.2s var(--ease);display:inline-flex;gap:8px;align-items:center}
+.chip:hover{border-color:var(--mint)}
+.chip[aria-pressed="true"]{background:var(--mint);color:var(--paper-ink);border-color:var(--mint)}
+.paper .chip[aria-pressed="true"]{color:#fff}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;background:var(--mint);color:var(--paper-ink);font-size:16px}
+.paper .btn{color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+.score{font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.04em}
+.score.Hot{background:rgba(255,138,92,.16);color:var(--hot)}
+.score.Warm{background:rgba(242,184,75,.16);color:var(--warm)}
+.score.Cold{background:rgba(124,196,240,.16);color:var(--cold)}
+.paper .score.Hot{color:#c2410c}.paper .score.Warm{color:#9a6400}.paper .score.Cold{color:#1d6fa5}
+.src{font-family:var(--font-mono);font-size:11.5px;padding:3px 8px;border-radius:6px;background:var(--panel-2);color:var(--muted);white-space:nowrap}
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-family:var(--font-display);font-size:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{text-align:left;font-weight:600;color:var(--faint);font-size:12px;text-transform:uppercase;letter-spacing:.08em;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.t td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t td.r,table.t th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tick{color:var(--mint);font-weight:800}
+ul.clean{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+ul.clean li{display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.4}
+ul.clean li::before{content:"";flex:none;width:8px;height:8px;margin-top:9px;border-radius:2px;background:var(--mint);transform:rotate(45deg)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.inp{background:var(--bg);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px;font-size:16px;color:var(--ink);width:100%;min-width:0}
+.paper .inp{background:#fbfaf5}
+textarea.inp{resize:none;height:76px}
+
+/* ---------- chrome ---------- */
+#bar{position:fixed;left:0;right:0;bottom:0;height:calc(60px + env(safe-area-inset-bottom,0px));padding:0 max(20px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(20px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:18px;background:var(--bg);border-top:1px solid var(--line);z-index:20}
+#bar .brand{font-family:var(--font-display);font-weight:800;letter-spacing:-.01em;font-size:17px;white-space:nowrap}
+#bar .brand span{color:var(--mint)}
+#bar .ttl{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+#progress{position:absolute;left:0;top:-1px;height:2px;background:var(--mint);transition:width .4s var(--ease)}
+.ctl{display:flex;gap:8px;align-items:center}
+.ctl button{background:var(--panel);border:1px solid var(--line);border-radius:10px;height:38px;min-width:38px;padding:0 12px;color:var(--ink);font-size:14px;font-weight:600}
+.ctl button:hover{border-color:var(--mint)}
+.ctl .count{font-family:var(--font-mono);font-size:13px;color:var(--muted);min-width:64px;text-align:center}
+#notes{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:420px;max-height:55vh;overflow:auto;background:var(--panel);border:1px solid var(--line-strong);border-radius:16px;padding:18px 20px;z-index:30;box-shadow:0 30px 80px rgba(0,0,0,.5);font-size:15px}
+#notes h4{margin:0 0 8px;font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+#notes .say{color:var(--ink);margin-bottom:10px}
+#notes .demo{color:var(--muted)}
+#notes .demo b{color:var(--mint)}
+#overview{position:fixed;inset:0;z-index:40;background:rgba(5,12,9,.96);overflow:auto;padding:40px max(32px,env(safe-area-inset-right,0px)) 40px max(32px,env(safe-area-inset-left,0px))}
+#overview .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;max-width:1400px;margin:0 auto}
+#overview button{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-height:92px}
+#overview button:hover,#overview button.cur{border-color:var(--mint)}
+#overview .n{font-family:var(--font-mono);font-size:12px;color:var(--faint)}
+#overview .tt{font-weight:600;font-size:15px;line-height:1.3}
+#overview .sec{font-size:12px;color:var(--mint);text-transform:uppercase;letter-spacing:.1em}
+#overview h3{max-width:1400px;margin:0 auto 20px;display:flex;justify-content:space-between;align-items:center}
+.kbd{font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-strong);border-radius:6px;padding:2px 6px;color:var(--muted)}
+
+/* ---------- slide-specific ---------- */
+/* cover */
+.cover-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:64px;flex:1;align-items:center}
+.flow{display:flex;flex-direction:column;gap:0}
+.flow .st{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px dashed var(--line-strong)}
+.flow .st:last-child{border-bottom:0}
+.flow .dot{width:44px;height:44px;border-radius:12px;background:var(--panel-2);display:grid;place-items:center;font-family:var(--font-mono);font-size:13px;color:var(--mint);border:1px solid var(--line)}
+.flow .st.on .dot{background:var(--mint);color:var(--paper-ink)}
+.flow .t1{font-weight:700;font-size:17px}
+.flow .t2{font-size:14px;color:var(--muted)}
+.flow .tm{font-family:var(--font-mono);font-size:12px;color:var(--faint)}
+.legend{display:flex;gap:22px;align-items:center;flex-wrap:wrap;font-size:15px;color:var(--muted)}
+
+/* problem */
+.leak{display:flex;flex-direction:column;gap:12px;padding:24px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line)}
+.leak .k{font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--rose);line-height:1}
+.leak h3{font-size:21px}
+.leak p{font-size:16px;color:var(--muted)}
+
+/* journey */
+.journey{display:grid;grid-template-columns:repeat(7,1fr);gap:0;position:relative;margin-top:10px}
+.journey::before{content:"";position:absolute;left:4%;right:4%;top:27px;height:2px;background:linear-gradient(90deg,var(--mint),var(--emerald) 60%,var(--amber))}
+.jstep{background:none;border:0;padding:0 10px;text-align:left;display:flex;flex-direction:column;gap:10px;color:var(--ink);position:relative}
+.jstep .b{width:56px;height:56px;border-radius:50%;background:var(--bg-2);border:2px solid var(--mint);display:grid;place-items:center;font-family:var(--font-mono);font-size:14px;color:var(--mint);transition:.2s}
+.jstep:hover .b,.jstep[aria-pressed="true"] .b{background:var(--mint);color:var(--paper-ink)}
+.jstep .d{font-family:var(--font-mono);font-size:12px;color:var(--faint);letter-spacing:.06em}
+.jstep .h{font-weight:700;font-size:17px;line-height:1.25}
+.jdetail{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.jdetail .q{font-family:var(--font-serif);font-size:34px;line-height:1.2;font-style:italic}
+
+/* divider */
+.divider .big{font-family:var(--font-display);font-size:260px;font-weight:800;line-height:.8;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px rgba(94,242,176,.45);position:absolute;right:80px;top:70px}
+.divider h2{font-size:96px;line-height:.95}
+.divider .lead{font-size:26px}
+.divider .chips{display:flex;gap:10px;flex-wrap:wrap}
+.divider .chips span{border:1px solid var(--line-strong);border-radius:99px;padding:8px 16px;font-size:16px;color:var(--muted)}
+
+/* inbox */
+.srcgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.srcbtn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:4px;transition:.2s var(--ease)}
+.srcbtn:hover{border-color:var(--mint);transform:translateY(-2px)}
+.srcbtn b{font-size:16px}
+.srcbtn span{font-size:12.5px;color:var(--muted)}
+.inbox{display:flex;flex-direction:column;gap:10px;max-height:470px;overflow:hidden}
+.lrow{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--bg-2);border:1px solid var(--line)}
+.paper .lrow{background:#fbfaf5}
+.lrow.new{animation:slidein .5s var(--ease)}
+@keyframes slidein{from{opacity:0;transform:translateY(-10px);background:rgba(94,242,176,.18)}}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--panel-2);color:var(--mint)}
+.lrow .nm{font-weight:700;font-size:15.5px}
+.lrow .meta{font-size:13px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lrow .ok{font-size:12px;color:var(--mint);text-align:right;line-height:1.5}
+
+/* whatsapp phone */
+.phone{width:330px;border-radius:40px;background:#0b141a;border:10px solid #1f2c33;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);justify-self:center}
+.phone .top{background:#1f2c33;padding:14px 16px;display:flex;gap:10px;align-items:center;color:#e9edef}
+.phone .top .av{background:#25d366;color:#0b141a}
+.phone .chat{padding:16px 12px;display:flex;flex-direction:column;gap:10px;min-height:400px;background:#0b141a}
+.bub{max-width:88%;padding:9px 11px 6px;border-radius:10px;font-size:14px;line-height:1.45;color:#e9edef}
+.bub.in{background:#202c33;align-self:flex-start;border-top-left-radius:2px}
+.bub.out{background:#005c4b;align-self:flex-end;border-top-right-radius:2px}
+.bub .tm{display:block;text-align:right;font-size:11px;color:#8696a0;margin-top:2px}
+.bub .doc{display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.2);border-radius:6px;padding:8px;margin:4px 0;font-size:13px}
+.typing{align-self:flex-end;background:#005c4b;border-radius:10px;padding:10px 14px;display:flex;gap:4px}
+.typing i{width:6px;height:6px;border-radius:50%;background:#cfe;opacity:.5;animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:1}}
+.load{display:grid;grid-template-columns:110px 1fr 54px;gap:12px;align-items:center;font-size:15px}
+.load .bar{height:12px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.load .bar i{display:block;height:100%;background:var(--muted);border-radius:99px;transition:width .5s var(--ease)}
+.load.pick .bar i{background:var(--mint)}
+.load.pick .nm{color:var(--mint);font-weight:700}
+
+/* import */
+.steps4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.steps4 .s{padding:20px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.steps4 .s .n{font-family:var(--font-mono);color:var(--mint);font-size:13px}
+.steps4 .s h3{font-size:20px}
+.steps4 .s p{font-size:15px;color:var(--muted)}
+.imp-result{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.imp-result > div{padding:20px 22px;border-right:1px solid var(--line)}
+.imp-result > div:last-child{border-right:0}
+.colmap{display:grid;grid-template-columns:1fr 30px 1fr;gap:8px 10px;align-items:center;font-size:15px}
+.colmap .a{font-family:var(--font-mono);font-size:13px;background:var(--panel-2);padding:7px 10px;border-radius:8px}
+.colmap .b{font-weight:600}
+.colmap .arr{color:var(--mint);text-align:center}
+
+/* leads table */
+.ltable td .nm{font-weight:700}
+.ltable td .sub{font-size:12.5px;color:var(--faint)}
+.st-tag{font-size:12.5px;font-weight:600;padding:4px 9px;border-radius:8px;background:var(--panel-2);white-space:nowrap}
+.dist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dist .card{padding:14px 16px}
+.dist .bars{display:flex;height:8px;border-radius:99px;overflow:hidden;margin-top:10px;gap:2px}
+
+/* follow-up */
+.timeline{display:flex;flex-direction:column;gap:0;max-height:420px;overflow:hidden}
+.tl{display:grid;grid-template-columns:22px 1fr;gap:12px;padding-bottom:16px;position:relative}
+.tl::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.tl:last-child::before{display:none}
+.tl .o{width:22px;height:22px;border-radius:50%;border:2px solid var(--mint);background:var(--bg-2);margin-top:2px}
+.tl.new .o{background:var(--mint)}
+.tl.new{animation:slidein .5s var(--ease)}
+.tl .h{font-weight:700;font-size:15.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tl .x{font-size:14px;color:var(--muted)}
+.tl .q{font-size:14.5px;margin-top:4px;padding:8px 10px;border-radius:10px;background:var(--panel-2)}
+
+/* capi */
+.capi-stages{display:flex;flex-direction:column;gap:10px}
+.capi-stage{display:grid;grid-template-columns:1fr 30px 1fr;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;text-align:left;transition:.2s var(--ease)}
+.capi-stage:hover,.capi-stage[aria-pressed="true"]{border-color:var(--mint)}
+.capi-stage[aria-pressed="true"]{background:rgba(94,242,176,.08)}
+.capi-stage .ev{font-family:var(--font-mono);font-size:14px;color:var(--mint)}
+.capi-stage .arr{color:var(--faint)}
+.signal{font-family:var(--font-mono);font-size:13.5px;line-height:1.7;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px 18px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+.signal b{color:var(--mint);font-weight:500}
+
+/* funnel */
+.funnel{display:flex;flex-direction:column;gap:10px}
+.fstep{display:grid;grid-template-columns:200px 1fr 90px;gap:16px;align-items:center;font-size:15.5px}
+.fstep .bar{height:40px;border-radius:10px;background:var(--panel-2);position:relative;overflow:hidden}
+.fstep .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--emerald),var(--mint));border-radius:10px;transition:width .7s var(--ease)}
+.fstep .pct{font-family:var(--font-mono);font-size:14px;color:var(--muted);text-align:right}
+.srcbars{display:flex;flex-direction:column;gap:9px}
+.srcbars .r{display:grid;grid-template-columns:96px 1fr 44px;gap:10px;align-items:center;font-size:14.5px}
+.srcbars .r .b{height:10px;border-radius:99px;background:var(--mint);opacity:.85}
+.srcbars .r .v{font-family:var(--font-mono);font-size:13px;color:var(--muted);text-align:right}
+
+/* visits stepper */
+.vsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.vstep{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px;transition:.2s var(--ease)}
+.vstep .n{font-family:var(--font-mono);font-size:12px;color:var(--faint)}
+.vstep b{font-size:17px}
+.vstep span{font-size:13.5px;color:var(--muted)}
+.vstep.done{border-color:rgba(94,242,176,.4)}
+.vstep.done .n{color:var(--mint)}
+.vstep.cur{border-color:var(--mint);background:rgba(94,242,176,.08)}
+.vstep.nx{border-style:dashed}
+.vstep.nx .n{color:var(--amber)}
+.vcard{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px}
+.vcard .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+.vcard .v{font-weight:600;font-size:16px}
+.odo{font-family:var(--font-mono);font-size:28px;letter-spacing:.08em;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 12px;display:inline-block;font-variant-numeric:tabular-nums}
+
+/* inventory */
+.units{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.unit{aspect-ratio:1.25;max-width:100%;border-radius:10px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;padding:7px 9px;font-family:var(--font-mono);font-size:12.5px;text-align:left;background:var(--panel);transition:.15s}
+.unit .s{font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.unit.Available{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.4);color:var(--mint)}
+.unit.Hold{background:rgba(242,184,75,.13);border-color:rgba(242,184,75,.4);color:var(--amber)}
+.unit.Booked{background:rgba(124,196,240,.13);border-color:rgba(124,196,240,.4);color:var(--sky)}
+.unit.Sold{background:var(--panel-2);color:var(--faint)}
+.unit.dim{opacity:.18}
+.unit.sel{outline:2px solid var(--ink);outline-offset:2px}
+.floorlbl{font-family:var(--font-mono);font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:18px 20px;border-radius:16px;background:var(--bg);border:1px solid var(--line)}
+.paper .total{background:var(--paper-ink);color:var(--paper)}
+.total .v{font-family:var(--font-display);font-size:42px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.brk{display:grid;grid-template-columns:1fr auto;gap:6px 18px;font-size:15px}
+.brk .r{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono);font-size:14px}
+.brk .neg{color:var(--rose)}
+.paper .brk .neg{color:#b42318}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.checks div{font-size:15px;display:flex;gap:8px;align-items:baseline}
+.checks div::before{content:"✓";color:var(--mint);font-weight:800}
+
+/* collections */
+.wa-preview{background:#0b141a;border-radius:16px;padding:14px;border:1px solid var(--line)}
+.wa-preview .bub{max-width:100%}
+
+/* receipt */
+.receipt{background:#fffdf7;color:#14261d;border-radius:6px;padding:30px 34px;box-shadow:0 30px 70px rgba(10,32,24,.18);font-size:14px;position:relative;border:1px solid #e3dfd0}
+.receipt .rh{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #14261d;padding-bottom:14px;margin-bottom:16px}
+.receipt .logo{width:46px;height:46px;border-radius:10px;background:#0a2018;color:#5ef2b0;display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:18px}
+.receipt .co{font-family:var(--font-display);font-weight:700;font-size:20px}
+.receipt .rt{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#51695a}
+.receipt .line{display:grid;grid-template-columns:150px 1fr;gap:8px;padding:6px 0;border-bottom:1px dotted #c9c4b2}
+.receipt .line span:first-child{color:#51695a}
+.receipt .amt{font-family:var(--font-display);font-size:30px;font-weight:700;margin:14px 0 4px}
+.receipt .sig{margin-top:26px;display:flex;justify-content:flex-end}
+.receipt .sig div{border-top:1px solid #14261d;padding-top:6px;font-size:12px;color:#51695a;min-width:180px;text-align:center}
+.doclist{display:flex;flex-direction:column;gap:12px}
+.doc{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.doc .ic{width:52px;height:60px;border-radius:8px;background:var(--panel-2);display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--mint);border:1px solid var(--line)}
+.doc b{font-size:16px}
+.doc p{font-size:13.5px;color:var(--muted)}
+
+/* targets chart */
+.chartwrap{position:relative}
+.chartwrap svg{width:100%;height:auto;display:block}
+.chartwrap text{fill:var(--muted);font-family:var(--font-mono);font-size:12px}
+.lg{display:flex;gap:18px;font-size:14px;color:var(--muted)}
+.lg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* incentive */
+.slabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.slab{border:1px solid var(--line);border-radius:12px;padding:12px;transition:.2s}
+.slab .p{font-family:var(--font-display);font-size:28px;font-weight:700}
+.slab .a{font-size:13px;color:var(--muted)}
+.slab.on{border-color:var(--mint);background:rgba(94,242,176,.1)}
+.rel{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.rel div{padding:12px;font-size:13px;border-right:1px solid var(--line);color:var(--muted)}
+.rel div:last-child{border-right:0}
+.rel div b{display:block;font-size:20px;color:var(--ink);font-family:var(--font-display)}
+.rel div.on{background:rgba(94,242,176,.12)}
+.rel div.on b{color:var(--mint)}
+input[type=range]{width:100%;accent-color:var(--mint)}
+
+/* roles */
+.roles{display:flex;flex-direction:column;gap:6px}
+.rolebtn{text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:16.5px;color:var(--muted)}
+.rolebtn:hover{color:var(--ink)}
+.rolebtn[aria-pressed="true"]{background:var(--panel);border-color:var(--line-strong);color:var(--ink)}
+.rolebtn small{font-weight:500;font-size:12.5px;color:var(--faint)}
+.widgets{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.widget{padding:14px 16px;border-radius:14px;background:var(--bg-2);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;animation:slidein .4s var(--ease) both}
+.widget b{font-size:15.5px}
+.widget span{font-size:13.5px;color:var(--muted)}
+
+/* permission matrix */
+.matrix{display:grid;grid-template-columns:1fr repeat(3,82px);gap:0;font-size:14.5px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.matrix > div{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.matrix .hd{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);justify-content:center;background:var(--panel-2)}
+.matrix .hd:first-child{justify-content:flex-start}
+.matrix .c{justify-content:center}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-strong);background:transparent;padding:0}
+.radio[aria-checked="true"]{border-color:var(--mint);background:radial-gradient(circle,var(--mint) 45%,transparent 50%)}
+
+/* team */
+.org{display:flex;flex-direction:column;align-items:center;gap:0}
+.org .lvl{display:flex;gap:14px;justify-content:center;position:relative;padding-top:20px}
+.org .lvl::before{content:"";position:absolute;top:0;left:50%;width:2px;height:20px;background:var(--line-strong)}
+.org .lvl:first-child{padding-top:0}.org .lvl:first-child::before{display:none}
+.node{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:14px;text-align:center;min-width:120px}
+.node b{display:block;font-size:14.5px}
+.node span{font-size:12px;color:var(--muted)}
+.cel{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.cel:last-child{border-bottom:0}
+.cel .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;font-weight:700;background:var(--panel-2);color:var(--amber)}
+.cel .when{font-size:12.5px;font-weight:700;color:var(--mint)}
+
+/* mobile slide */
+.mphone{width:300px;height:600px;border-radius:40px;background:var(--bg);border:9px solid #24342d;position:relative;overflow:hidden;justify-self:center;display:flex;flex-direction:column}
+.mphone .scr{flex:1;padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.mphone .nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);padding:10px 4px 14px;font-size:10.5px;text-align:center;color:var(--muted)}
+.mphone .nav .on{color:var(--mint);font-weight:700}
+.mphone .nav i{display:block;width:18px;height:18px;margin:0 auto 4px;border-radius:5px;border:2px solid currentColor}
+.mk{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.chat-q{align-self:flex-end;background:var(--mint);color:var(--paper-ink);padding:9px 12px;border-radius:12px 12px 2px 12px;font-size:14px;font-weight:600;max-width:85%}
+.chat-a{background:var(--panel-2);padding:12px 14px;border-radius:12px 12px 12px 2px;font-size:14px;line-height:1.5;max-width:92%}
+
+/* security */
+.sec-item{display:grid;grid-template-columns:52px 1fr;gap:16px;align-items:start}
+.sec-item .ic{width:52px;height:52px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center}
+.sec-item .ic svg{width:24px;height:24px;stroke:var(--mint);fill:none;stroke-width:1.8}
+.sec-item h3{font-size:19px;margin-bottom:4px}
+.sec-item p{font-size:15px;color:var(--muted)}
+
+/* status board */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;min-height:0;flex:1}
+.board .col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.board .col h3{font-size:16px;font-family:var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:500;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.bi{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:14.5px;padding:6px 0;line-height:1.3}
+.bi .pill{font-size:10.5px;padding:4px 8px 4px 7px}
+.bi.hide{display:none}
+.tally{display:flex;gap:28px;align-items:baseline}
+.tally .v{font-family:var(--font-display);font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* compare */
+.cmp{display:grid;grid-template-columns:260px 1fr 1fr;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.cmp > div{padding:15px 22px;border-bottom:1px solid var(--line);font-size:16px}
+.cmp .h{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);background:var(--panel-2)}
+.cmp .k{font-weight:700}
+.cmp .old{color:var(--muted)}
+.cmp .new{background:rgba(16,185,129,.07);color:var(--ink)}
+.paper .cmp .new{background:rgba(4,120,87,.06)}
+
+/* pricing */
+.plans{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:20px;align-items:stretch}
+.plan{border-radius:24px;padding:30px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
+.plan.pro{background:linear-gradient(160deg,rgba(16,185,129,.22),rgba(16,185,129,.04) 60%),var(--panel);border-color:rgba(94,242,176,.45)}
+.plan .nm{font-family:var(--font-mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint)}
+.plan .pr{font-family:var(--font-display);font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.plan .pr small{font-size:18px;font-weight:500;color:var(--muted);letter-spacing:0}
+.plan ul.clean li{font-size:15.5px}
+.cyc{display:flex;gap:6px;background:var(--bg);border-radius:12px;padding:4px;border:1px solid var(--line)}
+.cyc button{flex:1;border:0;background:transparent;border-radius:9px;padding:8px 6px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.cyc button[aria-pressed="true"]{background:var(--mint);color:var(--paper-ink)}
+
+/* rollout */
+.roll{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative}
+.roll .s{padding:0 22px 0 0;display:flex;flex-direction:column;gap:12px}
+.roll .s .n{width:64px;height:64px;border-radius:18px;background:var(--mint);color:var(--paper-ink);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;font-size:26px}
+.roll .s h3{font-size:24px}
+.roll .s p{font-size:16px;color:var(--muted)}
+.roll .s .w{font-family:var(--font-mono);font-size:12.5px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+
+/* closing */
+.closing h1{font-size:104px}
+
+/* ---------- reading mode (narrow screens) ---------- */
+@media (max-width:760px){
+  body{overflow:auto;font-size:16px}
+  #viewport{position:static;display:block;padding:0;overflow:visible}
+  #stage{width:auto;height:auto;transform:none!important;border-radius:0;box-shadow:none;overflow:visible;background:transparent}
+  .slide,.slide.active{position:relative;display:flex;padding:44px max(16px,env(safe-area-inset-right,0px)) 44px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);gap:22px}
+  .slide.divider{min-height:340px;overflow:hidden}
+  .divider .big{font-size:150px;right:10px;top:20px}
+  .divider h2{font-size:52px}
+  h1,.closing h1{font-size:46px}
+  h2{font-size:34px}
+  .lead,.divider .lead{font-size:18px}
+  .g2,.g-55,.g-46,.g3,.g4,.cover-grid,.steps4,.vsteps,.plans,.roll,.board,.calc,.imp-result,.slabs,.dist,.srcgrid{grid-template-columns:1fr}
+  .journey{grid-template-columns:1fr;gap:14px}.journey::before{display:none}
+  .jstep{flex-direction:row;align-items:center}
+  .jdetail{grid-template-columns:1fr}
+  .jdetail .q{font-size:24px}
+  .units{grid-template-columns:repeat(4,1fr)}
+  .cmp{grid-template-columns:1fr}
+  .cmp .h:nth-child(-n+3){display:none}
+  .cmp .k{background:var(--panel-2)}
+  .fstep{grid-template-columns:110px 1fr 56px;font-size:14px}
+  .imp-result > div{border-right:0;border-bottom:1px solid var(--line)}
+  .matrix{grid-template-columns:1fr repeat(3,56px)}
+  .phone,.mphone{width:100%;max-width:330px}
+  .widgets,.checks,.vcard{grid-template-columns:1fr}
+  .table-scroll{overflow-x:auto}
+  .rel{grid-template-columns:repeat(2,1fr)}
+  #bar,#notes{display:none!important}
+  .roll .s{padding:0 0 22px}
+  .mock{box-shadow:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="viewport">
+<div id="stage">
+
+<!-- 1 COVER -->
+<section class="slide" data-title="RealSalePro for real-estate leaders" data-sec="Opening">
+  <div class="eyebrow rv">RealSalePro <span class="num">/</span> Product walkthrough for leadership teams</div>
+  <div class="cover-grid">
+    <div class="stack" style="gap:30px">
+      <h1 class="rv d1">Every enquiry, every site visit, every rupee collected. <em class="s">One system.</em></h1>
+      <p class="lead rv d2">The sales operating system for Indian developers and brokerages. It follows a buyer from the first ad click to the registry, and keeps your whole team accountable along the way.</p>
+      <div class="legend rv d3">
+        <span class="row"><span class="pill live">Live</span> working in the product today</span>
+        <span class="row"><span class="pill next">Coming next</span> on our roadmap, shown for transparency</span>
+      </div>
+    </div>
+    <div class="mock rv d2" aria-label="Sample buyer flow">
+      <span class="mock-tag">Sample buyer</span>
+      <div class="flow" id="coverFlow">
+        <div class="st"><div class="dot">01</div><div><div class="t1">Enquiry from Facebook ad</div><div class="t2">Priya Sharma · 2 BHK · Green Valley Residency</div></div><div class="tm">10:02</div></div>
+        <div class="st"><div class="dot">02</div><div><div class="t1">WhatsApp welcome sent</div><div class="t2">Assigned to Rahul, least-busy advisor</div></div><div class="tm">10:02</div></div>
+        <div class="st"><div class="dot">03</div><div><div class="t1">Call logged, tagged Hot</div><div class="t2">"Wants site visit this Saturday"</div></div><div class="tm">Tue</div></div>
+        <div class="st"><div class="dot">04</div><div><div class="t1">Site visit with company cab</div><div class="t2">Approved, driver assigned</div></div><div class="tm">Sat</div></div>
+        <div class="st"><div class="dot">05</div><div><div class="t1">Booking for Unit B-704</div><div class="t2">₹68.4 L · booking amount received</div></div><div class="tm">Sun</div></div>
+        <div class="st"><div class="dot">06</div><div><div class="t1">Branded receipt on WhatsApp</div><div class="t2">Ledger always up to date</div></div><div class="tm">Sun</div></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Open with the outcome: one place for the entire sales cycle. Point out the two labels. We show what works today and what's coming, so there are no surprises after signing.</div><div class="demo"><b>Tip:</b> Press N to hide these notes before sharing your screen. O shows all slides.</div></aside>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide" data-title="Where sales money leaks today" data-sec="Opening">
+  <div class="head"><div class="eyebrow rv">The problem</div>
+  <h2 class="rv d1">You pay for every enquiry. <em class="s">Most of them leak away</em> before anyone follows up.</h2></div>
+  <div class="body g3" style="grid-auto-rows:1fr">
+    <div class="leak rv d1"><div class="k">5+</div><h3>Places enquiries arrive</h3><p>99acres, MagicBricks, Housing, Facebook, Google, your website, walk-ins. Each portal has its own login and its own spreadsheet.</p></div>
+    <div class="leak rv d2"><div class="k">Hours</div><h3>Before the first reply</h3><p>By the time someone calls back, the buyer has spoken to three other projects.</p></div>
+    <div class="leak rv d3"><div class="k">?</div><h3>What happened on that call</h3><p>Follow-ups live in personal notebooks and WhatsApp chats. When a salesperson leaves, the leads leave too.</p></div>
+    <div class="leak rv d2"><div class="k">Cab</div><h3>Site visits nobody tracks</h3><p>Who approved the visit, which driver went, and how many kilometres it cost.</p></div>
+    <div class="leak rv d3"><div class="k">₹</div><h3>Collections by phone call</h3><p>Accounts chases customers from a ledger in Excel. Receipts are typed by hand.</p></div>
+    <div class="leak rv d4"><div class="k">Q4</div><h3>Incentive arguments</h3><p>Targets and payouts are worked out at quarter end, and nobody trusts the sheet.</p></div>
+  </div>
+  <aside class="notes"><div class="say">Ask: "How many of these sound familiar?" Let them pick one. That becomes the thread for the rest of the demo.</div></aside>
+</section>
+
+<!-- 3 JOURNEY -->
+<section class="slide" data-title="One buyer, start to finish" data-sec="Opening">
+  <div class="head"><div class="eyebrow rv">How RealSalePro works</div>
+  <h2 class="rv d1">Follow one buyer through the system. <em class="s">Tap any step</em> to jump to it.</h2></div>
+  <div class="journey rv d2" id="journey"></div>
+  <div class="card jdetail rv d3" id="jdetail" style="margin-top:auto"></div>
+  <aside class="notes"><div class="say">This is the map for the meeting. Click a step to jump straight to that part of the deck if the CEO wants to go deep on one area.</div></aside>
+</section>
+
+<!-- 4 DIVIDER CAPTURE -->
+<section class="slide divider" data-title="Capture every enquiry" data-sec="01 Capture">
+  <div class="big" aria-hidden="true">01</div>
+  <div class="eyebrow rv">Chapter 01</div>
+  <h2 class="rv d1">Capture.<br><em class="s">Never lose an enquiry again.</em></h2>
+  <p class="lead rv d2">Every source flows into one inbox, gets a reply in seconds and lands with the right person.</p>
+  <div class="chips rv d3"><span>Portal and ad leads</span><span>Instant WhatsApp</span><span>Auto-assignment</span><span>Excel import</span></div>
+  <aside class="notes"><div class="say">Chapter one is about speed to lead. The fastest response usually wins the site visit.</div></aside>
+</section>
+
+<!-- 5 INBOX -->
+<section class="slide" data-title="Every source, one inbox" data-sec="01 Capture">
+  <div class="head"><div class="eyebrow rv">Lead capture <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Every enquiry lands in one inbox, <em class="s">the moment it's made.</em></h2></div>
+  <div class="body g-46">
+    <div class="stack rv d2">
+      <p class="small">Tap a source to send a sample enquiry into the CRM.</p>
+      <div class="srcgrid" id="srcgrid"></div>
+      <ul class="clean" style="margin-top:8px">
+        <li>Name, phone, budget and city are filled in automatically, whatever the source calls those fields.</li>
+        <li>Ad details are saved with the lead, so you know which campaign brought each buyer.</li>
+      </ul>
+    </div>
+    <div class="mock rv d3"><span class="mock-tag">Sample data</span>
+      <div class="row" style="justify-content:space-between;margin-bottom:14px"><h3>Leads inbox</h3><span class="small mono" id="inboxCount">3 today</span></div>
+      <div class="inbox" id="inbox"></div>
+    </div>
+  </div>
+  <div class="status rv d4">
+    <div class="it"><span class="pill live">Live</span><b>Facebook, Instagram, Google Ads, website forms, Google Forms and Sheets</b></div>
+    <div class="it"><span class="pill live">Live</span>99acres, MagicBricks, Housing: we hand you the email to activate lead push with your portal</div>
+  </div>
+  <aside class="notes"><div class="say">Click two or three sources. The point: no more logging into five portals every morning.</div><div class="demo"><b>In the app:</b> Settings → Integrations shows each connection and its "Send test lead" button. Run the Facebook test with your own page before a live demo.</div></aside>
+</section>
+
+<!-- 6 WHATSAPP + ASSIGN -->
+<section class="slide" data-title="Instant reply and assignment" data-sec="01 Capture">
+  <div class="head"><div class="eyebrow rv">Speed to lead <span class="pill live">Live</span></div>
+  <h2 class="rv d1">The buyer gets a WhatsApp in seconds. <em class="s">Your least-busy advisor gets the lead.</em></h2></div>
+  <div class="body" style="grid-template-columns:auto 1fr;gap:56px;align-items:start">
+    <div class="phone rv d2" aria-label="WhatsApp preview">
+      <div class="top"><div class="av">SD</div><div><div style="font-weight:700;font-size:15px">Shree Developers</div><div style="font-size:12px;color:#8696a0">Business account</div></div></div>
+      <div class="chat" id="waChat"></div>
+    </div>
+    <div class="stack rv d3" style="gap:22px">
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between"><h3>Who gets the next lead?</h3><button class="btn" id="assignBtn" type="button">Send a new lead</button></div>
+        <p class="small">The lead goes to the advisor with the fewest open leads, so nobody sits on a pile while others wait.</p>
+        <div class="stack" id="loads" style="gap:10px"></div>
+      </div>
+      <ul class="clean">
+        <li>The message uses the buyer's name, your project, the advisor's name and a brochure link.</li>
+        <li>Works with WhatsApp Business (official Meta API) and WATI.</li>
+        <li>Sent for leads from ads, portals, website forms and manual entry.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Auto WhatsApp welcome</b> via WhatsApp Business API or WATI</div>
+    <div class="it"><span class="pill live">Live</span><b>Auto-assignment</b> for ad and portal leads</div>
+    <div class="it"><span class="pill next">Coming next</span>AiSensy, Interakt and DoubleTick connections</div>
+  </div>
+  <aside class="notes"><div class="say">Click "Send a new lead" a few times. Watch the lead always go to whoever has the lightest load.</div><div class="demo"><b>In the app:</b> Integrations → WhatsApp → "Send test WhatsApp" sends a real message to your phone.</div></aside>
+</section>
+
+<!-- 7 IMPORT -->
+<section class="slide paper" data-title="Bring your old Excel across" data-sec="01 Capture">
+  <div class="head"><div class="eyebrow rv">Excel import <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Move years of Excel leads in <em class="s">one afternoon.</em> Without duplicates.</h2></div>
+  <div class="body" style="grid-template-rows:auto auto 1fr">
+    <div class="steps4 rv d2">
+      <div class="s"><span class="n">Step 1</span><h3>Upload your sheet</h3><p>Excel or CSV, in your existing format. A ready template is available too.</p></div>
+      <div class="s"><span class="n">Step 2</span><h3>Columns match themselves</h3><p>"Cust Name" becomes Name and "Mob No" becomes Mobile. You can adjust anything.</p></div>
+      <div class="s"><span class="n">Step 3</span><h3>Duplicates are caught</h3><p>A number already in the file or the CRM is skipped, so nobody calls the same buyer twice.</p></div>
+      <div class="s"><span class="n">Step 4</span><h3>Fix-list for the rest</h3><p>Rows that fail come back as an Excel file with the reason and the fix.</p></div>
+    </div>
+    <div class="imp-result rv d3">
+      <div class="kpi"><span class="v">1,248</span><span class="l">Rows in sheet</span></div>
+      <div class="kpi"><span class="v" style="color:#047857">1,191</span><span class="l">Imported</span></div>
+      <div class="kpi"><span class="v">41</span><span class="l">Duplicates skipped</span></div>
+      <div class="kpi"><span class="v" style="color:#9a6400">16</span><span class="l">Returned with fixes</span></div>
+    </div>
+    <div class="g2 body rv d4" style="gap:28px">
+      <div class="colmap card">
+        <span class="a">Cust Name</span><span class="arr">→</span><span class="b">Customer name</span>
+        <span class="a">Mob No</span><span class="arr">→</span><span class="b">Mobile</span>
+        <span class="a">Proj</span><span class="arr">→</span><span class="b">Project</span>
+        <span class="a">Exec Email</span><span class="arr">→</span><span class="b">Assigned advisor</span>
+      </div>
+      <ul class="clean" style="align-self:center">
+        <li>Projects and advisors are recognised by name and email.</li>
+        <li>Unit inventory imports the same way, floor by floor.</li>
+        <li>Plan limits are checked before import: 1,000 leads on Free, 2,00,000 on Pro.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Onboarding is the usual fear. This answers it: your history comes with you, cleaned.</div><div class="demo"><b>In the app:</b> Leads → Import. Use a small sample sheet with one duplicate number to show it being caught.</div></aside>
+</section>
+
+<!-- 8 DIVIDER NURTURE -->
+<section class="slide divider" data-title="Nurture every buyer" data-sec="02 Nurture">
+  <div class="big" aria-hidden="true">02</div>
+  <div class="eyebrow rv">Chapter 02</div>
+  <h2 class="rv d1">Nurture.<br><em class="s">Every call leaves a trail.</em></h2>
+  <p class="lead rv d2">A complete history for every buyer, visible to managers, and it stays with the company when people move on.</p>
+  <div class="chips rv d3"><span>Lead workspace</span><span>Follow-ups</span><span>Team controls</span><span>Ad feedback</span><span>Pipeline</span><span>Site visits</span></div>
+  <aside class="notes"><div class="say">Capture is half the job. This chapter covers how leads actually get worked.</div></aside>
+</section>
+
+<!-- 9 LEAD WORKSPACE -->
+<section class="slide" data-title="The lead workspace" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Lead workspace <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Your whole lead book on one screen. <em class="s">Filter it any way you like.</em></h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Sample data</span>
+      <div class="row" style="margin-bottom:12px" id="leadFilters"></div>
+      <div class="table-scroll"><table class="t ltable"><thead><tr><th>Buyer</th><th>Source</th><th>Status</th><th>Tag</th><th>Advisor</th></tr></thead><tbody id="leadRows"></tbody></table></div>
+    </div>
+    <div class="stack rv d3" style="gap:18px">
+      <div class="g2 body" style="gap:10px">
+        <div class="card kpi"><span class="v" id="kTotal">0</span><span class="l">Total leads</span></div>
+        <div class="card kpi"><span class="v" id="kHot" style="color:var(--hot)">0</span><span class="l">Hot right now</span></div>
+      </div>
+      <ul class="clean">
+        <li><b>9 clear stages</b> from New, Contacted and In Progress through Site Visit and Qualified to Converted, Lost or Disqualified.</li>
+        <li><b>Hot, Warm, Cold</b> tags show where to spend today's calls.</li>
+        <li>Search by name, phone, lead ID or city. Filter by date, status, tag and advisor.</li>
+        <li>Advisors see "My Leads". Managers see the whole team, with a lead count per advisor.</li>
+        <li>Tap to call, WhatsApp or email straight from the lead.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Click Hot. "This is your sales manager's morning list." Then mention that advisors only see their own leads.</div><div class="demo"><b>In the app:</b> Leads page. Show the per-advisor cards at the top; clicking one filters the list.</div></aside>
+</section>
+
+<!-- 10 FOLLOW-UP -->
+<section class="slide" data-title="Follow-ups with a full history" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Follow-ups <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Log a call in ten seconds. <em class="s">The lead re-tags itself</em> from what your advisor writes.</h2></div>
+  <div class="body g2">
+    <form class="mock stack rv d2" id="fuForm" autocomplete="off"><span class="mock-tag">Try it</span>
+      <div class="row" style="justify-content:space-between"><div><div style="font-weight:800;font-size:18px">Priya Sharma</div><div class="small">+91 98765 ••••• · Green Valley Residency</div></div><span class="score Warm" id="fuScore">Warm</span></div>
+      <div class="g3 body" style="gap:10px">
+        <label class="f" for="fuType">Interaction<select class="inp" id="fuType"><option>Call</option><option>WhatsApp</option><option>Visit</option><option>Email</option></select></label>
+        <label class="f" for="fuCall">Call status<select class="inp" id="fuCall"><option>Connected</option><option>Ringing</option><option>Busy</option><option>Not Responding</option><option>Asked to call later</option></select></label>
+        <label class="f" for="fuResp">Response<select class="inp" id="fuResp"><option>Positive</option><option>Neutral</option><option>Negative</option></select></label>
+      </div>
+      <label class="f" for="fuText">What did the buyer say?<textarea class="inp" id="fuText">Liked the floor plan. Wants a site visit on Saturday with family.</textarea></label>
+      <div class="row" style="justify-content:space-between">
+        <div class="row tiny">Try: "ready to pay token", "budget mismatch", "call back Monday"</div>
+        <button class="btn" type="submit">Save follow-up</button>
+      </div>
+    </form>
+    <div class="stack rv d3">
+      <h3>Buyer timeline</h3>
+      <div class="timeline" id="fuTimeline"></div>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span>Call outcome, response, next follow-up date and status changes all on one timeline</div>
+    <div class="it"><span class="pill live">Live</span>Auto Hot/Warm/Cold from the advisor's notes</div>
+    <div class="it"><span class="pill live">Live</span>Reopen Lost leads in one click</div>
+    <div class="it"><span class="pill next">Coming next</span>Overdue follow-up alerts</div>
+  </div>
+  <aside class="notes"><div class="say">Type "customer ready to pay token" and save. It flips to Hot. Then try "budget mismatch" and it goes Cold. Managers see the whole conversation history, even after an advisor leaves.</div><div class="demo"><b>In the app:</b> Leads → expand a row → Quick follow-up.</div></aside>
+</section>
+
+<!-- 11 TEAM CONTROLS -->
+<section class="slide paper" data-title="Manager controls and lead protection" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Manager controls <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Move 200 leads in one click. <em class="s">Stop them walking out the door.</em></h2></div>
+  <div class="body g3">
+    <div class="card stack rv d1">
+      <h3>Bulk actions</h3>
+      <p class="small">Select any number of leads, then:</p>
+      <ul class="clean">
+        <li>Reassign to an advisor. The picker shows each person's current load.</li>
+        <li>Attach a project</li>
+        <li>Change status. Marking leads Converted creates their bookings automatically.</li>
+      </ul>
+    </div>
+    <div class="card stack rv d2">
+      <h3>Phone-number masking</h3>
+      <p class="small">Advisors see and call numbers without being able to copy your lead database.</p>
+      <div class="mock" style="padding:16px;box-shadow:none">
+        <div class="row" style="justify-content:space-between"><b>Priya Sharma</b><span class="mono" id="maskNum">+91 98765 •••••</span></div>
+        <div class="row" style="margin-top:12px"><button class="chip" type="button" id="maskToggle" aria-pressed="true">Masking on</button><span class="tiny">Admins always see the full number</span></div>
+      </div>
+    </div>
+    <div class="card stack rv d3">
+      <h3>Owner-only powers</h3>
+      <ul class="clean">
+        <li>Only the company owner can delete leads.</li>
+        <li>Only the owner can export the lead list.</li>
+        <li>Each company's data is walled off from every other company on the platform.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status rv d4">
+    <div class="it"><span class="pill live">Live</span><b>Bulk reassign, status and project</b></div>
+    <div class="it"><span class="pill live">Live</span><b>Number masking</b> on screen for non-admin staff</div>
+    <div class="it"><span class="pill next">Coming next</span>Masking extended to tap-to-call links</div>
+  </div>
+  <aside class="notes"><div class="say">For CEOs, lead theft is a real fear. Show the masking toggle, then point out that only the owner can export.</div><div class="demo"><b>In the app:</b> Settings → "Lead Data Privacy &amp; Anti-Theft".</div></aside>
+</section>
+
+<!-- 12 CAPI -->
+<section class="slide" data-title="Ad feedback to Facebook" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Smarter ad spend <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Tell Facebook which leads actually <em class="s">visited and bought.</em> It finds you more like them.</h2></div>
+  <div class="body g2">
+    <div class="stack rv d2">
+      <p class="small">Each time your team moves a lead forward, RealSalePro tells Meta automatically. Tap a stage:</p>
+      <div class="capi-stages" id="capi"></div>
+    </div>
+    <div class="stack rv d3">
+      <div class="signal" id="capiSig"></div>
+      <ul class="clean">
+        <li>Facebook stops optimising for form-fillers and starts optimising for buyers who show up.</li>
+        <li>Buyer details are scrambled one-way before they leave your CRM. Meta can match them but can't read them.</li>
+        <li>You set what a site visit is worth to you. A booking reports its real value.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Meta Conversions API</b>: Qualified, Visit Scheduled, Visit Done, Booking</div>
+    <div class="it"><span class="pill next">Coming next</span>Google Ads offline conversions</div>
+    <div class="it"><span class="pill next">Coming next</span>Signal history screen</div>
+  </div>
+  <aside class="notes"><div class="say">This is the slide marketing heads love. Lower cost per site visit, because Facebook learns from real outcomes.</div><div class="demo"><b>In the app:</b> Integrations → Meta Conversions API → "Send test event", then check Meta Events Manager.</div></aside>
+</section>
+
+<!-- 13 PIPELINE -->
+<section class="slide" data-title="Pipeline and source analytics" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Pipeline <span class="pill live">Live</span></div>
+  <h2 class="rv d1">See where buyers get stuck, <em class="s">and which portal is worth paying for.</em></h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Sample month</span>
+      <h3 style="margin-bottom:18px">Sales funnel</h3>
+      <div class="funnel" id="funnel"></div>
+    </div>
+    <div class="mock rv d3"><span class="mock-tag">Sample month</span>
+      <h3 style="margin-bottom:18px">Leads by source</h3>
+      <div class="srcbars" id="srcbars"></div>
+      <p class="small" style="margin-top:18px">Put this next to your portal invoices and the renewal decision makes itself.</p>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Funnel, stage counts, leads by source</b> on the CRM dashboard</div>
+    <div class="it"><span class="pill next">Coming next</span>Why-we-lost analysis</div>
+    <div class="it"><span class="pill next">Coming next</span>Call activity analytics</div>
+  </div>
+  <aside class="notes"><div class="say">Ask: "Which portal do you spend most on? Do you know its site-visit rate?" Usually they don't.</div><div class="demo"><b>In the app:</b> CRM → Pipeline. Show the funnel and the source bars.</div></aside>
+</section>
+
+<!-- 14 SITE VISITS -->
+<section class="slide" data-title="Site visits and cab trips" data-sec="02 Nurture">
+  <div class="head"><div class="eyebrow rv">Site visits <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Every site visit requested, approved and driven <em class="s">on the record.</em></h2></div>
+  <div class="vsteps rv d2" id="vsteps"></div>
+  <div class="body g-55 rv d3">
+    <div class="mock" id="vpanel"><span class="mock-tag">Sample visit</span></div>
+    <ul class="clean" style="align-self:center">
+      <li>Advisors request a visit with pickup point, date and time.</li>
+      <li>Managers approve, decline with a reason, or ask a question. Nothing moves without a decision.</li>
+      <li>The driver gets the trip on their phone and logs odometer readings, so every cab kilometre is accounted for.</li>
+    </ul>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Request, approve, assign driver, start trip</b></div>
+    <div class="it"><span class="pill next">Coming next</span>Trip close-out with km report</div>
+    <div class="it"><span class="pill next">Coming next</span>Visit history on the buyer's timeline</div>
+  </div>
+  <aside class="notes"><div class="say">Click through the four steps. The cab is a real cost; this makes it visible.</div><div class="demo"><b>In the app:</b> Request and approve a visit, then show the driver's screen. Stop at "Start trip"; trip close-out is still being finished.</div></aside>
+</section>
+
+<!-- 15 DIVIDER CLOSE -->
+<section class="slide divider" data-title="Close and collect" data-sec="03 Close & collect">
+  <div class="big" aria-hidden="true">03</div>
+  <div class="eyebrow rv">Chapter 03</div>
+  <h2 class="rv d1">Close &amp; collect.<br><em class="s">From "yes" to the last receipt.</em></h2>
+  <p class="lead rv d2">Inventory, the booking file, payments and branded paperwork, all linked to the same buyer.</p>
+  <div class="chips rv d3"><span>Inventory</span><span>Booking file</span><span>Collections</span><span>Receipts and ledgers</span></div>
+  <aside class="notes"><div class="say">This chapter is for the CFO and the accounts team.</div></aside>
+</section>
+
+<!-- 16 INVENTORY -->
+<section class="slide" data-title="Projects and live inventory" data-sec="03 Close & collect">
+  <div class="head"><div class="eyebrow rv">Projects &amp; inventory <span class="pill live">Live</span></div>
+  <h2 class="rv d1">One list of every unit, <em class="s">described your way.</em></h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Sample tower</span>
+      <div class="row" style="justify-content:space-between;margin-bottom:14px"><h3>Green Valley Residency · Tower B</h3><div class="row" id="invFilters"></div></div>
+      <div class="stack" id="units" style="gap:6px"></div>
+    </div>
+    <div class="stack rv d3">
+      <div class="card stack" id="unitCard"></div>
+      <ul class="clean">
+        <li>Add your own unit details: BHK, facing, super area, floor, or anything else.</li>
+        <li>Filter by any detail, e.g. "3 BHK, east facing, under 1,400 sq ft".</li>
+        <li>Import a whole tower from Excel.</li>
+        <li>Nine project types, from apartments and plots to villas and farm houses.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Projects, units, custom details, Excel import</b></div>
+    <div class="it"><span class="pill next">Coming next</span>Unit marked Booked automatically on booking</div>
+    <div class="it"><span class="pill next">Coming next</span>Project photo gallery</div>
+    <div class="it"><span class="pill next">Coming next</span>Holds that expire on their own</div>
+  </div>
+  <aside class="notes"><div class="say">Click a status filter, then a unit. Today unit status is updated by your team; automatic linking to bookings is on the roadmap.</div><div class="demo"><b>In the app:</b> Inventory → pick a project → show the custom-detail filters.</div></aside>
+</section>
+
+<!-- 17 BOOKING FILE -->
+<section class="slide paper" data-title="The booking file" data-sec="03 Close & collect">
+  <div class="head"><div class="eyebrow rv">Booking file <span class="pill live">Live</span></div>
+  <h2 class="rv d1">The complete booking file, <em class="s">priced to the rupee.</em></h2></div>
+  <div class="body g2">
+    <div class="mock stack rv d2"><span class="mock-tag">Try it</span>
+      <div class="calc">
+        <label class="f" for="cArea">Area (sq ft)<input class="inp mono" id="cArea" type="number" value="1240" min="0"></label>
+        <label class="f" for="cRate">Rate / sq ft (₹)<input class="inp mono" id="cRate" type="number" value="5200" min="0"></label>
+        <label class="f" for="cPlc">PLC %<input class="inp mono" id="cPlc" type="number" value="3" min="0" step="0.5"></label>
+        <label class="f" for="cDev">Dev. charge / sq ft<input class="inp mono" id="cDev" type="number" value="150" min="0"></label>
+        <label class="f" for="cOther">Other charges (₹)<input class="inp mono" id="cOther" type="number" value="150000" min="0"></label>
+        <label class="f" for="cDisc">Discount (₹)<input class="inp mono" id="cDisc" type="number" value="100000" min="0"></label>
+      </div>
+      <div class="brk" id="cBrk"></div>
+      <div class="total"><span>Total consideration</span><span class="v" id="cTotal">₹0</span></div>
+    </div>
+    <div class="stack rv d3" style="gap:20px">
+      <div class="card stack">
+        <h3>Captured once, used everywhere</h3>
+        <div class="checks">
+          <div>Applicant KYC: PAN, Aadhaar</div><div>Co-applicant and relation</div>
+          <div>Current and permanent address</div><div>Income, occupation, NRI passport</div>
+          <div>Booking amount and payment mode</div><div>Cheque or UTR reference</div>
+          <div>Agreement done, with date</div><div>Registry done, with date</div>
+        </div>
+      </div>
+      <div class="card stack" style="background:var(--paper-ink);color:var(--paper);border:0">
+        <h3 style="color:var(--paper)">Converted means booked</h3>
+        <p style="color:#c9d6cf;font-size:16px">Mark a lead Converted and the booking record is created with the same buyer, advisor and team leader. No re-typing between sales and accounts.</p>
+      </div>
+      <div class="row"><span class="pill live">Live</span><span class="small">Booking file, pricing breakdown, agreement and registry tracking, cancellation with reason</span></div>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Change the rate or discount live. Pricing disputes disappear because the breakdown is on file.</div><div class="demo"><b>In the app:</b> Mark a lead Converted, open Sales and edit the booking it created to fill in the full file.</div></aside>
+</section>
+
+<!-- 18 COLLECTIONS -->
+<section class="slide" data-title="Collections without chasing" data-sec="03 Close & collect">
+  <div class="head"><div class="eyebrow rv">Accounts &amp; collections <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Know who owes what. <em class="s">Remind them in one tap.</em></h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Sample data</span>
+      <div class="g4 body" style="gap:10px;margin-bottom:16px">
+        <div class="kpi"><span class="v" style="font-size:26px">₹4.86 Cr</span><span class="l">Sale value</span></div>
+        <div class="kpi"><span class="v" style="font-size:26px;color:var(--mint)">₹3.12 Cr</span><span class="l">Collected · 64%</span></div>
+        <div class="kpi"><span class="v" style="font-size:26px;color:var(--amber)">₹1.74 Cr</span><span class="l">Outstanding</span></div>
+        <div class="kpi"><span class="v" style="font-size:26px">148</span><span class="l">Receipts</span></div>
+      </div>
+      <div class="row" style="margin-bottom:8px" id="dueFilters"></div>
+      <div class="table-scroll"><table class="t"><thead><tr><th>Buyer</th><th>Unit</th><th class="r">Balance</th><th></th></tr></thead><tbody id="dueRows"></tbody></table></div>
+    </div>
+    <div class="stack rv d3">
+      <h3>WhatsApp reminder</h3>
+      <div class="wa-preview"><div class="bub out" id="dueMsg"></div></div>
+      <ul class="clean">
+        <li>Record payments by UPI, bank transfer, cheque or cash, as booking, instalment, milestone, possession or maintenance.</li>
+        <li>Filter balances over ₹5 L or ₹25 L, by project.</li>
+        <li>A per-buyer ledger shows every rupee in.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Payments, balances, one-tap reminders, accountant dashboard</b></div>
+    <div class="it"><span class="pill next">Coming next</span>Instalment schedules and demand letters</div>
+    <div class="it"><span class="pill next">Coming next</span>Automatic reminders</div>
+    <div class="it"><span class="pill next">Coming next</span>Refund tracking</div>
+  </div>
+  <aside class="notes"><div class="say">Click Remind on a buyer and the message is ready to send. Your accountant stops typing balances into WhatsApp by hand.</div><div class="demo"><b>In the app:</b> Accounts → Outstanding → WhatsApp icon. Then Record Payment.</div></aside>
+</section>
+
+<!-- 19 DOCUMENTS -->
+<section class="slide paper" data-title="Branded receipts and ledgers" data-sec="03 Close & collect">
+  <div class="head"><div class="eyebrow rv">Documents <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Receipts and ledgers <em class="s">on your letterhead,</em> in a click.</h2></div>
+  <div class="body g2">
+    <div class="receipt rv d2" aria-label="Sample receipt">
+      <div class="rh"><div class="row" style="gap:12px"><div class="logo">SD</div><div><div class="co">Shree Developers</div><div style="font-size:12px;color:#51695a">GSTIN 27ABCDE1234F1Z5 · Pune</div></div></div><div style="text-align:right"><div class="rt">Payment receipt</div><div class="mono" style="font-size:13px">RCPT-2026-0148</div></div></div>
+      <div style="font-size:13px;color:#51695a">Received with thanks from</div>
+      <div style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:10px">Priya Sharma</div>
+      <div class="line"><span>Project / Unit</span><span>Green Valley Residency · B-704</span></div>
+      <div class="line"><span>Payment type</span><span>Instalment</span></div>
+      <div class="line"><span>Mode / Ref.</span><span>Bank transfer · UTR 6024 8891 3301</span></div>
+      <div class="line"><span>Date</span><span>08 Nov 2026</span></div>
+      <div class="amt mono">₹ 6,84,000</div>
+      <div style="font-size:12px;color:#51695a">Rupees Six Lakh Eighty-Four Thousand only</div>
+      <div class="sig"><div>Authorised signatory</div></div>
+    </div>
+    <div class="stack rv d3" style="gap:20px">
+      <div class="doclist">
+        <div class="doc"><div class="ic">PDF</div><div><b>Payment receipt</b><p>Your logo, GSTIN and signatory line</p></div><span class="pill live">Live</span></div>
+        <div class="doc"><div class="ic">PDF</div><div><b>Customer ledger</b><p>Buyer and unit details, summary, every payment</p></div><span class="pill live">Live</span></div>
+        <div class="doc"><div class="ic">XLSX</div><div><b>Ledger and outstanding dues</b><p>For your CA and your bank</p></div><span class="pill live">Live</span></div>
+        <div class="doc"><div class="ic">WA</div><div><b>Share on WhatsApp</b><p>Receipt summary sent to the buyer</p></div><span class="pill live">Live</span></div>
+        <div class="doc"><div class="ic">PDF</div><div><b>Demand letters</b><p>Milestone-based payment requests</p></div><span class="pill next">Coming next</span></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Buyers judge a developer by their paperwork. This looks like a big-company operation from day one.</div><div class="demo"><b>In the app:</b> Accounts → any payment → PDF receipt. Upload your company logo beforehand.</div></aside>
+</section>
+
+<!-- 20 DIVIDER MANAGE -->
+<section class="slide divider" data-title="Motivate and manage" data-sec="04 Motivate & manage">
+  <div class="big" aria-hidden="true">04</div>
+  <div class="eyebrow rv">Chapter 04</div>
+  <h2 class="rv d1">Motivate &amp; manage.<br><em class="s">Everyone sees the score.</em></h2>
+  <p class="lead rv d2">Targets, incentives, dashboards for every role, and control over who sees what.</p>
+  <div class="chips rv d3"><span>Targets</span><span>Incentives</span><span>Role dashboards</span><span>Permissions</span><span>Team</span><span>Mobile</span><span>Security</span></div>
+  <aside class="notes"><div class="say">This chapter is about the people side of sales.</div></aside>
+</section>
+
+<!-- 21 TARGETS -->
+<section class="slide" data-title="Monthly targets" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Targets <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Set the month's target. <em class="s">Watch it fill up</em> as bookings come in.</h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Sample advisor · 2026</span>
+      <div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="row" id="tgtMetric"></div><div class="lg"><span><i style="background:var(--panel-2);border:1px solid var(--line-strong)"></i>Target</span><span><i style="background:var(--mint)"></i>Achieved</span></div></div>
+      <div class="chartwrap" id="tgtChart"></div>
+    </div>
+    <div class="stack rv d3">
+      <div class="card kpi"><span class="v" id="tgtPct">0%</span><span class="l" id="tgtLbl">Year to date</span></div>
+      <ul class="clean">
+        <li>Measure what suits your business: <b>area sold, units, revenue</b>, or all three.</li>
+        <li>Managers assign targets per person, per month.</li>
+        <li>Advisors see their own target against achievement on their dashboard.</li>
+        <li>Team leaders see their team's progress and leaderboard.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Monthly targets</b> by area, units, revenue or hybrid, with progress charts</div>
+    <div class="it"><span class="pill next">Coming next</span>Edit assigned targets</div>
+    <div class="it"><span class="pill next">Coming next</span>Personal performance page</div>
+  </div>
+  <aside class="notes"><div class="say">Switch between Revenue, Area and Units. Most land developers prefer area; apartment builders prefer units.</div><div class="demo"><b>In the app:</b> Targets → Assign Monthly Target, then show the chart.</div></aside>
+</section>
+
+<!-- 22 INCENTIVES -->
+<section class="slide" data-title="Incentives tied to collections" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Incentives <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Incentives that are paid <em class="s">only as the customer pays.</em></h2></div>
+  <div class="body g2">
+    <div class="mock stack rv d2" style="gap:18px"><span class="mock-tag">Try it · sample plan</span>
+      <label class="f" for="incArea">Area sold this month: <span class="mono" id="incAreaV" style="color:var(--ink)"></span><input type="range" id="incArea" min="500" max="9000" step="100" value="4200"></label>
+      <div class="slabs" id="slabs"></div>
+      <label class="f" for="incPaid">Customer has paid: <span class="mono" id="incPaidV" style="color:var(--ink)"></span><input type="range" id="incPaid" min="0" max="100" step="5" value="55"></label>
+      <div class="rel" id="rel"></div>
+      <div class="total"><span>Releasable now <span class="tiny" id="incOf"></span></span><span class="v" id="incNow">₹0</span></div>
+    </div>
+    <div class="stack rv d3">
+      <ul class="clean">
+        <li><b>Area slabs:</b> the more an advisor sells in a month, the higher the rate. Your plan, your slabs.</li>
+        <li><b>Paid on collection:</b> 30% of the incentive at 30% collected, 50% at 50%, 75% at 75%, and the rest at registry.</li>
+        <li><b>Per-project rates</b> and milestone bonuses for launches you need to push.</li>
+        <li>Managers post payout records per advisor and month.</li>
+      </ul>
+      <div class="card" style="font-size:16px;color:var(--muted)">The result: no more paying out on bookings that later cancel, and no quarter-end arguments.</div>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Incentive plans and payout records</b></div>
+    <div class="it"><span class="pill next">Coming next</span>Automatic payout calculation for every advisor</div>
+    <div class="it"><span class="pill next">Coming next</span>Advisor earnings tracker</div>
+  </div>
+  <aside class="notes"><div class="say">Move the sliders. CFOs like "paid as collected"; it protects cash flow.</div><div class="demo"><b>In the app:</b> Incentives → add a manual record. Explain the plan on this slide; automatic calculation is being finished.</div></aside>
+</section>
+
+<!-- 23 ROLE DASHBOARDS -->
+<section class="slide" data-title="A dashboard for every role" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Role dashboards <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Everyone logs in to <em class="s">their own view of the business.</em></h2></div>
+  <div class="body" style="grid-template-columns:300px 1fr;gap:36px">
+    <div class="roles rv d2" id="roles"></div>
+    <div class="mock stack rv d3" style="align-self:start"><span class="mock-tag">What they see</span>
+      <div><h3 id="roleTitle"></h3><p class="small" id="roleSub" style="margin-top:4px"></p></div>
+      <div class="widgets" id="roleWidgets"></div>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Click Owner first, then Advisor, then Driver. The same system serves everyone, each seeing only what they need.</div><div class="demo"><b>In the app:</b> Log in as a few test users with different roles.</div></aside>
+</section>
+
+<!-- 24 PERMISSIONS -->
+<section class="slide paper" data-title="Custom roles and permissions" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Roles &amp; permissions <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Build any role. <em class="s">You decide who sees what.</em></h2></div>
+  <div class="body g-55">
+    <div class="mock rv d2"><span class="mock-tag">Try it · "Site Manager" role</span>
+      <div class="matrix" id="matrix" role="grid"></div>
+    </div>
+    <div class="stack rv d3" style="gap:18px">
+      <div class="card stack">
+        <h3>Sales visibility</h3>
+        <div class="row" id="visRow"></div>
+        <p class="small" id="visTxt"></p>
+      </div>
+      <ul class="clean">
+        <li><b>15 modules</b>, each set to No access, Read only or Full edit.</li>
+        <li>Pick which dashboard widgets each role sees.</li>
+        <li>Ready-made roles: Owner, Admin, Director, Team Leader, Sales Executive, CRM Staff, Accountant, Receptionist, Driver.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Custom roles</b>, module access and sales visibility</div>
+    <div class="it"><span class="pill next">Coming next</span>Read-only enforced on every module</div>
+  </div>
+  <aside class="notes"><div class="say">Build a "Channel Partner Manager" or "Site Manager" live in front of them.</div><div class="demo"><b>In the app:</b> Roles → Create role. Use No access / Full edit for module access; that's fully in place today.</div></aside>
+</section>
+
+<!-- 25 TEAM -->
+<section class="slide" data-title="Your team, organised" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Team &amp; culture <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Your org chart, your people, <em class="s">and the moments that matter to them.</em></h2></div>
+  <div class="body g3">
+    <div class="card stack rv d1">
+      <h3>Org chart</h3>
+      <p class="small">Built automatically from reporting lines, grouped by department.</p>
+      <div class="org" style="margin-top:8px">
+        <div class="lvl"><div class="node"><b>Vikram Mehta</b><span>Director</span></div></div>
+        <div class="lvl"><div class="node"><b>Anjali Rao</b><span>Team Leader</span></div><div class="node"><b>Karan Shah</b><span>Team Leader</span></div></div>
+        <div class="lvl"><div class="node"><b>Rahul</b><span>Advisor</span></div><div class="node"><b>Neha</b><span>Advisor</span></div><div class="node"><b>Arjun</b><span>Advisor</span></div></div>
+      </div>
+    </div>
+    <div class="card stack rv d2">
+      <h3>People &amp; departments</h3>
+      <ul class="clean">
+        <li>Add staff with role, department, manager and employee ID.</li>
+        <li>Deactivate people who leave. Their leads and history stay.</li>
+        <li>Searchable directory with CSV export.</li>
+        <li>Departments with your own details: head, budget, location.</li>
+      </ul>
+    </div>
+    <div class="card stack rv d3">
+      <h3>Celebrations</h3>
+      <div>
+        <div class="cel"><div class="ic">BDAY</div><div><b>Neha Kulkarni</b><div class="tiny">Birthday</div></div><span class="when">Today</span></div>
+        <div class="cel"><div class="ic">4 YRS</div><div><b>Anjali Rao</b><div class="tiny">Work anniversary</div></div><span class="when">In 3 days</span></div>
+        <div class="cel"><div class="ic">ANNIV</div><div><b>Rahul Verma</b><div class="tiny">Marriage anniversary</div></div><span class="when">In 9 days</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="status">
+    <div class="it"><span class="pill live">Live</span><b>Users, departments, org chart, directory, celebrations</b></div>
+    <div class="it"><span class="pill next">Coming next</span>Company announcements from the app</div>
+    <div class="it"><span class="pill next">Coming next</span>Automatic in-app notifications</div>
+  </div>
+  <aside class="notes"><div class="say">Sales teams have high churn. When someone leaves, deactivate them, reassign their leads in bulk, and keep the history.</div></aside>
+</section>
+
+<!-- 26 MOBILE -->
+<section class="slide" data-title="Built for the site and the road" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Everyday experience <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Built for advisors who live <em class="s">on their phones.</em></h2></div>
+  <div class="body" style="grid-template-columns:auto 1fr 1fr;gap:44px;align-items:start">
+    <div class="mphone rv d2" aria-label="Mobile app preview">
+      <div class="scr">
+        <div class="row" style="justify-content:space-between"><b style="font-family:var(--font-display);font-size:18px">Good morning, Rahul</b></div>
+        <div class="mk"><div class="tiny">My sales · November</div><div style="font-family:var(--font-display);font-size:26px;font-weight:700">₹1.36 Cr</div><div style="height:6px;border-radius:99px;background:var(--panel-2);margin-top:8px"><div style="width:68%;height:100%;border-radius:99px;background:var(--mint)"></div></div><div class="tiny" style="margin-top:6px">68% of monthly target</div></div>
+        <div class="mk"><div class="row" style="justify-content:space-between"><b style="font-size:14px">Priya Sharma</b><span class="score Hot">Hot</span></div><div class="tiny">Visit Saturday 11:00 · Green Valley</div><div class="row" style="margin-top:8px;gap:6px"><span class="src">Call</span><span class="src">WhatsApp</span><span class="src">Follow-up</span></div></div>
+        <div class="mk"><div class="row" style="justify-content:space-between"><b style="font-size:14px">Amit Joshi</b><span class="score Warm">Warm</span></div><div class="tiny">Call back Monday · Skyline Heights</div></div>
+      </div>
+      <div class="nav"><span class="on"><i></i>Home</span><span><i></i>Leads</span><span><i></i>Visits</span><span><i></i>Sales</span><span><i></i>More</span></div>
+    </div>
+    <div class="stack rv d3">
+      <h3>Sales playbook assistant</h3>
+      <div class="stack" style="gap:10px">
+        <div class="chat-q">Buyer says the price is too high</div>
+        <div class="chat-a">1. Acknowledge: "Budget matters most, I understand."<br>2. Shift to value: delivery record, open space, appreciation.<br>3. Offer flexibility: construction-linked or subvention plan.<br>4. Close on a visit: "See it once, then I'll speak to my director."</div>
+      </div>
+      <p class="small">Ready scripts for cold calls, price objections, WhatsApp follow-ups, site-visit closing and reviving old leads.</p>
+    </div>
+    <ul class="clean rv d4" style="align-self:center">
+      <li>A phone layout with a thumb-friendly bottom menu.</li>
+      <li>Tap to call or WhatsApp from any lead.</li>
+      <li>Light and dark mode.</li>
+      <li>A seven-step guided tour for new joiners.</li>
+      <li><span class="pill next" style="margin-right:6px">Coming next</span>AI-written follow-ups and buyer insights</li>
+    </ul>
+  </div>
+  <aside class="notes"><div class="say">Describe the assistant as playbooks: proven scripts on demand. Personalised AI writing is on the roadmap.</div><div class="demo"><b>In the app:</b> Open the app on your phone. The "?" button starts the guided tour.</div></aside>
+</section>
+
+<!-- 27 SECURITY -->
+<section class="slide paper" data-title="Your data stays yours" data-sec="04 Motivate & manage">
+  <div class="head"><div class="eyebrow rv">Security &amp; control <span class="pill live">Live</span></div>
+  <h2 class="rv d1">Your leads are your most valuable asset. <em class="s">We treat them that way.</em></h2></div>
+  <div class="body g3" style="align-content:start;gap:34px 40px">
+    <div class="sec-item rv d1"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><div><h3>Walled-off company data</h3><p>Every request is checked against your company. No other customer can reach your leads.</p></div></div>
+    <div class="sec-item rv d2"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div><h3>Login protection</h3><p>Repeated wrong passwords lock the attempt out for 15 minutes.</p></div></div>
+    <div class="sec-item rv d3"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 20L20 4"/></svg></div><div><h3>Number masking</h3><p>Staff can call buyers without being able to copy their numbers.</p></div></div>
+    <div class="sec-item rv d2"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg></div><div><h3>Owner-only deletion &amp; export</h3><p>Only the company owner can delete leads or export the lead list.</p></div></div>
+    <div class="sec-item rv d3"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div><div><h3>Switch modules on or off</h3><p>CRM, inventory, site visits, incentives and reports can be turned on per company.</p></div></div>
+    <div class="sec-item rv d4"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div><div><h3>Your own server (Enterprise)</h3><p>Large groups can run RealSalePro on their own database and domain.</p></div></div>
+  </div>
+  <aside class="notes"><div class="say">Keep this short unless their IT head is in the room. Then go deeper on the Enterprise self-hosting option.</div></aside>
+</section>
+
+<!-- 28 STATUS BOARD -->
+<section class="slide" data-title="Live today and coming next" data-sec="Summary">
+  <div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div class="head"><div class="eyebrow rv">Full feature status</div>
+    <h2 class="rv d1">What you get today, <em class="s">and what's coming next.</em></h2></div>
+    <div class="stack rv d2" style="align-items:flex-end;gap:12px">
+      <div class="tally"><div><span class="v" id="cntLive" style="color:var(--mint)">0</span> <span class="small">live</span></div><div><span class="v" id="cntNext" style="color:var(--amber)">0</span> <span class="small">coming next</span></div></div>
+      <div class="row" id="boardFilter"></div>
+    </div>
+  </div>
+  <div class="board rv d3" id="board"></div>
+  <aside class="notes"><div class="say">Use this when a CEO asks "does it do X?". Filter to Live for procurement; to Coming next for the roadmap conversation.</div></aside>
+</section>
+
+<!-- 29 BEFORE AFTER -->
+<section class="slide paper" data-title="Before and after RealSalePro" data-sec="Summary">
+  <div class="head"><div class="eyebrow rv">The difference</div>
+  <h2 class="rv d1">Monday morning, <em class="s">before and after.</em></h2></div>
+  <div class="cmp rv d2">
+    <div class="h"></div><div class="h">Today</div><div class="h">With RealSalePro</div>
+    <div class="k">New enquiries</div><div class="old">Downloaded from five portals into Excel</div><div class="new">Already in the CRM, assigned, and welcomed on WhatsApp</div>
+    <div class="k">Follow-ups</div><div class="old">In each advisor's head and phone</div><div class="new">On a shared timeline, tagged Hot, Warm or Cold</div>
+    <div class="k">Ad spend</div><div class="old">Optimised for form-fills</div><div class="new">Optimised for site visits and bookings</div>
+    <div class="k">Site visits</div><div class="old">Phone calls to arrange the cab</div><div class="new">Requested, approved and assigned to a driver in the app</div>
+    <div class="k">Collections</div><div class="old">Accountant calls buyers from a ledger</div><div class="new">Outstanding list, one-tap WhatsApp reminder, branded receipt</div>
+    <div class="k">Incentives</div><div class="old">Argued over at quarter end</div><div class="new">Slabs agreed upfront, released as customers pay</div>
+    <div class="k">Staff exit</div><div class="old">Leads leave with the person</div><div class="new">Deactivate, reassign in bulk, keep the history</div>
+  </div>
+  <aside class="notes"><div class="say">Read the left column and let them nod. Then the right column.</div></aside>
+</section>
+
+<!-- 30 PRICING -->
+<section class="slide" data-title="Plans and pricing" data-sec="Summary">
+  <div class="head"><div class="eyebrow rv">Pricing</div>
+  <h2 class="rv d1">Start free. <em class="s">Upgrade when your team grows.</em></h2></div>
+  <div class="plans rv d2">
+    <div class="plan">
+      <div class="nm">Free forever</div>
+      <div class="pr">₹0</div>
+      <p class="small">No card needed. For small brokerages getting started.</p>
+      <ul class="clean"><li>1,000 active leads</li><li>5 users</li><li>Pipeline and dashboards</li><li>Facebook and WhatsApp connections</li><li>Email support</li></ul>
+    </div>
+    <div class="plan pro">
+      <div class="row" style="justify-content:space-between"><span class="nm">Pro</span><span class="pill live">Most chosen</span></div>
+      <div class="cyc" id="cyc"></div>
+      <div class="pr"><span id="proPrice">₹1,000</span><small>/month</small></div>
+      <p class="small" id="proBill"></p>
+      <ul class="clean"><li>2,00,000 leads, unlimited users and roles</li><li>Facebook ad feedback (Conversions API)</li><li>99acres, MagicBricks, Housing connections</li><li>Phone-number masking</li><li>Branded receipts, ledgers and Excel exports</li><li>Priority email and WhatsApp support</li></ul>
+    </div>
+    <div class="plan">
+      <div class="nm">Enterprise</div>
+      <div class="pr" style="font-size:44px">Custom</div>
+      <p class="small">For developer groups with several projects or cities.</p>
+      <ul class="clean"><li>Custom limits</li><li>Run on your own server and database</li><li>ERP integration</li><li>Dedicated account manager</li><li>99.9% uptime commitment</li></ul>
+    </div>
+  </div>
+  <p class="tiny rv d3">Prices in INR. Pro is activated by our team after payment; self-serve online checkout is coming next.</p>
+  <aside class="notes"><div class="say">Anchor on yearly: ₹1,000 a month for the whole team. That's less than one portal lead package.</div></aside>
+</section>
+
+<!-- 31 ROLLOUT -->
+<section class="slide" data-title="Suggested rollout" data-sec="Summary">
+  <div class="head"><div class="eyebrow rv">Getting started</div>
+  <h2 class="rv d1">Live in four steps, <em class="s">without stopping sales.</em></h2></div>
+  <div class="roll rv d2" style="margin-top:20px">
+    <div class="s"><div class="n">1</div><span class="w">Day 1</span><h3>Set up your company</h3><p>Add your logo, roles, departments and team. Pick how targets are measured.</p></div>
+    <div class="s"><div class="n">2</div><span class="w">Days 2–3</span><h3>Bring your data</h3><p>Import projects, unit lists and existing leads from Excel. Duplicates are cleaned on the way in.</p></div>
+    <div class="s"><div class="n">3</div><span class="w">Days 3–5</span><h3>Connect your sources</h3><p>Facebook, Google, your website and portals. Switch on the WhatsApp welcome and Facebook ad feedback.</p></div>
+    <div class="s"><div class="n">4</div><span class="w">Week 2</span><h3>Train and review</h3><p>Advisors take the guided tour. After the first week, review the funnel and the source report together.</p></div>
+  </div>
+  <div class="card rv d3" style="margin-top:auto;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <p style="font-size:19px">Suggested pilot: one project, one team, 30 days. Measure response time and site-visit rate against last quarter.</p>
+    <span class="pill live">Low risk</span>
+  </div>
+  <aside class="notes"><div class="say">Propose the pilot here. One project, one team, 30 days. It's easy for a CEO to say yes to.</div></aside>
+</section>
+
+<!-- 32 CLOSE -->
+<section class="slide closing" data-title="Next steps" data-sec="Summary">
+  <div class="eyebrow rv">Next step</div>
+  <div class="stack" style="flex:1;justify-content:center;gap:30px">
+    <h1 class="rv d1">Let's put your next 100 enquiries <em class="s">on RealSalePro.</em></h1>
+    <p class="lead rv d2">Start on the Free plan today, or let us set up a 30-day pilot on one of your projects with your own leads.</p>
+    <div class="row rv d3" style="gap:16px">
+      <span class="card" style="padding:14px 20px;font-weight:700">realsalepro.com</span>
+      <span class="card" style="padding:14px 20px;color:var(--muted)">Free plan: 1,000 leads · 5 users · no card</span>
+    </div>
+  </div>
+  <aside class="notes"><div class="say">Close on the pilot. Agree a start date and name the project before leaving the room.</div></aside>
+</section>
+
+</div>
+</div>
+
+<nav id="bar" aria-label="Slide controls">
+  <div id="progress"></div>
+  <div class="brand">Real<span>Sale</span>Pro</div>
+  <div class="ttl" id="ttl"></div>
+  <div class="ctl">
+    <button type="button" id="btnOverview" title="All slides (O)">All slides</button>
+    <button type="button" id="btnNotes" title="Presenter notes (N)">Notes</button>
+    <button type="button" id="btnFull" title="Full screen (F)">Full screen</button>
+    <button type="button" id="prev" aria-label="Previous slide">←</button>
+    <span class="count" id="count">1 / 32</span>
+    <button type="button" id="next" aria-label="Next slide">→</button>
+  </div>
+</nav>
+<aside id="notes" hidden><h4>Presenter notes</h4><div id="notesBody"></div></aside>
+<div id="overview" hidden><h3><span>All slides</span><span class="tiny">Press <span class="kbd">O</span> or <span class="kbd">Esc</span> to close</span></h3><div class="grid" id="ovGrid"></div></div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const inrShort=n=>n>=1e7?"₹"+(n/1e7).toFixed(2)+" Cr":n>=1e5?"₹"+(n/1e5).toFixed(1)+" L":inr(n);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===== deck engine ===== */
+const slides=$$(".slide"), stage=$("#stage"), vp=$("#viewport");
+let cur=0;
+const reading=()=>matchMedia("(max-width:760px)").matches;
+function fit(){
+  if(reading()){stage.style.transform="";return;}
+  const w=vp.clientWidth-32, h=vp.clientHeight-24;
+  stage.style.transform="scale("+Math.min(w/1600,h/900)+")";
+}
+function go(i,push=true){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[cur].classList.remove("active");
+  cur=i; slides[cur].classList.add("active");
+  $("#count").textContent=(cur+1)+" / "+slides.length;
+  $("#ttl").textContent=slides[cur].dataset.sec+" · "+slides[cur].dataset.title;
+  $("#progress").style.width=((cur+1)/slides.length*100)+"%";
+  const n=$(".notes",slides[cur]);
+  $("#notesBody").innerHTML=n?n.innerHTML:"<div class='demo'>No notes for this slide.</div>";
+  if(push){try{history.replaceState(null,"","#slide-"+(cur+1));}catch(e){}}
+  onEnter(cur);
+}
+slides.forEach(s=>{const n=$(".notes",s); if(n) n.hidden=true;});
+$("#prev").onclick=()=>go(cur-1); $("#next").onclick=()=>go(cur+1);
+function toggleNotes(){$("#notes").hidden=!$("#notes").hidden;}
+function toggleOverview(){
+  const o=$("#overview"); o.hidden=!o.hidden;
+  if(!o.hidden){$$("button",o).forEach((b,i)=>b.classList.toggle("cur",i===cur)); const c=$("button.cur",o); if(c) c.focus();}
+}
+$("#btnNotes").onclick=toggleNotes; $("#btnOverview").onclick=toggleOverview;
+$("#btnFull").onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}};
+$("#ovGrid").innerHTML=slides.map((s,i)=>`<button type="button" data-i="${i}"><span class="n">${String(i+1).padStart(2,"0")}</span><span class="sec">${esc(s.dataset.sec)}</span><span class="tt">${esc(s.dataset.title)}</span></button>`).join("");
+$("#ovGrid").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; go(+b.dataset.i); toggleOverview();});
+document.addEventListener("keydown",e=>{
+  if(e.target.closest("input,textarea,select"))return;
+  const k=e.key;
+  if(k==="ArrowRight"||k==="PageDown"||(k===" "&&!e.target.closest("button"))){e.preventDefault();go(cur+1);}
+  else if(k==="ArrowLeft"||k==="PageUp"){e.preventDefault();go(cur-1);}
+  else if(k==="Home")go(0); else if(k==="End")go(slides.length-1);
+  else if(k==="n"||k==="N")toggleNotes();
+  else if(k==="o"||k==="O")toggleOverview();
+  else if(k==="Escape"&&!$("#overview").hidden)toggleOverview();
+  else if(k==="f"||k==="F")$("#btnFull").click();
+});
+let tx=null;
+vp.addEventListener("touchstart",e=>{tx=e.touches[0].clientX},{passive:true});
+vp.addEventListener("touchend",e=>{if(tx===null||reading())return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>60)go(cur+(d<0?1:-1));tx=null;});
+addEventListener("resize",fit);
+function fromHash(){const m=/^#slide-(\d+)$/.exec(location.hash); return m?+m[1]-1:0;}
+addEventListener("hashchange",()=>{const i=fromHash(); if(i!==cur) go(i,false);});
+const findSlide=title=>slides.findIndex(s=>s.dataset.title===title);
+
+/* ===== per-slide enter hooks ===== */
+const enterHooks={};
+function onEnter(i){const f=enterHooks[slides[i].dataset.title]; if(f) f();}
+
+/* cover flow ticker */
+(function(){
+  const st=$$("#coverFlow .st"); let k=0, t=null;
+  function tick(){st.forEach((s,j)=>s.classList.toggle("on",j<=k)); k=(k+1)%(st.length+1);}
+  enterHooks["RealSalePro for real-estate leaders"]=()=>{clearInterval(t);k=0;tick();t=setInterval(tick,1100);};
+  st.forEach(s=>s.classList.add("on"));
+})();
+
+/* journey */
+(function(){
+  const steps=[
+    {d:"MON 10:02",h:"Enquiry from a Facebook ad",q:"Priya fills a lead form for a 2 BHK at Green Valley Residency. Seconds later she's in the CRM.",to:"Every source, one inbox"},
+    {d:"MON 10:02",h:"WhatsApp welcome, advisor assigned",q:"She gets a personal WhatsApp with the brochure. Rahul, the advisor with the lightest load, owns the lead.",to:"Instant reply and assignment"},
+    {d:"TUE",h:"Call logged, tagged Hot",q:"Rahul notes \"wants a site visit Saturday with family\". The lead tags itself Hot.",to:"Follow-ups with a full history"},
+    {d:"TUE",h:"Facebook learns",q:"The CRM tells Meta this lead qualified, so your ads look for more buyers like Priya.",to:"Ad feedback to Facebook"},
+    {d:"SAT",h:"Site visit by company cab",q:"Visit approved by the manager, driver assigned, odometer logged.",to:"Site visits and cab trips"},
+    {d:"SUN",h:"Booking for Unit B-704",q:"Rahul marks her Converted. The booking file is created with the full price breakdown.",to:"The booking file"},
+    {d:"MONTHLY",h:"Receipts, and Rahul's incentive",q:"Each payment gets a branded receipt on WhatsApp. Rahul's incentive is released as Priya pays.",to:"Incentives tied to collections"}
+  ];
+  const j=$("#journey"), dt=$("#jdetail");
+  j.innerHTML=steps.map((s,i)=>`<button class="jstep" type="button" data-i="${i}" aria-pressed="${i===0}"><span class="b">${String(i+1).padStart(2,"0")}</span><span class="d">${s.d}</span><span class="h">${esc(s.h)}</span></button>`).join("");
+  function show(i){$$(".jstep",j).forEach((b,k)=>b.setAttribute("aria-pressed",k===i));
+    dt.innerHTML=`<p class="q">${esc(steps[i].q)}</p><button class="btn" type="button" data-to="${esc(steps[i].to)}">See how it works →</button>`;}
+  j.addEventListener("mouseover",e=>{const b=e.target.closest(".jstep"); if(b) show(+b.dataset.i);});
+  j.addEventListener("click",e=>{const b=e.target.closest(".jstep"); if(!b)return; show(+b.dataset.i); const t=findSlide(steps[+b.dataset.i].to); if(t>=0&&!reading()) go(t);});
+  dt.addEventListener("click",e=>{const b=e.target.closest("[data-to]"); if(!b)return; const t=findSlide(b.dataset.to); if(t>=0){ if(reading()) slides[t].scrollIntoView({behavior:"smooth"}); else go(t);} });
+  show(0);
+})();
+
+/* inbox */
+(function(){
+  const src=[
+    {k:"Facebook",s:"Lead ad form",n:"Sneha Patil",p:"Green Valley · 2 BHK",b:"50L–1Cr"},
+    {k:"Instagram",s:"Lead ad form",n:"Rohit Nair",p:"Skyline Heights · 3 BHK",b:"1Cr–2Cr"},
+    {k:"Google Ads",s:"Lead form",n:"Kavita Desai",p:"Green Valley · 3 BHK",b:"1Cr–2Cr"},
+    {k:"99acres",s:"Portal push",n:"Imran Shaikh",p:"Orchid Plots · Plot",b:"<50L"},
+    {k:"MagicBricks",s:"Portal push",n:"Deepa Iyer",p:"Skyline Heights · 2 BHK",b:"50L–1Cr"},
+    {k:"Housing",s:"Portal push",n:"Manish Gupta",p:"Green Valley · 2 BHK",b:"50L–1Cr"},
+    {k:"Website",s:"Your enquiry form",n:"Pooja Bansal",p:"Orchid Plots · Villa plot",b:">2Cr"},
+    {k:"Google Sheet",s:"Any form or sheet",n:"Sanjay Kulkarni",p:"Skyline Heights · 3 BHK",b:"1Cr–2Cr"},
+    {k:"Walk-in",s:"Added by reception",n:"Farah Khan",p:"Green Valley · 2 BHK",b:"50L–1Cr"}
+  ];
+  const reps=["Rahul","Neha","Arjun"]; let r=0, count=3;
+  $("#srcgrid").innerHTML=src.map((s,i)=>`<button class="srcbtn" type="button" data-i="${i}"><b>${s.k}</b><span>${s.s}</span></button>`).join("");
+  const ini=n=>n.split(" ").map(x=>x[0]).join("").slice(0,2);
+  function row(s,isNew,when){
+    const rep=reps[r++%reps.length];
+    const div=document.createElement("div"); div.className="lrow"+(isNew?" new":"");
+    div.innerHTML=`<div class="av">${ini(s.n)}</div><div><div class="nm">${esc(s.n)}</div><div class="meta"><span class="src">${esc(s.k)}</span><span>${esc(s.p)}</span><span>· ${esc(s.b)}</span></div></div><div class="ok">${when}<br>→ ${rep} · WhatsApp sent</div>`;
+    return div;
+  }
+  const box=$("#inbox");
+  [src[4],src[2],src[0]].forEach(s=>box.appendChild(row(s,false,"09:4"+(r+1))));
+  $("#srcgrid").addEventListener("click",e=>{const b=e.target.closest(".srcbtn"); if(!b)return;
+    box.prepend(row(src[+b.dataset.i],true,"just now")); while(box.children.length>6) box.lastChild.remove();
+    $("#inboxCount").textContent=(++count)+" today";});
+})();
+
+/* whatsapp + load */
+(function(){
+  const chat=$("#waChat"); let t=[];
+  const msgs=[
+    {c:"in",h:"Hi, I'm interested in Green Valley Residency 2 BHK",tm:"10:02"},
+    {c:"out",h:"Namaste Priya! Thank you for your interest in <b>Green Valley Residency</b> by Shree Developers. I'm Rahul, your property advisor.<div class='doc'>PDF · Green Valley brochure.pdf</div>Would Thursday 4 PM or Saturday 11 AM suit you for a site visit?",tm:"10:02"}
+  ];
+  function play(){t.forEach(clearTimeout);t=[];chat.innerHTML="";
+    const add=m=>{const d=document.createElement("div");d.className="bub "+m.c;d.innerHTML=m.h+`<span class="tm">${m.tm}</span>`;chat.appendChild(d);};
+    add(msgs[0]);
+    const ty=document.createElement("div");ty.className="typing";ty.innerHTML="<i></i><i></i><i></i>";
+    t.push(setTimeout(()=>chat.appendChild(ty),500));
+    t.push(setTimeout(()=>{ty.remove();add(msgs[1]);},1600));
+  }
+  enterHooks["Instant reply and assignment"]=play;
+  chat.innerHTML=msgs.map(m=>`<div class="bub ${m.c}">${m.h}<span class="tm">${m.tm}</span></div>`).join("");
+
+  const people=[{n:"Rahul",v:12},{n:"Neha",v:18},{n:"Arjun",v:21},{n:"Simran",v:15}];
+  function draw(){const min=Math.min(...people.map(p=>p.v));const pick=people.find(p=>p.v===min);
+    $("#loads").innerHTML=people.map(p=>`<div class="load ${p===pick?"pick":""}"><span class="nm">${p.n}${p===pick?" · next":""}</span><span class="bar"><i style="width:${p.v/30*100}%"></i></span><span class="mono small" style="text-align:right">${p.v} open</span></div>`).join("");}
+  $("#assignBtn").onclick=()=>{const min=Math.min(...people.map(p=>p.v));people.find(p=>p.v===min).v++;draw();};
+  draw();
+})();
+
+/* lead workspace */
+(function(){
+  const L=[
+    ["Priya Sharma","Green Valley · 2 BHK","Facebook","Site Visit Scheduled","Hot","Rahul"],
+    ["Rohit Nair","Skyline · 3 BHK","Instagram","Contacted","Warm","Neha"],
+    ["Kavita Desai","Green Valley · 3 BHK","Google","Qualified","Hot","Arjun"],
+    ["Imran Shaikh","Orchid Plots","99acres","New","Warm","Rahul"],
+    ["Deepa Iyer","Skyline · 2 BHK","MagicBricks","In Progress","Cold","Simran"],
+    ["Amit Joshi","Skyline · 3 BHK","Referral","Site Visit Done","Hot","Neha"],
+    ["Farah Khan","Green Valley · 2 BHK","Walk-in","Contacted","Warm","Arjun"],
+    ["Manish Gupta","Green Valley · 2 BHK","Housing","Lost","Cold","Simran"]
+  ];
+  const F=["All","Hot","Warm","Cold"]; let f="All";
+  $("#leadFilters").innerHTML=F.map(x=>`<button class="chip" type="button" data-f="${x}" aria-pressed="${x===f}">${x}</button>`).join("");
+  function draw(){
+    const rows=L.filter(l=>f==="All"||l[4]===f);
+    $("#leadRows").innerHTML=rows.map(l=>`<tr><td><div class="nm">${l[0]}</div><div class="sub">${l[1]}</div></td><td><span class="src">${l[2]}</span></td><td><span class="st-tag">${l[3]}</span></td><td><span class="score ${l[4]}">${l[4]}</span></td><td>${l[5]}</td></tr>`).join("");
+    $$("#leadFilters .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===f));
+    $("#kTotal").textContent="1,284"; $("#kHot").textContent="186";
+  }
+  $("#leadFilters").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b){f=b.dataset.f;draw();}});
+  draw();
+})();
+
+/* follow-up: same keyword rules as the product */
+(function(){
+  function score(t){t=t.toLowerCase();
+    if(/booking|token|advance|deal closed|converted|cheque/.test(t))return"Hot";
+    if(/not interested|lost|wrong number|budget mismatch|dropped|dnd/.test(t))return"Cold";
+    if(/site visit|visit confirmed|interested|positive|call back/.test(t))return"Hot";
+    return"Warm";}
+  const tl=$("#fuTimeline");
+  const seed=[
+    {h:"Call · Connected",x:"Mon 11:20 · Rahul",q:"Looking for 2 BHK for parents, budget around 70 L.",s:"Warm"},
+    {h:"Status: New → Contacted",x:"Mon 11:21 · automatic",q:null},
+    {h:"Lead created from Facebook ad",x:"Mon 10:02 · WhatsApp welcome sent",q:null}
+  ];
+  function item(o,isNew){const d=document.createElement("div");d.className="tl"+(isNew?" new":"");
+    d.innerHTML=`<span class="o"></span><div><div class="h">${esc(o.h)} ${o.s?`<span class="score ${o.s}">${o.s}</span>`:""}</div><div class="x">${esc(o.x)}</div>${o.q?`<div class="q">${esc(o.q)}</div>`:""}</div>`;return d;}
+  seed.forEach(o=>tl.appendChild(item(o,false)));
+  $("#fuForm").addEventListener("submit",e=>{e.preventDefault();
+    const txt=$("#fuText").value.trim()||"(no remark)"; const s=score(txt);
+    const sc=$("#fuScore"); sc.className="score "+s; sc.textContent=s;
+    tl.prepend(item({h:$("#fuType").value+" · "+$("#fuCall").value+" · "+$("#fuResp").value,x:"Just now · Rahul",q:txt,s:s},true));
+    while(tl.children.length>5) tl.lastChild.remove();
+  });
+})();
+
+/* masking */
+(function(){const b=$("#maskToggle");b.onclick=()=>{const on=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",on);b.textContent=on?"Masking on":"Masking off";$("#maskNum").textContent=on?"+91 98765 •••••":"+91 98765 43210";};})();
+
+/* CAPI */
+(function(){
+  const S=[
+    {st:"Qualified",ev:"Qualified_Lead",v:null,why:"Your advisor confirmed budget and intent."},
+    {st:"Site Visit Scheduled",ev:"Schedule",v:null,why:"A visit is booked."},
+    {st:"Site Visit Done",ev:"Site_Visit_Done",v:1000,why:"The buyer showed up. Your strongest signal before booking."},
+    {st:"Converted",ev:"Purchase",v:6840000,why:"A booking, reported with its real value."}
+  ];
+  const box=$("#capi"); let sel=2;
+  box.innerHTML=S.map((s,i)=>`<button class="capi-stage" type="button" data-i="${i}"><b>${s.st}</b><span class="arr">→</span><span class="ev">${s.ev}</span></button>`).join("");
+  function draw(){$$(".capi-stage",box).forEach((b,i)=>b.setAttribute("aria-pressed",i===sel));const s=S[sel];
+    $("#capiSig").innerHTML=`Sent to Meta · just now\n\nevent      <b>${s.ev}</b>\nlead       Priya Sharma (Facebook lead ad)\nphone      <b>scrambled</b> 3f9a…c21e\nemail      <b>scrambled</b> 81bd…07fa\n${s.v?`value      <b>${inr(s.v)}</b>\n`:""}\n${esc(s.why)}`;}
+  box.addEventListener("click",e=>{const b=e.target.closest(".capi-stage");if(b){sel=+b.dataset.i;draw();}});
+  draw();
+})();
+
+/* funnel + sources */
+(function(){
+  const F=[["New",1284],["In progress",742],["Visit scheduled",268],["Visit done",171],["Converted",38]];
+  $("#funnel").innerHTML=F.map(([k,v])=>`<div class="fstep"><span>${k}</span><span class="bar"><i data-w="${v/F[0][1]*100}" style="width:${v/F[0][1]*100}%"></i></span><span class="pct">${v.toLocaleString("en-IN")}</span></div>`).join("");
+  const S=[["Facebook",412],["99acres",268],["Google",214],["MagicBricks",156],["Referral",98],["Housing",74],["Walk-in",62]];
+  const mx=S[0][1];
+  $("#srcbars").innerHTML=S.map(([k,v])=>`<div class="r"><span>${k}</span><span><span class="b" style="display:block;width:${v/mx*100}%"></span></span><span class="v">${v}</span></div>`).join("");
+  enterHooks["Pipeline and source analytics"]=()=>{const bars=$$("#funnel i");bars.forEach(b=>b.style.width="0%");requestAnimationFrame(()=>requestAnimationFrame(()=>bars.forEach(b=>b.style.width=b.dataset.w+"%")));};
+})();
+
+/* site visits */
+(function(){
+  const V=[
+    {t:"Advisor requests",s:"Customer, pickup, date and time",p:`<div class="vcard"><div><div class="k">Customer</div><div class="v">Priya Sharma + family</div></div><div><div class="k">Requested by</div><div class="v">Rahul Verma</div></div><div><div class="k">Pickup</div><div class="v">Baner, near Balewadi High Street</div></div><div><div class="k">When</div><div class="v">Sat 15 Nov · 11:00</div></div></div><div class="row" style="margin-top:16px"><span class="st-tag">Pending approval</span></div>`},
+    {t:"Manager decides",s:"Approve, decline or ask",p:`<div class="row" style="gap:10px;margin-bottom:14px"><span class="chip" aria-pressed="true">Approve</span><span class="chip">Decline (reason needed)</span><span class="chip">Ask a question</span></div><div class="vcard"><div><div class="k">Approved by</div><div class="v">Anjali Rao, Team Leader</div></div><div><div class="k">Driver assigned</div><div class="v">Suresh Pawar · MH12 AB 4521</div></div></div>`},
+    {t:"Driver starts trip",s:"Odometer at pickup",p:`<div class="vcard"><div><div class="k">Start reading</div><div class="odo">48,212</div></div><div><div class="k">Status</div><div class="v" style="color:var(--mint)">On trip · 10:41</div></div></div><p class="small" style="margin-top:14px">Suresh sees today's trips on his phone, grouped by date, with the pickup point.</p>`},
+    {t:"Trip closed",s:"Kilometres logged",p:`<div class="vcard"><div><div class="k">End reading</div><div class="odo">48,249</div></div><div><div class="k">Distance</div><div class="v">37 km</div></div></div><p class="small" style="margin-top:14px"><span class="pill next">Coming next</span> Close-out and km report are being finished.</p>`,nx:true}
+  ];
+  let i=0;
+  function draw(){$("#vsteps").innerHTML=V.map((v,k)=>`<button class="vstep ${k<i?"done":""} ${k===i?"cur":""} ${v.nx?"nx":""}" type="button" data-i="${k}"><span class="n">${v.nx?"COMING NEXT":"STEP "+(k+1)}</span><b>${v.t}</b><span>${v.s}</span></button>`).join("");
+    $("#vpanel").innerHTML=`<span class="mock-tag">Sample visit</span>`+V[i].p;}
+  $("#vsteps").addEventListener("click",e=>{const b=e.target.closest(".vstep");if(b){i=+b.dataset.i;draw();}});
+  draw();
+})();
+
+/* inventory */
+(function(){
+  const st=["Available","Hold","Booked","Sold"];
+  const pattern="SSBSASBAHASBAAABSABHAAABABAAHAAASABAAAAH";
+  const facing=["East","West","North","East"];
+  const floors=[];
+  for(let f=8;f>=4;f--){const row=[];for(let u=1;u<=8;u++){const c=pattern[(8-f)*8+u-1]||"A";row.push({id:"B-"+f+"0"+u,s:{A:"Available",H:"Hold",B:"Booked",S:"Sold"}[c],bhk:u%3===0?"3 BHK":"2 BHK",area:u%3===0?1580:1240,face:facing[u%4],floor:f});}floors.push(row);}
+  const all=floors.flat(); let filt="All", sel=all.find(u=>u.id==="B-704");
+  $("#invFilters").innerHTML=["All",...st].map(x=>`<button class="chip" type="button" data-f="${x}" aria-pressed="${x===filt}" style="padding:6px 11px;font-size:13px">${x}</button>`).join("");
+  function draw(){
+    $("#units").innerHTML=floors.map(r=>`<div class="floorlbl">Floor ${r[0].floor}</div><div class="units">${r.map(u=>`<button class="unit ${u.s} ${filt!=="All"&&u.s!==filt?"dim":""} ${u===sel?"sel":""}" type="button" data-id="${u.id}"><span>${u.id.slice(2)}</span><span class="s">${u.s}</span></button>`).join("")}</div>`).join("");
+    $$("#invFilters .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===filt));
+    const c={Available:0,Hold:0,Booked:0,Sold:0}; all.forEach(u=>c[u.s]++);
+    $("#unitCard").innerHTML=`<div class="row" style="justify-content:space-between"><h3>Unit ${sel.id}</h3><span class="unit ${sel.s}" style="aspect-ratio:auto;padding:4px 10px;display:inline-block">${sel.s}</span></div>
+      <div class="vcard"><div><div class="k">Type</div><div class="v">${sel.bhk}</div></div><div><div class="k">Super area</div><div class="v">${sel.area.toLocaleString("en-IN")} sq ft</div></div><div><div class="k">Facing</div><div class="v">${sel.face}</div></div><div><div class="k">Floor</div><div class="v">${sel.floor}</div></div></div>
+      <div class="tiny">Tower B: ${c.Available} available · ${c.Hold} on hold · ${c.Booked} booked · ${c.Sold} sold</div>`;
+  }
+  $("#invFilters").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){filt=b.dataset.f;draw();}});
+  $("#units").addEventListener("click",e=>{const b=e.target.closest(".unit");if(b){sel=all.find(u=>u.id===b.dataset.id);draw();}});
+  draw();
+})();
+
+/* price calculator: area*rate + area*dev + area*rate*PLC% + other - discount */
+(function(){
+  const ids=["cArea","cRate","cPlc","cDev","cOther","cDisc"];
+  function calc(){const [a,r,p,d,o,ds]=ids.map(i=>Math.max(0,parseFloat($("#"+i).value)||0));
+    const base=a*r, plc=base*p/100, dev=a*d, tot=base+plc+dev+o-ds;
+    $("#cBrk").innerHTML=`<span>Basic (${a.toLocaleString("en-IN")} × ${inr(r)})</span><span class="r">${inr(base)}</span><span>Preferred location charge (${p}%)</span><span class="r">${inr(plc)}</span><span>Development charges</span><span class="r">${inr(dev)}</span><span>Other charges</span><span class="r">${inr(o)}</span><span>Discount</span><span class="r neg">− ${inr(ds)}</span>`;
+    $("#cTotal").textContent=inrShort(tot);}
+  ids.forEach(i=>$("#"+i).addEventListener("input",calc)); calc();
+})();
+
+/* collections */
+(function(){
+  const D=[["Priya Sharma","Green Valley","B-704",6156000,"68,40,000"],["Amit Joshi","Skyline Heights","A-1203",3420000,"92,00,000"],["Kavita Desai","Green Valley","B-502",1840000,"82,10,000"],["Sanjay Kulkarni","Skyline Heights","C-904",420000,"1,04,00,000"],["Farah Khan","Orchid Plots","P-17",260000,"38,00,000"]];
+  let f=0, sel=0; const F=[["All",0],["≥ ₹5 L",5e5],["≥ ₹25 L",25e5]];
+  $("#dueFilters").innerHTML=F.map((x,i)=>`<button class="chip" type="button" data-i="${i}" aria-pressed="${i===f}" style="padding:6px 12px;font-size:13.5px">${x[0]}</button>`).join("");
+  function msg(){const d=D[sel];$("#dueMsg").innerHTML=`Dear ${d[0]},<br><br>Greetings from Shree Developers. This is a gentle reminder that a balance of <b>${inr(d[3])}</b> is pending for Unit <b>${d[2]}</b>, ${d[1]}.<br><br>Please contact your relationship manager for payment details. Thank you.<span class="tm">now ✓✓</span>`;}
+  function draw(){const rows=D.map((d,i)=>[d,i]).filter(([d])=>d[3]>=F[f][1]);
+    $("#dueRows").innerHTML=rows.map(([d,i])=>`<tr><td><b>${d[0]}</b><div class="tiny">${d[1]}</div></td><td class="mono" style="font-size:14px">${d[2]}</td><td class="r mono">${inr(d[3])}</td><td class="r"><button class="chip" type="button" data-s="${i}" aria-pressed="${i===sel}" style="padding:5px 12px;font-size:13px">Remind</button></td></tr>`).join("");
+    $$("#dueFilters .chip").forEach((b,i)=>b.setAttribute("aria-pressed",i===f)); msg();}
+  $("#dueFilters").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){f=+b.dataset.i;draw();}});
+  $("#dueRows").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(b){sel=+b.dataset.s;draw();}});
+  draw();
+})();
+
+/* targets chart (sample) */
+(function(){
+  const M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const data={
+    Revenue:{t:[80,80,90,90,100,100,100,110,110,120,120,120],a:[72,88,95,70,104,92,118,101,124,131,82,null],u:"₹ L",fmt:v=>"₹"+v+" L"},
+    Area:{t:[1500,1500,1700,1700,1900,1900,1900,2100,2100,2300,2300,2300],a:[1380,1640,1810,1300,1990,1720,2240,1930,2380,2510,1560,null],u:"sq ft",fmt:v=>v.toLocaleString("en-IN")+" sq ft"},
+    Units:{t:[1,1,2,2,2,2,2,2,2,2,2,2],a:[1,2,2,1,2,1,3,2,3,3,1,null],u:"units",fmt:v=>v+" units"}
+  };
+  let m="Revenue";
+  $("#tgtMetric").innerHTML=Object.keys(data).map(k=>`<button class="chip" type="button" data-m="${k}" aria-pressed="${k===m}" style="padding:6px 12px;font-size:13.5px">${k==="Area"?"Area (sq ft)":k}</button>`).join("");
+  function draw(){
+    const d=data[m], W=860,H=380,pl=64,pr=16,pt=16,pb=36, iw=W-pl-pr, ih=H-pt-pb;
+    const raw=Math.max(...d.t,...d.a.filter(v=>v!=null));
+    const step=raw<=5?1:Math.pow(10,Math.floor(Math.log10(raw)))*(raw/Math.pow(10,Math.floor(Math.log10(raw)))>5?2:1);
+    const mx=Math.ceil(raw/step)*step, y=v=>pt+ih-(v/mx)*ih, bw=iw/12;
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly target versus achieved, ${m}">`;
+    for(let v=0;v<=mx+1e-9;v+=step){s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-10}" y="${y(v)+4}" text-anchor="end">${v.toLocaleString("en-IN")}</text>`;}
+    M.forEach((mo,i)=>{const x=pl+i*bw;
+      s+=`<rect x="${x+bw*.14}" y="${y(d.t[i])}" width="${bw*.72}" height="${ih-(y(d.t[i])-pt)}" rx="5" fill="var(--panel-2)" stroke="var(--line-strong)"/>`;
+      if(d.a[i]!=null){const hit=d.a[i]>=d.t[i];s+=`<rect x="${x+bw*.28}" y="${y(d.a[i])}" width="${bw*.44}" height="${ih-(y(d.a[i])-pt)}" rx="4" fill="${hit?"var(--mint)":"var(--emerald)"}" opacity="${hit?1:.65}"><title>${mo}: ${d.fmt(d.a[i])} of ${d.fmt(d.t[i])}</title></rect>`;}
+      s+=`<text x="${x+bw/2}" y="${H-12}" text-anchor="middle">${mo}</text>`;});
+    s+=`<text x="${pl-10}" y="${pt-2}" text-anchor="end" style="font-size:11px">${d.u}</text></svg>`;
+    $("#tgtChart").innerHTML=s;
+    const ta=d.t.slice(0,11).reduce((a,b)=>a+b,0), aa=d.a.slice(0,11).reduce((a,b)=>a+(b||0),0);
+    $("#tgtPct").textContent=Math.round(aa/ta*100)+"%"; $("#tgtLbl").textContent="Of year-to-date target · "+d.fmt(aa)+" of "+d.fmt(ta);
+    $$("#tgtMetric .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
+  }
+  $("#tgtMetric").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){m=b.dataset.m;draw();}});
+  draw();
+})();
+
+/* incentives: default slab plan and release rule from the product */
+(function(){
+  const SL=[{a:"0–2,999 sq ft",lo:0,hi:2999,p:1},{a:"3,000–5,000",lo:3000,hi:5000,p:2},{a:"5,001–7,000",lo:5001,hi:7000,p:3},{a:"7,001+",lo:7001,hi:1e9,p:4}];
+  const RL=[{at:30,r:30,l:"30% paid"},{at:50,r:50,l:"50% paid"},{at:75,r:75,l:"75% paid"},{at:101,r:100,l:"At registry"}];
+  const rate=5500;
+  function draw(){const area=+$("#incArea").value, paid=+$("#incPaid").value;
+    const slab=SL.find(s=>area>=s.lo&&area<=s.hi)||SL[0];
+    const rev=area*rate, inc=rev*slab.p/100;
+    let rel=0; RL.forEach(r=>{if(paid>=r.at)rel=r.r;}); if(paid>=100)rel=75;
+    $("#incAreaV").textContent=area.toLocaleString("en-IN")+" sq ft · "+inrShort(rev)+" sales";
+    $("#incPaidV").textContent=paid+"%";
+    $("#slabs").innerHTML=SL.map(s=>`<div class="slab ${s===slab?"on":""}"><div class="p">${s.p}%</div><div class="a">${s.a}</div></div>`).join("");
+    $("#rel").innerHTML=RL.map(r=>`<div class="${rel>=r.r?"on":""}"><b>${r.r}%</b>${r.l}</div>`).join("");
+    $("#incNow").textContent=inr(inc*rel/100);
+    $("#incOf").textContent="of "+inr(inc)+" earned";}
+  ["incArea","incPaid"].forEach(i=>$("#"+i).addEventListener("input",draw)); draw();
+})();
+
+/* roles */
+(function(){
+  const R={
+    "Owner / Director":{s:"Whole company",sub:"Owner, Admin and Director see the full business.",w:[["Sales & revenue","This month and year to date, against last year"],["Area sold by project","Square feet moved per project"],["Sales trend & collections","Month by month, side by side"],["Top performers","Today, week, month or year"],["Leads by source","Which portal and ad is working"],["Celebrations & recent sales","Birthdays, anniversaries, latest bookings"]]},
+    "Team Leader":{s:"Their team",sub:"Everything about the people who report to them.",w:[["Team sales & revenue","Month and year to date"],["Team targets","Monthly target against achievement"],["Site visits","Visits, average per advisor, conversion %"],["Team leaderboard","Who's ahead this month"]]},
+    "Sales Executive":{s:"Their own work",sub:"Advisors see only their own leads and numbers.",w:[["My sales this month","With progress against target"],["Achievement %","Year to date"],["Incentives earned","Year to date"],["Units by project","What they've sold, where"]]},
+    "CRM Staff":{s:"Lead operations",sub:"For the team that handles enquiries and follow-ups.",w:[["Lead counts","Total, qualified, converted"],["Pending site visits","Waiting for approval"],["Sales trend & collections","Company view"],["Recent sales","Latest bookings"]]},
+    "Accountant":{s:"Money in",sub:"Built for the accounts desk.",w:[["Booked value","Total sale consideration"],["Collected & outstanding","With recovery %"],["Latest receipts","PDF and WhatsApp in one click"],["Quick actions","Record payment, export dues"]]},
+    "Receptionist":{s:"Front desk",sub:"A company-wide view for the front office.",w:[["Company KPIs","Sales this month and year"],["Leaderboards","Month and year to date"],["Latest updates","Company news"],["Celebrations","Who to wish today"]]},
+    "Driver":{s:"Today's trips",sub:"A simple phone screen for site-visit drivers.",w:[["Trips by date","Customer and pickup point"],["Start / end trip","Odometer readings"],["Tap to call","Reach the customer directly"],["Active trips","What's in progress now"]]}
+  };
+  let r="Owner / Director";
+  $("#roles").innerHTML=Object.keys(R).map(k=>`<button class="rolebtn" type="button" data-r="${k}" aria-pressed="${k===r}">${k}<small>${R[k].s}</small></button>`).join("");
+  function draw(){$$(".rolebtn").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===r));
+    $("#roleTitle").textContent=r+" dashboard"; $("#roleSub").textContent=R[r].sub;
+    $("#roleWidgets").innerHTML=R[r].w.map((w,i)=>`<div class="widget" style="animation-delay:${i*50}ms"><b>${w[0]}</b><span>${w[1]}</span></div>`).join("");}
+  $("#roles").addEventListener("click",e=>{const b=e.target.closest(".rolebtn");if(b){r=b.dataset.r;draw();}});
+  draw();
+})();
+
+/* permission matrix */
+(function(){
+  const mods=[["Dashboard",2],["CRM / Leads",2],["Site Visits",2],["Inventory / Projects",1],["Sales & Trends",1],["Accounts & Payments",0],["Incentives & Targets",0],["User Management",0]];
+  const lv=["No access","Read only","Full edit"];
+  const box=$("#matrix");
+  function draw(){box.innerHTML=`<div class="hd">Module</div>${lv.map(l=>`<div class="hd">${l}</div>`).join("")}`+mods.map((m,i)=>`<div>${m[0]}</div>${lv.map((l,j)=>`<div class="c"><button class="radio" type="button" role="radio" aria-label="${m[0]}: ${l}" aria-checked="${m[1]===j}" data-i="${i}" data-j="${j}"></button></div>`).join("")}`).join("");}
+  box.addEventListener("click",e=>{const b=e.target.closest(".radio");if(b){mods[+b.dataset.i][1]=+b.dataset.j;draw();}});
+  draw();
+  const V={None:"Sees no sales figures.",Self:"Sees only their own bookings.",Team:"Sees bookings by everyone who reports to them.",Overall:"Sees every booking in the company."};
+  let v="Team";
+  function dv(){$("#visRow").innerHTML=Object.keys(V).map(k=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===v}" style="padding:6px 12px;font-size:14px">${k}</button>`).join("");$("#visTxt").textContent=V[v];}
+  $("#visRow").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){v=b.dataset.v;dv();}});
+  dv();
+})();
+
+/* status board */
+(function(){
+  const B={
+    "Capture":[["Facebook & Instagram lead ads",1],["Google Ads lead forms",1],["Website, Google Forms & Sheets",1],["99acres, MagicBricks, Housing push",1],["Automatic WhatsApp welcome",1],["Auto-assign to least-busy advisor",1],["Excel import with duplicate check",1],["AiSensy, Interakt, DoubleTick",0],["Duplicate check on manual entry",0]],
+    "Nurture":[["Lead workspace, 9 stages, filters",1],["Follow-up timeline",1],["Auto Hot/Warm/Cold tagging",1],["Bulk reassign, status, project",1],["Phone-number masking",1],["Meta Conversions API",1],["Pipeline funnel & source report",1],["Site visit request & approval",1],["Driver trip start",1],["Sales playbook assistant",1],["Trip close-out & km report",0],["Google Ads offline conversions",0],["Lost-reason & call analytics",0],["Follow-up reminders",0],["AI-written follow-ups",0]],
+    "Close & collect":[["Projects & units, custom details",1],["Inventory Excel import",1],["Booking file & price breakdown",1],["Lead to booking, automatically",1],["Cancellation with reason",1],["Payments: 4 modes, 5 types",1],["Outstanding dues & reminders",1],["Branded receipts & ledgers",1],["Excel ledger & dues export",1],["Unit auto-booked on sale",0],["Project photo gallery",0],["Instalment schedules",0],["Demand letters",0],["Refund tracking",0]],
+    "Manage":[["Monthly targets & charts",1],["Incentive plans & records",1],["9 role dashboards",1],["Custom roles & permissions",1],["Users, departments, org chart",1],["Celebrations",1],["Mobile layout, dark mode, tour",1],["Free & Pro plan limits",1],["Report builder & CSV export",0],["Automatic incentive payouts",0],["Edit assigned targets",0],["Announcements from the app",0],["In-app notifications",0],["Self-serve signup & checkout",0],["Partner referral programme",0]]
+  };
+  let f="All";
+  const all=Object.values(B).flat();
+  $("#cntLive").textContent=all.filter(x=>x[1]).length; $("#cntNext").textContent=all.filter(x=>!x[1]).length;
+  $("#boardFilter").innerHTML=["All","Live","Coming next"].map(x=>`<button class="chip" type="button" data-f="${x}" aria-pressed="${x===f}" style="padding:6px 13px;font-size:14px">${x}</button>`).join("");
+  function draw(){$("#board").innerHTML=Object.entries(B).map(([k,items])=>`<div class="col"><h3>${k}</h3>${items.map(([n,l])=>`<div class="bi ${(f==="Live"&&!l)||(f==="Coming next"&&l)?"hide":""}"><span>${n}</span><span class="pill ${l?"live":"next"}">${l?"Live":"Next"}</span></div>`).join("")}</div>`).join("");
+    $$("#boardFilter .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===f));}
+  $("#boardFilter").addEventListener("click",e=>{const b=e.target.closest(".chip");if(b){f=b.dataset.f;draw();}});
+  draw();
+})();
+
+/* pricing */
+(function(){
+  const C=[["Monthly","₹1,500","Billed ₹1,500 every month"],["6 months","₹1,200","Billed ₹7,200 every 6 months · save 20%"],["Yearly","₹1,000","Billed ₹12,000 a year · save 33%"]];
+  let c=2;
+  function draw(){$("#cyc").innerHTML=C.map((x,i)=>`<button type="button" data-i="${i}" aria-pressed="${i===c}">${x[0]}</button>`).join("");$("#proPrice").textContent=C[c][1];$("#proBill").textContent=C[c][2];}
+  $("#cyc").addEventListener("click",e=>{const b=e.target.closest("button");if(b){c=+b.dataset.i;draw();}});
+  draw();
+})();
+
+/* boot */
+if(reading()) slides.forEach(s=>s.classList.add("active"));
+go(fromHash(),false); fit();
+addEventListener("resize",()=>{ if(reading()) slides.forEach(s=>s.classList.add("active")); else slides.forEach((s,i)=>s.classList.toggle("active",i===cur)); });
+})();
+</script>
