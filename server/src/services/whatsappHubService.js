@@ -1306,8 +1306,8 @@ COMPLETE REALSALEPRO PRODUCT & PRICING KNOWLEDGE BASE:
    - Use single asterisks for bold (*like this*). NEVER use double asterisks (**like this**).`;
 
   try {
-    // Cost-Optimized Context Window: take last 6 messages (3 turns) for maximum relevance & minimum token cost
-    const historyMessages = conversationHistory.slice(-6).map((m) => ({
+    // Complete Session Memory: Preserve full conversation context across the entire chat session
+    const historyMessages = conversationHistory.slice(-100).map((m) => ({
       role: m.sender_type === 'visitor' ? 'user' : 'assistant',
       content: m.body,
     }));
