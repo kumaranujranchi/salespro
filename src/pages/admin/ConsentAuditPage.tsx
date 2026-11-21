@@ -5,7 +5,6 @@ import {
   RefreshCw,
   Search,
   Filter,
-  Lock,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -137,17 +136,11 @@ export function ConsentAuditPage() {
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-5">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              DPDP Act (India) Consent Audit Ledger
-            </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>3-Year Statutory WORM Protected</span>
-            </span>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            Consent Audit Ledger
+          </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Verifiable, tamper-proof proof of consent logs mandated under Chapter III & Rule 3(2) of India's DPDP Act, 2023.
+            Audit logs of visitor and lead consent preferences recorded across landing pages.
           </p>
         </div>
 
@@ -170,30 +163,8 @@ export function ConsentAuditPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? 'Generating Report...' : 'Export Statutory CSV'}</span>
+            <span>{isExporting ? 'Generating Report...' : 'Export CSV'}</span>
           </button>
-        </div>
-      </div>
-
-      {/* 3-Year Retention Guarantee Notice */}
-      <div className="bg-emerald-50 dark:bg-emerald-950/50 border-2 border-emerald-300 dark:border-emerald-700/80 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 flex items-center justify-center text-emerald-800 dark:text-emerald-300 shrink-0 mt-0.5">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div className="text-xs sm:text-sm text-emerald-950 dark:text-emerald-100 leading-relaxed font-normal">
-            <span className="font-extrabold text-emerald-950 dark:text-emerald-100 text-sm sm:text-base block mb-1">
-              Immutable 3-Year Retention Guarantee (WORM Protection)
-            </span>
-            All consent records below are protected by an engine-level PostgreSQL database trigger preventing any{' '}
-            <code className="bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 font-mono font-bold px-1.5 py-0.5 rounded text-xs shadow-xs">DELETE</code> or{' '}
-            <code className="bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300 font-mono font-bold px-1.5 py-0.5 rounded text-xs shadow-xs">UPDATE</code>. Every row represents legally binding evidence including SHA-256 notice text fingerprint, timestamp, and anonymized IP.
-          </div>
-        </div>
-
-        <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-emerald-900/60 border-2 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 text-xs font-mono font-bold shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Zero Deletions Allowed</span>
         </div>
       </div>
 

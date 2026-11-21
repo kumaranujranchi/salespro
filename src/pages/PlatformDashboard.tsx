@@ -10,9 +10,7 @@ import {
   CheckCircle,
   Loader2,
   ShieldCheck,
-  Lock,
-  ArrowRight,
-  Database
+  ArrowRight
 } from 'lucide-react';
 
 interface Tenant {
@@ -119,36 +117,28 @@ export function PlatformDashboard() {
         </div>
       </div>
 
-      {/* DPDP Act (India) Compliance & 3-Year Retention Hub */}
+      {/* Cookie & Privacy Consent Overview */}
       <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 rounded-2xl p-6 shadow-md shadow-emerald-500/5 relative overflow-hidden">
         {/* Subtle decorative emerald accent glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 shadow-xs">
-                🇮🇳 DPDP Act, 2023 Statutory Compliance
-              </span>
-              <span className="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shadow-xs">
-                <Lock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 3-Year Immutable WORM
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Privacy &amp; Cookie Consent Audit Ledger
+          <div className="space-y-1.5">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Cookie &amp; Privacy Consent Logs
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Verifiable proof of consent records for CRM landing page visitors. Protected by engine-level database triggers that prevent accidental update or deletion.
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+              Visitor consent preferences recorded across landing pages and marketing channels.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0 relative z-10">
             <Link
               to="/platform/consent-audit"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/25 cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs sm:text-sm transition-all shadow-sm cursor-pointer"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>Open Consent Audit Ledger</span>
+              <span>View Consent Logs</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
