@@ -271,3 +271,109 @@ export async function withdrawAllConsent(language: ConsentLanguage = 'en'): Prom
     actionType: 'WITHDRAWN',
   });
 }
+
+/**
+ * Records explicit, verifiable consent proof for lead capture forms (Web Form, Template Download, Contact Us).
+ * Complies with DPDP Act, 2023 Section 5 (Notice) & Section 6 (Consent).
+ */
+export async function recordLeadFormConsent({
+  identifier,
+  name,
+  purpose = 'Real Estate Inquiry, CRM Walkthrough & Follow-up Communications',
+  noticeText = 'I consent to receiving property details and communications via WhatsApp/SMS/Call under DPDP Act, 2023.',
+  language = 'en',
+  leadId,
+}: {
+  identifier: string;
+  name?: string;
+  purpose?: string;
+  noticeText?: string;
+  language?: ConsentLanguage;
+  leadId?: string;
+}): Promise<{ success: boolean; consent_proof_id?: string; error?: string }> {
+  try {
+    const payload = {
+      identifier,
+      name,
+      purpose,
+      notice_text: noticeText,
+      language,
+      lead_id: leadId,
+      anonymous_id: getOrCreateAnonymousId(),
+    };
+
+    const res = await fetch('/api/v1/consent/lead-consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      // Fallback endpoint
+      const fb = await fetch('/api/consent/lead-consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await fb.json();
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.warn('[DPDP] Error dispatching lead consent proof:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Submits Data Subject Rights Request (DSR) under DPDP Act, 2023.
+ * Supports Section 12 (Right to Erasure) & Section 11 (Right to Access).
+ */
+export async function submitDSRRequest({
+  identifier,
+  requestType = 'erasure',
+  confirmation,
+  reason,
+}: {
+  identifier: string;
+  requestType: 'erasure' | 'access';
+  confirmation?: string;
+  reason?: string;
+}): Promise<any> {
+  const payload = {
+    identifier,
+    request_type: requestType,
+    confirmation,
+    reason,
+  };
+
+  const res = await fetch('/api/v1/consent/dsr-request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const fb = await fetch('/api/consent/dsr-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return await fb.json();
+  }
+
+  return await res.json();
+}
+
+/**
+ * Checks privacy and consent records for a given phone or email.
+ */
+export async function lookupDSRData(identifier: string): Promise<any> {
+  const query = encodeURIComponent(identifier);
+  const res = await fetch(`/api/v1/consent/dsr-lookup?identifier=${query}`);
+  if (!res.ok) {
+    const fb = await fetch(`/api/consent/dsr-lookup?identifier=${query}`);
+    return await fb.json();
+  }
+  return await res.json();
+}

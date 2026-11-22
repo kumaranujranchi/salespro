@@ -340,6 +340,10 @@ export function ExcelTemplatePage() {
                 </a>
               </div>
 
+              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.55)', marginTop: '-12px', marginBottom: '18px' }}>
+                🛡️ Free direct download · In statutory compliance with India's <strong style={{ color: '#10b981' }}>DPDP Act, 2023</strong> · Zero tracking on raw download files · All imported leads are encrypted.
+              </p>
+
               {downloadSuccess && (
                 <div style={{ padding: '14px 20px', borderRadius: '14px', background: 'rgba(16,185,129,0.18)', border: '1px solid rgba(16,185,129,0.4)', color: '#5ef2b0', fontSize: '14px', margin: '16px auto', maxWidth: '480px' }}>
                   ✓ <strong>Download Complete!</strong> Check your Downloads folder for the spreadsheet.

@@ -23,6 +23,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { SEOHead } from '../components/seo/SEOHead';
+import { recordLeadFormConsent } from '../lib/consentManager';
 
 export function RegisterCompanyPage() {
   const navigate = useNavigate();
@@ -56,6 +57,7 @@ export function RegisterCompanyPage() {
   });
 
   const [verificationStep, setVerificationStep] = useState(false);
+  const [agreedConsent, setAgreedConsent] = useState(false);
   const [whatsappOtp, setWhatsappOtp] = useState('');
   const [emailOtp, setEmailOtp] = useState('');
   const [generatedWhatsappOtp, setGeneratedWhatsappOtp] = useState<string | null>(null);
@@ -157,6 +159,11 @@ export function RegisterCompanyPage() {
       return;
     }
 
+    if (!agreedConsent) {
+      setError("Please check the consent box to agree to DPDP Act privacy terms and communications.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -255,6 +262,15 @@ export function RegisterCompanyPage() {
 
       // Sign In locally
       await signIn(formData.email, formData.password);
+
+      // DPDP Act, 2023: Record immutable consent proof for registered tenant
+      recordLeadFormConsent({
+        identifier: formData.phone,
+        name: formData.fullName,
+        purpose: 'Tenant CRM Registration & Account Communications',
+        noticeText:
+          'I consent to the processing of my contact and business data under the DPDP Act, 2023, and agree to receiving account updates, CRM alerts, and communications via WhatsApp, SMS, and Email from RealSalePro.',
+      }).catch((cErr) => console.warn('[DPDP] Consent log warning:', cErr));
 
       if (planName && planName !== 'Free' && planName !== 'Free Forever' && planAmount && parseInt(planAmount) > 0) {
         const referralParam = formData.referralCode ? `&referralCode=${encodeURIComponent(formData.referralCode)}` : '';
@@ -526,6 +542,24 @@ export function RegisterCompanyPage() {
                     <span>{error}</span>
                   </div>
                 )}
+
+                {/* DPDP Act 2023 Statutory Consent Checkbox */}
+                <div className="p-3 bg-[#0a2318]/80 border border-emerald-500/20 rounded-xl space-y-2">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      id="dpdp-reg-consent"
+                      type="checkbox"
+                      checked={agreedConsent}
+                      onChange={(e) => setAgreedConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-emerald-500/40 bg-[#071d14] text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 cursor-pointer shrink-0"
+                    />
+                    <span className="text-xs text-slate-300 leading-snug">
+                      I consent to the processing of my contact & company data under the{' '}
+                      <strong className="text-emerald-300">DPDP Act, 2023</strong>, and agree to receiving account updates,
+                      CRM alerts, and communications via WhatsApp, SMS, and Email from RealSalePro.
+                    </span>
+                  </label>
+                </div>
 
                 {/* Primary Action Button (Continue) - High Contrast & Glowing */}
                 <div className="pt-2">

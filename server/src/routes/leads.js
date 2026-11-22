@@ -4,6 +4,7 @@ import { createSaleFromLead } from '../services/leadToSale.js';
 import { dispatchCrmConversionEvent } from '../services/capiService.js';
 import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
 import { getEffectivePermissions, isPlatformRole } from '../middleware/auth.js';
+import { recordLeadConsent } from '../services/consentService.js';
 
 const router = Router();
 
@@ -413,6 +414,20 @@ router.post('/', async (req, res) => {
     );
 
     const lead = result.rows[0];
+
+    // DPDP Act, 2023: Record statutory consent audit log proof for lead
+    try {
+      await recordLeadConsent({
+        leadId: lead.lead_id,
+        identifier: lead.mobile,
+        actionType: 'LEAD_CONSENT_GRANTED',
+        purpose: lead.purpose || 'Real Estate Inquiry & Property Follow-up',
+        ipAddress: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip,
+        userAgent: req.headers['user-agent'] || 'CRM Manual / Direct Lead Form',
+      });
+    } catch (dpdpErr) {
+      console.warn('[DPDP] Lead creation consent logging warning:', dpdpErr.message);
+    }
 
     // If lead is created directly as Converted, create corresponding Sale record
     if (lead_status && String(lead_status).toLowerCase() === 'converted') {

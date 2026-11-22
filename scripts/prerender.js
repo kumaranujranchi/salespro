@@ -992,6 +992,65 @@ const routes = [
     }
   },
 
+  // --- DPDP Act Data Erasure & Privacy Rights Portal ---
+  {
+    path: '/data-deletion',
+    title: 'DPDP Privacy Rights & Data Erasure Portal | RealSalePro',
+    description: 'Exercise statutory privacy rights under India\'s DPDP Act, 2023. Self-serve Data Principal Right to Erasure (Section 12) and Right to Access (Section 11).',
+    canonical: 'https://realsalepro.com/data-deletion',
+    noindex: false,
+    content: `
+      <div style="max-width:960px;margin:0 auto;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1e293b;background:#ffffff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.05);line-height:1.7;">
+        <nav style="margin-bottom:24px;"><a href="/" style="color:#059669;text-decoration:none;font-weight:600;">&larr; Back to RealSalePro Home</a></nav>
+        <span style="display:inline-block;padding:4px 12px;border-radius:9999px;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.2);margin-bottom:12px;">DPDP Act (India) Statutory Rights</span>
+        <h1 style="font-size:36px;font-weight:800;color:#0a1c37;margin:0 0 8px 0;">Privacy Rights &amp; Data Erasure Portal</h1>
+        <p style="color:#64748b;font-size:14px;margin-bottom:32px;">Statutory Reference: Digital Personal Data Protection Act, 2023 (Section 11 &amp; Section 12)</p>
+
+        <section style="margin-bottom:28px;">
+          <p>Under India's <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong>, every homebuyer and prospective customer (Data Principal) possesses non-negotiable statutory rights over their personal information.</p>
+        </section>
+
+        <section style="margin-bottom:28px;">
+          <h2 style="font-size:20px;font-weight:700;color:#0a1c37;margin:0 0 12px 0;">1. Right to Erasure &amp; Consent Withdrawal (Section 12 &amp; Section 6(4))</h2>
+          <p>You may demand the immediate erasure of your personal data from RealSalePro's databases and active marketing campaigns at any time. When you submit an erasure request:</p>
+          <ul style="padding-left:24px;color:#334155;">
+            <li>Your mobile number is immediately masked and anonymized across lead records.</li>
+            <li>All automated WhatsApp, SMS, and email follow-up communications cease instantly.</li>
+            <li>A permanent, cryptographically verifiable proof of erasure is written to our 3-year WORM compliance ledger.</li>
+          </ul>
+        </section>
+
+        <section style="margin-bottom:28px;">
+          <h2 style="font-size:20px;font-weight:700;color:#0a1c37;margin:0 0 12px 0;">2. WhatsApp Self-Service Opt-Out</h2>
+          <p>For zero-friction privacy, you can withdraw consent simply by replying <code>STOP</code>, <code>UNSUBSCRIBE</code>, or <code>DELETE MY DATA</code> to any WhatsApp message sent from RealSalePro or our client developers.</p>
+        </section>
+
+        <section style="margin-bottom:28px;">
+          <h2 style="font-size:20px;font-weight:700;color:#0a1c37;margin:0 0 12px 0;">3. Data Protection &amp; Grievance Redressal Officer</h2>
+          <p>In compliance with Rule 3(2) of the DPDP Rules, 2026, you may reach our designated Data Protection Officer directly:</p>
+          <ul style="padding-left:24px;color:#334155;">
+            <li><strong>Officer Name:</strong> Anuj Kumar Singh</li>
+            <li><strong>Email Desk:</strong> <a href="mailto:grievance@realsalepro.com" style="color:#059669;">grievance@realsalepro.com</a></li>
+            <li><strong>Resolution Turnaround SLA:</strong> Within 72 working hours</li>
+            <li><strong>Appellate Authority:</strong> Data Protection Board of India (DPDP Act Section 13(3))</li>
+          </ul>
+        </section>
+      </div>
+    `,
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://realsalepro.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Data Erasure Portal", "item": "https://realsalepro.com/data-deletion" }
+          ]
+        }
+      ]
+    }
+  },
+
   // --- Terms of Service ---
   {
     path: '/terms',

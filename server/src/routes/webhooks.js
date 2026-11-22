@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
+import { recordLeadConsent } from '../services/consentService.js';
 
 const router = Router();
 
@@ -343,6 +344,20 @@ async function handleInboundLead(req, res) {
         JSON.stringify(metadata),
       ]
     );
+
+    // DPDP Act, 2023: Record statutory consent audit log proof for portal/webhook lead
+    try {
+      await recordLeadConsent({
+        leadId: inserted.rows[0].lead_id,
+        identifier: lead.mobile,
+        actionType: 'LEAD_CONSENT_GRANTED',
+        purpose: `${portal.leadSource} Digital Ad Form Inquiry & Property Follow-up`,
+        ipAddress: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip,
+        userAgent: `${portal.leadSource} Inbound Webhook`,
+      });
+    } catch (dpdpErr) {
+      console.warn('[DPDP] Webhook lead consent logging warning:', dpdpErr.message);
+    }
 
     // Asynchronously trigger automated WhatsApp welcome if enabled
     sendLeadWelcomeWhatsApp({

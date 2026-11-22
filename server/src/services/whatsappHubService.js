@@ -5,6 +5,7 @@ import {
   analyzeLeadAuthenticity,
   getLearnedGuidanceForPrompt,
 } from './leadIntelligenceService.js';
+import { recordLeadConsent, processDataErasureRequest } from './consentService.js';
 
 let schemaInitialized = false;
 
@@ -1652,6 +1653,19 @@ export async function processIncomingWebhook(body) {
                   JSON.stringify({ whatsapp_conversation_id: conversation.id, captured_via: 'meta_cloud_whatsapp' })
                 ]);
                 console.log(`[WhatsApp Lead Auto-Capture] Created new CRM lead for tenant ${matchedTenantId}: ${last10Digits}`);
+
+                // DPDP Act, 2023: Record statutory consent audit log for inbound WhatsApp lead
+                try {
+                  await recordLeadConsent({
+                    leadId: leadCode,
+                    identifier: fromPhone,
+                    actionType: 'LEAD_CONSENT_GRANTED',
+                    purpose: 'Inbound WhatsApp Inquiry & Sales Follow-up',
+                    userAgent: 'Meta WhatsApp Cloud API',
+                  });
+                } catch (dpdpErr) {
+                  console.warn('[DPDP] WhatsApp lead consent log warning:', dpdpErr.message);
+                }
               }
             } catch (leadSyncErr) {
               console.warn('[WhatsApp Lead Auto-Capture] Error syncing lead:', leadSyncErr.message);
@@ -1692,8 +1706,46 @@ export async function processIncomingWebhook(body) {
           const effectivePersonalName = cleanStated || cleanCust || null;
           const currentCompanyName = conversation.metadata?.company_name || extractCompanyName(conversation.customer_name);
 
-          // Check if user requested agent handover explicitly
+          // Check for Data Principal Right to Erasure / Opt-Out (DPDP Act, 2023 Sec 6(4) & Sec 12)
           const normalized = String(messageText || '').trim().toLowerCase();
+          const optOutKeywords = [
+            'stop',
+            'unsubscribe',
+            'delete my data',
+            'erase my data',
+            'remove my data',
+            'opt out',
+            'optout',
+            'data hatao',
+            'mera data delete karo',
+            'band karo',
+            "don't message me",
+            'dont message me',
+            'remove me',
+          ];
+          const isOptOutRequest = optOutKeywords.some(
+            (kw) => normalized === kw || normalized.startsWith(`${kw} `) || normalized.includes('delete my data')
+          );
+
+          if (isOptOutRequest) {
+            console.log(`🛡️ [DPDP Erasure Request] Received opt-out/erasure request from ${fromPhone}`);
+            try {
+              await processDataErasureRequest({
+                identifier: fromPhone,
+                reason: `WhatsApp incoming opt-out request ("${messageText}")`,
+                userAgent: 'WhatsApp Cloud API Webhook',
+              });
+            } catch (eraseErr) {
+              console.warn('[DPDP Erasure] Warning processing WhatsApp erasure request:', eraseErr.message);
+            }
+
+            const erasureReply = `Namaste! 🙏 As per Section 6(4) & Section 12 of the Digital Personal Data Protection (DPDP) Act, 2023, your consent has been withdrawn and your personal contact information has been erased/anonymized from our active communications list.\n\nYou will not receive any further automated messages or calls from RealSalePro. If you ever wish to reconnect in the future, you are welcome to visit https://realsalepro.com anytime. Thank you!`;
+
+            await sendBotReply(conversation, erasureReply);
+            continue;
+          }
+
+          // Check if user requested agent handover explicitly
           const isAgentRequest =
             normalized === '5' ||
             normalized.includes('agent') ||

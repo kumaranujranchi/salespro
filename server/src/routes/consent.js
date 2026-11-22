@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { recordConsent, getLatestConsent, getConsentAuditLogs } from '../services/consentService.js';
+import {
+  recordConsent,
+  getLatestConsent,
+  getConsentAuditLogs,
+  recordLeadConsent,
+  processDataErasureRequest,
+  lookupDataPrincipalData,
+} from '../services/consentService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { query } from '../db/index.js';
 
@@ -300,6 +307,130 @@ router.post('/delete-account', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Account erasure error:', err);
     return res.status(500).json({ error: err.message || 'Failed to erase account data' });
+  }
+});
+
+/**
+ * POST /api/v1/consent/lead-consent & /api/consent/lead-consent
+ * Records explicit, verifiable consent proof for lead capture forms.
+ * Complies with DPDP Act, 2023 Section 5 (Notice) & Section 6 (Consent).
+ */
+router.post('/lead-consent', async (req, res) => {
+  try {
+    const { identifier, name, purpose, notice_text, language, lead_id } = req.body || {};
+
+    if (!identifier) {
+      return res.status(400).json({ error: 'Identifier (mobile or email) is required for lead consent tracking' });
+    }
+
+    const clientIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '0.0.0.0';
+
+    const userAgent = req.headers['user-agent'] || 'Web Lead Form';
+
+    const log = await recordLeadConsent({
+      leadId: lead_id || null,
+      identifier,
+      actionType: 'LEAD_CONSENT_GRANTED',
+      purpose: purpose || 'Real Estate Inquiry, CRM Walkthrough & Product Follow-up',
+      language: language === 'hi' ? 'hi' : 'en',
+      noticeText:
+        notice_text ||
+        'I consent to receiving property details and communications via WhatsApp/SMS/Call under DPDP Act, 2023.',
+      ipAddress: clientIp,
+      userAgent,
+      anonymousId: req.cookies?.dpdp_consent_id || null,
+    });
+
+    return res.status(201).json({
+      success: true,
+      consent_proof_id: log.id,
+      identifier: log.identifier,
+      purpose: log.purpose,
+      recorded_at: log.created_at,
+    });
+  } catch (err) {
+    console.error('Lead consent logging error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to record lead consent proof' });
+  }
+});
+
+/**
+ * POST /api/v1/consent/dsr-request & /api/consent/dsr-request
+ * Public Data Subject Request (DSR) Portal Endpoint.
+ * Supports DPDP Section 12 (Right to Erasure) & Section 11 (Right to Access).
+ */
+router.post('/dsr-request', async (req, res) => {
+  try {
+    const { identifier, request_type = 'erasure', confirmation, reason } = req.body || {};
+
+    if (!identifier) {
+      return res.status(400).json({ error: 'Mobile number or email is required' });
+    }
+
+    const clientIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '0.0.0.0';
+
+    const userAgent = req.headers['user-agent'] || 'DSR Web Portal';
+
+    if (request_type === 'erasure') {
+      if (confirmation !== 'DELETE') {
+        return res.status(400).json({
+          error: 'Please type DELETE in capital letters to confirm permanent data erasure.',
+        });
+      }
+
+      const result = await processDataErasureRequest({
+        identifier,
+        reason: reason || 'Data Principal submitted self-service erasure request via DSR Portal',
+        ipAddress: clientIp,
+        userAgent,
+      });
+
+      return res.json({
+        success: true,
+        message:
+          'Your personal data has been erased and your consent withdrawn in compliance with Section 12 of the DPDP Act, 2023.',
+        ...result,
+      });
+    }
+
+    if (request_type === 'access') {
+      const data = await lookupDataPrincipalData({ identifier });
+      return res.json({
+        success: true,
+        data,
+      });
+    }
+
+    return res.status(400).json({ error: `Unknown request_type: ${request_type}. Use 'erasure' or 'access'.` });
+  } catch (err) {
+    console.error('DSR Request Error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to process privacy request' });
+  }
+});
+
+/**
+ * GET /api/v1/consent/dsr-lookup
+ * Looks up active consent status by phone or email.
+ */
+router.get('/dsr-lookup', async (req, res) => {
+  try {
+    const { identifier } = req.query || {};
+    if (!identifier) {
+      return res.status(400).json({ error: 'Identifier is required' });
+    }
+
+    const data = await lookupDataPrincipalData({ identifier: String(identifier) });
+    return res.json({ success: true, data });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 

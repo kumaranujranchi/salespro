@@ -1303,6 +1303,7 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
         <p>© <span id="year">2026</span> RealSalePro · Powered by Synergy Brand Architect · AWS Mumbai Cloud Infrastructure · In Statutory Compliance with Digital Personal Data Protection (DPDP) Act, 2023 &amp; IT Act, 2000.</p>
         <div class="footer__legal">
           <a href="/privacy">Privacy Policy</a>
+          <a href="/data-deletion">Data Erasure (DPDP)</a>
           <a href="/terms">Terms of Service</a>
           <a href="/refund-policy">Refund Policy</a>
           <a href="/shipping-policy">Shipping Policy</a>

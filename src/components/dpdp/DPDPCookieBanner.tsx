@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
   ChevronDown,
@@ -220,6 +221,14 @@ export function DPDPCookieBanner({ forceOpen = false, onClose }: DPDPCookieBanne
                 {isHindi ? 'शिकायत निवारण अधिकारी संपर्क (Grievance Officer)' : 'Grievance Officer Contact'}
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
               </button>
+
+              <Link
+                to="/data-deletion"
+                className="underline underline-offset-4 hover:text-emerald-300 text-emerald-400 inline-flex items-center gap-1 cursor-pointer"
+              >
+                {isHindi ? 'डेटा मिटाएं (Data Erasure)' : 'Data Erasure (DPDP Sec 12)'}
+                <ExternalLink className="w-3 h-3" />
+              </Link>
 
               <button
                 type="button"

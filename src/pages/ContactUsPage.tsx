@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, ArrowLeft, MessageSquare, Clock, Send, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowLeft, MessageSquare, Clock, Send, ShieldCheck, CheckCircle2, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../components/seo/SEOHead';
+import { recordLeadFormConsent } from '../lib/consentManager';
 
 const contactSchema = {
   "@context": "https://schema.org",
@@ -54,11 +55,28 @@ export function ContactUsPage() {
     company: '',
     message: ''
   });
+  const [agreedConsent, setAgreedConsent] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) return;
+    if (!agreedConsent) {
+      setConsentError(true);
+      return;
+    }
+    setConsentError(false);
+
+    // Record immutable lead consent proof under DPDP Act 2023
+    recordLeadFormConsent({
+      identifier: formData.phone,
+      name: formData.name,
+      purpose: 'Demo Request & WhatsApp Specialist Walkthrough',
+      noticeText:
+        'I consent to receiving a product walkthrough and follow-up communications on WhatsApp/Call from RealSalePro in compliance with DPDP Act, 2023.',
+    }).catch((err) => console.warn('[DPDP] Consent log warning:', err));
+
     const text = `Hi RealSalePro Team, my name is ${formData.name} from ${formData.company || 'Real Estate Company'}. Phone: ${formData.phone}. Query: ${formData.message || 'I would like a product demo and onboarding walkthrough.'}`;
     window.open(`https://wa.me/917079737773?text=${encodeURIComponent(text)}`, '_blank');
     setSubmitted(true);
@@ -249,9 +267,35 @@ export function ContactUsPage() {
                       />
                     </div>
 
+                    {/* DPDP Act 2023 Consent Checkbox */}
+                    <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl space-y-1.5">
+                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                        <input
+                          id="dpdp-contact-consent"
+                          type="checkbox"
+                          checked={agreedConsent}
+                          onChange={(e) => {
+                            setAgreedConsent(e.target.checked);
+                            if (e.target.checked) setConsentError(false);
+                          }}
+                          className="mt-0.5 h-4 w-4 rounded border-emerald-500/40 bg-black/40 text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 cursor-pointer shrink-0"
+                        />
+                        <span className="text-xs text-emerald-100/80 leading-snug">
+                          I consent to receiving property CRM walkthroughs and follow-up communications on WhatsApp/Call in accordance with the{' '}
+                          <Link to="/privacy" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">Privacy Policy</Link>{' '}
+                          and <strong className="text-emerald-300">DPDP Act, 2023</strong>.
+                        </span>
+                      </label>
+                      {consentError && (
+                        <p className="text-[11px] text-red-400 pl-6">
+                          * Please check the consent box to proceed.
+                        </p>
+                      )}
+                    </div>
+
                     <button
                       type="submit"
-                      className="w-full py-3 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Send className="w-4 h-4" /> Connect with Specialist on WhatsApp
                     </button>
