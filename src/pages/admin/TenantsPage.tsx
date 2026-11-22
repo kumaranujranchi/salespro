@@ -1389,170 +1389,185 @@ export function TenantsPage() {
 
             {/* Desktop View - Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-left border-collapse table-auto">
                 <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company Name</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact Details</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Usage</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Login</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Trial Expiry</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Billing</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Joined</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Company</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contact</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plan &amp; Billing</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Usage</th>
+                    <th className="px-3.5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Activity</th>
+                    <th className="px-3.5 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky right-0 z-10 bg-slate-50 dark:bg-slate-900 shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.06)]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                   {tenantsData === undefined ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                         Loading tenants...
                       </td>
                     </tr>
                   ) : filteredTenants.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                         No tenants found matching your filter.
                       </td>
                     </tr>
                   ) : (
-                    filteredTenants.map((tenant: any) => (
-                      <tr key={tenant._id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors ${tenant.is_active === false ? 'opacity-60 bg-slate-50' : ''}`}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm mr-3 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
-                              {tenant.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-slate-900 dark:text-white">
-                                {tenant.name}
-                                {tenant.is_active === false && <span className="ml-2 text-xs text-red-500 font-bold">(SUSPENDED)</span>}
+                    filteredTenants.map((tenant: any) => {
+                      const daysLeft = calculateTrialDaysLeft(tenant);
+                      const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
+                      const isExpired = daysLeft <= 0;
+
+                      return (
+                        <tr key={tenant._id} className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group ${tenant.is_active === false ? 'opacity-60 bg-slate-50/50' : ''}`}>
+                          {/* 1. Company Name & Slug */}
+                          <td className="px-3.5 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 ${tenant.is_active === false ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'}`}>
+                                {tenant.name.charAt(0)}
                               </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">{tenant.slug}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1">
-                            {tenant.admin_name && (
-                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                <User className="h-3 w-3 text-indigo-500 shrink-0" />
-                                <span>{tenant.admin_name}</span>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-slate-900 dark:text-white truncate" title={tenant.name}>
+                                  {tenant.name}
+                                </div>
+                                <div className="text-[11px] text-slate-400 font-mono truncate" title={tenant.slug}>
+                                  {tenant.slug}
+                                </div>
                               </div>
-                            )}
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                              <Mail className="h-3 w-3 shrink-0" />
-                              <span>{tenant.contact_email || 'No email'}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                              <Phone className="h-3 w-3 shrink-0" />
-                              <span>{tenant.contact_phone || 'No phone'}</span>
+                          </td>
+
+                          {/* 2. Contact Details */}
+                          <td className="px-3.5 py-3">
+                            <div className="flex flex-col gap-0.5 text-xs">
+                              {tenant.admin_name && (
+                                <div className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200 truncate">
+                                  <User className="h-3 w-3 text-indigo-500 shrink-0" />
+                                  <span className="truncate">{tenant.admin_name}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 truncate" title={tenant.contact_email}>
+                                <Mail className="h-3 w-3 shrink-0 text-slate-400" />
+                                <span className="truncate">{tenant.contact_email || 'No email'}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                <Phone className="h-3 w-3 shrink-0 text-slate-400" />
+                                <span>{tenant.contact_phone || 'No phone'}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                              ${tenant.deactivation_reason === 'inactive_30_days'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 font-bold'
-                                : tenant.is_active === false
-                                ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                                : tenant.subscription_status === 'active'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}
-                            `}>
-                              {tenant.deactivation_reason === 'inactive_30_days' ? 'Inactive (30d)' : (tenant.is_active === false ? 'Suspended' : tenant.subscription_status)}
-                            </span>
-                            {(tenant.inactivity_warning_count || 0) > 0 && tenant.is_active !== false && (
-                              <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                <Clock className="w-2.5 h-2.5 inline" /> Warning {tenant.inactivity_warning_count}/3
+                          </td>
+
+                          {/* 3. Status */}
+                          <td className="px-3.5 py-3 whitespace-nowrap">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize
+                                ${tenant.deactivation_reason === 'inactive_30_days'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 font-bold'
+                                  : tenant.is_active === false
+                                  ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                  : tenant.subscription_status === 'active'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40'}
+                              `}>
+                                {tenant.deactivation_reason === 'inactive_30_days' ? 'Inactive (30d)' : (tenant.is_active === false ? 'Suspended' : tenant.subscription_status)}
                               </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize font-medium">
-                          <div className="flex flex-col">
-                            <span>{tenant.plan_tier || 'free'}</span>
-                            {isUpgradeCandidate(tenant) && (
-                              <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 w-fit animate-pulse" title="High usage on Free plan - Pitch Pro Upgrade!">
-                                🔥 Upgrade Target
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300">
-                              <Users className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                              {(tenant.inactivity_warning_count || 0) > 0 && tenant.is_active !== false && (
+                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                  <Clock className="w-2.5 h-2.5 inline" /> Warn {tenant.inactivity_warning_count}/3
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* 4. Plan & Billing */}
+                          <td className="px-3.5 py-3 whitespace-nowrap text-xs">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-900 dark:text-white capitalize">
+                                  {tenant.plan_tier || 'Free'}
+                                </span>
+                                <span className="text-[11px] text-slate-400 capitalize">
+                                  · {tenant.billing_cycle || 'Monthly'}
+                                </span>
+                              </div>
+                              {tenant.trial_ends_at && (
+                                <div className="text-[10px]">
+                                  {isExpired ? (
+                                    <span className="text-red-600 font-bold">Trial Ended</span>
+                                  ) : isExpiringSoon ? (
+                                    <span className="text-amber-600 font-semibold">{daysLeft}d trial left</span>
+                                  ) : (
+                                    <span className="text-slate-400">Trial: {formatDate(tenant.trial_ends_at)}</span>
+                                  )}
+                                </div>
+                              )}
+                              {isUpgradeCandidate(tenant) && (
+                                <span className="inline-flex items-center gap-0.5 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 w-fit animate-pulse" title="High usage on Free plan - Pitch Pro Upgrade!">
+                                  🔥 Pro Target
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        {/* 5. Usage Stats */}
+                        <td className="px-3.5 py-3 whitespace-nowrap text-xs">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                              <Users className="h-3 w-3 text-indigo-500 shrink-0" />
                               <span><strong>{tenant.stats?.activeUsers || 0}</strong> users</span>
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-300">
-                              <Building2 className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                            <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                              <Building2 className="h-3 w-3 text-blue-500 shrink-0" />
                               <span><strong>{tenant.stats?.leadsCount || 0}</strong> leads</span>
                             </div>
                             {tenant.stats?.salesCount > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                <TrendingUp className="h-3 w-3 text-emerald-500 shrink-0" />
                                 <span><strong>{tenant.stats.salesCount}</strong> sales</span>
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
-                          <div className="flex flex-col">
+
+                        {/* 6. Activity & Joined */}
+                        <td className="px-3.5 py-3 whitespace-nowrap text-xs">
+                          <div className="flex flex-col gap-0.5">
                             <span className="font-semibold text-slate-900 dark:text-white">
                               {formatDate(tenant.last_login_at || tenant._creationTime || tenant.created_at)}
                             </span>
                             <span className="text-[11px] text-slate-400">
                               {formatRelativeTime(tenant.last_login_at || tenant._creationTime || tenant.created_at)}
                             </span>
+                            <span className="text-[10px] text-slate-400">
+                              Joined {formatDate(tenant._creationTime || tenant.created_at)}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {(() => {
-                            const daysLeft = calculateTrialDaysLeft(tenant);
-                            const isExpiringSoon = daysLeft <= 7 && daysLeft > 0;
-                            const isExpired = daysLeft <= 0;
-                            return tenant.trial_ends_at ? (
-                              <div className="flex flex-col">
-                                <span className={`${isExpired ? 'text-red-600 font-bold' : isExpiringSoon ? 'text-amber-600 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
-                                  {formatDate(tenant.trial_ends_at)}
-                                </span>
-                                {isExpired && <span className="text-xs text-red-500">Trial Ended</span>}
-                                {isExpiringSoon && !isExpired && <span className="text-xs text-amber-500">{daysLeft} days left</span>}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">N/A</span>
-                            );
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 capitalize">
-                          {tenant.billing_cycle || 'Monthly'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                          {formatDate(tenant._creationTime || tenant.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleSendReminder(tenant)}
-                            className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 mr-4"
-                            title="Send Expiry Reminder"
-                          >
-                            <Bell className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => setSelectedTenant(tenant)}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-4"
-                          >
-                            Manage
-                          </button>
+
+                        {/* 7. Actions (Sticky Right to prevent cut off!) */}
+                        <td className="px-3.5 py-3 whitespace-nowrap text-right sticky right-0 z-10 bg-white dark:bg-surface-dark group-hover:bg-slate-50 dark:group-hover:bg-white/5 transition-colors shadow-[-8px_0_12px_-4px_rgba(0,0,0,0.06)]">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleSendReminder(tenant)}
+                              className="p-1.5 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-lg transition-colors cursor-pointer"
+                              title="Send Expiry Reminder"
+                            >
+                              <Bell className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setSelectedTenant(tenant)}
+                              className="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/50 font-bold rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors text-xs shadow-sm cursor-pointer"
+                            >
+                              Manage
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
+                    );
+                  })
+                )}
+              </tbody>
               </table>
             </div>
           </div>

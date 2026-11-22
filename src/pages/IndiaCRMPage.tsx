@@ -395,10 +395,11 @@ export function IndiaCRMPage() {
             <p>© {new Date().getFullYear()} RealSalePro. All rights reserved.</p>
             <div className="footer__legal">
               <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/data-deletion">Data Erasure (DPDP)</Link>
               <Link to="/terms">Terms of Service</Link>
               <Link to="/refund-policy">Refund Policy</Link>
               <Link to="/shipping-policy">Shipping Policy</Link>
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+              <Link to="/sitemap">Site Map</Link>
             </div>
           </div>
         </div>

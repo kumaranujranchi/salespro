@@ -1308,7 +1308,6 @@ export const landingHtml = `  <!-- ============ ICON SPRITE ============ -->
           <a href="/refund-policy">Refund Policy</a>
           <a href="/shipping-policy">Shipping Policy</a>
           <a href="/sitemap">Site Map</a>
-          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">XML Sitemap</a>
         </div>
       </div>
     </div>

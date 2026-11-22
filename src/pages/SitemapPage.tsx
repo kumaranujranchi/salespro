@@ -150,6 +150,11 @@ const sitemapData: SitemapSection[] = [
         description: 'Our commitment to data privacy, AES-256 encryption, and zero third-party data selling.'
       },
       {
+        title: 'Data Erasure Request (DPDP Act)',
+        path: '/data-deletion',
+        description: 'Exercise statutory right to data erasure, consent withdrawal, and grievance redressal under DPDP Act, 2023.'
+      },
+      {
         title: 'Terms of Service',
         path: '/terms',
         description: 'Account terms, usage guidelines, and service level agreements.'
@@ -240,11 +245,10 @@ export function SitemapPage() {
           </Link>
 
           <nav className="nav__links" aria-label="Primary">
-            <Link to="/free-real-estate-crm">Free Plan</Link>
-            <Link to="/crm-for-real-estate-brokers">For Brokers</Link>
-            <Link to="/real-estate-crm-india">India Edition</Link>
-            <Link to="/features/lead-management">Lead Management</Link>
+            <a href="/#features">Features</a>
             <Link to="/pricing">Pricing</Link>
+            <Link to="/blog">Blog</Link>
+            <a href="/#faq">FAQ</a>
           </nav>
 
           <div className="nav__actions">
@@ -259,11 +263,10 @@ export function SitemapPage() {
         </div>
 
         <div className="nav__mobile" id="mobileMenu" hidden>
-          <Link to="/free-real-estate-crm">Free CRM (1,000 Leads)</Link>
-          <Link to="/crm-for-real-estate-brokers">For Brokers</Link>
-          <Link to="/real-estate-crm-india">India Edition</Link>
-          <Link to="/features/lead-management">Lead Management</Link>
+          <a href="/#features">Features</a>
           <Link to="/pricing">Pricing</Link>
+          <Link to="/blog">Blog</Link>
+          <a href="/#faq">FAQ</a>
           <Link to="/login">Log in</Link>
           <Link className="btn btn--primary" to="/register">Start free <svg className="icon"><use href="#i-arrow"/></svg></Link>
         </div>
@@ -411,12 +414,16 @@ export function SitemapPage() {
 
             <div className="footer__col">
               <h3>Platform</h3>
-              <Link to="/sitemap" style={{ color: 'var(--mint)', fontWeight: 600 }}>Sitemap Hub</Link>
-              <Link to="/free-real-estate-crm">Free Real Estate CRM</Link>
+              <Link to="/free-real-estate-crm" style={{ color: 'var(--mint)', fontWeight: 600 }}>Free Real Estate CRM</Link>
               <Link to="/crm-for-real-estate-brokers">CRM for Brokers</Link>
               <Link to="/real-estate-crm-india">India Real Estate CRM</Link>
               <Link to="/features/lead-management">Lead Management</Link>
               <Link to="/templates/real-estate-crm-excel-template">Free Excel Template</Link>
+              <a href="/#features">Features</a>
+              <a href="/#product">Product tour</a>
+              <a href="/#integrations">Integrations</a>
+              <Link to="/pricing">Pricing</Link>
+              <a href="/#security">Security</a>
             </div>
 
             <div className="footer__col">
@@ -431,9 +438,11 @@ export function SitemapPage() {
             <div className="footer__col">
               <h3>Company</h3>
               <a href="/#stories">About us</a>
+              <Link to="/blog/dpdp-act-real-estate-data-fiduciary-vs-processor">DPDP Compliance Guide</Link>
               <Link to="/referral-program">Refer &amp; earn</Link>
-              <Link to="/contact">Contact</Link>
-              <Link to="/pricing">Pricing</Link>
+              <Link to="/affiliate/terms">Affiliate Program</Link>
+              <Link to="/contact">Contact Support</Link>
+              <Link to="/pricing">Plans &amp; Pricing</Link>
             </div>
 
             <div className="footer__col footer__col--contact">
@@ -449,14 +458,14 @@ export function SitemapPage() {
           <div className="footer__wordmark" aria-hidden="true">RealSalePro</div>
 
           <div className="footer__bottom">
-            <p>© {new Date().getFullYear()} RealSalePro. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} RealSalePro · Powered by Synergy Brand Architect · AWS Mumbai Cloud Infrastructure · In Statutory Compliance with Digital Personal Data Protection (DPDP) Act, 2023 &amp; IT Act, 2000.</p>
             <div className="footer__legal">
               <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/data-deletion">Data Erasure (DPDP)</Link>
               <Link to="/terms">Terms of Service</Link>
               <Link to="/refund-policy">Refund Policy</Link>
               <Link to="/shipping-policy">Shipping Policy</Link>
-              <Link to="/sitemap">HTML Sitemap</Link>
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">XML Sitemap</a>
+              <Link to="/sitemap">Site Map</Link>
             </div>
           </div>
         </div>

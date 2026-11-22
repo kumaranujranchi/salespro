@@ -1112,7 +1112,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           transition: isDragging ? 'none' : 'margin-left 300ms cubic-bezier(0.4,0,0.2,1)'
         }}
       >
-        <div key={location.pathname} className="max-w-[1600px] space-y-6 animate-fadeIn">
+        <div key={location.pathname} className="w-full space-y-6 animate-fadeIn">
           {children}
         </div>
       </main>
