@@ -3,10 +3,70 @@ import { query } from '../db/index.js';
 import { createSaleFromLead } from '../services/leadToSale.js';
 import { dispatchCrmConversionEvent } from '../services/capiService.js';
 import { sendLeadWelcomeWhatsApp } from '../services/whatsappService.js';
-import { getEffectivePermissions, isPlatformRole } from '../middleware/auth.js';
+import { getEffectivePermissions, isPlatformRole, normalizeRole } from '../middleware/auth.js';
 import { recordLeadConsent } from '../services/consentService.js';
 
 const router = Router();
+
+/**
+ * Resolves the Lead Visibility Scope ('self' | 'team' | 'overall')
+ * and whether the user is permitted to view all organization leads.
+ */
+export async function resolveLeadAccessScope(req, tenantId) {
+  if (!req.user) {
+    return { scope: 'overall', canViewAll: true, userId: null };
+  }
+
+  const isPlatform = isPlatformRole(req.user);
+  const normalizedRole = normalizeRole(req.user.role || '');
+  if (isPlatform || ['platform_admin', 'super_admin'].includes(normalizedRole)) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  const perms = await getEffectivePermissions(req.user);
+  if (perms?.is_admin) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  // Check explicit perspective configured on role
+  const leadsConfig = perms?.modules?.leads;
+  const perspective = leadsConfig?.perspective || perms?.leads_view;
+
+  if (perspective === 'self') {
+    return { scope: 'self', canViewAll: false, userId: req.user.id };
+  }
+  if (perspective === 'team') {
+    return { scope: 'team', canViewAll: false, userId: req.user.id };
+  }
+  if (perspective === 'overall') {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  // Fallback heuristics based on role name
+  const isExecutive = 
+    normalizedRole.includes('executive') || 
+    normalizedRole.includes('caller') || 
+    normalizedRole.includes('telecaller') ||
+    normalizedRole === 'sales_executive';
+
+  const isManager =
+    normalizedRole.includes('manager') ||
+    normalizedRole.includes('team_leader') ||
+    normalizedRole.includes('leader');
+
+  if (isExecutive) {
+    return { scope: 'self', canViewAll: false, userId: req.user.id };
+  }
+  if (isManager) {
+    return { scope: 'team', canViewAll: false, userId: req.user.id };
+  }
+  if (['admin', 'director', 'owner'].includes(normalizedRole)) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  // Safe default: self-isolated
+  return { scope: 'self', canViewAll: false, userId: req.user.id };
+}
 
 // 1. List Leads with filtering and search
 router.get('/', async (req, res) => {
@@ -57,14 +117,33 @@ router.get('/', async (req, res) => {
       sql += ` AND l.lead_score ILIKE $${params.length}`;
     }
 
-    // Executive filter
-    let effExec = executive_id || executiveFilter;
-    if (showOnlyMyLeads === 'true' || showOnlyMyLeads === true) {
-      effExec = profileId || req.user?.id;
-    }
-    if (effExec && effExec !== 'all') {
-      params.push(effExec);
-      sql += ` AND l.sales_executive_id = $${params.length}`;
+    // RBAC & Lead Visibility Scope Isolation
+    const { scope, canViewAll, userId } = await resolveLeadAccessScope(req, tenant_id);
+
+    if (!canViewAll) {
+      if (scope === 'self' && userId) {
+        params.push(userId);
+        sql += ` AND l.sales_executive_id = $${params.length}`;
+      } else if (scope === 'team' && userId) {
+        params.push(userId);
+        sql += ` AND (l.sales_executive_id = $${params.length} OR l.sales_executive_id IN (
+          WITH RECURSIVE subordinates AS (
+            SELECT id FROM profiles WHERE reporting_manager_id = $${params.length}
+            UNION ALL
+            SELECT p.id FROM profiles p INNER JOIN subordinates s ON p.reporting_manager_id = s.id
+          ) SELECT id FROM subordinates
+        ))`;
+      }
+    } else {
+      // Executive filter for privileged users
+      let effExec = executive_id || executiveFilter;
+      if (showOnlyMyLeads === 'true' || showOnlyMyLeads === true) {
+        effExec = profileId || req.user?.id;
+      }
+      if (effExec && effExec !== 'all') {
+        params.push(effExec);
+        sql += ` AND l.sales_executive_id = $${params.length}`;
+      }
     }
 
     // Project filter
@@ -137,10 +216,29 @@ router.get('/stats', async (req, res) => {
     let filterClause = 'tenant_id = $1';
     const params = [tenant_id];
 
-    const effExec = executive_id || executiveFilter;
-    if (effExec && effExec !== 'all') {
-      params.push(effExec);
-      filterClause += ` AND sales_executive_id = $${params.length}`;
+    // RBAC & Lead Visibility Scope Isolation
+    const { scope, canViewAll, userId } = await resolveLeadAccessScope(req, tenant_id);
+
+    if (!canViewAll) {
+      if (scope === 'self' && userId) {
+        params.push(userId);
+        filterClause += ` AND sales_executive_id = $${params.length}`;
+      } else if (scope === 'team' && userId) {
+        params.push(userId);
+        filterClause += ` AND (sales_executive_id = $${params.length} OR sales_executive_id IN (
+          WITH RECURSIVE subordinates AS (
+            SELECT id FROM profiles WHERE reporting_manager_id = $${params.length}
+            UNION ALL
+            SELECT p.id FROM profiles p INNER JOIN subordinates s ON p.reporting_manager_id = s.id
+          ) SELECT id FROM subordinates
+        ))`;
+      }
+    } else {
+      const effExec = executive_id || executiveFilter;
+      if (effExec && effExec !== 'all') {
+        params.push(effExec);
+        filterClause += ` AND sales_executive_id = $${params.length}`;
+      }
     }
 
     const effDateFilter = date_filter || dateFilter;
@@ -310,6 +408,12 @@ router.get('/executive-stats', async (req, res) => {
     let eligibleProfiles = profilesResult.rows.filter(p => isSalesRole(p.role, p.role_name));
     if (eligibleProfiles.length === 0) {
       eligibleProfiles = profilesResult.rows;
+    }
+
+    // Isolate executive stats for non-privileged staff
+    const { scope, canViewAll, userId } = await resolveLeadAccessScope(req, targetTenantId);
+    if (!canViewAll && scope === 'self' && userId) {
+      eligibleProfiles = eligibleProfiles.filter(p => String(p.id) === String(userId));
     }
 
     const executiveStats = eligibleProfiles.map(p => {

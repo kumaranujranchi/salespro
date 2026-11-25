@@ -161,7 +161,14 @@ export function LeadsPage() {
 
   const [isCRMActive, setIsCRMActive] = useState(true);
 
-  // Filter & Search State
+  // Granular RBAC Permissions & Data Visibility Scope
+  const { can, canCreate, canEdit, canDelete, canExport, canAssign, isAdmin, canViewAllLeads, leadPerspective, isExecutiveRole } = usePermissions();
+  const canCreateLead = canCreate('leads');
+  const canEditLead = canEdit('leads');
+  const canDeleteLead = canDelete('leads');
+  const canExportLeads = isSuperAdmin; // Strict Data Security: Bulk leads export is restricted to Super Admin only
+  const canAssignLeads = canAssign('leads');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
@@ -170,8 +177,10 @@ export function LeadsPage() {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [executiveFilter, setExecutiveFilter] = useState<string>('all');
   const [showOnlyMyLeads, setShowOnlyMyLeads] = useState(
-    normalizedRole === 'sales_executive'
+    !canViewAllLeads || leadPerspective === 'self' || isExecutiveRole
   );
+
+  const effectiveShowOnlyMyLeads = !canViewAllLeads || showOnlyMyLeads;
 
   const hasActiveFilters = Boolean(
     searchTerm.trim() ||
@@ -191,29 +200,20 @@ export function LeadsPage() {
     setCustomStartDate('');
     setCustomEndDate('');
     setExecutiveFilter('all');
-    setShowOnlyMyLeads(normalizedRole === 'sales_executive');
+    setShowOnlyMyLeads(!canViewAllLeads || leadPerspective === 'self' || isExecutiveRole);
   };
 
   // Dashboard Stats using optimized query
   const statsData = useQuery(api.leads.getDashboardStats, 
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
-      executive_id: showOnlyMyLeads ? profile.id as Id<"profiles"> : (executiveFilter !== 'all' ? executiveFilter : undefined),
+      executive_id: effectiveShowOnlyMyLeads ? profile.id as Id<"profiles"> : (executiveFilter !== 'all' ? executiveFilter : undefined),
       dateFilter,
       startDate: customStartDate || undefined,
       endDate: customEndDate || undefined,
       callerProfileId: profile.id as Id<"profiles">
     } : "skip"
   );
-
-  // Granular RBAC Permissions
-  const { can, canCreate, canEdit, canDelete, canExport, canAssign, isAdmin } = usePermissions();
-  const canCreateLead = canCreate('leads');
-  const canEditLead = canEdit('leads');
-  const canDeleteLead = canDelete('leads');
-  const canExportLeads = isSuperAdmin; // Strict Data Security: Bulk leads export is restricted to Super Admin only
-  const canAssignLeads = canAssign('leads');
-  const canViewAllLeads = isAdmin || ['super_admin', 'admin', 'team_leader', 'director'].includes(normalizedRole);
 
   // Per-executive lead stats (only for roles that can see all leads)
   const executiveStats = useQuery(
@@ -272,7 +272,7 @@ export function LeadsPage() {
     api.leads.listLeadsByTenant,
     profile?.tenant_id ? { 
       tenant_id: profile.tenant_id as Id<"tenants">,
-      showOnlyMyLeads,
+      showOnlyMyLeads: effectiveShowOnlyMyLeads,
       profileId: profile.id as Id<"profiles">,
       statusFilter,
       scoreFilter,
@@ -288,6 +288,11 @@ export function LeadsPage() {
   // Client-side filtering ensures instant response and keeps table & cards in sync
   const leads = useMemo(() => {
     let list: LeadWithRelations[] = Array.isArray(rawLeads) ? (rawLeads as LeadWithRelations[]) : [];
+
+    // Data isolation defense: executives and self-perspective roles only ever see assigned leads
+    if (!canViewAllLeads && profile?.id) {
+      list = list.filter(l => String(l.sales_executive_id) === String(profile.id));
+    }
 
     // Status filter
     if (statusFilter && statusFilter !== 'all') {

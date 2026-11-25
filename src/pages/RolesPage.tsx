@@ -207,6 +207,12 @@ const SALES_PERSPECTIVES: { id: 'none' | 'self' | 'team' | 'overall'; label: str
   { id: 'overall', label: 'Overall Sales', description: 'Show total company sales and volume' },
 ];
 
+const LEAD_PERSPECTIVES: { id: 'self' | 'team' | 'overall'; label: string; description: string }[] = [
+  { id: 'self', label: 'Assigned Leads Only (Self)', description: 'Strictly isolate: user only sees and calls leads assigned directly to them' },
+  { id: 'team', label: 'Team / Department Leads', description: 'Show leads assigned to user and reporting team members' },
+  { id: 'overall', label: 'All Company Leads (Global)', description: 'Full access to browse and manage all organization leads' },
+];
+
 // Helper to construct empty permissions
 function createDefaultPermissions(): RolePermissions {
   const modules: Record<string, ModulePermissionConfig> = {};
@@ -218,8 +224,16 @@ function createDefaultPermissions(): RolePermissions {
     modules[m.id] = { view: false, ...actMap };
   });
 
+  if (modules.leads) {
+    modules.leads.perspective = 'overall';
+  }
+  if (modules.sales) {
+    modules.sales.perspective = 'overall';
+  }
+
   return {
     modules,
+    leads_view: 'overall',
     menu: {
       dashboard: 'read',
       accounts: 'none',
@@ -249,13 +263,17 @@ function normalizeRolePermissions(rawPerms: any): RolePermissions {
   const base = createDefaultPermissions();
   if (!rawPerms || typeof rawPerms !== 'object') return base;
 
+  const leadPersp = rawPerms.modules?.leads?.perspective || rawPerms.leads_view || 'overall';
+  const salesPersp = rawPerms.modules?.sales?.perspective || rawPerms.dashboard?.sales_view || 'none';
+
   const result: RolePermissions = {
     modules: { ...base.modules },
+    leads_view: leadPersp,
     menu: { ...base.menu, ...(rawPerms.menu || {}) },
     dashboard: {
       ...base.dashboard,
       ...(rawPerms.dashboard || {}),
-      sales_view: rawPerms.dashboard?.sales_view || 'none',
+      sales_view: salesPersp,
     },
   };
 
@@ -296,6 +314,13 @@ function normalizeRolePermissions(rawPerms: any): RolePermissions {
         }
       }
     });
+  }
+
+  if (result.modules?.leads) {
+    result.modules.leads.perspective = leadPersp;
+  }
+  if (result.modules?.sales) {
+    result.modules.sales.perspective = salesPersp;
   }
 
   return result;
@@ -388,6 +413,9 @@ export function RolesPage() {
         });
         if (nextPerms.modules) nextPerms.modules[m.id] = actMap as any;
       });
+      nextPerms.leads_view = 'overall';
+      if (nextPerms.modules?.leads) nextPerms.modules.leads.perspective = 'overall';
+      if (nextPerms.modules?.sales) nextPerms.modules.sales.perspective = 'overall';
       nextPerms.dashboard = {
         kpi_cards: true,
         project_performance: true,
@@ -406,6 +434,7 @@ export function RolesPage() {
           delete: false,
           assign: false,
           export: false,
+          perspective: 'self',
         };
         nextPerms.modules.sales = {
           view: true,
@@ -413,6 +442,7 @@ export function RolesPage() {
           edit: false,
           delete: false,
           export: false,
+          perspective: 'self',
         };
         nextPerms.modules.site_visits = {
           view: true,
@@ -433,6 +463,7 @@ export function RolesPage() {
           delete: false,
         };
       }
+      nextPerms.leads_view = 'self';
       nextPerms.dashboard = {
         kpi_cards: true,
         project_performance: false,
@@ -451,6 +482,7 @@ export function RolesPage() {
           delete: false,
           assign: true,
           export: true,
+          perspective: 'team',
         };
         nextPerms.modules.sales = {
           view: true,
@@ -458,6 +490,7 @@ export function RolesPage() {
           edit: true,
           delete: false,
           export: true,
+          perspective: 'team',
         };
         nextPerms.modules.site_visits = {
           view: true,
@@ -482,6 +515,7 @@ export function RolesPage() {
           export: true,
         };
       }
+      nextPerms.leads_view = 'team';
       nextPerms.dashboard = {
         kpi_cards: true,
         project_performance: true,
@@ -506,6 +540,7 @@ export function RolesPage() {
           edit: false,
           delete: false,
           export: true,
+          perspective: 'overall',
         };
         nextPerms.modules.leads = {
           view: true,
@@ -514,6 +549,7 @@ export function RolesPage() {
           delete: false,
           assign: false,
           export: false,
+          perspective: 'overall',
         };
         nextPerms.modules.inventory = {
           view: true,
@@ -526,6 +562,7 @@ export function RolesPage() {
           export: true,
         };
       }
+      nextPerms.leads_view = 'overall';
       nextPerms.dashboard = {
         kpi_cards: true,
         project_performance: false,
@@ -543,6 +580,9 @@ export function RolesPage() {
         });
         if (nextPerms.modules) nextPerms.modules[m.id] = actMap as any;
       });
+      nextPerms.leads_view = 'overall';
+      if (nextPerms.modules?.leads) nextPerms.modules.leads.perspective = 'overall';
+      if (nextPerms.modules?.sales) nextPerms.modules.sales.perspective = 'overall';
       nextPerms.dashboard = {
         kpi_cards: true,
         project_performance: true,
@@ -624,11 +664,24 @@ export function RolesPage() {
 
       const modules = formData.permissions.modules || {};
       const menu = deriveLegacyMenu(modules);
+      const leadScope = modules.leads?.perspective || formData.permissions.leads_view || 'overall';
+      const salesScope = modules.sales?.perspective || formData.permissions.dashboard?.sales_view || 'none';
+
+      if (modules.leads) {
+        modules.leads.perspective = leadScope;
+      }
+      if (modules.sales) {
+        modules.sales.perspective = salesScope;
+      }
 
       const finalPermissions: RolePermissions = {
         modules,
         menu,
-        dashboard: formData.permissions.dashboard,
+        dashboard: {
+          ...formData.permissions.dashboard,
+          sales_view: salesScope,
+        },
+        leads_view: leadScope,
       };
 
       if (selectedRole) {
@@ -856,11 +909,19 @@ export function RolesPage() {
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500">
-                      <span>Sales View:</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 uppercase">
-                        {perms.dashboard?.sales_view || 'none'}
-                      </span>
+                    <div className="pt-3 border-t border-slate-100 dark:border-white/5 space-y-1.5 text-xs text-slate-500">
+                      <div className="flex items-center justify-between">
+                        <span>Leads Scope:</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
+                          {perms.modules?.leads?.perspective || perms.leads_view || 'overall'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Sales View:</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 uppercase">
+                          {perms.dashboard?.sales_view || 'none'}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -876,6 +937,7 @@ export function RolesPage() {
                   <TableHead className="pl-6">Role Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Active Privileges</TableHead>
+                  <TableHead>Leads Scope</TableHead>
                   <TableHead>Sales Scope</TableHead>
                   <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
@@ -903,6 +965,11 @@ export function RolesPage() {
                         <TableCell>
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-semibold text-xs">
                             <ShieldCheck size={13} /> {activeCount} Modules Granted
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                            {perms.modules?.leads?.perspective || perms.leads_view || 'overall'}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -1211,6 +1278,70 @@ export function RolesPage() {
                           })}
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Lead Visibility Perspective */}
+              <div className="space-y-4 bg-slate-50 dark:bg-white/5 p-5 rounded-3xl border border-slate-200 dark:border-white/10">
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                    <UsersIcon size={16} className="text-emerald-600" /> Lead Visibility Scope (Data Access Level)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Controls whether users with this role see assigned leads only, reporting team leads, or all organization leads.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {LEAD_PERSPECTIVES.map(opt => {
+                    const currentScope = formData.permissions.modules?.leads?.perspective || formData.permissions.leads_view || 'overall';
+                    const isSelected = currentScope === opt.id;
+
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          const currentMods = { ...(formData.permissions.modules || {}) };
+                          currentMods.leads = {
+                            ...(currentMods.leads || { view: true }),
+                            perspective: opt.id,
+                          };
+                          setFormData({
+                            ...formData,
+                            permissions: {
+                              ...formData.permissions,
+                              modules: currentMods,
+                              leads_view: opt.id,
+                            },
+                          });
+                        }}
+                        className={`p-3.5 rounded-2xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-600 ring-2 ring-emerald-500/20'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-xs font-bold ${
+                              isSelected ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'
+                            }`}
+                          >
+                            {opt.label}
+                          </span>
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                              isSelected ? 'border-emerald-600' : 'border-slate-300'
+                            }`}
+                          >
+                            {isSelected && <div className="w-2 h-2 bg-emerald-600 rounded-full" />}
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-500 leading-tight block">{opt.description}</span>
+                      </button>
                     );
                   })}
                 </div>

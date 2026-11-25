@@ -2,6 +2,7 @@ import { useQuery } from '../../lib/reactive';
 import { api, Id } from '../../lib/api-endpoints';
 import { formatCurrency } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { KPICard } from '../ui/KPICard';
 import { CompanyLogoAvatar } from '../ui/CompanyLogoAvatar';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -33,6 +34,7 @@ import { useState, useMemo } from 'react';
 export function CRMDashboard() {
     const { profile } = useAuth();
     const [leaderboardTimeFilter, setLeaderboardTimeFilter] = useState<'this_month' | 'this_year'>('this_month');
+    const { canViewAllLeads, canViewAllSales } = usePermissions();
 
     const tenantId = profile?.tenant_id as Id<"tenants">;
 
@@ -41,11 +43,19 @@ export function CRMDashboard() {
     const profiles = useQuery(api.profiles.listUsersByTenant, tenantId ? { tenant_id: tenantId } : "skip");
     const departments = useQuery(api.departments.list, tenantId ? { tenant_id: tenantId } : "skip");
     const pendingVisitsCount = useQuery(api.site_visits.countPendingVisits, tenantId ? { tenant_id: tenantId } : "skip");
-    const crmStats = useQuery(api.leads.getDashboardStats, tenantId ? { tenant_id: tenantId } : "skip");
+    const crmStats = useQuery(api.leads.getDashboardStats, tenantId ? { 
+        tenant_id: tenantId,
+        executive_id: !canViewAllLeads ? profile?.id : undefined,
+        callerProfileId: profile?.id
+    } : "skip");
     const salesAnalytics = useQuery(api.sales.getSalesAnalytics, tenantId ? { tenant_id: tenantId, year: new Date().getFullYear() } : "skip");
     const recentActivity = useQuery(api.activity_logs.listRecent, tenantId ? { tenant_id: tenantId, limit: 10 } : "skip");
     const announcements = useQuery(api.announcements.listPublished, tenantId ? { tenant_id: tenantId, limit: 3 } : "skip");
-    const recentSales = useQuery(api.sales.listSales, tenantId ? { tenant_id: tenantId } : "skip");
+    const recentSales = useQuery(api.sales.listSales, tenantId ? { 
+        tenant_id: tenantId,
+        executive_id: !canViewAllSales ? profile?.id : undefined,
+        scope: canViewAllSales ? (profile?.role_details?.permissions?.dashboard?.sales_view || 'overall') : 'my'
+    } : "skip");
 
     const loading = crmStats === undefined || salesAnalytics === undefined || projects === undefined || profiles === undefined;
 

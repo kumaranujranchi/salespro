@@ -1,9 +1,69 @@
 import { Router } from 'express';
 import { query } from '../db/index.js';
 import { syncConvertedLeadsForTenant } from '../services/leadToSale.js';
-import { isPlatformRole, normalizeRole } from '../middleware/auth.js';
+import { getEffectivePermissions, isPlatformRole, normalizeRole } from '../middleware/auth.js';
 
 const router = Router();
+
+/**
+ * Resolves Sales Visibility Scope ('none' | 'self' | 'team' | 'overall')
+ */
+export async function resolveSalesAccessScope(req, tenantId) {
+  if (!req.user) {
+    return { scope: 'overall', canViewAll: true, userId: null };
+  }
+
+  const isPlatform = isPlatformRole(req.user);
+  const normalizedRole = normalizeRole(req.user.role || '');
+  if (isPlatform || ['platform_admin', 'super_admin'].includes(normalizedRole)) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  const perms = await getEffectivePermissions(req.user);
+  if (perms?.is_admin) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  const salesConfig = perms?.modules?.sales;
+  const perspective = salesConfig?.perspective || perms?.dashboard?.sales_view;
+
+  if (perspective === 'none') {
+    return { scope: 'none', canViewAll: false, userId: req.user.id };
+  }
+  if (perspective === 'self') {
+    return { scope: 'self', canViewAll: false, userId: req.user.id };
+  }
+  if (perspective === 'team') {
+    return { scope: 'team', canViewAll: false, userId: req.user.id };
+  }
+  if (perspective === 'overall') {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  // Heuristic fallback
+  const isExecutive = 
+    normalizedRole.includes('executive') || 
+    normalizedRole.includes('caller') || 
+    normalizedRole.includes('telecaller') ||
+    normalizedRole === 'sales_executive';
+
+  const isManager =
+    normalizedRole.includes('manager') ||
+    normalizedRole.includes('team_leader') ||
+    normalizedRole.includes('leader');
+
+  if (isExecutive) {
+    return { scope: 'self', canViewAll: false, userId: req.user.id };
+  }
+  if (isManager) {
+    return { scope: 'team', canViewAll: false, userId: req.user.id };
+  }
+  if (['admin', 'director', 'owner'].includes(normalizedRole)) {
+    return { scope: 'overall', canViewAll: true, userId: req.user.id };
+  }
+
+  return { scope: 'self', canViewAll: false, userId: req.user.id };
+}
 
 // 1. List Sales
 router.get('/', async (req, res) => {
@@ -18,9 +78,11 @@ router.get('/', async (req, res) => {
       console.warn('Auto-sync converted leads warning:', syncErr.message);
     }
 
-    const callerRole = normalizeRole(req.user?.role || '');
-    const isPlatform = req.user ? isPlatformRole(req.user) : false;
-    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+    const { scope: accessScope, canViewAll, userId } = await resolveSalesAccessScope(req, tenant_id);
+
+    if (accessScope === 'none') {
+      return res.json([]);
+    }
 
     let sql = `
       SELECT s.*, 
@@ -42,11 +104,18 @@ router.get('/', async (req, res) => {
 
     // Determine executive filtering (user-specific isolation)
     if (!canViewAll) {
-      // Non-privileged staff (e.g. sales_executive): strictly restricted to their own sales
-      const userExecId = req.user?.id || executive_id;
-      if (userExecId) {
-        params.push(userExecId);
+      if (accessScope === 'self' && userId) {
+        params.push(userId);
         sql += ` AND s.sales_executive_id = $${params.length}`;
+      } else if (accessScope === 'team' && userId) {
+        params.push(userId);
+        sql += ` AND (s.sales_executive_id = $${params.length} OR s.sales_executive_id IN (
+          WITH RECURSIVE subordinates AS (
+            SELECT id FROM profiles WHERE reporting_manager_id = $${params.length}
+            UNION ALL
+            SELECT p.id FROM profiles p INNER JOIN subordinates s ON p.reporting_manager_id = s.id
+          ) SELECT id FROM subordinates
+        ))`;
       }
     } else if (scope === 'my') {
       // Privileged user explicitly filtering to their own sales
@@ -122,14 +191,12 @@ router.get('/overview', async (req, res) => {
     let { tenant_id, executive_id, view = 'overall' } = req.query;
     if (!tenant_id) return res.status(400).json({ error: 'tenant_id required' });
 
-    const callerRole = normalizeRole(req.user?.role || '');
-    const isPlatform = req.user ? isPlatformRole(req.user) : false;
-    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+    const { scope: accessScope, canViewAll, userId } = await resolveSalesAccessScope(req, tenant_id);
 
-    // If caller cannot view all sales, strictly force view='self' and executive_id=req.user.id
+    // If caller cannot view all sales, strictly force their scope and executive_id
     if (!canViewAll) {
-      view = 'self';
-      executive_id = req.user?.id || executive_id;
+      view = accessScope === 'team' ? 'team' : 'self';
+      executive_id = userId || executive_id;
     }
 
     const now = new Date();
@@ -548,18 +615,29 @@ router.get('/payments', async (req, res) => {
       sql += ` AND sale_id = $${params.length}`;
     }
 
-    const callerRole = normalizeRole(req.user?.role || '');
-    const isPlatform = req.user ? isPlatformRole(req.user) : false;
-    const canViewAll = isPlatform || ['super_admin', 'admin', 'director', 'sales_manager'].includes(callerRole);
+    const { scope: accessScope, canViewAll, userId } = await resolveSalesAccessScope(req, tenant_id);
 
     let effectiveExecId = executive_id;
     if (!canViewAll) {
-      effectiveExecId = req.user?.id;
+      effectiveExecId = userId;
     } else if (scope === 'my') {
       effectiveExecId = req.user?.id;
     }
 
-    if (effectiveExecId && effectiveExecId !== 'all') {
+    if (!canViewAll && accessScope === 'team' && userId) {
+      params.push(userId);
+      sql += ` AND sale_id IN (
+        SELECT id FROM sales WHERE tenant_id = $1 AND (
+          sales_executive_id = $${params.length} OR sales_executive_id IN (
+            WITH RECURSIVE subordinates AS (
+              SELECT id FROM profiles WHERE reporting_manager_id = $${params.length}
+              UNION ALL
+              SELECT p.id FROM profiles p INNER JOIN subordinates s ON p.reporting_manager_id = s.id
+            ) SELECT id FROM subordinates
+          )
+        )
+      )`;
+    } else if (effectiveExecId && effectiveExecId !== 'all') {
       params.push(effectiveExecId);
       sql += ` AND sale_id IN (SELECT id FROM sales WHERE tenant_id = $1 AND sales_executive_id = $${params.length})`;
     }

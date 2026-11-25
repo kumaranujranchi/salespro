@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '../lib/reactive';
 import { api, Id } from '../lib/api-endpoints';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
@@ -21,19 +22,28 @@ const COLORS = {
 
 export function PipelinePage() {
   const { profile } = useAuth();
+  const { canViewAllLeads } = usePermissions();
   const navigate = useNavigate();
   const tenantId = profile?.tenant_id as Id<"tenants">;
 
-  // Backend query
+  // Backend query: if executive or non-admin, isolate to current profile
   const leads = useQuery(
     api.leads.listAllLeadsForTenant,
-    tenantId ? { tenant_id: tenantId, profileId: profile?.id } : "skip"
+    tenantId ? { 
+      tenant_id: tenantId, 
+      profileId: profile?.id,
+      showOnlyMyLeads: !canViewAllLeads,
+      executive_id: !canViewAllLeads ? profile?.id : undefined
+    } : "skip"
   );
 
   const { stats, funnelData, inProgressData, lostData } = useMemo(() => {
     if (!leads) return { stats: { total: 0, inProgress: 0, closed: 0 }, funnelData: [], inProgressData: [], lostData: [] };
 
-    const currentLeads = leads;
+    let currentLeads = Array.isArray(leads) ? leads : [];
+    if (!canViewAllLeads && profile?.id) {
+      currentLeads = currentLeads.filter((l: any) => String(l.sales_executive_id) === String(profile.id));
+    }
 
     // 2. Process Statistics
     const total = currentLeads.length;

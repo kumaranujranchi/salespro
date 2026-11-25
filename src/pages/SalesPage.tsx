@@ -16,11 +16,13 @@ import { SalesDetailsModal } from '../components/sales/SalesDetailsModal';
 import { SalesCancellationModal } from '../components/sales/SalesCancellationModal';
 import { startOfYear, startOfMonth, isSameMonth, parseISO, format } from 'date-fns';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { usePermissions } from '../hooks/usePermissions';
 import { toast } from 'sonner';
 
 export function SalesPage() {
   const { profile } = useAuth();
   const dialog = useDialog();
+  const { canViewAllSales, salesPerspective } = usePermissions();
   
   const [activeMetric, setActiveMetric] = useState<'area' | 'revenue' | 'units'>('revenue');
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,35 +42,35 @@ export function SalesPage() {
     setExpandedSaleId(prev => (prev === id ? null : id));
   };
 
-  const normalizedRole = (profile?.role || '').toLowerCase().replace(/[\s_-]+/g, '_');
-  const canViewAllSales = ['super_admin', 'admin', 'director', 'platform_admin', 'sales_manager'].includes(normalizedRole);
   const [scope, setScope] = useState<'all' | 'my'>(canViewAllSales ? 'all' : 'my');
   const [selectedExecutiveId, setSelectedExecutiveId] = useState<string>('all');
+
+  const effectiveScope = canViewAllSales ? scope : 'my';
 
   const effectiveExecutiveId = useMemo(() => {
     if (!canViewAllSales) {
       return (profile?.id || (profile as any)?._id) as string;
     }
-    if (scope === 'my') {
+    if (effectiveScope === 'my') {
       return (profile?.id || (profile as any)?._id) as string;
     }
     if (selectedExecutiveId !== 'all') {
       return selectedExecutiveId;
     }
     return undefined;
-  }, [canViewAllSales, scope, selectedExecutiveId, profile]);
+  }, [canViewAllSales, effectiveScope, selectedExecutiveId, profile]);
 
   // Backend queries
   const sales = useQuery(api.sales.listSales, profile?.tenant_id ? { 
     tenant_id: profile.tenant_id as Id<"tenants">,
     executive_id: effectiveExecutiveId,
-    scope: scope
+    scope: effectiveScope
   } : "skip");
 
   const payments = useQuery(api.payments.listPayments, profile?.tenant_id ? {
     tenant_id: profile.tenant_id as Id<"tenants">,
     executive_id: effectiveExecutiveId,
-    scope: scope
+    scope: effectiveScope
   } : "skip");
 
   const projects = useQuery(api.projects.listRunningProjects, profile?.tenant_id ? {
@@ -146,12 +148,18 @@ export function SalesPage() {
   const filteredSales = useMemo(() => {
     if (!sales) return [];
     return sales.filter(s => {
+      // Data isolation defense for sales executives
+      if (!canViewAllSales && profile?.id) {
+        if (String(s.sales_executive_id) !== String(profile.id)) {
+          return false;
+        }
+      }
       const matchSearch = !searchQuery || 
         String(s.customer?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         String(s.project?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchSearch;
     });
-  }, [sales, searchQuery]);
+  }, [sales, searchQuery, canViewAllSales, profile]);
 
   const metrics = useMemo(() => {
     if (!sales || !payments) return { totalSales: 0, thisMonth: 0, totalArea: 0, totalRevenue: 0, totalReceived: 0 };

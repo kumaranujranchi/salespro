@@ -119,6 +119,7 @@ export interface ModulePermissionConfig {
 export interface RolePermissions {
   menu?: Record<string, 'none' | 'read' | 'edit'>;
   modules?: Record<string, ModulePermissionConfig>;
+  leads_view?: 'none' | 'self' | 'team' | 'overall';
   dashboard: {
     kpi_cards?: boolean;
     project_performance?: boolean;

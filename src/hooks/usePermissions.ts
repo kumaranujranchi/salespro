@@ -1,6 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'assign';
+export type DataPerspective = 'none' | 'self' | 'team' | 'overall';
 
 export function usePermissions() {
   const { profile } = useAuth();
@@ -17,6 +18,38 @@ export function usePermissions() {
 
   // Extract permissions from role_details or top-level profile permissions
   const permissions = (profile?.role_details?.permissions || profile?.permissions || {}) as any;
+
+  // Determine data visibility perspectives (self / team / overall)
+  const isExecutiveRole = (role: string) => {
+    const r = role.replace(/[\s_-]+/g, '');
+    return r.includes('executive') || r.includes('caller') || r.includes('telecaller') || r.includes('agent');
+  };
+
+  const isManagerRole = (role: string) => {
+    const r = role.replace(/[\s_-]+/g, '');
+    return r.includes('manager') || r.includes('leader') || r.includes('director');
+  };
+
+  const rawLeadPerspective = (
+    permissions?.modules?.leads?.perspective ||
+    permissions?.leads_view ||
+    (isExecutiveRole(normalizedRole) ? 'self' : isManagerRole(normalizedRole) ? 'team' : (isAdmin ? 'overall' : 'self'))
+  ) as DataPerspective;
+
+  const rawSalesPerspective = (
+    permissions?.modules?.sales?.perspective ||
+    permissions?.dashboard?.sales_view ||
+    (isExecutiveRole(normalizedRole) ? 'self' : isManagerRole(normalizedRole) ? 'team' : (isAdmin ? 'overall' : 'self'))
+  ) as DataPerspective;
+
+  // Final effective perspectives
+  const leadPerspective: DataPerspective = isSuperAdmin ? 'overall' : rawLeadPerspective;
+  const salesPerspective: DataPerspective = isSuperAdmin ? 'overall' : rawSalesPerspective;
+
+  // Boolean flags for easy UI decisions
+  const canViewAllLeads = (isAdmin || leadPerspective === 'overall') && leadPerspective !== 'self' && leadPerspective !== 'none';
+  const canViewAllSales = (isAdmin || salesPerspective === 'overall') && salesPerspective !== 'self' && salesPerspective !== 'none';
+  const isSalesExecutive = leadPerspective === 'self' || isExecutiveRole(normalizedRole);
 
   const can = (moduleName: string, action: PermissionAction = 'view'): boolean => {
     // SECURITY: Bulk leads export is strictly restricted to Super Admin only
@@ -74,7 +107,12 @@ export function usePermissions() {
   return {
     isAdmin,
     isSuperAdmin,
+    isSalesExecutive,
     permissions,
+    leadPerspective,
+    salesPerspective,
+    canViewAllLeads,
+    canViewAllSales,
     can,
     canView: (moduleName: string) => can(moduleName, 'view'),
     canCreate: (moduleName: string) => can(moduleName, 'create'),
@@ -82,6 +120,5 @@ export function usePermissions() {
     canDelete: (moduleName: string) => can(moduleName, 'delete'),
     canExport: (moduleName: string) => can(moduleName, 'export'),
     canAssign: (moduleName: string) => can(moduleName, 'assign'),
-    salesPerspective: (permissions?.dashboard?.sales_view || 'overall') as 'none' | 'self' | 'team' | 'overall',
   };
 }
